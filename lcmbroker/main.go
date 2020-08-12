@@ -19,8 +19,8 @@ package main
 import (
 	"github.com/astaxie/beego"
 
-	_ "applcm/lcmbroker/config"
-	_ "applcm/lcmbroker/routers"
+	_ "lcmbroker/config"
+	_ "lcmbroker/routers"
 )
 
 func main() {
