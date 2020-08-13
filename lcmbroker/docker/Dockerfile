@@ -62,9 +62,11 @@ WORKDIR $HOME
 COPY --from=builder $HOME/lcmbroker $HOME/bin
 COPY --from=builder $HOME/conf/ $HOME/conf/
 COPY --from=builder $HOME/start.sh $HOME/bin
+COPY --from=builder $HOME/views/ $HOME/views/
 
 RUN chmod 750 $HOME &&\
     chmod 750 $HOME/conf &&\
+    chmod 500 -R $HOME/views &&\
     chmod 640 $HOME/conf/app.conf &&\
     chmod 550 -R $HOME/bin &&\
     mkdir -p -m 750 $HOME/log &&\
