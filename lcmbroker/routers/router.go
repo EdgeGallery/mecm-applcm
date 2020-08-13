@@ -27,5 +27,5 @@ const RootPath string = "/lcmbroker/v1"
 func init() {
 	beego.Router(RootPath+"/app_instances/:appInstanceId/instantiate", &controllers.LcmController{},"post:Instantiate")
 	beego.Router(RootPath+"/app_instances/:appInstanceId/terminate", &controllers.LcmController{},"post:Terminate")
-	beego.Router(RootPath+"/app_instances/:appInstanceId", &controllers.LcmController{},"post:Query")
+	beego.Router(RootPath+"/app_instances/:appInstanceId", &controllers.LcmController{},"get:Query")
 }

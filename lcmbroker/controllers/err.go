@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package main
+package controllers
 
-import (
-	"github.com/astaxie/beego"
-	"lcmbroker/controllers"
+import "github.com/astaxie/beego"
 
-	_ "lcmbroker/config"
-	_ "lcmbroker/routers"
-)
+type ErrorController struct {
+	beego.Controller
+}
 
-func main() {
-	beego.ErrorController(&controllers.ErrorController{})
-	beego.Run()
+// Error handling for invalid request
+func (c *ErrorController) Error404() {
+	c.Data["content"] = "page not found"
+	c.TplName = "error/404.tpl"
+	c.Ctx.ResponseWriter.Header().Del("server")
 }
