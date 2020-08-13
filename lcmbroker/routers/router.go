@@ -18,7 +18,7 @@
 package routers
 
 import (
-	"applcm/lcmbroker/controllers"
+	"lcmbroker/controllers"
 	"github.com/astaxie/beego"
 	)
 
