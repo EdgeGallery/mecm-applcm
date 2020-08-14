@@ -26,6 +26,14 @@ type LcmController struct {
 	beego.Controller
 }
 
+func (c *LcmController) UploadConfig() {
+	log.Info("Add configuration request received.")
+}
+
+func (c *LcmController) RemoveConfig() {
+	log.Info("Delete configuration request received.")
+}
+
 func (c *LcmController) Instantiate() {
 	log.Info("Application instantiation request received.")
 }
@@ -36,4 +44,12 @@ func (c *LcmController) Terminate() {
 
 func (c *LcmController) Query() {
 	log.Info("Application query request received.")
+}
+
+func (c *LcmController) QueryKPI() {
+	log.Info("Query KPI request received.")
+}
+
+func (c *LcmController) QueryMepCapabilities() {
+	log.Info("Query mep capabilities request received.")
 }
