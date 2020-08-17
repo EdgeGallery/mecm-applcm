@@ -25,7 +25,11 @@ import (
 const RootPath string = "/lcmbroker/v1"
 
 func init() {
-	beego.Router(RootPath+"/app_instances/:appInstanceId/instantiate", &controllers.LcmController{},"post:Instantiate")
-	beego.Router(RootPath+"/app_instances/:appInstanceId/terminate", &controllers.LcmController{},"post:Terminate")
-	beego.Router(RootPath+"/app_instances/:appInstanceId", &controllers.LcmController{},"get:Query")
+	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "post:UploadConfig")
+	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "delete:RemoveConfig")
+	beego.Router(RootPath+"/app_instances/:appInstanceId/instantiate", &controllers.LcmController{}, "post:Instantiate")
+	beego.Router(RootPath+"/app_instances/:appInstanceId/terminate", &controllers.LcmController{}, "post:Terminate")
+	beego.Router(RootPath+"/app_instances/:appInstanceId", &controllers.LcmController{}, "get:Query")
+	beego.Router(RootPath+"/kpi/:hostIp", &controllers.LcmController{}, "get:QueryKPI")
+	beego.Router(RootPath+"/mep_capabilities/:hostIp", &controllers.LcmController{}, "get:QueryMepCapabilities")
 }
