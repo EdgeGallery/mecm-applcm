@@ -317,7 +317,7 @@ func (c *LcmController) openPackage(packagePath string) {
 		defer zippedFile.Close()
 
 		isContinue := c.extractFiles(file, zippedFile)
-		if isContinue == true {
+		if isContinue {
 			continue
 		}
 	}
