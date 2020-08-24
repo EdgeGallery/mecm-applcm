@@ -18,6 +18,7 @@ package pluginAdapter
 import (
 	"context"
 	"lcmbroker/pkg/plugin"
+	"lcmbroker/util"
 	"mime/multipart"
 	"time"
 
@@ -46,8 +47,8 @@ func (c *PluginAdapter) Instantiate(pluginInfo string, host string, deployArtifa
 	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
 	var client, err = plugin.NewClientGRPC(clientConfig)
 	if err != nil {
-		log.Errorf("failed to create client: %v", err)
-		return err, "Failure"
+		log.Errorf(util.FailedToCreateClient, err)
+		return err, util.Failure
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
@@ -56,7 +57,7 @@ func (c *PluginAdapter) Instantiate(pluginInfo string, host string, deployArtifa
 	status, err = client.Instantiate(ctx, deployArtifact, host, accessToken, appInsId)
 	if err != nil {
 		log.Errorf("server failed to respond %s", err.Error())
-		return err, "Failure"
+		return err, util.Failure
 	}
 	log.Info("Instantiation completed with status: ", status)
 	return nil, status
@@ -68,7 +69,7 @@ func (c *PluginAdapter) Query(pluginInfo string, host string) (status string, er
 	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
 	var client, err = plugin.NewClientGRPC(clientConfig)
 	if err != nil {
-		log.Errorf("failed to create client: %v", err)
+		log.Errorf(util.FailedToCreateClient, err)
 		return "", err
 	}
 
@@ -90,8 +91,8 @@ func (c *PluginAdapter) Terminate(pluginInfo string, host string, accessToken st
 	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
 	var client, err = plugin.NewClientGRPC(clientConfig)
 	if err != nil {
-		log.Errorf("failed to create client: %v", err)
-		return "Failure", err
+		log.Errorf(util.FailedToCreateClient, err)
+		return util.Failure, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -101,7 +102,7 @@ func (c *PluginAdapter) Terminate(pluginInfo string, host string, accessToken st
 
 	if err != nil {
 		log.Errorf("failed to instantiate: %v", err)
-		return "Failure", err
+		return util.Failure, err
 	}
 
 	log.Info("termination success with status: ", status)
@@ -114,8 +115,8 @@ func (c *PluginAdapter) UploadConfig(pluginInfo string, file multipart.File, hos
 	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
 	var client, err = plugin.NewClientGRPC(clientConfig)
 	if err != nil {
-		log.Errorf("failed to create client: %v", err)
-		return "Failure", err
+		log.Errorf(util.FailedToCreateClient, err)
+		return util.Failure, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -125,7 +126,7 @@ func (c *PluginAdapter) UploadConfig(pluginInfo string, file multipart.File, hos
 
 	if err != nil {
 		log.Errorf("failed to upload configuration: %v", err)
-		return "Failure", err
+		return util.Failure, err
 	}
 
 	log.Info("upload configuration is success with status: ", status)
@@ -138,8 +139,8 @@ func (c *PluginAdapter) RemoveConfig(pluginInfo string, host string, accessToken
 	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
 	var client, err = plugin.NewClientGRPC(clientConfig)
 	if err != nil {
-		log.Errorf("failed to create client: %v", err)
-		return "Failure", err
+		log.Errorf(util.FailedToCreateClient, err)
+		return util.Failure, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -149,7 +150,7 @@ func (c *PluginAdapter) RemoveConfig(pluginInfo string, host string, accessToken
 
 	if err != nil {
 		log.Errorf("failed to remove configuration: %v", err)
-		return "Failure", err
+		return util.Failure, err
 	}
 
 	log.Info("remove configuration is success with status: ", status)

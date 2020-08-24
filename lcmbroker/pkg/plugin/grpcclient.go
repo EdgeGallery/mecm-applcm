@@ -19,6 +19,7 @@ package plugin
 import (
 	"io"
 	"lcmbroker/internal/lcmservice"
+	"lcmbroker/util"
 	"mime/multipart"
 	"os"
 
@@ -87,7 +88,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 	file, err := os.Open(deployArtifact)
 	if err != nil {
 		log.Errorf("failed to open package file: %s. Err: %s", deployArtifact, err.Error())
-		return"Failure", err
+		return util.Failure, err
 	}
 	defer file.Close()
 
@@ -97,7 +98,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	if err != nil {
 		log.Errorf("failed to upload stream: %s. Err: %s", deployArtifact, err.Error())
-		return"Failure", err
+		return util.Failure, err
 	}
 	defer stream.CloseSend()
 
@@ -111,8 +112,8 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf("failed to send metadata information: %v", err)
-		return"Failure", err
+		log.Errorf(util.FailedToSendMetadataInfo, err)
+		return util.Failure, err
 	}
 
 	//send metadata information
@@ -125,8 +126,8 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf("failed to send metadata information: %v", err)
-		return"Failure", err
+		log.Errorf(util.FailedToSendMetadataInfo, err)
+		return util.Failure, err
 	}
 
 	//send metadata information
@@ -139,8 +140,8 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf("failed to send metadata information: %v", err)
-		return"Failure", err
+		log.Errorf(util.FailedToSendMetadataInfo, err)
+		return util.Failure, err
 	}
 
 	// Allocate a buffer with `chunkSize` as the capacity
@@ -158,7 +159,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 				continue
 			}
 			log.Errorf("errored while copying from file to buf: %v", err)
-			return"Failure", err
+			return util.Failure, err
 		}
 
 		req := &lcmservice.InstantiateRequest{
@@ -171,14 +172,14 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 		if err != nil {
 			log.Errorf("failed to send chunk via stream: %v", err)
-			return"Failure", err
+			return util.Failure, err
 		}
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
 		log.Errorf("failed to receive upstream status response: %v", err)
-		return"Failure", err
+		return util.Failure, err
 	}
 	return res.GetStatus(), err
 }
@@ -238,7 +239,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 	stream, err := c.client.UploadConfig(ctx)
 	if err != nil {
 		log.Errorf("failed to upload stream Err: %v", err)
-		return"Failure", err
+		return util.Failure, err
 	}
 	defer stream.CloseSend()
 
@@ -252,8 +253,8 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf("failed to send metadata information: %v", err)
-		return"Failure", err
+		log.Errorf(util.FailedToSendMetadataInfo, err)
+		return util.Failure, err
 	}
 
 	req = &lcmservice.UploadCfgRequest{
@@ -265,8 +266,8 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf("failed to send metadata information: %v", err)
-		return"Failure", err
+		log.Errorf(util.FailedToSendMetadataInfo, err)
+		return util.Failure, err
 	}
 
 	// Allocate a buffer with `chunkSize` as the capacity
@@ -284,7 +285,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 				continue
 			}
 			log.Errorf("errored while copying from file to buf: %v", err)
-			return"Failure", err
+			return util.Failure, err
 		}
 
 		req := &lcmservice.UploadCfgRequest{
@@ -297,14 +298,14 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 		if err != nil {
 			log.Errorf("failed to send chunk via stream: %v", err)
-			return"Failure", err
+			return util.Failure, err
 		}
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
 		log.Errorf("failed to receive upstream status response: %v", err)
-		return"Failure", err
+		return util.Failure, err
 	}
 	log.Info("Instantiation Completed with status: ", res.GetStatus())
 	return res.GetStatus(), err

@@ -37,36 +37,28 @@ func (c *LcmController) UploadConfig() {
 	accessToken := c.Ctx.Request.Header.Get("access_token")
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
-		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "]")
-		c.writeErrorResponse("Authorization failed", util.StatusUnauthorized)
-		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: Authorization failed.]")
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
 
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
 	file, header, err := c.GetFile("configFile")
 	if err != nil {
-		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "]")
-		c.writeErrorResponse("Upload config file error", util.BadRequest)
-		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: Upload config file error.]")
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Upload config file error")
 		return
 	}
 
 	err = util.ValidateFileSize(header.Size, util.MaxConfigFile)
 	if err != nil {
-		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "]")
-		c.writeErrorResponse("Upload config file error", util.BadRequest)
-		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: config file error.]")
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "File size is larger than max size")
 		return
 	}
 
@@ -74,17 +66,12 @@ func (c *LcmController) UploadConfig() {
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
 	_, err = adapter.UploadConfig(pluginInfo, file, hostIp, accessToken)
+	util.ClearByteArray(bKey)
 	if err != nil {
-		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "]")
-		c.writeErrorResponse("Upload configuration failed.", util.StatusInternalServerError)
-		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: Upload configuration failed.]")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Upload configuration failed")
 		return
 	}
 
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	util.ClearByteArray(bKey)
 	c.ServeJSON()
 }
 
@@ -95,16 +82,13 @@ func (c *LcmController) RemoveConfig() {
 	accessToken := c.Ctx.Request.Header.Get("access_token")
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
-		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "]")
-		c.writeErrorResponse("Authorization failed", util.StatusUnauthorized)
-		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: Authorization failed.]")
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
-
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -112,17 +96,11 @@ func (c *LcmController) RemoveConfig() {
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
 	_, err = adapter.RemoveConfig(pluginInfo, hostIp, accessToken)
+	util.ClearByteArray(bKey)
 	if err != nil {
-		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "]")
-		c.writeErrorResponse("Remove configuration failed.", util.StatusInternalServerError)
-		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: Remove configuration failed.]")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Remove configuration failed")
 		return
 	}
-
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	util.ClearByteArray(bKey)
 	c.ServeJSON()
 }
 
@@ -146,17 +124,32 @@ func (c *LcmController) QueryMepCapabilities() {
 	log.Info("Query mep capabilities request received.")
 }
 
+func (c *LcmController) writeErrorResponse(errMsg string, code int) {
+	log.Error(errMsg)
+	c.writeResponse(errMsg, code)
+}
+
+func (c *LcmController) writeResponse(msg string, code int) {
+	c.Data["json"] = msg
+	c.Ctx.ResponseWriter.WriteHeader(code)
+	c.ServeJSON()
+}
 // Get host IP
 func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	hostIp := c.GetString("hostIp")
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "]")
-		c.writeErrorResponse("HostIp address is invalid.", util.BadRequest)
-		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: HostIp address is invalid.]")
+		c.handleLoggingForError(clientIp, util.BadRequest,"HostIp address is invalid")
 		return "", err
 	}
 	return hostIp, nil
+}
+// Handled logging for error case
+func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg string) {
+	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "]")
+	c.writeErrorResponse(errMsg, code)
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
+	return
 }

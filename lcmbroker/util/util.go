@@ -29,6 +29,11 @@ var (
 	jwtPublicKey        = os.Getenv("JWT_PUBLIC_KEY")
 )
 
+const AuthorizationFailed = "Authorization failed"
+const Failure string = "Failure"
+const FailedToSendMetadataInfo string = "failed to send metadata information: %v"
+const FailedToCreateClient string = "failed to create client: %v"
+const InvalidToken string = "invalid token"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
@@ -38,9 +43,10 @@ const BadRequest = 400
 const StatusUnauthorized = 401
 const StatusInternalServerError = 500
 
-const DB_USER_REGEX string = `^[\w-]{4,16}$`
-const DB_PWD_REGEX string = `^[\w-]{4,16}$`
-const DB_NAME_REGEX string = `^[\w-]{4,16}$`
+const DB_REGEX string = `^[\w-]{4,16}$`
+const DB_USER_REGEX = DB_REGEX
+const DB_PWD_REGEX = DB_REGEX
+const DB_NAME_REGEX = DB_REGEX
 const HOST_REGEX string = `^[\w-.]{4,16}$`
 const PORT_REGEX string = `^[0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]$`
 
@@ -114,27 +120,27 @@ func ValidateAccessToken(accessToken string) error {
 	}
 
 	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(accessToken, claims, func(_ *jwt.Token) (interface{}, error) {
 		return jwtPublicKey, nil
 	})
 
 	if token != nil && !token.Valid {
 		if claims["authorities"] == nil {
 			log.Info("Invalid token A")
-			return  errors.New("invalid token")
+			return  errors.New(InvalidToken)
 		}
 		if claims["userId"] == nil {
 			log.Info("Invalid token UI")
-			return  errors.New("invalid token")
+			return  errors.New(InvalidToken)
 		}
 		if claims["user_name"] == nil {
 			log.Info("Invalid token UN")
-			return  errors.New("invalid token")
+			return  errors.New(InvalidToken)
 		}
 	} else if er, ok := err.(*jwt.ValidationError); ok {
 		if er.Errors&jwt.ValidationErrorMalformed != 0 {
 			log.Info("Invalid token")
-			return  errors.New("invalid token")
+			return  errors.New(InvalidToken)
 		} else if er.Errors&(jwt.ValidationErrorExpired | jwt.ValidationErrorNotValidYet) != 0 {
 			log.Infof("token expired or inactive")
 			return  errors.New("token expired or inactive")
