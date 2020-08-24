@@ -29,6 +29,10 @@ var (
 	jwtPublicKey        = os.Getenv("JWT_PUBLIC_KEY")
 )
 
+const XRealIp = "X-Real-Ip"
+const AccessToken = "access_token"
+const HelmPlugin = "helmplugin"
+const HelmPluginPort = "HELM_PLUGIN_PORT"
 const AuthorizationFailed = "Authorization failed"
 const Failure string = "Failure"
 const FailedToSendMetadataInfo string = "failed to send metadata information: %v"

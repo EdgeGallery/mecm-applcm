@@ -33,8 +33,8 @@ type LcmController struct {
 // Upload Config
 func (c *LcmController) UploadConfig() {
 	log.Info("Add configuration request received.")
-	clientIp := c.Ctx.Request.Header.Get("X-Real-Ip")
-	accessToken := c.Ctx.Request.Header.Get("access_token")
+	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
@@ -62,7 +62,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo := "helmplugin" + ":" + os.Getenv("HELM_PLUGIN_PORT")
+	pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
 	_, err = adapter.UploadConfig(pluginInfo, file, hostIp, accessToken)
@@ -78,8 +78,8 @@ func (c *LcmController) UploadConfig() {
 // Remove Config
 func (c *LcmController) RemoveConfig() {
 	log.Info("Delete configuration request received.")
-	clientIp := c.Ctx.Request.Header.Get("X-Real-Ip")
-	accessToken := c.Ctx.Request.Header.Get("access_token")
+	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
@@ -92,7 +92,7 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo := "helmplugin" + ":" + os.Getenv("HELM_PLUGIN_PORT")
+	pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
 	_, err = adapter.RemoveConfig(pluginInfo, hostIp, accessToken)
@@ -113,8 +113,8 @@ func (c *LcmController) Terminate() {
 	log.Info("Application termination request received.")
 	var pluginInfo string
 
-	clientIp := c.Ctx.Request.Header.Get("X-Real-Ip")
-	accessToken := c.Ctx.Request.Header.Get("access_token")
+	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
@@ -136,7 +136,7 @@ func (c *LcmController) Terminate() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = "helmplugin" + ":" + os.Getenv("HELM_PLUGIN_PORT")
+		pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
