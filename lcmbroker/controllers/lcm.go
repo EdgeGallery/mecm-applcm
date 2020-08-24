@@ -277,10 +277,9 @@ func (c *LcmController) getDeploymentArtifact(dir string, ext string) (string, e
 	}
 
 	for _, file := range files {
-		if file.Mode().IsRegular() {
-			if filepath.Ext(file.Name()) == ext || filepath.Ext(file.Name()) == ".gz" || filepath.Ext(file.Name()) == ".tgz" {
-				return dir + "/" + file.Name(), nil
-			}
+		if file.Mode().IsRegular() && (filepath.Ext(file.Name()) == ext ||
+			filepath.Ext(file.Name()) == ".gz" || filepath.Ext(file.Name()) == ".tgz") {
+			return dir + "/" + file.Name(), nil
 		}
 	}
 	return "", err
@@ -310,48 +309,52 @@ func (c *LcmController) openPackage(packagePath string) {
 	for _, file := range zipReader.Reader.File {
 
 		zippedFile, err := file.Open()
-		if err != nil {
+		if err != nil || zippedFile == nil {
 			c.writeErrorResponse("Failed to open zip file", util.StatusInternalServerError)
-		}
-		if zippedFile == nil {
-			c.writeErrorResponse("The zipped file is nil", util.StatusInternalServerError)
 			continue
 		}
 
 		defer zippedFile.Close()
 
-		targetDir := PackageFolderPath + "/"
-		extractedFilePath := filepath.Join(
-			targetDir,
-			file.Name,
-		)
-
-		if file.FileInfo().IsDir() {
-			err := os.MkdirAll(extractedFilePath, 0750)
-			if err != nil {
-				c.writeErrorResponse("Failed to make directory", util.StatusInternalServerError)
-			}
-		} else {
-			outputFile, err := os.OpenFile(
-				extractedFilePath,
-				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-				0750,
-			)
-			if err != nil {
-				c.writeErrorResponse("The output file is nil", util.StatusInternalServerError)
-			}
-			if outputFile == nil {
-				c.writeErrorResponse("The output file is nil", util.StatusInternalServerError)
-				continue
-			}
-			defer outputFile.Close()
-
-			_, err = io.Copy(outputFile, zippedFile)
-			if err != nil {
-				c.writeErrorResponse("Failed to copy zipped file", util.StatusInternalServerError)
-			}
+		isContinue := c.extractFiles(file, zippedFile)
+		if isContinue == true {
+			continue
 		}
 	}
+}
+
+// Extract files
+func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser) bool {
+	targetDir := PackageFolderPath + "/"
+	extractedFilePath := filepath.Join(
+		targetDir,
+		file.Name,
+	)
+
+	if file.FileInfo().IsDir() {
+		err := os.MkdirAll(extractedFilePath, 0750)
+		if err != nil {
+			c.writeErrorResponse("Failed to make directory", util.StatusInternalServerError)
+		}
+	} else {
+		outputFile, err := os.OpenFile(
+			extractedFilePath,
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			0750,
+		)
+		if err != nil || outputFile == nil {
+			c.writeErrorResponse("The output file is nil", util.StatusInternalServerError)
+			return true
+		}
+
+		defer outputFile.Close()
+
+		_, err = io.Copy(outputFile, zippedFile)
+		if err != nil {
+			c.writeErrorResponse("Failed to copy zipped file", util.StatusInternalServerError)
+		}
+	}
+	return false
 }
 
 // Make target directory
@@ -372,15 +375,15 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.InvalidArgument {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Instantiation failed")
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.InstantiationFailed)
 			return err
 		} else {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Instantiation failed")
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.InstantiationFailed)
 		}
 		return err
 	}
 	if resStatus == "Failure" {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Instantiation failed")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.InstantiationFailed)
 		return errors.New("instantiation failed")
 	}
 	return nil

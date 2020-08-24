@@ -29,11 +29,12 @@ var (
 	jwtPublicKey        = os.Getenv("JWT_PUBLIC_KEY")
 )
 
-const XRealIp = "X-Real-Ip"
-const AccessToken = "access_token"
-const HelmPlugin = "helmplugin"
-const HelmPluginPort = "HELM_PLUGIN_PORT"
-const AuthorizationFailed = "Authorization failed"
+const XRealIp string = "X-Real-Ip"
+const AccessToken string = "access_token"
+const HelmPlugin string = "helmplugin"
+const HelmPluginPort string = "HELM_PLUGIN_PORT"
+const AuthorizationFailed string = "Authorization failed"
+const InstantiationFailed string = "Instantiation failed"
 const Failure string = "Failure"
 const FailedToSendMetadataInfo string = "failed to send metadata information: %v"
 const FailedToCreateClient string = "failed to create client: %v"
@@ -43,9 +44,9 @@ const MaxBackups int = 50
 const MaxAge = 30
 const MaxConfigFile int64 = 5242880
 
-const BadRequest = 400
-const StatusUnauthorized = 401
-const StatusInternalServerError = 500
+const BadRequest int = 400
+const StatusUnauthorized int = 401
+const StatusInternalServerError int = 500
 
 const DB_REGEX string = `^[\w-]{4,16}$`
 const DB_USER_REGEX = DB_REGEX
