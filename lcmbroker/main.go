@@ -17,14 +17,73 @@
 package main
 
 import (
+	"fmt"
 	"github.com/astaxie/beego"
-	"lcmbroker/controllers"
-
+	"github.com/astaxie/beego/logs"
+	"github.com/astaxie/beego/orm"
+	_ "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 	_ "lcmbroker/config"
+	"lcmbroker/controllers"
+	_ "lcmbroker/models"
 	_ "lcmbroker/routers"
+	"lcmbroker/util"
+	"os"
+	"strings"
+	"unsafe"
 )
 
+func initDatabase() error {
+	dbUser := os.Getenv("dbUser")
+	dbPwd := os.Getenv("dbPwd")
+	dbName := os.Getenv("dbName")
+	dbHost := os.Getenv("dbHost")
+	dbPort := os.Getenv("dbPort")
+	dbSslMode := os.Getenv("dbSslMode")
+	dbSslRootCert := os.Getenv("db_sslrootcert")
+
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
+	if validateDbParamsErr != nil || !dbParamsAreValid {
+		return validateDbParamsErr
+	}
+	registerDriverErr := orm.RegisterDriver("postgres", orm.DRPostgres)
+	if registerDriverErr != nil {
+		logs.Error("Failed to register driver")
+		return registerDriverErr
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwd,
+		dbName, dbHost, dbPort, dbSslMode, dbSslRootCert)
+	bStr := b.String()
+
+	registerDataBaseErr := orm.RegisterDataBase("default", "postgres", bStr)
+	//clear bStr
+	bKey1 := *(*[]byte)(unsafe.Pointer(&bStr))
+	for i := 0; i < len(bKey1); i++ {
+		bKey1[i] = 0
+	}
+
+	if registerDataBaseErr != nil {
+		logs.Error("Failed to register database")
+		return registerDataBaseErr
+	}
+	errRunSyncdb := orm.RunSyncdb("default", false, false)
+	if errRunSyncdb != nil {
+		logs.Error("Failed to sync database.")
+		return errRunSyncdb
+	}
+
+	return nil
+}
+
+
 func main() {
+	err := initDatabase()
+	if err != nil {
+		log.Error("Failed to init database.")
+		return
+	}
 	beego.ErrorController(&controllers.ErrorController{})
 	beego.Run()
 }

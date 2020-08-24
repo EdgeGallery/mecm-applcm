@@ -18,9 +18,9 @@
 package routers
 
 import (
-	"lcmbroker/controllers"
 	"github.com/astaxie/beego"
-	)
+	"lcmbroker/controllers"
+)
 
 const RootPath string = "/lcmbroker/v1"
 
