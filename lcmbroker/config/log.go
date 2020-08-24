@@ -20,6 +20,7 @@ package config
 import (
 	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
+	"lcmbroker/util"
 	"os"
 )
 
@@ -34,9 +35,9 @@ func init() {
 		}
 		ioWriter := &lumberjack.Logger{
 			Filename:   fileName,
-			MaxSize:    20, // megabytes
-			MaxBackups: 50, // max archived files
-			MaxAge:     30, // days
+			MaxSize:    util.MaxSize,   // megabytes
+			MaxBackups: util.MaxBackups,   // max archived files
+			MaxAge:     util.MaxAge,   // days
 			Compress:   true, // compression
 		}
 		logrus.SetOutput(ioWriter)
