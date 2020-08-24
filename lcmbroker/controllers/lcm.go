@@ -30,6 +30,7 @@ type LcmController struct {
 	beego.Controller
 }
 
+// Upload Config
 func (c *LcmController) UploadConfig() {
 	log.Info("Add configuration request received.")
 	clientIp := c.Ctx.Request.Header.Get("X-Real-Ip")
@@ -87,8 +88,42 @@ func (c *LcmController) UploadConfig() {
 	c.ServeJSON()
 }
 
+// Remove Config
 func (c *LcmController) RemoveConfig() {
 	log.Info("Delete configuration request received.")
+	clientIp := c.Ctx.Request.Header.Get("X-Real-Ip")
+	accessToken := c.Ctx.Request.Header.Get("access_token")
+	err := util.ValidateAccessToken(accessToken)
+	if err != nil {
+		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+			" Resource [" + c.Ctx.Input.URL() + "]")
+		c.writeErrorResponse("Authorization failed", util.StatusUnauthorized)
+		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: Authorization failed.]")
+		return
+	}
+
+	hostIp, err := c.getHostIP(clientIp)
+	if err != nil {
+		return
+	}
+
+	pluginInfo := "helmplugin" + ":" + os.Getenv("HELM_PLUGIN_PORT")
+
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
+	_, err = adapter.RemoveConfig(pluginInfo, hostIp, accessToken)
+	if err != nil {
+		log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+			" Resource [" + c.Ctx.Input.URL() + "]")
+		c.writeErrorResponse("Remove configuration failed.", util.StatusInternalServerError)
+		log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+			" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: Remove configuration failed.]")
+		return
+	}
+
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	util.ClearByteArray(bKey)
+	c.ServeJSON()
 }
 
 func (c *LcmController) Instantiate() {
