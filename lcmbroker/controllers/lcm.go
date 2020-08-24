@@ -108,8 +108,48 @@ func (c *LcmController) Instantiate() {
 	log.Info("Application instantiation request received.")
 }
 
+// Terminate application
 func (c *LcmController) Terminate() {
 	log.Info("Application termination request received.")
+	var pluginInfo string
+
+	clientIp := c.Ctx.Request.Header.Get("X-Real-Ip")
+	accessToken := c.Ctx.Request.Header.Get("access_token")
+	err := util.ValidateAccessToken(accessToken)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	switch appInfoRecord.DeployType {
+	case "helm":
+		pluginInfo = "helmplugin" + ":" + os.Getenv("HELM_PLUGIN_PORT")
+	default:
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
+		return
+	}
+
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
+	_, err = adapter.Terminate(pluginInfo, appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Terminate application failed")
+		return
+	}
 }
 
 func (c *LcmController) Query() {
@@ -134,6 +174,21 @@ func (c *LcmController) writeResponse(msg string, code int) {
 	c.Ctx.ResponseWriter.WriteHeader(code)
 	c.ServeJSON()
 }
+// Get app info record
+func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId: appInsId,
+	}
+	readErr := ReadData(appInfoRecord, "appInsId")
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"App info record does not exist in database")
+		return nil, readErr
+	}
+	return appInfoRecord, nil
+
+}
+
 // Get host IP
 func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	hostIp := c.GetString("hostIp")
@@ -143,6 +198,17 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 		return "", err
 	}
 	return hostIp, nil
+}
+
+// Get app Instance Id
+func (c *LcmController) getAppInstId(clientIp string) (string, error) {
+	appInsId := c.Ctx.Input.Param(":appInstanceId")
+	err := util.ValidateUUID(appInsId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,"App instance invalid")
+		return "", err
+	}
+	return appInsId, nil
 }
 // Handled logging for error case
 func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg string) {
