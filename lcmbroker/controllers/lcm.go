@@ -172,6 +172,9 @@ func (c *LcmController) Instantiate() {
 	}
 
 	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
+	if err != nil {
+		return
+	}
 	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	util.ClearByteArray(bKey)
@@ -461,7 +464,6 @@ func getPackageName(header *multipart.FileHeader) string {
 // Get artifact and plugin info
 func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName string,
 	clientIp string) (string, string, error) {
-	var err error
 	switch deployType {
 	case "helm":
 		pkgPath := PackageFolderPath + packageName + PackageArtifactPath + "Charts"
@@ -474,7 +476,8 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 		pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 		return artifact, pluginInfo, nil
 	default:
-		return "", "", err
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
+		return "", "", errors.New("deployment type is not helm based")
 	}
 }
 
