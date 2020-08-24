@@ -18,12 +18,31 @@
 package controllers
 
 import (
+	"archive/zip"
+	"bytes"
+	"errors"
+	"github.com/astaxie/beego"
+	"github.com/buger/jsonparser"
+	"github.com/ghodss/yaml"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"io"
+	"io/ioutil"
+	"lcmbroker/models"
+	"mime/multipart"
+	"path/filepath"
+	"strings"
 	"unsafe"
 
 	log "github.com/sirupsen/logrus"
 	"lcmbroker/pkg/handlers/pluginAdapter"
 	"lcmbroker/util"
 	"os"
+)
+
+var (
+	PackageFolderPath   = "/usr/app/"
+	PackageArtifactPath = "/Artifacts/Deployment/"
 )
 
 type LcmController struct {
@@ -104,8 +123,63 @@ func (c *LcmController) RemoveConfig() {
 	c.ServeJSON()
 }
 
+// Instantiate application
 func (c *LcmController) Instantiate() {
 	log.Info("Application instantiation request received.")
+
+	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err := util.ValidateAccessToken(accessToken)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	hostIp, err := c.getHostIP(clientIp)
+	if err != nil {
+		return
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		return
+	}
+
+	file, header, err := c.getFile(clientIp)
+	if err != nil {
+		return
+	}
+
+	packageName := getPackageName(header)
+	pkgPath := PackageFolderPath + header.Filename
+	err = c.createPackagePath(pkgPath, clientIp, file)
+	if err != nil {
+		return
+	}
+
+	err = c.makeTargetDirectory(clientIp, packageName)
+	if err != nil {
+		return
+	}
+
+	c.openPackage(pkgPath)
+	var yamlFile = PackageFolderPath + packageName + "/Definitions/" + "MainServiceTemplate.yaml"
+	deployType := c.getApplicationDeploymentType(yamlFile)
+	deployType = "helm"
+	err = insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType)
+	if err != nil {
+		return
+	}
+
+	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
+	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	util.ClearByteArray(bKey)
+	if err != nil {
+		return
+	}
+
+	c.ServeJSON()
 }
 
 // Terminate application
@@ -174,6 +248,144 @@ func (c *LcmController) writeResponse(msg string, code int) {
 	c.Ctx.ResponseWriter.WriteHeader(code)
 	c.ServeJSON()
 }
+
+// Get csar file
+func (c *LcmController) getFile(clientIp string) (multipart.File, *multipart.FileHeader, error) {
+	file, header, err := c.GetFile("file")
+	if err != nil || file == nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Failed to get csar file")
+		return nil, nil, err
+	}
+
+	defer file.Close()
+	return file, header, nil
+}
+
+// Gets deployment artifact
+func (c *LcmController) getDeploymentArtifact(dir string, ext string) (string, error) {
+	d, err := os.Open(dir)
+	if err != nil {
+		log.Info("Error: ", err)
+		return "", err
+	}
+	defer d.Close()
+
+	files, err := d.Readdir(-1)
+	if err != nil {
+		log.Info("Error: ", err)
+		return "", err
+	}
+
+	for _, file := range files {
+		if file.Mode().IsRegular() {
+			if filepath.Ext(file.Name()) == ext || filepath.Ext(file.Name()) == ".gz" || filepath.Ext(file.Name()) == ".tgz" {
+				return dir + "/" + file.Name(), nil
+			}
+		}
+	}
+	return "", err
+}
+
+// Decodes application descriptor
+func (c *LcmController) getApplicationDeploymentType(serviceTemplate string) string {
+	yamlFile, err := ioutil.ReadFile(serviceTemplate)
+	if err != nil {
+		c.writeResponse("Failed to read service template file", util.StatusInternalServerError)
+	}
+
+	jsonData, err := yaml.YAMLToJSON(yamlFile)
+	if err != nil {
+		c.writeResponse("Failed to parse yaml file", util.StatusInternalServerError)
+	}
+
+	deployType, _, _, _ := jsonparser.Get(jsonData, "topology_template", "node_templates", "face_recognition", "properties", "type")
+
+	//return appPackageInfo
+	return string(deployType)
+}
+
+// Opens package
+func (c *LcmController) openPackage(packagePath string) {
+	zipReader, _ := zip.OpenReader(packagePath)
+	for _, file := range zipReader.Reader.File {
+
+		zippedFile, err := file.Open()
+		if err != nil {
+			c.writeErrorResponse("Failed to open zip file", util.StatusInternalServerError)
+		}
+		if zippedFile == nil {
+			c.writeErrorResponse("The zipped file is nil", util.StatusInternalServerError)
+			continue
+		}
+
+		defer zippedFile.Close()
+
+		targetDir := PackageFolderPath + "/"
+		extractedFilePath := filepath.Join(
+			targetDir,
+			file.Name,
+		)
+
+		if file.FileInfo().IsDir() {
+			err := os.MkdirAll(extractedFilePath, 0750)
+			if err != nil {
+				c.writeErrorResponse("Failed to make directory", util.StatusInternalServerError)
+			}
+		} else {
+			outputFile, err := os.OpenFile(
+				extractedFilePath,
+				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+				0750,
+			)
+			if err != nil {
+				c.writeErrorResponse("The output file is nil", util.StatusInternalServerError)
+			}
+			if outputFile == nil {
+				c.writeErrorResponse("The output file is nil", util.StatusInternalServerError)
+				continue
+			}
+			defer outputFile.Close()
+
+			_, err = io.Copy(outputFile, zippedFile)
+			if err != nil {
+				c.writeErrorResponse("Failed to copy zipped file", util.StatusInternalServerError)
+			}
+		}
+	}
+}
+
+// Make target directory
+func (c *LcmController) makeTargetDirectory(clientIp string, packageName string) error {
+	err := os.Mkdir(PackageFolderPath + packageName, 0750)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to create target directory")
+		return err
+	}
+	return nil
+}
+
+// Instantiate application
+func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
+	artifact string, clientIp string, accessToken string, appInsId string) error {
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
+	err, resStatus := adapter.Instantiate(pluginInfo, hostIp, artifact, accessToken, appInsId)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.InvalidArgument {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Instantiation failed")
+			return err
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Instantiation failed")
+		}
+		return err
+	}
+	if resStatus == "Failure" {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Instantiation failed")
+		return errors.New("instantiation failed")
+	}
+	return nil
+}
+
 // Get app info record
 func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {
 	appInfoRecord := &models.AppInfoRecord{
@@ -210,6 +422,59 @@ func (c *LcmController) getAppInstId(clientIp string) (string, error) {
 	}
 	return appInsId, nil
 }
+
+// Create package path
+func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file multipart.File) error {
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, file); err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,"Failed to copy csar file")
+		return err
+	}
+
+	newFile, err := os.Create(pkgPath)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,"Failed to create package path")
+		return err
+	}
+	defer newFile.Close()
+	if _, err := newFile.Write(buf.Bytes()); err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,"Failed to write csar file")
+		return err
+	}
+	return nil
+}
+
+// Get package name
+func getPackageName(header *multipart.FileHeader) string {
+	var packageName = ""
+	f := strings.Split(header.Filename, ".")
+	if len(f) > 0 {
+		packageName = f[0]
+	}
+	return packageName
+}
+
+// Get artifact and plugin info
+func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName string,
+	clientIp string) (string, string, error) {
+	var err error
+	switch deployType {
+	case "helm":
+		pkgPath := PackageFolderPath + packageName + PackageArtifactPath + "Charts"
+		artifact, err := c.getDeploymentArtifact(pkgPath, ".tar")
+		if artifact == "" {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+				"Artifact not available in application package.")
+			return "", "", err
+		}
+		pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
+		return artifact, pluginInfo, nil
+	default:
+		return "", "", err
+	}
+}
+
 // Handled logging for error case
 func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg string) {
 	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
@@ -218,4 +483,19 @@ func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg 
 	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
 		" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 	return
+}
+
+// insert or update application info record
+func insertOrUpdateAppInfoRecord(appInsId string, hostIp string, deployType string) error {
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId:   appInsId,
+		HostIp:     hostIp,
+		DeployType: deployType,
+	}
+	err := InsertOrUpdateData(appInfoRecord, "app_ins_id")
+	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		log.Error("Failed to save app info record to database.")
+		return err
+	}
+	return nil
 }
