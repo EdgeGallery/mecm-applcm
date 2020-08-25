@@ -56,7 +56,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 	if cfg.RootCertificate != "" {
 		grpcCreds, err = credentials.NewClientTLSFromFile(cfg.RootCertificate, "localhost")
 		if err != nil {
-			log.Errorf("failed to create grpc tls client via provided root-cert: %v", err)
+			log.Error("failed to create grpc tls client via provided root-cert")
 			return c, err
 		}
 		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(grpcCreds))
@@ -66,7 +66,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 
 	c.conn, err = grpc.Dial(cfg.Address, grpcOpts...)
 	if err != nil {
-		log.Errorf("failed to start grpc connection with address: %s", cfg.Address)
+		log.Error("failed to start grpc connection with address")
 		return c, err
 	}
 
@@ -87,7 +87,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 	// Get a file handle for the file we want to upload
 	file, err := os.Open(deployArtifact)
 	if err != nil {
-		log.Errorf("failed to open package file: %s. Err: %s", deployArtifact, err.Error())
+		log.Error("failed to open package file")
 		return util.Failure, err
 	}
 	defer file.Close()
@@ -97,7 +97,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 	stream, err := c.client.Instantiate(ctx)
 
 	if err != nil {
-		log.Errorf("failed to upload stream: %s. Err: %s", deployArtifact, err.Error())
+		log.Error("failed to upload stream")
 		return util.Failure, err
 	}
 	defer stream.CloseSend()
@@ -112,7 +112,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf(util.FailedToSendMetadataInfo, err)
+		log.Error(util.FailedToSendMetadataInfo)
 		return util.Failure, err
 	}
 
@@ -126,7 +126,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf(util.FailedToSendMetadataInfo, err)
+		log.Error(util.FailedToSendMetadataInfo)
 		return util.Failure, err
 	}
 
@@ -140,7 +140,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf(util.FailedToSendMetadataInfo, err)
+		log.Error(util.FailedToSendMetadataInfo)
 		return util.Failure, err
 	}
 
@@ -158,7 +158,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 				err = nil
 				continue
 			}
-			log.Errorf("errored while copying from file to buf: %v", err)
+			log.Error("failed while copying from file to buf")
 			return util.Failure, err
 		}
 
@@ -171,14 +171,14 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 		err = stream.Send(req)
 
 		if err != nil {
-			log.Errorf("failed to send chunk via stream: %v", err)
+			log.Error("failed to send chunk via stream")
 			return util.Failure, err
 		}
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Errorf("failed to receive upstream status response: %v", err)
+		log.Error("failed to receive upstream status response")
 		return util.Failure, err
 	}
 	return res.GetStatus(), err
@@ -212,6 +212,7 @@ func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, accessToken s
 	return resp.Status, err
 }
 
+// Remove configuration
 func (c *ClientGRPC) RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error) {
 	req := &lcmservice.RemoveCfgRequest{
 		HostIp:     hostIP,
@@ -238,7 +239,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 	// gRPC server
 	stream, err := c.client.UploadConfig(ctx)
 	if err != nil {
-		log.Errorf("failed to upload stream Err: %v", err)
+		log.Error("failed to upload stream")
 		return util.Failure, err
 	}
 	defer stream.CloseSend()
@@ -253,7 +254,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf(util.FailedToSendMetadataInfo, err)
+		log.Error(util.FailedToSendMetadataInfo)
 		return util.Failure, err
 	}
 
@@ -266,7 +267,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 	err = stream.Send(req)
 	if err != nil {
-		log.Errorf(util.FailedToSendMetadataInfo, err)
+		log.Error(util.FailedToSendMetadataInfo)
 		return util.Failure, err
 	}
 
@@ -284,7 +285,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 				err = nil
 				continue
 			}
-			log.Errorf("errored while copying from file to buf: %v", err)
+			log.Error("failed while copying from file to buf")
 			return util.Failure, err
 		}
 
@@ -297,21 +298,20 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 		err = stream.Send(req)
 
 		if err != nil {
-			log.Errorf("failed to send chunk via stream: %v", err)
+			log.Error("failed to send chunk via stream")
 			return util.Failure, err
 		}
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Errorf("failed to receive upstream status response: %v", err)
+		log.Error("failed to receive upstream status response")
 		return util.Failure, err
 	}
-	log.Info("Instantiation Completed with status: ", res.GetStatus())
 	return res.GetStatus(), err
 }
 
-
+// Close connection
 func (c *ClientGRPC) Close() {
 	if c.conn != nil {
 		c.conn.Close()

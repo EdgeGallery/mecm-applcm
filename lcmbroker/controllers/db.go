@@ -21,40 +21,41 @@ import (
 	"fmt"
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
+	"lcmbroker/util"
 )
 
 // Insert or update data into lcmbroker
 func InsertOrUpdateData(data interface{}, cols ...string) (err error) {
 
 	defer func() {
-		if err2 := recover(); err2 != nil {
-			log.Error("panic handled:", err2)
-			err = fmt.Errorf("recover panic as %s", err2)
+		if err := recover(); err != nil {
+			log.Error("panic handled:", err)
+			err = fmt.Errorf("recover panic as %s", err)
 		}
 	}()
 	o := orm.NewOrm()
-	err1 := o.Using("default")
-	if err1 != nil {
-		return err1
+	err = o.Using(util.Default)
+	if err != nil {
+		return err
 	}
-	_, err3 := o.InsertOrUpdate(data, cols...)
-	return err3
+	_, err = o.InsertOrUpdate(data, cols...)
+	return err
 }
 
 // Read data from lcmbroker
 func ReadData(data interface{}, cols ...string) (err error) {
 
 	defer func() {
-		if err2 := recover(); err2 != nil {
-			log.Error("panic handled:", err2)
-			err = fmt.Errorf("recover panic as %s", err2)
+		if err := recover(); err != nil {
+			log.Error("panic handled:", err)
+			err = fmt.Errorf("recover panic as %s", err)
 		}
 	}()
 	o := orm.NewOrm()
-	err1 := o.Using("default")
-	if err1 != nil {
-		return err1
+	err = o.Using(util.Default)
+	if err != nil {
+		return err
 	}
-	err3 := o.Read(data, cols...)
-	return err3
+	err = o.Read(data, cols...)
+	return err
 }

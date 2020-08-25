@@ -19,7 +19,7 @@ ENV GO111MODULE on
 ENV HOME=/usr/app
 
 RUN apk update &&\
-    apk add --no-cache libc-dev gcc shadow
+    apk add --no-cache gcc libc-dev  shadow
 
 RUN mkdir -p $HOME
 

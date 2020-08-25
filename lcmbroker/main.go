@@ -33,6 +33,7 @@ import (
 	"unsafe"
 )
 
+// Init database
 func initDatabase() error {
 	dbUser := os.Getenv("dbUser")
 	dbPwd := os.Getenv("dbPwd")
@@ -46,7 +47,7 @@ func initDatabase() error {
 	if validateDbParamsErr != nil || !dbParamsAreValid {
 		return validateDbParamsErr
 	}
-	registerDriverErr := orm.RegisterDriver("postgres", orm.DRPostgres)
+	registerDriverErr := orm.RegisterDriver(util.DriverName, orm.DRPostgres)
 	if registerDriverErr != nil {
 		logs.Error("Failed to register driver")
 		return registerDriverErr
@@ -57,18 +58,16 @@ func initDatabase() error {
 		dbName, dbHost, dbPort, dbSslMode, dbSslRootCert)
 	bStr := b.String()
 
-	registerDataBaseErr := orm.RegisterDataBase("default", "postgres", bStr)
+	registerDataBaseErr := orm.RegisterDataBase(util.Default, util.DriverName, bStr)
 	//clear bStr
 	bKey1 := *(*[]byte)(unsafe.Pointer(&bStr))
-	for i := 0; i < len(bKey1); i++ {
-		bKey1[i] = 0
-	}
+	util.ClearByteArray(bKey1)
 
 	if registerDataBaseErr != nil {
 		logs.Error("Failed to register database")
 		return registerDataBaseErr
 	}
-	errRunSyncdb := orm.RunSyncdb("default", false, false)
+	errRunSyncdb := orm.RunSyncdb(util.Default, false, false)
 	if errRunSyncdb != nil {
 		logs.Error("Failed to sync database.")
 		return errRunSyncdb
@@ -77,7 +76,7 @@ func initDatabase() error {
 	return nil
 }
 
-
+// Start lcmbroker application
 func main() {
 	err := initDatabase()
 	if err != nil {

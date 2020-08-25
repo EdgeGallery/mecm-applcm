@@ -51,15 +51,15 @@ func (c *PluginAdapter) Instantiate(pluginInfo string, host string, deployArtifa
 		return err, util.Failure
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err = client.Instantiate(ctx, deployArtifact, host, accessToken, appInsId)
 	if err != nil {
-		log.Errorf("server failed to respond %s", err.Error())
+		log.Error("failed to instantiate application")
 		return err, util.Failure
 	}
-	log.Info("Instantiation completed with status: ", status)
+	log.Info("instantiation completed with status: ", status)
 	return nil, status
 }
 
@@ -73,12 +73,12 @@ func (c *PluginAdapter) Query(pluginInfo string, host string) (status string, er
 		return "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err = client.Query(ctx, host)
 	if err != nil {
-		log.Errorf("failed to query: %v", err)
+		log.Errorf("failed to query information")
 		return "", err
 	}
 	log.Info("query status: ", status)
@@ -95,13 +95,12 @@ func (c *PluginAdapter) Terminate(pluginInfo string, host string, accessToken st
 		return util.Failure, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err = client.Terminate(ctx, host, accessToken, appInsId)
-
 	if err != nil {
-		log.Errorf("failed to instantiate: %v", err)
+		log.Error("failed to terminate application")
 		return util.Failure, err
 	}
 
@@ -119,13 +118,12 @@ func (c *PluginAdapter) UploadConfig(pluginInfo string, file multipart.File, hos
 		return util.Failure, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err = client.UploadConfig(ctx, file, host, accessToken)
-
 	if err != nil {
-		log.Errorf("failed to upload configuration: %v", err)
+		log.Error("failed to upload configuration")
 		return util.Failure, err
 	}
 
@@ -143,13 +141,12 @@ func (c *PluginAdapter) RemoveConfig(pluginInfo string, host string, accessToken
 		return util.Failure, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err = client.RemoveConfig(ctx, host, accessToken)
-
 	if err != nil {
-		log.Errorf("failed to remove configuration: %v", err)
+		log.Error("failed to remove configuration")
 		return util.Failure, err
 	}
 

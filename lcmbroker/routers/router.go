@@ -24,6 +24,7 @@ import (
 
 const RootPath string = "/lcmbroker/v1"
 
+// Init lcmbroker APIs
 func init() {
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "post:UploadConfig")
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "delete:RemoveConfig")

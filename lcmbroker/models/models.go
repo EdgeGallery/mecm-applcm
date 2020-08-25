@@ -20,10 +20,12 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
+// Init application info record
 func init() {
 	orm.RegisterModel(new(AppInfoRecord))
 }
 
+// Application info record
 type AppInfoRecord struct {
 	AppInsId     string `orm:"pk"`
 	HostIp       string

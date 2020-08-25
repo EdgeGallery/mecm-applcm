@@ -35,14 +35,17 @@ const HelmPlugin string = "helmplugin"
 const HelmPluginPort string = "HELM_PLUGIN_PORT"
 const AuthorizationFailed string = "Authorization failed"
 const InstantiationFailed string = "Instantiation failed"
+const Default string = "Default"
+const DriverName string = "postgres"
 const Failure string = "Failure"
-const FailedToSendMetadataInfo string = "failed to send metadata information: %v"
+const FailedToSendMetadataInfo string = "failed to send metadata information"
 const FailedToCreateClient string = "failed to create client: %v"
 const InvalidToken string = "invalid token"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
 const MaxConfigFile int64 = 5242880
+const Timeout = 5
 
 const BadRequest int = 400
 const StatusUnauthorized int = 401
@@ -50,10 +53,17 @@ const StatusInternalServerError int = 500
 
 const DB_REGEX string = `^[\w-]{4,16}$`
 const DB_USER_REGEX = DB_REGEX
-const DB_PWD_REGEX = DB_REGEX
 const DB_NAME_REGEX = DB_REGEX
 const HOST_REGEX string = `^[\w-.]{4,16}$`
 const PORT_REGEX string = `^[0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]$`
+
+const minPasswordSize = 8
+const maxPasswordSize = 16
+const specialCharRegex string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
+const singleDigitRegex string = `\d`
+const lowerCaseRegex string = `[a-z]`
+const upperCaseRegex string = `[A-Z]`
+const maxPasswordCount = 2
 
 // Validate UUID
 func ValidateUUID(id string) error {
@@ -93,13 +103,47 @@ func ClearByteArray(data []byte) {
 	}
 }
 
-// Validate db paramters
+// Validate password
+func ValidatePassword(password *[]byte) (bool, error) {
+	if len(*password) >= minPasswordSize && len(*password) <= maxPasswordSize {
+		// password must satisfy any two conditions
+		var pwdValidCount = 0
+		pwdIsValid, err := regexp.Match(singleDigitRegex, *password)
+		if pwdIsValid && err == nil {
+			pwdValidCount++
+		}
+		pwdIsValid, err = regexp.Match(lowerCaseRegex, *password)
+		if pwdIsValid && err == nil {
+			pwdValidCount++
+		}
+		pwdIsValid, err = regexp.Match(upperCaseRegex, *password)
+		if pwdIsValid && err == nil  {
+			pwdValidCount++
+		}
+		// space validation for password complexity is not added
+		// as jwt decrypt fails if space is included in password
+		pwdIsValid, err = regexp.Match(specialCharRegex, *password)
+		if pwdIsValid && err == nil {
+			pwdValidCount++
+		}
+		if pwdValidCount < maxPasswordCount {
+			return false, errors.New("password must contain at least two types of the either one lowercase" +
+				" character, one uppercase character, one digit or one special character")
+		}
+	} else {
+		return false, errors.New("password must have minimum length of 8 and maximum of 16")
+	}
+	return true, nil
+}
+
+// Validate db parameters
 func ValidateDbParams(dbUser string, dbPwd string, dbName string, dbHost string, dbPort string) (bool, error) {
 	dbUserIsValid, validateDbUserErr := regexp.MatchString(DB_USER_REGEX, dbUser)
 	if validateDbUserErr != nil || !dbUserIsValid {
 		return dbUserIsValid, validateDbUserErr
 	}
-	dbPwdIsValid, validateDbPwdErr := regexp.MatchString(DB_PWD_REGEX, dbPwd)
+	dbPwdBytes := []byte(dbPwd)
+	dbPwdIsValid, validateDbPwdErr := ValidatePassword(&dbPwdBytes)
 	if validateDbPwdErr != nil || !dbPwdIsValid {
 		return dbPwdIsValid, validateDbPwdErr
 	}

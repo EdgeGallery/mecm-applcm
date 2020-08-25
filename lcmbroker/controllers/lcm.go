@@ -45,6 +45,7 @@ var (
 	PackageArtifactPath = "/Artifacts/Deployment/"
 )
 
+// Lcm Controller
 type LcmController struct {
 	beego.Controller
 }
@@ -53,6 +54,13 @@ type LcmController struct {
 func (c *LcmController) UploadConfig() {
 	log.Info("Add configuration request received.")
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		return
+	}
+	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "]")
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -98,6 +106,13 @@ func (c *LcmController) UploadConfig() {
 func (c *LcmController) RemoveConfig() {
 	log.Info("Delete configuration request received.")
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		return
+	}
+	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "]")
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -128,6 +143,13 @@ func (c *LcmController) Instantiate() {
 	log.Info("Application instantiation request received.")
 
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		return
+	}
+	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "]")
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -135,17 +157,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	hostIp, err := c.getHostIP(clientIp)
-	if err != nil {
-		return
-	}
-
-	appInsId, err := c.getAppInstId(clientIp)
-	if err != nil {
-		return
-	}
-
-	file, header, err := c.getFile(clientIp)
+	hostIp, appInsId, file, header, err := c.getInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -191,6 +203,13 @@ func (c *LcmController) Terminate() {
 	var pluginInfo string
 
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		return
+	}
+	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "]")
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -229,23 +248,28 @@ func (c *LcmController) Terminate() {
 	}
 }
 
+// Query
 func (c *LcmController) Query() {
 	log.Info("Application query request received.")
 }
 
+// Query KPI
 func (c *LcmController) QueryKPI() {
 	log.Info("Query KPI request received.")
 }
 
+// Query Mep capabilities
 func (c *LcmController) QueryMepCapabilities() {
 	log.Info("Query mep capabilities request received.")
 }
 
+// Write error response
 func (c *LcmController) writeErrorResponse(errMsg string, code int) {
 	log.Error(errMsg)
 	c.writeResponse(errMsg, code)
 }
 
+// Write response
 func (c *LcmController) writeResponse(msg string, code int) {
 	c.Data["json"] = msg
 	c.Ctx.ResponseWriter.WriteHeader(code)
@@ -268,14 +292,14 @@ func (c *LcmController) getFile(clientIp string) (multipart.File, *multipart.Fil
 func (c *LcmController) getDeploymentArtifact(dir string, ext string) (string, error) {
 	d, err := os.Open(dir)
 	if err != nil {
-		log.Info("Error: ", err)
+		log.Info("failed to open the directory")
 		return "", err
 	}
 	defer d.Close()
 
 	files, err := d.Readdir(-1)
 	if err != nil {
-		log.Info("Error: ", err)
+		log.Info("failed to read the directory")
 		return "", err
 	}
 
@@ -483,15 +507,13 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 
 // Handled logging for error case
 func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg string) {
-	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "]")
 	c.writeErrorResponse(errMsg, code)
 	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
 		" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 	return
 }
 
-// insert or update application info record
+// Insert or update application info record
 func insertOrUpdateAppInfoRecord(appInsId string, hostIp string, deployType string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId:   appInsId,
@@ -504,4 +526,24 @@ func insertOrUpdateAppInfoRecord(appInsId string, hostIp string, deployType stri
 		return err
 	}
 	return nil
+}
+
+// Get input parameters
+func (c *LcmController) getInputParameters(clientIp string) (string, string, multipart.File,
+	*multipart.FileHeader, error) {
+	hostIp, err := c.getHostIP(clientIp)
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	file, header, err := c.getFile(clientIp)
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+	return hostIp, appInsId, file, header, nil
 }
