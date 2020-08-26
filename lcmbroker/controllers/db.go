@@ -14,48 +14,10 @@
  * limitations under the License.
  */
 
-// db controller
 package controllers
 
-import (
-	"fmt"
-	"github.com/astaxie/beego/orm"
-	log "github.com/sirupsen/logrus"
-	"lcmbroker/util"
-)
-
-// Insert or update data into lcmbroker
-func InsertOrUpdateData(data interface{}, cols ...string) (err error) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			log.Error("panic handled:", err)
-			err = fmt.Errorf("recover panic as %s", err)
-		}
-	}()
-	o := orm.NewOrm()
-	err = o.Using(util.Default)
-	if err != nil {
-		return err
-	}
-	_, err = o.InsertOrUpdate(data, cols...)
-	return err
-}
-
-// Read data from lcmbroker
-func ReadData(data interface{}, cols ...string) (err error) {
-
-	defer func() {
-		if err := recover(); err != nil {
-			log.Error("panic handled:", err)
-			err = fmt.Errorf("recover panic as %s", err)
-		}
-	}()
-	o := orm.NewOrm()
-	err = o.Using(util.Default)
-	if err != nil {
-		return err
-	}
-	err = o.Read(data, cols...)
-	return err
+// Database API's
+type Database interface {
+	InsertOrUpdateData(data interface{}, cols ...string) (err error)
+	ReadData(data interface{}, cols ...string) (err error)
 }

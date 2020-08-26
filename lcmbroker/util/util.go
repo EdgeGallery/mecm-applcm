@@ -18,6 +18,7 @@ package util
 
 import (
 	"errors"
+	"github.com/astaxie/beego"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
@@ -35,7 +36,7 @@ const HelmPlugin string = "helmplugin"
 const HelmPluginPort string = "HELM_PLUGIN_PORT"
 const AuthorizationFailed string = "Authorization failed"
 const InstantiationFailed string = "Instantiation failed"
-const Default string = "Default"
+const Default string = "default"
 const DriverName string = "postgres"
 const Failure string = "Failure"
 const FailedToSendMetadataInfo string = "failed to send metadata information"
@@ -65,8 +66,17 @@ const lowerCaseRegex string = `[a-z]`
 const upperCaseRegex string = `[A-Z]`
 const maxPasswordCount = 2
 
+
+// Get app configuration
+func GetAppConfig(k string) string {
+	return beego.AppConfig.String(k)
+}
+
 // Validate UUID
 func ValidateUUID(id string) error {
+	if id == "" {
+		return errors.New("require app instance id")
+	}
 	if len(id) != 0 {
 		validate := validator.New()
 		res := validate.Var(id, "required,uuid")
@@ -81,6 +91,9 @@ func ValidateUUID(id string) error {
 
 // Validate IPv4 address
 func ValidateIpv4Address(id string) error {
+	if id == "" {
+		return errors.New("require ip address")
+	}
 	if len(id) != 0 {
 		validate := validator.New()
 		return validate.Var(id, "required,ipv4")

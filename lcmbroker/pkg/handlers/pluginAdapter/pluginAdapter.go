@@ -17,7 +17,6 @@ package pluginAdapter
 
 import (
 	"context"
-	"lcmbroker/pkg/plugin"
 	"lcmbroker/util"
 	"mime/multipart"
 	"time"
@@ -44,13 +43,11 @@ func NewPluginAdapter(pluginInfo string) *PluginAdapter {
 func (c *PluginAdapter) Instantiate(pluginInfo string, host string, deployArtifact string,
 	accessToken string, appInsId string) (error error, status string) {
 	log.Info("Instantiation started")
-	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
-	var client, err = plugin.NewClientGRPC(clientConfig)
+	client, err := GetClient(pluginInfo)
 	if err != nil {
 		log.Errorf(util.FailedToCreateClient, err)
 		return err, util.Failure
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
@@ -66,8 +63,7 @@ func (c *PluginAdapter) Instantiate(pluginInfo string, host string, deployArtifa
 // Query application
 func (c *PluginAdapter) Query(pluginInfo string, host string) (status string, error error) {
 	log.Info("Query started")
-	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
-	var client, err = plugin.NewClientGRPC(clientConfig)
+	client, err := GetClient(pluginInfo)
 	if err != nil {
 		log.Errorf(util.FailedToCreateClient, err)
 		return "", err
@@ -88,8 +84,7 @@ func (c *PluginAdapter) Query(pluginInfo string, host string) (status string, er
 // Terminate application
 func (c *PluginAdapter) Terminate(pluginInfo string, host string, accessToken string, appInsId string) (status string, error error) {
 	log.Info("Terminate started")
-	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
-	var client, err = plugin.NewClientGRPC(clientConfig)
+	client, err := GetClient(pluginInfo)
 	if err != nil {
 		log.Errorf(util.FailedToCreateClient, err)
 		return util.Failure, err
@@ -111,8 +106,7 @@ func (c *PluginAdapter) Terminate(pluginInfo string, host string, accessToken st
 // Upload configuration
 func (c *PluginAdapter) UploadConfig(pluginInfo string, file multipart.File, host string, accessToken string) (status string, error error) {
 	log.Info("Upload config started")
-	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
-	var client, err = plugin.NewClientGRPC(clientConfig)
+	client, err := GetClient(pluginInfo)
 	if err != nil {
 		log.Errorf(util.FailedToCreateClient, err)
 		return util.Failure, err
@@ -134,8 +128,7 @@ func (c *PluginAdapter) UploadConfig(pluginInfo string, file multipart.File, hos
 // Remove configuration
 func (c *PluginAdapter) RemoveConfig(pluginInfo string, host string, accessToken string) (status string, error error) {
 	log.Info("Remove config started")
-	clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize, RootCertificate: rootCertificate}
-	var client, err = plugin.NewClientGRPC(clientConfig)
+	client, err := GetClient(pluginInfo)
 	if err != nil {
 		log.Errorf(util.FailedToCreateClient, err)
 		return util.Failure, err

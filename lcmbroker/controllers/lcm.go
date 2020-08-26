@@ -48,6 +48,7 @@ var (
 // Lcm Controller
 type LcmController struct {
 	beego.Controller
+	db Database
 }
 
 // Upload Config
@@ -178,7 +179,8 @@ func (c *LcmController) Instantiate() {
 	var yamlFile = PackageFolderPath + packageName + "/Definitions/" + "MainServiceTemplate.yaml"
 	deployType := c.getApplicationDeploymentType(yamlFile)
 	deployType = "helm"
-	err = insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType)
+
+	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType)
 	if err != nil {
 		return
 	}
@@ -421,7 +423,8 @@ func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*mod
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId: appInsId,
 	}
-	readErr := ReadData(appInfoRecord, "appInsId")
+	c.initDbAdapter()
+	readErr := c.db.ReadData(appInfoRecord, "app_ins_id")
 	if readErr != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"App info record does not exist in database")
@@ -514,13 +517,14 @@ func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg 
 }
 
 // Insert or update application info record
-func insertOrUpdateAppInfoRecord(appInsId string, hostIp string, deployType string) error {
+func (c *LcmController)insertOrUpdateAppInfoRecord(appInsId string, hostIp string, deployType string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId:   appInsId,
 		HostIp:     hostIp,
 		DeployType: deployType,
 	}
-	err := InsertOrUpdateData(appInfoRecord, "app_ins_id")
+	c.initDbAdapter()
+	err := c.db.InsertOrUpdateData(appInfoRecord, "app_ins_id")
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save app info record to database.")
 		return err
@@ -546,4 +550,22 @@ func (c *LcmController) getInputParameters(clientIp string) (string, string, mul
 		return "", "", nil, nil, err
 	}
 	return hostIp, appInsId, file, header, nil
+}
+
+// Init Db adapter
+func (c *LcmController) initDbAdapter() {
+	dbAdapter := util.GetAppConfig("dbAdapter")
+	switch dbAdapter {
+	case "pgDb":
+		if c.db == nil {
+			pgDbadapter, err := NewPgDbAdapter()
+			if err != nil {
+				return
+			}
+			c.db = pgDbadapter
+		}
+		return
+	default:
+		return
+	}
 }
