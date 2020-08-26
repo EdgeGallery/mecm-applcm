@@ -16,6 +16,59 @@
 
 package controllers
 
+import (
+	"fmt"
+	"github.com/astaxie/beego/orm"
+	log "github.com/sirupsen/logrus"
+	"lcmbroker/util"
+	"strings"
+	"unsafe"
+)
+
+// Init database
+func init() {
+	dbUser := os.Getenv("dbUser")
+	dbPwd := os.Getenv("dbPwd")
+	dbName := os.Getenv("dbName")
+	dbHost := os.Getenv("dbHost")
+	dbPort := os.Getenv("dbPort")
+	dbSslMode := os.Getenv("dbSslMode")
+	dbSslRootCert := os.Getenv("db_sslrootcert")
+
+
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
+	if validateDbParamsErr != nil || !dbParamsAreValid {
+		return
+	}
+	registerDriverErr := orm.RegisterDriver(util.DriverName, orm.DRPostgres)
+	if registerDriverErr != nil {
+		log.Error("Failed to register driver")
+		return
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwd,
+		dbName, dbHost, dbPort, dbSslMode, dbSslRootCert)
+	bStr := b.String()
+
+	registerDataBaseErr := orm.RegisterDataBase(util.Default, util.DriverName, bStr)
+	//clear bStr
+	bKey1 := *(*[]byte)(unsafe.Pointer(&bStr))
+	util.ClearByteArray(bKey1)
+
+	if registerDataBaseErr != nil {
+		log.Error("Failed to register database")
+		return
+	}
+	errRunSyncdb := orm.RunSyncdb(util.Default, false, false)
+	if errRunSyncdb != nil {
+		log.Error("Failed to sync database.")
+		return
+	}
+
+	return
+}
+
 // Database API's
 type Database interface {
 	InsertOrUpdateData(data interface{}, cols ...string) (err error)

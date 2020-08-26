@@ -24,34 +24,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	chunkSize       = 1024
-	rootCertificate = ""
-)
-
 // Plugin adapter which decides a specific client based on plugin info
 type PluginAdapter struct {
 	pluginInfo string
+	client ClientIntf
 }
 
 // Constructor of PluginAdapter
-func NewPluginAdapter(pluginInfo string) *PluginAdapter {
-	return &PluginAdapter{pluginInfo: pluginInfo}
+func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
+	return &PluginAdapter{pluginInfo: pluginInfo, client: client}
 }
 
 // Instantiate application
-func (c *PluginAdapter) Instantiate(pluginInfo string, host string, deployArtifact string,
+func (c *PluginAdapter) Instantiate(host string, deployArtifact string,
 	accessToken string, appInsId string) (error error, status string) {
 	log.Info("Instantiation started")
-	client, err := GetClient(pluginInfo)
-	if err != nil {
-		log.Errorf(util.FailedToCreateClient, err)
-		return err, util.Failure
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err = client.Instantiate(ctx, deployArtifact, host, accessToken, appInsId)
+	status, err := c.client.Instantiate(ctx, deployArtifact, host, accessToken, appInsId)
 	if err != nil {
 		log.Error("failed to instantiate application")
 		return err, util.Failure
@@ -61,18 +52,13 @@ func (c *PluginAdapter) Instantiate(pluginInfo string, host string, deployArtifa
 }
 
 // Query application
-func (c *PluginAdapter) Query(pluginInfo string, host string) (status string, error error) {
+func (c *PluginAdapter) Query(host string) (status string, error error) {
 	log.Info("Query started")
-	client, err := GetClient(pluginInfo)
-	if err != nil {
-		log.Errorf(util.FailedToCreateClient, err)
-		return "", err
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err = client.Query(ctx, host)
+	status, err := c.client.Query(ctx, host)
 	if err != nil {
 		log.Errorf("failed to query information")
 		return "", err
@@ -82,18 +68,13 @@ func (c *PluginAdapter) Query(pluginInfo string, host string) (status string, er
 }
 
 // Terminate application
-func (c *PluginAdapter) Terminate(pluginInfo string, host string, accessToken string, appInsId string) (status string, error error) {
+func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId string) (status string, error error) {
 	log.Info("Terminate started")
-	client, err := GetClient(pluginInfo)
-	if err != nil {
-		log.Errorf(util.FailedToCreateClient, err)
-		return util.Failure, err
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err = client.Terminate(ctx, host, accessToken, appInsId)
+	status, err := c.client.Terminate(ctx, host, accessToken, appInsId)
 	if err != nil {
 		log.Error("failed to terminate application")
 		return util.Failure, err
@@ -104,18 +85,13 @@ func (c *PluginAdapter) Terminate(pluginInfo string, host string, accessToken st
 }
 
 // Upload configuration
-func (c *PluginAdapter) UploadConfig(pluginInfo string, file multipart.File, host string, accessToken string) (status string, error error) {
+func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string, error error) {
 	log.Info("Upload config started")
-	client, err := GetClient(pluginInfo)
-	if err != nil {
-		log.Errorf(util.FailedToCreateClient, err)
-		return util.Failure, err
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err = client.UploadConfig(ctx, file, host, accessToken)
+	status, err := c.client.UploadConfig(ctx, file, host, accessToken)
 	if err != nil {
 		log.Error("failed to upload configuration")
 		return util.Failure, err
@@ -126,18 +102,12 @@ func (c *PluginAdapter) UploadConfig(pluginInfo string, file multipart.File, hos
 }
 
 // Remove configuration
-func (c *PluginAdapter) RemoveConfig(pluginInfo string, host string, accessToken string) (status string, error error) {
+func (c *PluginAdapter) RemoveConfig(host string, accessToken string) (status string, error error) {
 	log.Info("Remove config started")
-	client, err := GetClient(pluginInfo)
-	if err != nil {
-		log.Errorf(util.FailedToCreateClient, err)
-		return util.Failure, err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err = client.RemoveConfig(ctx, host, accessToken)
+	status, err := c.client.RemoveConfig(ctx, host, accessToken)
 	if err != nil {
 		log.Error("failed to remove configuration")
 		return util.Failure, err

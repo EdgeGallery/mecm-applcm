@@ -91,8 +91,12 @@ func (c *LcmController) UploadConfig() {
 
 	pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
-	_, err = adapter.UploadConfig(pluginInfo, file, hostIp, accessToken)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		return
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	_, err = adapter.UploadConfig(file, hostIp, accessToken)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Upload configuration failed")
@@ -127,8 +131,12 @@ func (c *LcmController) RemoveConfig() {
 
 	pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
-	_, err = adapter.RemoveConfig(pluginInfo, hostIp, accessToken)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		return
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	_, err = adapter.RemoveConfig(hostIp, accessToken)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Remove configuration failed")
@@ -237,8 +245,12 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
-	_, err = adapter.Terminate(pluginInfo, appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		return
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	_, err = adapter.Terminate(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Terminate application failed")
@@ -395,8 +407,12 @@ func (c *LcmController) makeTargetDirectory(clientIp string, packageName string)
 // Instantiate application
 func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 	artifact string, clientIp string, accessToken string, appInsId string) error {
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo)
-	err, resStatus := adapter.Instantiate(pluginInfo, hostIp, artifact, accessToken, appInsId)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		return err
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	err, resStatus := adapter.Instantiate(hostIp, artifact, accessToken, appInsId)
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.InvalidArgument {
