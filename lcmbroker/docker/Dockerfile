@@ -19,14 +19,14 @@ ENV GO111MODULE on
 ENV HOME=/usr/app
 
 RUN apk update &&\
-    apk add --no-cache libc-dev gcc shadow
+    apk add --no-cache gcc libc-dev  shadow
 
 RUN mkdir -p $HOME
 
 WORKDIR /go/cache
 
-ADD go.mod .
-ADD go.sum .
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
 COPY . $HOME
@@ -74,6 +74,6 @@ RUN chmod 750 $HOME &&\
 
 USER $USER_NAME
 
-EXPOSE 8484
+EXPOSE 8484:8484
 
 CMD ["sh", "-c", "$HOME/bin/start.sh"]

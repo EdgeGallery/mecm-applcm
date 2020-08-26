@@ -16,16 +16,8 @@
 
 package controllers
 
-import "github.com/astaxie/beego"
-
-// Error controller
-type ErrorController struct {
-	beego.Controller
-}
-
-// Error handling for invalid request
-func (c *ErrorController) Error404() {
-	c.Data["content"] = "page not found"
-	c.TplName = "error/404.tpl"
-	c.Ctx.ResponseWriter.Header().Del("server")
+// Database API's
+type Database interface {
+	InsertOrUpdateData(data interface{}, cols ...string) (err error)
+	ReadData(data interface{}, cols ...string) (err error)
 }

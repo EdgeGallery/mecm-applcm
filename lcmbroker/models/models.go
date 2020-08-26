@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package controllers
+package models
 
-import "github.com/astaxie/beego"
+import (
+	"github.com/astaxie/beego/orm"
+)
 
-// Error controller
-type ErrorController struct {
-	beego.Controller
+// Init application info record
+func init() {
+	orm.RegisterModel(new(AppInfoRecord))
 }
 
-// Error handling for invalid request
-func (c *ErrorController) Error404() {
-	c.Data["content"] = "page not found"
-	c.TplName = "error/404.tpl"
-	c.Ctx.ResponseWriter.Header().Del("server")
+// Application info record
+type AppInfoRecord struct {
+	AppInsId     string `orm:"pk"`
+	HostIp       string
+	DeployType   string
 }

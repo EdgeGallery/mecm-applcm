@@ -18,12 +18,13 @@
 package routers
 
 import (
-	"lcmbroker/controllers"
 	"github.com/astaxie/beego"
-	)
+	"lcmbroker/controllers"
+)
 
 const RootPath string = "/lcmbroker/v1"
 
+// Init lcmbroker APIs
 func init() {
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "post:UploadConfig")
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "delete:RemoveConfig")
