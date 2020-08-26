@@ -39,6 +39,7 @@ const InstantiationFailed string = "Instantiation failed"
 const Default string = "default"
 const DriverName string = "postgres"
 const Failure string = "Failure"
+const ClientIpaddressInvalid = "cientIp address is invalid"
 const FailedToSendMetadataInfo string = "failed to send metadata information"
 const FailedToCreateClient string = "failed to create client: %v"
 const InvalidToken string = "invalid token"
@@ -52,11 +53,11 @@ const BadRequest int = 400
 const StatusUnauthorized int = 401
 const StatusInternalServerError int = 500
 
-const DB_REGEX string = `^[\w-]{4,16}$`
-const DB_USER_REGEX = DB_REGEX
-const DB_NAME_REGEX = DB_REGEX
-const HOST_REGEX string = `^[\w-.]{4,16}$`
-const PORT_REGEX string = `^[0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]$`
+const DbRegex string = `^[\w-]{4,16}$`
+const DbUserRegex = DbRegex
+const DbNameRegex = DbRegex
+const HostRegex string = `^[\w-.]{4,16}$`
+const PortRegex string = `^[0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]$`
 
 const minPasswordSize = 8
 const maxPasswordSize = 16
@@ -120,25 +121,7 @@ func ClearByteArray(data []byte) {
 func ValidatePassword(password *[]byte) (bool, error) {
 	if len(*password) >= minPasswordSize && len(*password) <= maxPasswordSize {
 		// password must satisfy any two conditions
-		var pwdValidCount = 0
-		pwdIsValid, err := regexp.Match(singleDigitRegex, *password)
-		if pwdIsValid && err == nil {
-			pwdValidCount++
-		}
-		pwdIsValid, err = regexp.Match(lowerCaseRegex, *password)
-		if pwdIsValid && err == nil {
-			pwdValidCount++
-		}
-		pwdIsValid, err = regexp.Match(upperCaseRegex, *password)
-		if pwdIsValid && err == nil  {
-			pwdValidCount++
-		}
-		// space validation for password complexity is not added
-		// as jwt decrypt fails if space is included in password
-		pwdIsValid, err = regexp.Match(specialCharRegex, *password)
-		if pwdIsValid && err == nil {
-			pwdValidCount++
-		}
+		pwdValidCount := getPasswordValidCount(password)
 		if pwdValidCount < maxPasswordCount {
 			return false, errors.New("password must contain at least two types of the either one lowercase" +
 				" character, one uppercase character, one digit or one special character")
@@ -149,9 +132,33 @@ func ValidatePassword(password *[]byte) (bool, error) {
 	return true, nil
 }
 
+// To get password valid count
+func getPasswordValidCount(password *[]byte) int {
+	var pwdValidCount = 0
+	pwdIsValid, err := regexp.Match(singleDigitRegex, *password)
+	if pwdIsValid && err == nil {
+		pwdValidCount++
+	}
+	pwdIsValid, err = regexp.Match(lowerCaseRegex, *password)
+	if pwdIsValid && err == nil {
+		pwdValidCount++
+	}
+	pwdIsValid, err = regexp.Match(upperCaseRegex, *password)
+	if pwdIsValid && err == nil  {
+		pwdValidCount++
+	}
+	// space validation for password complexity is not added
+	// as jwt decrypt fails if space is included in password
+	pwdIsValid, err = regexp.Match(specialCharRegex, *password)
+	if pwdIsValid && err == nil {
+		pwdValidCount++
+	}
+	return pwdValidCount
+}
+
 // Validate db parameters
 func ValidateDbParams(dbUser string, dbPwd string, dbName string, dbHost string, dbPort string) (bool, error) {
-	dbUserIsValid, validateDbUserErr := regexp.MatchString(DB_USER_REGEX, dbUser)
+	dbUserIsValid, validateDbUserErr := regexp.MatchString(DbUserRegex, dbUser)
 	if validateDbUserErr != nil || !dbUserIsValid {
 		return dbUserIsValid, validateDbUserErr
 	}
@@ -160,15 +167,15 @@ func ValidateDbParams(dbUser string, dbPwd string, dbName string, dbHost string,
 	if validateDbPwdErr != nil || !dbPwdIsValid {
 		return dbPwdIsValid, validateDbPwdErr
 	}
-	dbNameIsValid, validateDbNameErr := regexp.MatchString(DB_NAME_REGEX, dbName)
+	dbNameIsValid, validateDbNameErr := regexp.MatchString(DbNameRegex, dbName)
 	if validateDbNameErr != nil || !dbNameIsValid {
 		return dbNameIsValid, validateDbNameErr
 	}
-	dbHostIsValid, validateDbHostErr := regexp.MatchString(HOST_REGEX, dbHost)
+	dbHostIsValid, validateDbHostErr := regexp.MatchString(HostRegex, dbHost)
 	if validateDbHostErr != nil || !dbHostIsValid {
 		return dbHostIsValid, validateDbHostErr
 	}
-	dbPortIsValid, validateDbPortErr := regexp.MatchString(PORT_REGEX, dbPort)
+	dbPortIsValid, validateDbPortErr := regexp.MatchString(PortRegex, dbPort)
 	if validateDbPortErr != nil || !dbPortIsValid {
 		return dbPortIsValid, validateDbPortErr
 	}

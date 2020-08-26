@@ -57,11 +57,10 @@ func (c *LcmController) UploadConfig() {
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
 		return
 	}
-	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "]")
+	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -109,11 +108,10 @@ func (c *LcmController) RemoveConfig() {
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
 		return
 	}
-	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "]")
+	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -146,11 +144,10 @@ func (c *LcmController) Instantiate() {
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
 		return
 	}
-	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "]")
+	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -207,11 +204,10 @@ func (c *LcmController) Terminate() {
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,"cientIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
 		return
 	}
-	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "]")
+	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -568,4 +564,10 @@ func (c *LcmController) initDbAdapter() {
 	default:
 		return
 	}
+}
+
+// To display log for received message
+func (c *LcmController) displayReceivedMsg(clientIp string) {
+	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "]")
 }
