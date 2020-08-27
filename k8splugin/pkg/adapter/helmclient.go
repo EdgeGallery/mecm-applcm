@@ -85,7 +85,7 @@ func (hc *HelmClient) InstallChart(helmPkg bytes.Buffer) (string, error) {
 	// Initialize action config
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
+		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
 			fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
@@ -110,7 +110,7 @@ func (hc *HelmClient) UninstallChart(relName string) error {
 	// Prepare action config and uninstall chart
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
+		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
 			fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
@@ -132,7 +132,7 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 	log.Info("In Query Chart function")
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
+		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
 			fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)

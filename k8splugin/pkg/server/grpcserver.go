@@ -175,12 +175,12 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 }
 
 // Instantiate HELM Chart
-func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) (err error) {
+func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) error {
 	log.Info("Recieved instantiate request")
 
 	hostIp, appInsId, err := s.validateInputParamsForInstan(stream)
 	if err != nil {
-		return
+		return err
 	}
 
 	helmPkg, err := s.getHelmPackage(stream)
@@ -213,7 +213,7 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) (er
 	if err != nil {
 		return s.logError(status.Errorf(codes.Unknown, "cannot send response: %v", err))
 	}
-	return
+	return nil
 }
 
 // Upload file configuration
