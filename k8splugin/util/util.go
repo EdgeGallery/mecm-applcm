@@ -52,6 +52,7 @@ const AccssTokenIsInvalid = "AccessToken is invalid"
 const Success = "Success"
 const Failure = "Failure"
 const ActionConfig = "Unable to initialize action config"
+const HelmDriver = "HELM_DRIVER"
 
 // Validate server port
 func ValidateServerPort(serverPort string) (bool, error) {
