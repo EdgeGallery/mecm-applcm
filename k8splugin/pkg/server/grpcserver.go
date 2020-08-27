@@ -104,6 +104,32 @@ func (s *ServerGRPC) Listen() (err error) {
 	return
 }
 
+// Query HELM chart
+func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
+
+	// Input validation
+	if req.GetHostIp() == "" {
+		return nil, s.logError(status.Errorf(codes.InvalidArgument, "HostIP can't be null", err))
+	}
+
+	// Create HELM Client
+	hc, err := adapter.NewHelmClient(req.GetHostIp())
+	if os.IsNotExist(err) {
+		return nil, s.logError(status.Errorf(codes.InvalidArgument,
+			"Kubeconfig corresponding to given Edge can't be found. Err: %s", err))
+	}
+
+	// Query Chart
+	r, err := hc.QueryChart("1")
+	if err != nil {
+		return nil, s.logError(status.Errorf(codes.NotFound, "Chart not found for workloadId: %s. Err: %s",
+			"1", err))
+	}
+	resp = &lcmservice.QueryResponse{
+		Response: r,
+	}
+	return resp, nil
+}
 
 // Terminate HELM charts
 func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
