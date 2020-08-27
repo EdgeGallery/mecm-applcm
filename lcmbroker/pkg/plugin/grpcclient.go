@@ -44,17 +44,6 @@ type ClientGRPCConfig struct {
 	RootCertificate string
 }
 
-// GRPC client APIs
-type ClientGRPCIntf interface {
-	Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-		accessToken string, appInsId string) (status string, error error)
-	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
-	Query(ctx context.Context, hostIP string) (status string, error error)
-	UploadConfig(ctx context.Context, multipartFile multipart.File,
-		hostIP string, accessToken string) (status string, error error)
-	RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error)
-}
-
 // Create a GRPC client
 func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 
