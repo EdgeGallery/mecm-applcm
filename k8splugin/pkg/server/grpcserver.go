@@ -261,6 +261,50 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 
 	return
 }
+
+// Remove file configuration
+func (s *ServerGRPC) RemoveConfig(_ context.Context,
+	request *lcmservice.RemoveCfgRequest) (*lcmservice.RemoveCfgResponse, error) {
+	resp := &lcmservice.RemoveCfgResponse{
+		Status: "Failure",
+	}
+
+	hostIp, err := validateInputParamsForRemoveCfg(request)
+	if err != nil {
+		return resp, err
+	}
+	configPath := kubeconfigPath + hostIp
+	err = os.Remove(configPath)
+	if err != nil {
+		log.Error("host %s config delete failed....", err.Error())
+		return resp, err
+	}
+
+	resp = &lcmservice.RemoveCfgResponse{
+		Status: "Success",
+	}
+	log.Info("host configuration file deleted successfully.")
+	return resp, nil
+}
+
+// Validate input parameters for remove config
+func validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (string, error) {
+	accessToken := request.GetAccessToken()
+	err := util.ValidateAccessToken(accessToken)
+	if err != nil {
+		log.Info("accessToken validation failed, invalid accessToken")
+		return "", err
+	}
+
+	hostIp := request.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		log.Info("hostIp validation failed, invalid ipaddress")
+		return "", err
+	}
+	return hostIp, nil
+}
+
 // Query KPI
 func (s *ServerGRPC) QueryKPI(_ context.Context,
 	request *lcmservice.QueryKPIRequest) (*lcmservice.QueryKPIResponse, error) {
