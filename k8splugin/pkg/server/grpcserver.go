@@ -161,14 +161,14 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 
 	if err != nil {
 		resp = &lcmservice.TerminateResponse{
-			Status: "Failure",
+			Status: util.Failure,
 		}
 
 		return resp, s.logError(status.Errorf(codes.NotFound, "Chart not found for workloadId: %s. Err: %s",
 			appInstanceRecord.WorkloadId, err))
 	} else {
 		resp = &lcmservice.TerminateResponse{
-			Status: "Success",
+			Status: util.Success,
 		}
 		return resp, nil
 	}
@@ -198,10 +198,10 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) (er
 	releaseName, err := hc.InstallChart(helmPkg)
 	var res lcmservice.InstantiateResponse
 	if err != nil {
-		res.Status = "Failure"
+		res.Status = util.Failure
 		log.Info("Instantiation Failed")
 	} else {
-		res.Status = "Success"
+		res.Status = util.Success
 		log.Info("Successful Instantiation")
 		err := s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName)
 		if err != nil {
@@ -247,10 +247,10 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 	var res lcmservice.UploadCfgResponse
 
 	if err != nil {
-		res.Status = "Failure"
+		res.Status = util.Failure
 		log.Error("config IO operation error.")
 	} else {
-		res.Status = "Success"
+		res.Status = util.Success
 		log.Info("Uploaded config file successfully")
 	}
 
@@ -266,7 +266,7 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 func (s *ServerGRPC) RemoveConfig(_ context.Context,
 	request *lcmservice.RemoveCfgRequest) (*lcmservice.RemoveCfgResponse, error) {
 	resp := &lcmservice.RemoveCfgResponse{
-		Status: "Failure",
+		Status: util.Failure,
 	}
 
 	hostIp, err := validateInputParamsForRemoveCfg(request)
@@ -281,7 +281,7 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 	}
 
 	resp = &lcmservice.RemoveCfgResponse{
-		Status: "Success",
+		Status: util.Success,
 	}
 	log.Info("host configuration file deleted successfully.")
 	return resp, nil
@@ -347,7 +347,7 @@ func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_Insta
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, "AccessToken is invalid", err))
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.AccssTokenIsInvalid, err))
 	}
 
 	// Receive metadata which is app instance id
@@ -369,7 +369,7 @@ func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_Insta
 	hostIp := req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, "HostIp is invalid", err))
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.HostIpIsInvalid, err))
 	}
 
 	return hostIp, appInsId, nil
@@ -382,14 +382,14 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
 		return "", "", nil, s.logError(status.Errorf(codes.InvalidArgument,
-			"AccessToken is invalid", err))
+			util.AccssTokenIsInvalid, err))
 	}
 
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
 		return "", "", nil, s.logError(status.Errorf(codes.InvalidArgument,
-			"HostIp is invalid", err))
+			util.HostIpIsInvalid, err))
 	}
 
 	appInsId = req.GetAppInstanceId()
@@ -414,7 +414,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", s.logError(status.Errorf(codes.InvalidArgument, "AccessToken is invalid", err))
+		return "", s.logError(status.Errorf(codes.InvalidArgument, util.AccssTokenIsInvalid, err))
 	}
 
 	// Receive metadata which is host ip
@@ -426,7 +426,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", s.logError(status.Errorf(codes.InvalidArgument, "HostIp is invalid", err))
+		return "", s.logError(status.Errorf(codes.InvalidArgument, util.HostIpIsInvalid, err))
 	}
 
 	return hostIp, nil

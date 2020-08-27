@@ -47,6 +47,11 @@ const InvalidToken string = "invalid token"
 const CannotReceivePackage = "Cannot receive package metadata."
 const FilePerm = 0750
 const TempFile = "temp.tar.gz"
+const HostIpIsInvalid = "HostIp is invalid"
+const AccssTokenIsInvalid = "AccessToken is invalid"
+const Success = "Success"
+const Failure = "Failure"
+const ActionConfig = "Unable to initialize action config"
 
 // Validate server port
 func ValidateServerPort(serverPort string) (bool, error) {

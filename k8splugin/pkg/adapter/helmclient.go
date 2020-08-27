@@ -88,7 +88,7 @@ func (hc *HelmClient) InstallChart(helmPkg bytes.Buffer) (string, error) {
 		os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
 			fmt.Sprintf(format, v)
 		}); err != nil {
-		log.Error("Unable to initialize action config")
+		log.Error(util.ActionConfig)
 		return "", err
 	}
 
@@ -113,7 +113,7 @@ func (hc *HelmClient) UninstallChart(relName string) error {
 		os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
 			fmt.Sprintf(format, v)
 		}); err != nil {
-		log.Error("Unable to initialize action config")
+		log.Error(util.ActionConfig)
 		return err
 	}
 
@@ -135,7 +135,7 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 		os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
 			fmt.Sprintf(format, v)
 		}); err != nil {
-		log.Error("Unable to initialize action config")
+		log.Error(util.ActionConfig)
 		return "", err
 	}
 	s := action.NewStatus(actionConfig)
