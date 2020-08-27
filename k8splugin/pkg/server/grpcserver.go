@@ -174,6 +174,47 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 	}
 }
 
+// Instantiate HELM Chart
+func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) (err error) {
+	log.Info("Recieved instantiate request")
+
+	hostIp, appInsId, err := s.validateInputParamsForInstan(stream)
+	if err != nil {
+		return
+	}
+
+	helmPkg, err := s.getHelmPackage(stream)
+	if err != nil {
+		return err
+	}
+
+	// Create HELM client
+	hc, err := adapter.NewHelmClient(hostIp)
+	if os.IsNotExist(err) {
+		return s.logError(status.Errorf(codes.InvalidArgument,
+			"Kubeconfig corresponding to edge can't be found. Err: %s", err))
+	}
+
+	releaseName, err := hc.InstallChart(helmPkg)
+	var res lcmservice.InstantiateResponse
+	if err != nil {
+		res.Status = "Failure"
+		log.Info("Instantiation Failed")
+	} else {
+		res.Status = "Success"
+		log.Info("Successful Instantiation")
+		err := s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = stream.SendAndClose(&res)
+	if err != nil {
+		return s.logError(status.Errorf(codes.Unknown, "cannot send response: %v", err))
+	}
+	return
+}
 
 // Query KPI
 func (s *ServerGRPC) QueryKPI(_ context.Context,
@@ -207,7 +248,43 @@ func (s *ServerGRPC) logError(err error) error {
 	return err
 }
 
+// Validate input parameters for instantiation
+func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_InstantiateServer) (string, string, error) {
+	// Receive metadata which is access token
+	req, err := stream.Recv()
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.CannotReceivePackage, err))
+	}
+	accessToken := req.GetAccessToken()
+	err = util.ValidateAccessToken(accessToken)
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, "AccessToken is invalid", err))
+	}
 
+	// Receive metadata which is app instance id
+	req, err = stream.Recv()
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.CannotReceivePackage, err))
+	}
+	appInsId := req.GetAppInstanceId()
+	err = util.ValidateUUID(appInsId)
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, "App instance id is invalid", err))
+	}
+
+	// Receive metadata which is host ip
+	req, err = stream.Recv()
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.CannotReceivePackage, err))
+	}
+	hostIp := req.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument, "HostIp is invalid", err))
+	}
+
+	return hostIp, appInsId, nil
+}
 
 // Validate input parameters for termination
 func (s *ServerGRPC) validateInputParamsForTerm(
@@ -234,6 +311,37 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	}
 
 	return hostIp, appInsId, nil, nil
+}
+// Get helm package
+func (s *ServerGRPC) getHelmPackage(stream lcmservice.AppLCM_InstantiateServer) (buf bytes.Buffer, err error) {
+	// Receive package
+	helmPkg := bytes.Buffer{}
+	for {
+		err := s.contextError(stream.Context())
+		if err != nil {
+			return helmPkg, err
+		}
+
+		log.Debug("Waiting to receive more data")
+
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Debug("No more data")
+			break
+		}
+		if err != nil {
+			return helmPkg, s.logError(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err))
+		}
+
+		// Receive chunk and write to helm package
+		chunk := req.GetPackage()
+
+		_, err = helmPkg.Write(chunk)
+		if err != nil {
+			return helmPkg, s.logError(status.Errorf(codes.Internal, "cannot write chunk data: %v", err))
+		}
+	}
+	return helmPkg, nil
 }
 
 
