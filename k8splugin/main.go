@@ -16,16 +16,41 @@
 
 package main
 
-
 import (
-	_ "k8splugin/config"
-
+	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
+	_ "k8splugin/config"
+	_ "k8splugin/models"
+	_ "k8splugin/pgdb"
+	"k8splugin/pkg/server"
+	"k8splugin/util"
+	"os"
+	"strconv"
 )
 
+// Variables to be defined in deployment file
+var (
+	serverPort  = os.Getenv("HELM_PLUGIN_PORT")
+	certificate = os.Getenv("CERTIFICATE_PATH")
+	key         = os.Getenv("KEY_PATH")
+)
 
-
+// Start k8splugin application
 func main() {
 	log.Info("Started k8s plugin server")
-	// TODO
+
+	// Create GRPC server
+	serPortValid, validateSerPortErr := util.ValidateServerPort(serverPort)
+	if validateSerPortErr != nil || !serPortValid {
+		log.Fatalf("invalid port: %v", validateSerPortErr)
+	}
+	sp, err := strconv.Atoi(serverPort)
+	serverConfig := server.ServerGRPCConfig{Certificate: certificate, Port: sp, Key: key}
+	grpcServer := server.NewServerGRPC(serverConfig)
+
+	// Start listening
+	err = grpcServer.Listen()
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 }

@@ -249,8 +249,8 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 	//send metadata information
 	req := &lcmservice.UploadCfgRequest{
 
-		Data: &lcmservice.UploadCfgRequest_HostIp{
-			HostIp: hostIP,
+		Data: &lcmservice.UploadCfgRequest_AccessToken{
+			AccessToken: accessToken,
 		},
 	}
 
@@ -260,10 +260,11 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 		return util.Failure, err
 	}
 
+	//send metadata information
 	req = &lcmservice.UploadCfgRequest{
 
-		Data: &lcmservice.UploadCfgRequest_AccessToken{
-			AccessToken: accessToken,
+		Data: &lcmservice.UploadCfgRequest_HostIp{
+			HostIp: hostIP,
 		},
 	}
 

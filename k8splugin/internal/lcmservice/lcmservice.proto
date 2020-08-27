@@ -92,7 +92,7 @@ service AppLCM {
   rpc instantiate (stream InstantiateRequest) returns (InstantiateResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc query (QueryRequest) returns (QueryResponse) {}
-  rpc uploadConfig (UploadCfgRequest) returns (UploadCfgResponse) {}
+  rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
   rpc queryKPI (QueryKPIRequest) returns (QueryKPIResponse) {}
   rpc queryMepCapabilities (QueryMepCapRequest) returns (QueryMepCapResponse) {}
