@@ -19,15 +19,24 @@ package main
 import (
 	"github.com/astaxie/beego"
 	_ "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 	_ "lcmbroker/config"
 	"lcmbroker/controllers"
 	_ "lcmbroker/controllers"
 	_ "lcmbroker/models"
 	_ "lcmbroker/routers"
+	"lcmbroker/util"
 )
 
 // Start lcmbroker application
 func main() {
+	tlsConf, err := util.TLSConfig("HTTPSCertFile")
+	if err != nil {
+		log.Error("failed to config tls for beego")
+		return
+	}
+
+	beego.BeeApp.Server.TLSConfig = tlsConf
 	beego.ErrorController(&controllers.ErrorController{})
 	beego.Run()
 }
