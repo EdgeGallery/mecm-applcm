@@ -62,7 +62,7 @@ func (c *LcmController) UploadConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err := util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -117,7 +117,7 @@ func (c *LcmController) RemoveConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err := util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -157,7 +157,7 @@ func (c *LcmController) Instantiate() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err := util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -217,7 +217,7 @@ func (c *LcmController) Terminate() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err := util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
