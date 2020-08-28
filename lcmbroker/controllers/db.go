@@ -23,6 +23,7 @@ import (
 	"lcmbroker/util"
 	"strings"
 	"unsafe"
+	"os"
 )
 
 // Init database
