@@ -17,13 +17,17 @@
 package util
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"github.com/astaxie/beego"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -67,6 +71,10 @@ const lowerCaseRegex string = `[a-z]`
 const upperCaseRegex string = `[A-Z]`
 const maxPasswordCount = 2
 
+var cipherSuiteMap = map[string]uint16{
+	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+}
 
 // Get app configuration
 func GetAppConfig(k string) string {
@@ -223,5 +231,60 @@ func ValidateAccessToken(accessToken string) error {
 	}
 
 	log.Info("Token validated successfully")
+	return nil
+}
+
+// Update tls configuration
+func TLSConfig(crtName string) (*tls.Config, error) {
+	certNameConfig := GetAppConfig(crtName)
+	if len(certNameConfig) == 0 {
+		log.Error(crtName + " configuration is not set")
+		return nil, errors.New("cert name configuration is not set")
+	}
+
+	crt, err := ioutil.ReadFile(certNameConfig)
+	if err != nil {
+		log.Error("unable to read certificate")
+		return nil, err
+	}
+
+	rootCAs := x509.NewCertPool()
+	rootCAs.AppendCertsFromPEM(crt)
+
+
+	sslCiphers := GetAppConfig("ssl_ciphers")
+	if len(sslCiphers) == 0 {
+		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
+	}
+	cipherSuites := getCipherSuites(sslCiphers)
+	if cipherSuites == nil {
+		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
+	}
+	return &tls.Config{
+		RootCAs:      rootCAs,
+		MinVersion:   tls.VersionTLS12,
+		CipherSuites: cipherSuites,
+	}, nil
+}
+
+// To get cipher suites
+func getCipherSuites(sslCiphers string) []uint16 {
+	cipherSuiteArr := make([]uint16, 0, 5)
+	cipherSuiteNameList := strings.Split(sslCiphers, ",")
+	for _, cipherName := range cipherSuiteNameList {
+		cipherName = strings.TrimSpace(cipherName)
+		if len(cipherName) == 0 {
+			continue
+		}
+		mapValue, ok := cipherSuiteMap[cipherName]
+		if !ok {
+			log.Error("not recommended cipher suite")
+			return nil
+		}
+		cipherSuiteArr = append(cipherSuiteArr, mapValue)
+	}
+	if len(cipherSuiteArr) > 0 {
+		return cipherSuiteArr
+	}
 	return nil
 }
