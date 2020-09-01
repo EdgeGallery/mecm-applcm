@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
-	"lcmbroker/util"
+	"lcmcontroller/util"
 )
 
 // Pg database
@@ -46,13 +46,13 @@ func NewPgDbAdapter() (pgDb *PgDb, err error) {
 	return &PgDb{ormer: o}, nil
 }
 
-// Insert or update data into lcmbroker
+// Insert or update data into lcmcontroller
 func (db *PgDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
 	_, err = db.ormer.InsertOrUpdate(data, cols...)
 	return err
 }
 
-// Read data from lcmbroker
+// Read data from lcmcontroller
 func (db *PgDb)  ReadData(data interface{}, cols ...string) (err error) {
 	err = db.ormer.Read(data, cols...)
 	return err

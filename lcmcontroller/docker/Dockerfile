@@ -33,7 +33,7 @@ COPY . $HOME
 
 WORKDIR $HOME
 
-RUN GOOS=linux go build -buildmode=pie -ldflags '-linkmode "external" -extldflags "-static"' -o lcmbroker
+RUN GOOS=linux go build -buildmode=pie -ldflags '-linkmode "external" -extldflags "-static"' -o lcmcontroller
 
 FROM alpine:latest
 RUN sed -i "s|umask 022|umask 027|g" /etc/profile
@@ -59,7 +59,7 @@ RUN apk update &&\
 WORKDIR $HOME
 
 # Copy in the application exe.
-COPY --from=builder $HOME/lcmbroker $HOME/bin
+COPY --from=builder $HOME/lcmcontroller $HOME/bin
 COPY --from=builder $HOME/conf/ $HOME/conf/
 COPY --from=builder $HOME/start.sh $HOME/bin
 COPY --from=builder $HOME/views/ $HOME/views/

@@ -18,8 +18,8 @@ package plugin
 
 import (
 	"io"
-	"lcmbroker/internal/lcmservice"
-	"lcmbroker/util"
+	"lcmcontroller/internal/lcmservice"
+	"lcmcontroller/util"
 	"mime/multipart"
 	"os"
 

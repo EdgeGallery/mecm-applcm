@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-module lcmbroker
+module lcmcontroller
 
 go 1.14
 
@@ -23,6 +23,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-playground/validator/v10 v10.3.0
 	github.com/golang/protobuf v1.4.2
+	github.com/lib/pq v1.0.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/sirupsen/logrus v1.6.0
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859

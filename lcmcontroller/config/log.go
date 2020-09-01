@@ -20,13 +20,13 @@ package config
 import (
 	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
-	"lcmbroker/util"
+	"lcmcontroller/util"
 	"os"
 )
 
 // Initialize logging
 func init() {
-	fileName := "/usr/app/log/lcmbroker.log"
+	fileName := "/usr/app/log/lcmcontroller.log"
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
 	if err == nil {
 		err = file.Close()

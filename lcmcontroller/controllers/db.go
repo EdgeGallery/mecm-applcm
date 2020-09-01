@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
-	"lcmbroker/util"
+	"lcmcontroller/util"
 	"strings"
 	"unsafe"
 	"os"
