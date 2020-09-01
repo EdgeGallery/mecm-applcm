@@ -52,19 +52,18 @@ func (c *PluginAdapter) Instantiate(host string, deployArtifact string,
 }
 
 // Query application
-func (c *PluginAdapter) Query(host string) (status string, error error) {
+func (c *PluginAdapter) Query(accessToken, appInsId, host string) (response string, error error) {
 	log.Info("Query started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.Query(ctx, host)
+	response, err := c.client.Query(ctx, accessToken, appInsId, host)
 	if err != nil {
 		log.Errorf("failed to query information")
 		return "", err
 	}
-	log.Info("query status: ", status)
-	return status, nil
+	return response, nil
 }
 
 // Terminate application

@@ -186,9 +186,12 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 }
 
 // Query application
-func (c *ClientGRPC) Query(ctx context.Context, hostIP string) (status string, error error) {
+func (c *ClientGRPC) Query(ctx context.Context, accessToken string,
+	appInsId string, hostIP string) (response string, error error) {
 
 	req := &lcmservice.QueryRequest{
+		AccessToken: accessToken,
+		AppInstanceId: appInsId,
 		HostIp:     hostIP,
 	}
 	resp, err := c.client.Query(ctx, req)
