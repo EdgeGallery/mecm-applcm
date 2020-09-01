@@ -224,7 +224,12 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 		return "", err
 	}
 
-	return appInfo, nil
+	appInfoJson, err := json.Marshal(appInfo)
+	if err != nil {
+		return "", err
+	}
+
+	return string(appInfoJson), nil
 }
 
 // Get label selector
@@ -249,10 +254,9 @@ func getLabelSelector(helmResponse string) []string {
 }
 
 // Get pod statistics
-func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, config *rest.Config) (string, error) {
+func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, config *rest.Config) (appInfo models.AppInfo, err error) {
 	var containerInfo models.ContainerInfo
 	var podInfo models.PodInfo
-	var appInfo models.AppInfo
 
 	totalCpuUsage, totalMemUsage, totalDiskUsage, err := getTotalCpuDiskMemory(clientset)
 	if err != nil {
@@ -266,19 +270,19 @@ func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, c
 
 		pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
 		if err != nil {
-			return "", err
+			return appInfo, err
 		}
 
 		for _, pod := range pods.Items {
 			podName := pod.GetObjectMeta().GetName()
 			mc, err := metrics.NewForConfig(config)
 			if err != nil {
-				return "", err
+				return appInfo, err
 			}
 
 			podMetrics, err := mc.MetricsV1beta1().PodMetricses(metav1.NamespaceDefault).Get(context.Background(), podName, metav1.GetOptions{})
 			if err != nil {
-				return "", err
+				return appInfo, err
 			}
 
 			for _, container := range podMetrics.Containers {
@@ -302,11 +306,8 @@ func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, c
 		appInfo.Pods = append(appInfo.Pods, podInfo)
 	}
 
-	appInfoJson, err := json.Marshal(appInfo)
-	if err != nil {
-		return "", err
-	}
-	return string(appInfoJson), nil
+
+	return appInfo, nil
 }
 
 // Get total cpu disk and memory metrics
