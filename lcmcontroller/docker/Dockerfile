@@ -74,6 +74,6 @@ RUN chmod 750 $HOME &&\
 
 USER $USER_NAME
 
-EXPOSE 8484:8484
+EXPOSE 8094
 
 CMD ["sh", "-c", "$HOME/bin/start.sh"]
