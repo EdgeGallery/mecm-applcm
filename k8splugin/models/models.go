@@ -31,3 +31,31 @@ type AppInstanceInfo struct {
 	HostIp       string
 	WorkloadId   string
 }
+
+// Application Information
+type AppInfo struct {
+	Pods []PodInfo `json:"pods"`
+}
+
+// Pod Information
+type PodInfo struct {
+	PodStatus string `json:"podstatus"`
+	PodName string `json:"podname"`
+	Containers []ContainerInfo `json:"containers"`
+}
+
+// Container Information
+type ContainerInfo struct
+{
+	ContainerName string `json:"containername"`
+	MetricsUsage ContainerStats `json:"metricsusage"`
+}
+
+// Container statistics
+type ContainerStats struct {
+	CpuUsage string `json:"cpuusage"`
+	MemUsage string `json:"memusage"`
+	DiskUsage string `json:"diskusage"`
+}
+
+

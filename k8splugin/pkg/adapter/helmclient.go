@@ -17,15 +17,27 @@
 package adapter
 
 import (
+	"bufio"
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/ghodss/yaml"
+	"k8s.io/client-go/rest"
+	"k8splugin/models"
 	"k8splugin/util"
 	"os"
+	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/kube"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 // Variables to be defined in deployment file
@@ -40,6 +52,36 @@ type HelmClient struct {
 	hostIP     string
 	kubeconfig string
 }
+
+// Manifest file
+type Manifest struct {
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Metadata   struct {
+		Name      string `yaml:"name"`
+		Namespace string `yaml:"namespace"`
+		Labels    struct {
+			App string `yaml:"app"`
+			Component string `yaml:"component"`
+		} `yaml:"labels"`
+	} `yaml:"metadata"`
+	Spec struct {
+		Selector struct {
+			MatchLabels struct {
+				App string `yaml:"app"`
+			} `yaml:"matchLabels"`
+		} `yaml:"selector"`
+		Replicas int `yaml:"replicas"`
+		Template struct {
+			Metadata struct {
+				Labels struct {
+					App string `yaml:"app"`
+				} `yaml:"labels"`
+			} `yaml:"metadata"`
+		} `yaml:"template"`
+	} `yaml:"spec"`
+}
+
 
 // Constructor of helm client for a given host IP
 func NewHelmClient(hostIP string) (*HelmClient, error) {
@@ -144,7 +186,176 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 		log.Error("Unable to query chart with release name")
 		return "", err
 	}
-	return res.Info.Status.String(), nil
+	manifest, err := splitManifestYaml([]byte(res.Manifest))
+	if err != nil {
+		log.Errorf("Query response processing failed release name: %s. Err: %s",
+			relName, err)
+		return "", err
+	}
+	data := make([]byte, 0)
+	for i := 0; i < len(manifest); i++ {
+		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" {
+			appName := manifest[i].Metadata.Name
+			if  manifest[i].Metadata.Labels.App != "" {
+				appName = manifest[i].Metadata.Labels.App
+			}
+			pod := "POD_NAME=$(kubectl get pods --namespace default" +
+				" -l " + "app=" +  appName + " -o" + "\n"
+
+			data = append(data, []byte(pod)...)
+		}
+	}
+
+	// uses the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", hc.kubeconfig)
+	if err != nil {
+		return "", err
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	labelSelector := getLabelSelector(string(data))
+	appInfo, err := getPodStatistics(labelSelector, clientset, config)
+	if err != nil {
+		log.Error("Failed to get pod statistics")
+		return "", err
+	}
+
+	return appInfo, nil
+}
+
+// Get label selector
+func getLabelSelector(helmResponse string) []string {
+	var labelSelectorArr []string
+	scanner := bufio.NewScanner(strings.NewReader(helmResponse))
+	for scanner.Scan() {
+		str := scanner.Text()
+		if strings.Contains(str, "POD_NAME=") {
+			splitArr := strings.Fields(str)
+			for i := 0; i < len(splitArr); i++ {
+				result:= strings.Compare(splitArr[i], "-l")
+				if result == 0 && i <= len(splitArr) {
+					all := strings.ReplaceAll(splitArr[i+1], "\\\\", "")
+					replaceAll := strings.ReplaceAll(all, "\"", "")
+					labelSelectorArr = append(labelSelectorArr, replaceAll)
+				}
+			}
+		}
+	}
+	return labelSelectorArr
+}
+
+// Get pod statistics
+func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, config *rest.Config) (string, error) {
+	var containerInfo models.ContainerInfo
+	var podInfo models.PodInfo
+	var appInfo models.AppInfo
+
+	totalCpuUsage, totalMemUsage, totalDiskUsage, err := getTotalCpuDiskMemory(clientset)
+	if err != nil {
+		return "", err
+	}
+
+	for _, labelSelector := range labelSelector {
+		options := metav1.ListOptions{
+			LabelSelector: labelSelector,
+		}
+
+		pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
+		if err != nil {
+			return "", err
+		}
+
+		for _, pod := range pods.Items {
+			podName := pod.GetObjectMeta().GetName()
+			mc, err := metrics.NewForConfig(config)
+			if err != nil {
+				return "", err
+			}
+
+			podMetrics, err := mc.MetricsV1beta1().PodMetricses(metav1.NamespaceDefault).Get(context.Background(), podName, metav1.GetOptions{})
+			if err != nil {
+				return "", err
+			}
+
+			for _, container := range podMetrics.Containers {
+				cpuUsage := container.Usage.Cpu().String()
+				cpuUsage = strings.TrimSuffix(cpuUsage, "n")
+				memory, _ := container.Usage.Memory().AsInt64()
+				memUsage := strconv.FormatInt(memory, 10)
+				disk, _ := container.Usage.StorageEphemeral().AsInt64()
+				diskUsage := strconv.FormatInt(disk, 10)
+
+				containerInfo.ContainerName = container.Name
+				containerInfo.MetricsUsage.CpuUsage = cpuUsage + "/" + totalCpuUsage
+				containerInfo.MetricsUsage.MemUsage = memUsage + "/" + totalMemUsage
+				containerInfo.MetricsUsage.DiskUsage = diskUsage + "/" + totalDiskUsage
+				podInfo.Containers = append(podInfo.Containers, containerInfo)
+			}
+			podInfo.PodName = podName
+			phase := pod.Status.Phase;
+			podInfo.PodStatus = string(phase)
+		}
+		appInfo.Pods = append(appInfo.Pods, podInfo)
+	}
+
+	appInfoJson, err := json.Marshal(appInfo)
+	if err != nil {
+		return "", err
+	}
+	return string(appInfoJson), nil
+}
+
+// Get total cpu disk and memory metrics
+func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, string, error) {
+	var totalDiskUsage string
+	var totalMemUsage string
+	var totalCpuUsage string
+
+	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err == nil {
+		if len(nodeList.Items) > 0 {
+			node := &nodeList.Items[0]
+			cpuquantity := node.Status.Allocatable.Cpu()
+			cpu, _ := cpuquantity.AsInt64()
+			cpu = cpu * 1000000
+			totalCpuUsage = strconv.FormatInt(cpu, 10)
+			memQuantity := node.Status.Allocatable.Memory()
+			memory, _ := memQuantity.AsInt64();
+			totalMemUsage = strconv.FormatInt(memory, 10)
+			diskQuantity := node.Status.Allocatable.StorageEphemeral()
+			disk, _ :=  diskQuantity.AsInt64()
+			totalDiskUsage = strconv.FormatInt(disk, 10)
+		}
+	} else {
+		return "", "", "", err
+	}
+	return totalCpuUsage, totalMemUsage, totalDiskUsage, err
+
+}
+
+// Split manifest yaml file
+func splitManifestYaml(data []byte) (manifest []Manifest, err error) {
+	manifestBuf :=  []Manifest{}
+
+	yamlSeparator := "\n---"
+	yamlString := string(data)
+
+	yamls := strings.Split(yamlString, yamlSeparator)
+	//fmt.Println("yamls:  ", yamls)
+	for k := 0; k < len(yamls); k++ {
+		var manifest Manifest
+		err := yaml.Unmarshal([]byte(yamls[k]), &manifest)
+		if err != nil {
+			fmt.Printf("err: %v\n", err)
+			return nil, err
+		}
+		manifestBuf = append(manifestBuf, manifest)
+	}
+	return manifestBuf, nil
 }
 
 // fileExists checks if a file exists and is not a directory before we
