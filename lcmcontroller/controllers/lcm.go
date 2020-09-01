@@ -271,11 +271,11 @@ func (c *LcmController) Query() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	/* err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
-	} */
+	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	appInsId, err := c.getAppInstId(clientIp)
