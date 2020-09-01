@@ -20,15 +20,15 @@ import (
 	"github.com/astaxie/beego"
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
-	_ "lcmbroker/config"
-	"lcmbroker/controllers"
-	_ "lcmbroker/controllers"
-	_ "lcmbroker/models"
-	_ "lcmbroker/routers"
-	"lcmbroker/util"
+	_ "lcmcontroller/config"
+	"lcmcontroller/controllers"
+	_ "lcmcontroller/controllers"
+	_ "lcmcontroller/models"
+	_ "lcmcontroller/routers"
+	"lcmcontroller/util"
 )
 
-// Start lcmbroker application
+// Start lcmcontroller application
 func main() {
 	tlsConf, err := util.TLSConfig("HTTPSCertFile")
 	if err != nil {

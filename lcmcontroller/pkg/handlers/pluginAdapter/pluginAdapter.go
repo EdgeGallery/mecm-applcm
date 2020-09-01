@@ -17,7 +17,7 @@ package pluginAdapter
 
 import (
 	"context"
-	"lcmbroker/util"
+	"lcmcontroller/util"
 	"mime/multipart"
 	"time"
 
