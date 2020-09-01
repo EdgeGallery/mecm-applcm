@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 	"io"
 	"io/ioutil"
-	"lcmbroker/models"
+	"lcmcontroller/models"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -39,8 +39,8 @@ import (
 	"unsafe"
 
 	log "github.com/sirupsen/logrus"
-	"lcmbroker/pkg/handlers/pluginAdapter"
-	"lcmbroker/util"
+	"lcmcontroller/pkg/handlers/pluginAdapter"
+	"lcmcontroller/util"
 	"os"
 )
 

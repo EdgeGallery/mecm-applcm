@@ -3,8 +3,8 @@ package pluginAdapter
 import (
 	"errors"
 	log "github.com/sirupsen/logrus"
-	"lcmbroker/pkg/plugin"
-	"lcmbroker/util"
+	"lcmcontroller/pkg/plugin"
+	"lcmcontroller/util"
 )
 
 const (
