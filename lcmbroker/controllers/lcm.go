@@ -20,7 +20,9 @@ package controllers
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/buger/jsonparser"
 	"github.com/ghodss/yaml"
@@ -30,7 +32,9 @@ import (
 	"io/ioutil"
 	"lcmbroker/models"
 	"mime/multipart"
+	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unsafe"
 
@@ -265,12 +269,118 @@ func (c *LcmController) Query() {
 
 // Query KPI
 func (c *LcmController) QueryKPI() {
-	log.Info("Query KPI request received.")
+
+	fmt.Println("Performing Http Get...QueryKPI")
+
+	var metricInfo models.MetricInfo
+
+	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = util.ValidateAccessToken(accessToken)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
+	hostIp, err := c.getHostIP(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	prometheusPort := util.GetAppConfig("promethuesPort")
+	cpu, errCpu:= setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores) " +
+		"/ sum(kube_node_status_allocatable_cpu_cores)")
+
+	if errCpu != nil {
+		log.Fatalln(errCpu)
+	}
+	fmt.Println("API Response as String cpu:\n" + cpu)
+	mem, errMem := setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query" +
+		"=sum(kube_pod_container_resource_requests_memory_bytes) / sum(kube_node_status_allocatable_memory_bytes)")
+	if errMem != nil {
+		log.Fatalln(errMem)
+	}
+	fmt.Println("API Response as String Mem:\n" + mem)
+	disk, err := setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query=(sum (node_filesystem_size_bytes) - sum (node_filesystem_free_bytes)) / sum (node_filesystem_size_bytes)")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println("API Response as String disk:\n" + disk)
+	metricInfo.CpuUsage = cpu
+	metricInfo.MemUsage = mem
+	metricInfo.DiskUsage = disk
+	metricInfoJson, err := json.Marshal(metricInfo)
+	if err != nil {
+		log.Info("Failed to json marshal")
+		return
+	}
+	log.Info("metricInfoJson", metricInfoJson)
+	log.Info("appJson", metricInfoJson)
+	return
+}
+
+// Query KPI
+func setGet(url string) (string, error) {
+	fmt.Println("Performing Http setGet")
+
+	//url
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+	body, err2 := ioutil.ReadAll(resp.Body)
+	if err2 != nil {
+		return "", err2
+	}
+	log.Info("response is received")
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
+	}
+	return string(body), nil
 }
 
 // Query Mep capabilities
-func (c *LcmController) QueryMepCapabilities() {
-	log.Info("Query mep capabilities request received.")
+func (c *LcmController) QueryMepCapabilities()  {
+	fmt.Println("Performing Http Get QueryMepCapabilities")
+	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = util.ValidateAccessToken(accessToken)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
+	hostIp, err := c.getHostIP(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	mepPort := util.GetAppConfig("mepPort")
+	mepCapabilities, err := http.Get("http://" +hostIp + ":" +mepPort+"/mec/v1/mgmt/tenant/6fb25e82-c361-4f5f-91c4-0f8835519db1/hosts/"+ hostIp +":"+mepPort + "/mep-capabilities")
+	mepJson, err := json.Marshal(mepCapabilities)
+	log.Info("appJson", mepJson)
+	return
+
 }
 
 // Write error response
