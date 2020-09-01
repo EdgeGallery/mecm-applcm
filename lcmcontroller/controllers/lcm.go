@@ -241,7 +241,7 @@ func (c *LcmController) Terminate() {
 		pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 	default:
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return
 	}
 
@@ -292,11 +292,10 @@ func (c *LcmController) Query() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		//pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
-		pluginInfo = "119.8.125.174" + ":" + "8485"
+		pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 	default:
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return
 	}
 
@@ -566,7 +565,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 		pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 		return artifact, pluginInfo, nil
 	default:
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return "", "", errors.New("deployment type is not helm based")
 	}
 }
