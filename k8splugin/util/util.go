@@ -53,6 +53,7 @@ const Success = "Success"
 const Failure = "Failure"
 const ActionConfig = "Unable to initialize action config"
 const HelmDriver = "HELM_DRIVER"
+const AppInsId = "app_ins_id"
 
 // Validate server port
 func ValidateServerPort(serverPort string) (bool, error) {

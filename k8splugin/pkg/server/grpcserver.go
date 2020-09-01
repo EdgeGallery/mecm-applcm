@@ -108,7 +108,7 @@ func (s *ServerGRPC) Listen() (err error) {
 func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
 
 	// Input validation
-	hostIp, _, err := s.validateInputParamsForQuery(req)
+	hostIp, appInsId, err := s.validateInputParamsForQuery(req)
 	if err != nil {
 		return
 	}
@@ -124,7 +124,7 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 		AppInsId: appInsId,
 	}
 	s.initDbAdapter()
-	readErr := s.db.ReadData(appInstanceRecord, "app_ins_id")
+	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
 		return nil, s.logError(status.Errorf(codes.InvalidArgument,
 			"App info record does not exist in database. Err: %s", readErr))
@@ -154,7 +154,7 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 		AppInsId: appInsId,
 	}
 	s.initDbAdapter()
-	readErr := s.db.ReadData(appInstanceRecord, "app_ins_id")
+	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
 		return nil, s.logError(status.Errorf(codes.InvalidArgument,
 			"App info record does not exist in database. Err: %s", readErr))
@@ -543,7 +543,7 @@ func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName st
 		WorkloadId: releaseName,
 	}
 	s.initDbAdapter()
-	err = s.db.InsertOrUpdateData(appInfoRecord, "app_ins_id")
+	err = s.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		return s.logError(status.Errorf(codes.InvalidArgument,
 			"Failed to save app info record to database. Err: %s", err))

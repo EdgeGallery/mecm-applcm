@@ -260,7 +260,7 @@ func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, c
 
 	totalCpuUsage, totalMemUsage, totalDiskUsage, err := getTotalCpuDiskMemory(clientset)
 	if err != nil {
-		return "", err
+		return appInfo, err
 	}
 
 	for _, labelSelector := range labelSelector {
