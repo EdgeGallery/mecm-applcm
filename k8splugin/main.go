@@ -23,14 +23,13 @@ import (
 	_ "k8splugin/models"
 	_ "k8splugin/pgdb"
 	"k8splugin/pkg/server"
-	"k8splugin/util"
 	"os"
 	"strconv"
 )
 
 // Variables to be defined in deployment file
 var (
-	serverPort  = os.Getenv("HELM_PLUGIN_PORT")
+	serverPort  = "8485"
 	certificate = os.Getenv("CERTIFICATE_PATH")
 	key         = os.Getenv("KEY_PATH")
 )
@@ -40,10 +39,6 @@ func main() {
 	log.Info("Started k8s plugin server")
 
 	// Create GRPC server
-	serPortValid, validateSerPortErr := util.ValidateServerPort(serverPort)
-	if validateSerPortErr != nil || !serPortValid {
-		log.Fatalf("invalid port: %v", validateSerPortErr)
-	}
 	sp, err := strconv.Atoi(serverPort)
 	serverConfig := server.ServerGRPCConfig{Certificate: certificate, Port: sp, Key: key}
 	grpcServer := server.NewServerGRPC(serverConfig)

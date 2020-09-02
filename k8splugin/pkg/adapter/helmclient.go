@@ -17,12 +17,12 @@
 package adapter
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ghodss/yaml"
+	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/client-go/rest"
 	"k8splugin/models"
 	"k8splugin/util"
@@ -172,6 +172,9 @@ func (hc *HelmClient) UninstallChart(relName string) error {
 // Query a given chart
 func (hc *HelmClient) QueryChart(relName string) (string, error) {
 	log.Info("In Query Chart function")
+	var labelSelector models.LabelSelector
+	var label models.Label
+
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
 		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
@@ -192,17 +195,17 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 			relName, err)
 		return "", err
 	}
-	data := make([]byte, 0)
+
 	for i := 0; i < len(manifest); i++ {
-		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" {
+		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service"  {
 			appName := manifest[i].Metadata.Name
 			if  manifest[i].Metadata.Labels.App != "" {
 				appName = manifest[i].Metadata.Labels.App
 			}
-			pod := "POD_NAME=$(kubectl get pods --namespace default" +
-				" -l " + "app=" +  appName + " -o" + "\n"
-
-			data = append(data, []byte(pod)...)
+			pod := "app=" +  appName
+			label.Kind = manifest[i].Kind
+			label.Selector = pod
+			labelSelector.Label = append(labelSelector.Label, label)
 		}
 	}
 
@@ -217,8 +220,7 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 		return "", err
 	}
 
-	labelSelector := getLabelSelector(string(data))
-	appInfo, err := getPodStatistics(labelSelector, clientset, config)
+	appInfo, err := getResourcesBySelector(labelSelector, clientset, config)
 	if err != nil {
 		log.Error("Failed to get pod statistics")
 		return "", err
@@ -232,29 +234,9 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 	return string(appInfoJson), nil
 }
 
-// Get label selector
-func getLabelSelector(helmResponse string) []string {
-	var labelSelectorArr []string
-	scanner := bufio.NewScanner(strings.NewReader(helmResponse))
-	for scanner.Scan() {
-		str := scanner.Text()
-		if strings.Contains(str, "POD_NAME=") {
-			splitArr := strings.Fields(str)
-			for i := 0; i < len(splitArr); i++ {
-				result:= strings.Compare(splitArr[i], "-l")
-				if result == 0 && i <= len(splitArr) {
-					all := strings.ReplaceAll(splitArr[i+1], "\\\\", "")
-					replaceAll := strings.ReplaceAll(all, "\"", "")
-					labelSelectorArr = append(labelSelectorArr, replaceAll)
-				}
-			}
-		}
-	}
-	return labelSelectorArr
-}
-
-// Get pod statistics
-func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, config *rest.Config) (appInfo models.AppInfo, err error) {
+// Get resources by selector
+func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
+	config *rest.Config) (appInfo models.AppInfo, err error) {
 	var containerInfo models.ContainerInfo
 	var podInfo models.PodInfo
 
@@ -263,51 +245,64 @@ func getPodStatistics(labelSelector []string, clientset *kubernetes.Clientset, c
 		return appInfo, err
 	}
 
-	for _, labelSelector := range labelSelector {
-		options := metav1.ListOptions{
-			LabelSelector: labelSelector,
-		}
+	for _, label := range labelSelector.Label {
+		if label.Kind == "Pod" || label.Kind == "Deployment"{
+			options := metav1.ListOptions{
+				LabelSelector: label.Selector,
+			}
 
-		pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
-		if err != nil {
-			return appInfo, err
-		}
-
-		for _, pod := range pods.Items {
-			podName := pod.GetObjectMeta().GetName()
-			mc, err := metrics.NewForConfig(config)
+			pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
 			if err != nil {
 				return appInfo, err
 			}
 
-			podMetrics, err := mc.MetricsV1beta1().PodMetricses(metav1.NamespaceDefault).Get(context.Background(), podName, metav1.GetOptions{})
-			if err != nil {
-				return appInfo, err
-			}
+			for _, pod := range pods.Items {
+				podName := pod.GetObjectMeta().GetName()
 
-			for _, container := range podMetrics.Containers {
-				cpuUsage := container.Usage.Cpu().String()
-				cpuUsage = strings.TrimSuffix(cpuUsage, "n")
-				memory, _ := container.Usage.Memory().AsInt64()
-				memUsage := strconv.FormatInt(memory, 10)
-				disk, _ := container.Usage.StorageEphemeral().AsInt64()
-				diskUsage := strconv.FormatInt(disk, 10)
+				podMetrics, err  := getPodMetrics(config, podName)
+				if err != nil {
+					return appInfo, err
+				}
 
-				containerInfo.ContainerName = container.Name
-				containerInfo.MetricsUsage.CpuUsage = cpuUsage + "/" + totalCpuUsage
-				containerInfo.MetricsUsage.MemUsage = memUsage + "/" + totalMemUsage
-				containerInfo.MetricsUsage.DiskUsage = diskUsage + "/" + totalDiskUsage
-				podInfo.Containers = append(podInfo.Containers, containerInfo)
+				for _, container := range podMetrics.Containers {
+					cpuUsage := container.Usage.Cpu().String()
+					cpuUsage = strings.TrimSuffix(cpuUsage, "n")
+					memory, _ := container.Usage.Memory().AsInt64()
+					memUsage := strconv.FormatInt(memory, 10)
+					disk, _ := container.Usage.StorageEphemeral().AsInt64()
+					diskUsage := strconv.FormatInt(disk, 10)
+
+					containerInfo.ContainerName = container.Name
+					containerInfo.MetricsUsage.CpuUsage = cpuUsage + "/" + totalCpuUsage
+					containerInfo.MetricsUsage.MemUsage = memUsage + "/" + totalMemUsage
+					containerInfo.MetricsUsage.DiskUsage = diskUsage + "/" + totalDiskUsage
+					podInfo.Containers = append(podInfo.Containers, containerInfo)
+				}
+				podInfo.PodName = podName
+				phase := pod.Status.Phase;
+				podInfo.PodStatus = string(phase)
 			}
-			podInfo.PodName = podName
-			phase := pod.Status.Phase;
-			podInfo.PodStatus = string(phase)
+			appInfo.Pods = append(appInfo.Pods, podInfo)
 		}
-		appInfo.Pods = append(appInfo.Pods, podInfo)
 	}
 
 
 	return appInfo, nil
+}
+
+// Get Pod metrics
+func getPodMetrics(config *rest.Config, podName string) (podMetrics *v1beta1.PodMetrics, err error) {
+	mc, err := metrics.NewForConfig(config)
+	if err != nil {
+		return podMetrics, err
+	}
+
+	podMetrics, err = mc.MetricsV1beta1().PodMetricses(metav1.NamespaceDefault).Get(context.Background(),
+		podName, metav1.GetOptions{})
+	if err != nil {
+		return podMetrics, err
+	}
+	return podMetrics, nil
 }
 
 // Get total cpu disk and memory metrics

@@ -58,4 +58,14 @@ type ContainerStats struct {
 	DiskUsage string `json:"diskusage"`
 }
 
+// Label Selector
+type LabelSelector struct {
+	Label []Label
+}
+
+// Label Info
+type Label struct {
+	Kind string
+	Selector string
+}
 

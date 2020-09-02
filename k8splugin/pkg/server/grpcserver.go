@@ -117,7 +117,7 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 	hc, err := adapter.NewHelmClient(hostIp)
 	if os.IsNotExist(err) {
 		return nil, s.logError(status.Errorf(codes.InvalidArgument,
-			"Kubeconfig corresponding to given Edge can't be found. Err: %s", err))
+			"Kubeconfig corresponding to given Edge can't be found."))
 	}
 
 	appInstanceRecord := &models.AppInstanceInfo{
@@ -139,6 +139,7 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 	resp = &lcmservice.QueryResponse{
 		Response: r,
 	}
+	log.Info("Query is success")
 	return resp, nil
 }
 
