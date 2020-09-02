@@ -46,6 +46,7 @@ const Failure string = "Failure"
 const ClientIpaddressInvalid = "cientIp address is invalid"
 const FailedToSendMetadataInfo string = "failed to send metadata information"
 const FailedToCreateClient string = "failed to create client: %v"
+const DeployTypeIsNotHelmBased = "Deployment type is not helm based"
 const InvalidToken string = "invalid token"
 const MaxSize int = 20
 const MaxBackups int = 50

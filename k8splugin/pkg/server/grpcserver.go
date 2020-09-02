@@ -108,26 +108,38 @@ func (s *ServerGRPC) Listen() (err error) {
 func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
 
 	// Input validation
-	if req.GetHostIp() == "" {
-		return nil, s.logError(status.Errorf(codes.InvalidArgument, "HostIP can't be null", err))
+	hostIp, appInsId, err := s.validateInputParamsForQuery(req)
+	if err != nil {
+		return
 	}
 
 	// Create HELM Client
-	hc, err := adapter.NewHelmClient(req.GetHostIp())
+	hc, err := adapter.NewHelmClient(hostIp)
 	if os.IsNotExist(err) {
 		return nil, s.logError(status.Errorf(codes.InvalidArgument,
-			"Kubeconfig corresponding to given Edge can't be found. Err: %s", err))
+			"Kubeconfig corresponding to given Edge can't be found."))
+	}
+
+	appInstanceRecord := &models.AppInstanceInfo{
+		AppInsId: appInsId,
+	}
+	s.initDbAdapter()
+	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
+	if readErr != nil {
+		return nil, s.logError(status.Errorf(codes.InvalidArgument,
+			"App info record does not exist in database. Err: %s", readErr))
 	}
 
 	// Query Chart
-	r, err := hc.QueryChart("1")
+	r, err := hc.QueryChart(appInstanceRecord.WorkloadId)
 	if err != nil {
 		return nil, s.logError(status.Errorf(codes.NotFound, "Chart not found for workloadId: %s. Err: %s",
-			"1", err))
+			appInstanceRecord.WorkloadId, err))
 	}
 	resp = &lcmservice.QueryResponse{
 		Response: r,
 	}
+	log.Info("Query is success")
 	return resp, nil
 }
 
@@ -135,7 +147,7 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
 	log.Info("In Terminate")
 
-	hostIp, appInsId, resp, err := s.validateInputParamsForTerm(req)
+	hostIp, appInsId, err := s.validateInputParamsForTerm(req)
 	if err != nil {
 		return
 	}
@@ -143,7 +155,7 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 		AppInsId: appInsId,
 	}
 	s.initDbAdapter()
-	readErr := s.db.ReadData(appInstanceRecord, "app_ins_id")
+	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
 		return nil, s.logError(status.Errorf(codes.InvalidArgument,
 			"App info record does not exist in database. Err: %s", readErr))
@@ -377,29 +389,29 @@ func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_Insta
 
 // Validate input parameters for termination
 func (s *ServerGRPC) validateInputParamsForTerm(
-	req *lcmservice.TerminateRequest) (hostIp string, appInsId string, resp *lcmservice.TerminateResponse, err error) {
+	req *lcmservice.TerminateRequest) (hostIp string, appInsId string, err error) {
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", "", nil, s.logError(status.Errorf(codes.InvalidArgument,
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
 			util.AccssTokenIsInvalid, err))
 	}
 
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", nil, s.logError(status.Errorf(codes.InvalidArgument,
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
 			util.HostIpIsInvalid, err))
 	}
 
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", nil, s.logError(status.Errorf(codes.InvalidArgument,
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
 			"AppInsId is invalid", err))
 	}
 
-	return hostIp, appInsId, nil, nil
+	return hostIp, appInsId, nil
 }
 
 // Validate input parameters for upload configuration
@@ -430,6 +442,34 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	}
 
 	return hostIp, nil
+}
+
+// Validate input parameters for Query
+func (s *ServerGRPC) validateInputParamsForQuery(
+	req *lcmservice.QueryRequest) (hostIp string, appInsId string, err error) {
+
+	accessToken := req.GetAccessToken()
+	err = util.ValidateAccessToken(accessToken)
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
+			util.AccssTokenIsInvalid, err))
+	}
+
+	hostIp = req.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
+			util.HostIpIsInvalid, err))
+	}
+
+	appInsId = req.GetAppInstanceId()
+	err = util.ValidateUUID(appInsId)
+	if err != nil {
+		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
+			"AppInsId is invalid", err))
+	}
+
+	return hostIp, appInsId,nil
 }
 
 // Get helm package
@@ -504,7 +544,7 @@ func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName st
 		WorkloadId: releaseName,
 	}
 	s.initDbAdapter()
-	err = s.db.InsertOrUpdateData(appInfoRecord, "app_ins_id")
+	err = s.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		return s.logError(status.Errorf(codes.InvalidArgument,
 			"Failed to save app info record to database. Err: %s", err))

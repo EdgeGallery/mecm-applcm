@@ -241,7 +241,7 @@ func (c *LcmController) Terminate() {
 		pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 	default:
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return
 	}
 
@@ -261,6 +261,56 @@ func (c *LcmController) Terminate() {
 // Query
 func (c *LcmController) Query() {
 	log.Info("Application query request received.")
+	var pluginInfo string
+
+	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = util.ValidateAccessToken(accessToken)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	switch appInfoRecord.DeployType {
+	case "helm":
+		pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
+	default:
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
+		return
+	}
+
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		return
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.HostIp)
+	if err != nil {
+		log.Info("Query failed")
+		return
+	}
+	c.Data["json"] = response
+	c.ServeJSON()
 }
 
 // Query KPI
@@ -515,7 +565,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 		pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
 		return artifact, pluginInfo, nil
 	default:
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Deployment type is not helm based")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return "", "", errors.New("deployment type is not helm based")
 	}
 }

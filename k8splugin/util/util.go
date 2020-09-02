@@ -53,15 +53,7 @@ const Success = "Success"
 const Failure = "Failure"
 const ActionConfig = "Unable to initialize action config"
 const HelmDriver = "HELM_DRIVER"
-
-// Validate server port
-func ValidateServerPort(serverPort string) (bool, error) {
-	serPortIsValid, validateSerPortErr := regexp.MatchString(PORT_REGEX, serverPort)
-	if validateSerPortErr != nil || !serPortIsValid {
-		return serPortIsValid, validateSerPortErr
-	}
-	return true, nil
-}
+const AppInsId = "app_ins_id"
 
 // Validate password
 func ValidatePassword(password *[]byte) (bool, error) {
