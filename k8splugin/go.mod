@@ -14,6 +14,7 @@ require (
 	google.golang.org/grpc v1.31.0
 	google.golang.org/protobuf v1.25.0
 	helm.sh/helm/v3 v3.3.0
+	k8s.io/api v0.18.4
 	k8s.io/apimachinery v0.18.4
 	k8s.io/client-go v0.18.4
 	k8s.io/metrics v0.18.4

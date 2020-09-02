@@ -22,8 +22,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ghodss/yaml"
-	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8splugin/models"
 	"k8splugin/util"
 	"os"
@@ -237,13 +238,6 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 // Get resources by selector
 func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
 	config *rest.Config) (appInfo models.AppInfo, err error) {
-	var containerInfo models.ContainerInfo
-	var podInfo models.PodInfo
-
-	totalCpuUsage, totalMemUsage, totalDiskUsage, err := getTotalCpuDiskMemory(clientset)
-	if err != nil {
-		return appInfo, err
-	}
 
 	for _, label := range labelSelector.Label {
 		if label.Kind == "Pod" || label.Kind == "Deployment"{
@@ -256,38 +250,63 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 				return appInfo, err
 			}
 
-			for _, pod := range pods.Items {
-				podName := pod.GetObjectMeta().GetName()
-
-				podMetrics, err  := getPodMetrics(config, podName)
-				if err != nil {
-					return appInfo, err
-				}
-
-				for _, container := range podMetrics.Containers {
-					cpuUsage := container.Usage.Cpu().String()
-					cpuUsage = strings.TrimSuffix(cpuUsage, "n")
-					memory, _ := container.Usage.Memory().AsInt64()
-					memUsage := strconv.FormatInt(memory, 10)
-					disk, _ := container.Usage.StorageEphemeral().AsInt64()
-					diskUsage := strconv.FormatInt(disk, 10)
-
-					containerInfo.ContainerName = container.Name
-					containerInfo.MetricsUsage.CpuUsage = cpuUsage + "/" + totalCpuUsage
-					containerInfo.MetricsUsage.MemUsage = memUsage + "/" + totalMemUsage
-					containerInfo.MetricsUsage.DiskUsage = diskUsage + "/" + totalDiskUsage
-					podInfo.Containers = append(podInfo.Containers, containerInfo)
-				}
-				podInfo.PodName = podName
-				phase := pod.Status.Phase;
-				podInfo.PodStatus = string(phase)
+			podInfo, err := getPodInfo(pods, clientset, config)
+			if err != nil {
+				return appInfo, err
 			}
+
 			appInfo.Pods = append(appInfo.Pods, podInfo)
 		}
 	}
 
-
 	return appInfo, nil
+}
+
+// Get pod information
+func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config) (podInfo models.PodInfo, err error) {
+	for _, pod := range pods.Items {
+		podName := pod.GetObjectMeta().GetName()
+		podMetrics, err  := getPodMetrics(config, podName)
+		if err != nil {
+			return podInfo, err
+		}
+
+		podInfo, err = updateContainerInfo(podMetrics, clientset, podInfo)
+		if err != nil {
+			return podInfo, err
+		}
+
+		podInfo.PodName = podName
+		phase := pod.Status.Phase;
+		podInfo.PodStatus = string(phase)
+	}
+
+	return podInfo, nil
+}
+
+// Update container information
+func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.Clientset, podInfo models.PodInfo) (models.PodInfo, error) {
+	var containerInfo models.ContainerInfo
+	totalCpuUsage, totalMemUsage, totalDiskUsage, err := getTotalCpuDiskMemory(clientset)
+	if err != nil {
+		return podInfo, err
+	}
+
+	for _, container := range podMetrics.Containers {
+		cpuUsage := container.Usage.Cpu().String()
+		cpuUsage = strings.TrimSuffix(cpuUsage, "n")
+		memory, _ := container.Usage.Memory().AsInt64()
+		memUsage := strconv.FormatInt(memory, 10)
+		disk, _ := container.Usage.StorageEphemeral().AsInt64()
+		diskUsage := strconv.FormatInt(disk, 10)
+
+		containerInfo.ContainerName = container.Name
+		containerInfo.MetricsUsage.CpuUsage = cpuUsage + "/" + totalCpuUsage
+		containerInfo.MetricsUsage.MemUsage = memUsage + "/" + totalMemUsage
+		containerInfo.MetricsUsage.DiskUsage = diskUsage + "/" + totalDiskUsage
+		podInfo.Containers = append(podInfo.Containers, containerInfo)
+	}
+	return podInfo, nil
 }
 
 // Get Pod metrics
