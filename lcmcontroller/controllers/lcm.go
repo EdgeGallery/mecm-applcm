@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/buger/jsonparser"
 	"github.com/ghodss/yaml"
@@ -320,6 +321,9 @@ func (c *LcmController) Query() {
 
 // Query KPI
 func (c *LcmController) QueryKPI() {
+
+	fmt.Println("Performing Http Get...QueryKPI")
+
 	var metricInfo models.MetricInfo
 
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
