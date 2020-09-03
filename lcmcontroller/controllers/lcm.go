@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/buger/jsonparser"
 	"github.com/ghodss/yaml"
@@ -185,9 +184,11 @@ func (c *LcmController) Instantiate() {
 	}
 
 	c.openPackage(pkgPath)
-	var yamlFile = PackageFolderPath + packageName + "/Definitions/" + "MainServiceTemplate.yaml"
-	deployType := c.getApplicationDeploymentType(yamlFile)
-	deployType = "helm"
+	var mainServiceTemplateMf = PackageFolderPath + packageName + "/MainServiceTemplate.mf"
+	deployType, err := c.getDeployType(mainServiceTemplateMf)
+	if err != nil {
+		return
+	}
 
 	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType)
 	if err != nil {
@@ -319,9 +320,6 @@ func (c *LcmController) Query() {
 
 // Query KPI
 func (c *LcmController) QueryKPI() {
-
-	fmt.Println("Performing Http Get...QueryKPI")
-
 	var metricInfo models.MetricInfo
 
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
@@ -482,22 +480,32 @@ func (c *LcmController) getDeploymentArtifact(dir string, ext string) (string, e
 	return "", err
 }
 
-// Decodes application descriptor
-func (c *LcmController) getApplicationDeploymentType(serviceTemplate string) string {
-	yamlFile, err := ioutil.ReadFile(serviceTemplate)
+// Get deployment type from main service template file
+func (c *LcmController) getApplicationDeploymentType(mainServiceTemplateMf string) (string, error) {
+
+	var deployType string
+	templateMf, err := ioutil.ReadFile(mainServiceTemplateMf)
 	if err != nil {
-		c.writeResponse("Failed to read service template file", util.StatusInternalServerError)
+		c.writeErrorResponse("Failed to read file", util.StatusInternalServerError)
 	}
 
-	jsonData, err := yaml.YAMLToJSON(yamlFile)
+	jsondata, err := yaml.YAMLToJSON(templateMf)
 	if err != nil {
-		c.writeResponse("Failed to parse yaml file", util.StatusInternalServerError)
+		c.writeErrorResponse("failed to convert from YAML to JSON", util.StatusInternalServerError)
 	}
 
-	deployType, _, _, _ := jsonparser.Get(jsonData, "topology_template", "node_templates", "face_recognition", "properties", "type")
+	helmDeploy, _, _, _ := jsonparser.Get(jsondata, util.NonManoArtifactSets, "applcm_helm_chart_deployment")
+	k8sDeploy, _, _, _ := jsonparser.Get(jsondata, util.NonManoArtifactSets, "applcm_k8s_chart_deployment")
+	vmDeploy, _, _, _ := jsonparser.Get(jsondata, util.NonManoArtifactSets, "applcm_VM_chart_deployment")
 
-	//return appPackageInfo
-	return string(deployType)
+	if helmDeploy != nil {
+		deployType = "helm"
+	} else if k8sDeploy != nil {
+		deployType = "kubernetes"
+	} else if vmDeploy != nil {
+		deployType = "vm"
+	}
+	return deployType, nil
 }
 
 // Opens package
