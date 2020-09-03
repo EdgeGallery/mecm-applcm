@@ -320,8 +320,6 @@ func (c *LcmController) Query() {
 // Query KPI
 func (c *LcmController) QueryKPI() {
 
-	fmt.Println("Performing Http Get...QueryKPI")
-
 	var metricInfo models.MetricInfo
 
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
@@ -347,24 +345,19 @@ func (c *LcmController) QueryKPI() {
 		return
 	}
 	prometheusPort := util.GetAppConfig("promethuesPort")
-	cpu, errCpu:= setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores) " +
-		"/ sum(kube_node_status_allocatable_cpu_cores)")
+	cpu, errCpu:= getResourceInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.CpuQuery)
 
 	if errCpu != nil {
 		log.Fatalln(errCpu)
 	}
-	fmt.Println("API Response as String cpu:\n" + cpu)
-	mem, errMem := setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query" +
-		"=sum(kube_pod_container_resource_requests_memory_bytes) / sum(kube_node_status_allocatable_memory_bytes)")
+	mem, errMem := getResourceInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.MemQuery)
 	if errMem != nil {
 		log.Fatalln(errMem)
 	}
-	fmt.Println("API Response as String Mem:\n" + mem)
-	disk, err := setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query=(sum (node_filesystem_size_bytes) - sum (node_filesystem_free_bytes)) / sum (node_filesystem_size_bytes)")
+	disk, err := getResourceInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.DiskQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("API Response as String disk:\n" + disk)
 	metricInfo.CpuUsage = cpu
 	metricInfo.MemUsage = mem
 	metricInfo.DiskUsage = disk
@@ -379,7 +372,7 @@ func (c *LcmController) QueryKPI() {
 }
 
 // Query KPI
-func setGet(url string) (string, error) {
+func getResourceInfo(url string) (string, error) {
 	fmt.Println("Performing Http setGet")
 
 	//url
