@@ -31,3 +31,10 @@ type AppInfoRecord struct {
 	HostIp       string
 	DeployType   string
 }
+
+// Metric Information
+type MetricInfo struct {
+	CpuUsage string `json:"cpuusage"`
+	MemUsage string `json:"memusgae"`
+	DiskUsage string `json:"diskusgae"`
+}
