@@ -26,16 +26,21 @@ import (
 	"unsafe"
 )
 
+// Variables are required for db connections
+var (
+	DB_SSL_MODE        = "enable"
+	DB_SSL_ROOT_CER   = "ssl/ca.crt"
+)
 
 // Init database
 func init() {
-	dbUser := os.Getenv("dbUser")
-	dbPwd := os.Getenv("dbPwd")
-	dbName := os.Getenv("dbName")
-	dbHost := os.Getenv("dbHost")
-	dbPort := os.Getenv("dbPort")
-	dbSslMode := os.Getenv("dbSslMode")
-	dbSslRootCert := os.Getenv("db_sslrootcert")
+	dbUser := os.Getenv("K8S_PLUGIN_USER")
+	dbPwd := os.Getenv("K8S_PLUGIN_DB_PASSWORD")
+	dbName := os.Getenv("K8S_PLUGIN_DB")
+	dbHost := os.Getenv("K8S_PLUGIN_DB_HOST")
+	dbPort := os.Getenv("K8S_PLUGIN_DB_PORT")
+	dbSslMode := os.Getenv(DB_SSL_MODE)
+	dbSslRootCert := os.Getenv(DB_SSL_ROOT_CER)
 
 	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
