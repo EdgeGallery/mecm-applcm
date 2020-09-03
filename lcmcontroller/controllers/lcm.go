@@ -185,7 +185,7 @@ func (c *LcmController) Instantiate() {
 
 	c.openPackage(pkgPath)
 	var mainServiceTemplateMf = PackageFolderPath + packageName + "/MainServiceTemplate.mf"
-	deployType, err := c.getDeployType(mainServiceTemplateMf)
+	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
 	if err != nil {
 		return
 	}
