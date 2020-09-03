@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/buger/jsonparser"
 	"github.com/ghodss/yaml"
@@ -319,7 +318,6 @@ func (c *LcmController) Query() {
 
 // Query KPI
 func (c *LcmController) QueryKPI() {
-
 	var metricInfo models.MetricInfo
 
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
@@ -336,7 +334,6 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
-
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
 	hostIp, err := c.getHostIP(clientIp)
@@ -345,16 +342,16 @@ func (c *LcmController) QueryKPI() {
 		return
 	}
 	prometheusPort := util.GetAppConfig("promethuesPort")
-	cpu, errCpu:= getResourceInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.CpuQuery)
+	cpu, errCpu:= getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.CpuQuery)
 
 	if errCpu != nil {
 		log.Fatalln(errCpu)
 	}
-	mem, errMem := getResourceInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.MemQuery)
+	mem, errMem := getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.MemQuery)
 	if errMem != nil {
 		log.Fatalln(errMem)
 	}
-	disk, err := getResourceInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.DiskQuery)
+	disk, err := getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.DiskQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -372,9 +369,7 @@ func (c *LcmController) QueryKPI() {
 }
 
 // Query KPI
-func getResourceInfo(url string) (string, error) {
-	fmt.Println("Performing Http setGet")
-
+func getHostInfo(url string) (string, error) {
 	//url
 	resp, err := http.Get(url)
 	if err != nil {
@@ -395,7 +390,6 @@ func getResourceInfo(url string) (string, error) {
 
 // Query Mep capabilities
 func (c *LcmController) QueryMepCapabilities()  {
-	fmt.Println("Performing Http Get QueryMepCapabilities")
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
@@ -423,7 +417,6 @@ func (c *LcmController) QueryMepCapabilities()  {
 	mepJson, err := json.Marshal(mepCapabilities)
 	log.Info("appJson", mepJson)
 	return
-
 }
 
 // Write error response
