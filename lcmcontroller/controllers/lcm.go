@@ -398,7 +398,7 @@ func (c *LcmController) QueryKPI() {
 	}
 	log.Info("metricInfoJson", metricInfoJson)
 	log.Info("appJson", metricInfoJson)
-	return
+	c.ServeJSON()
 }
 
 // Query KPI
@@ -449,9 +449,21 @@ func (c *LcmController) QueryMepCapabilities()  {
 		util.ClearByteArray(bKey)
 		return
 	}
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	mepPort := util.GetAppConfig("mepPort")
-	mepCapabilities, err := http.Get("http://" +hostIp + ":" +mepPort+"/mec/v1/mgmt/tenant/6fb25e82-c361-4f5f-91c4-0f8835519db1/hosts/"+ hostIp +":"+mepPort + "/mep-capabilities")
+	mepCapabilities, err := http.Get(util.HttpUrl +hostIp + ":" +mepPort+"/mec/v1/mgmt/tenant/" +tenantId+ "/hosts/"+ hostIp +":"+mepPort + "/mep-capabilities")
+
 	mepJson, err := json.Marshal(mepCapabilities)
+
+	if mepCapabilities.StatusCode >= 200 && mepCapabilities.StatusCode <= 299 {
+		c.ServeJSON()
+	}
 	log.Info("appJson", mepJson)
 	return
 }
