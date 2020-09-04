@@ -382,10 +382,10 @@ func getHostInfo(url string) (string, error) {
 	}
 	log.Info("response is received")
 
-	if resp.StatusCode != http.StatusCreated {
-		return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
+	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+		return string(body), nil
 	}
-	return string(body), nil
+	return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
 
 // Query Mep capabilities
