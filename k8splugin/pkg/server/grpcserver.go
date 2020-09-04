@@ -33,32 +33,34 @@ import (
 	"k8splugin/util"
 	"net"
 	"os"
-	"strconv"
 )
 
 var (
-	kubeconfigPath  = "/usr/app/config/"
+	kubeconfigPath = "/usr/app/config/"
 )
 
 // GRPC server
 type ServerGRPC struct {
-	server      *grpc.Server
-	port        int
-	certificate string
-	key         string
-	db          pgdb.Database
+	server       *grpc.Server
+	port         string
+	address      string
+	certificate  string
+	key          string
+	db           pgdb.Database
 	serverConfig *conf.ServerConfigurations
 }
 
 // GRPC service configuration used to create GRPC server
 type ServerGRPCConfig struct {
-	Port        int
+	Port         string
+	Address      string
 	ServerConfig *conf.ServerConfigurations
 }
 
 // Constructor to GRPC server
 func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.port = cfg.Port
+	s.address = cfg.Address
 	s.certificate = cfg.ServerConfig.Certfilepath
 	s.key = cfg.ServerConfig.Keyfilepath
 	s.serverConfig = cfg.ServerConfig
@@ -69,11 +71,11 @@ func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 // Start GRPC server and start listening on the port
 func (s *ServerGRPC) Listen() (err error) {
 	var (
-		listener  net.Listener
+		listener net.Listener
 	)
 
 	// Listen announces on the network address
-	listener, err = net.Listen("tcp", ":"+strconv.Itoa(s.port))
+	listener, err = net.Listen("tcp", s.address+":"+s.port)
 	if err != nil {
 		log.Errorf("failed to listen on specified port")
 		return err
@@ -81,7 +83,7 @@ func (s *ServerGRPC) Listen() (err error) {
 	log.Infof("Server started listening on port {}", s.port)
 
 	if !s.serverConfig.Sslnotenabled {
-		tlsConfig, err := util.GetTLSConfig(s.serverConfig, s.certificate, s.key);
+		tlsConfig, err := util.GetTLSConfig(s.serverConfig, s.certificate, s.key)
 		if err != nil {
 			log.Errorf("failed to load certificates")
 			return err
@@ -474,7 +476,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 			"AppInsId is invalid", err))
 	}
 
-	return hostIp, appInsId,nil
+	return hostIp, appInsId, nil
 }
 
 // Get helm package
@@ -510,7 +512,7 @@ func (s *ServerGRPC) getHelmPackage(stream lcmservice.AppLCM_InstantiateServer) 
 }
 
 // Get upload configuration file
-func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error){
+func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error) {
 	// Receive upload config file
 	file := bytes.Buffer{}
 	for {

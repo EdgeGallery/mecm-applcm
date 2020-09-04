@@ -20,3 +20,4 @@ server:
   certfilepath: "ssl/server_tls.crt"
   keyfilepath: "ssl/server_tls.key"
   serverport: 8095
+  httpsaddr:

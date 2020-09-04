@@ -24,7 +24,6 @@ import (
 	_ "k8splugin/pgdb"
 	"k8splugin/pkg/server"
 	"k8splugin/util"
-	"strconv"
 )
 
 const (
@@ -43,8 +42,8 @@ func main() {
 	}
 
 	// Create GRPC server
-	port, err := strconv.Atoi(config.Server.Serverport)
-	serverConfig := server.ServerGRPCConfig{Port: port, ServerConfig: &config.Server}
+	serverConfig := server.ServerGRPCConfig{Address: config.Server.Httpsaddr, Port: config.Server.Serverport,
+		ServerConfig: &config.Server}
 	grpcServer := server.NewServerGRPC(serverConfig)
 
 	// Start listening
