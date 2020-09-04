@@ -642,7 +642,7 @@ func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*mod
 		AppInsId: appInsId,
 	}
 	c.initDbAdapter()
-	readErr := c.db.ReadData(appInfoRecord, "app_ins_id")
+	readErr := c.db.ReadData(appInfoRecord, util.AppInsId)
 	if readErr != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"App info record does not exist in database")
@@ -754,7 +754,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 		TenantId:   tenantId,
 	}
 	c.initDbAdapter()
-	count, err := c.db.QueryCountForAppInfo("app_info_record", "tenant_id", tenantId)
+	count, err := c.db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
 	if err != nil {
 		return err
 	}
@@ -765,7 +765,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 		return err
 	}
 
-	err = c.db.InsertOrUpdateData(appInfoRecord, "app_ins_id")
+	err = c.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save app info record to database.")
 		return err
@@ -790,7 +790,7 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 		return err
 	}
 
-	err = c.db.InsertOrUpdateData(tenantRecord, "tenant_id")
+	err = c.db.InsertOrUpdateData(tenantRecord, util.TenantId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save tenant record to database.")
 		return err
@@ -804,7 +804,7 @@ func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
 		AppInsId:   appInsId,
 	}
 	c.initDbAdapter()
-	err := c.db.DeleteData(appInfoRecord, "app_ins_id")
+	err := c.db.DeleteData(appInfoRecord, util.AppInsId)
 	if err != nil {
 		return err
 	}
@@ -817,13 +817,13 @@ func (c *LcmController) deleteTenantRecord(tenantId string) error {
 		TenantId:   tenantId,
 	}
 	c.initDbAdapter()
-	count, err := c.db.QueryCountForAppInfo("app_info_record", "tenant_id", tenantId)
+	count, err := c.db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
 	if err != nil {
 		return err
 	}
 	log.Info("terminate count", count)
 	if count == 0 {
-		err = c.db.DeleteData(tenantRecord, "tenant_id")
+		err = c.db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
 			return err
 		}
