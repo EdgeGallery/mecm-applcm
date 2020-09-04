@@ -18,7 +18,7 @@ package conf
 
 // Configurations exported
 type Configurations struct {
-	Server       ServerConfigurations
+	Server ServerConfigurations
 }
 
 // ServerConfigurations exported
@@ -28,5 +28,6 @@ type ServerConfigurations struct {
 	Sslnotenabled bool
 	Certfilepath  string
 	Keyfilepath   string
-	Serverport string
+	Serverport    string
+	Httpsaddr     string
 }
