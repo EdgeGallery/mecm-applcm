@@ -53,6 +53,7 @@ const MaxBackups int = 50
 const MaxAge = 30
 const MaxConfigFile int64 = 5242880
 const Timeout = 5
+const NonManoArtifactSets = "non_mano_artifact_sets"
 
 const BadRequest int = 400
 const StatusUnauthorized int = 401

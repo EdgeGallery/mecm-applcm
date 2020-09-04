@@ -21,21 +21,20 @@ import (
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/util"
+	"os"
 	"strings"
 	"unsafe"
-	"os"
 )
 
 // Init database
 func init() {
-	dbUser := os.Getenv("dbUser")
-	dbPwd := os.Getenv("dbPwd")
-	dbName := os.Getenv("dbName")
-	dbHost := os.Getenv("dbHost")
-	dbPort := os.Getenv("dbPort")
-	dbSslMode := os.Getenv("dbSslMode")
-	dbSslRootCert := os.Getenv("db_sslrootcert")
-
+	dbUser := os.Getenv("LCM_CNTLR_USER")
+	dbPwd := os.Getenv("LCM_CNTLR_DB_PASSWORD")
+	dbName := os.Getenv("LCM_CNTLR_DB")
+	dbHost := os.Getenv("LCM_CNTLR_DB_HOST")
+	dbPort := os.Getenv("LCM_CNTLR_DB_PORT")
+	dbSslMode := util.GetAppConfig("DB_SSL_MODE")
+	dbSslRootCert := util.GetAppConfig("DB_SSL_ROOT_CERT")
 
 	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
