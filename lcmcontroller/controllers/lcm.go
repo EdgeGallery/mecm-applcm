@@ -548,6 +548,10 @@ func (c *LcmController) getApplicationDeploymentType(mainServiceTemplateMf strin
 // Opens package
 func (c *LcmController) openPackage(packagePath string) {
 	zipReader, _ := zip.OpenReader(packagePath)
+	if len(zipReader.File) > util.TooManyFile {
+		c.writeErrorResponse("Too many files contains in zip file", util.StatusInternalServerError)
+	}
+	var totalWrote int64
 	for _, file := range zipReader.Reader.File {
 
 		zippedFile, err := file.Open()
@@ -555,18 +559,22 @@ func (c *LcmController) openPackage(packagePath string) {
 			c.writeErrorResponse("Failed to open zip file", util.StatusInternalServerError)
 			continue
 		}
+		if file.UncompressedSize64 > util.SingleFileTooBig || totalWrote > util.TooBig {
+			c.writeErrorResponse("File size limit is exceeded", util.StatusInternalServerError)
+		}
 
 		defer zippedFile.Close()
 
-		isContinue := c.extractFiles(file, zippedFile)
+		isContinue, wrote := c.extractFiles(file, zippedFile, totalWrote)
 		if isContinue {
 			continue
 		}
+		totalWrote = wrote
 	}
 }
 
 // Extract files
-func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser) bool {
+func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64) (bool, int64) {
 	targetDir := PackageFolderPath + "/"
 	extractedFilePath := filepath.Join(
 		targetDir,
@@ -586,17 +594,18 @@ func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser) b
 		)
 		if err != nil || outputFile == nil {
 			c.writeErrorResponse("The output file is nil", util.StatusInternalServerError)
-			return true
+			return true, totalWrote
 		}
 
 		defer outputFile.Close()
 
-		_, err = io.Copy(outputFile, zippedFile)
+		wt, err := io.Copy(outputFile, zippedFile)
 		if err != nil {
 			c.writeErrorResponse("Failed to copy zipped file", util.StatusInternalServerError)
 		}
+		totalWrote += wt
 	}
-	return false
+	return false, totalWrote
 }
 
 // Make target directory

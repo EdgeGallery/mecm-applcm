@@ -76,6 +76,10 @@ const lowerCaseRegex string = `[a-z]`
 const upperCaseRegex string = `[A-Z]`
 const maxPasswordCount = 2
 
+const TooManyFile int = 1024
+const TooBig = 0x6400000
+const SingleFileTooBig = 0x6400000
+
 const HttpUrl string = "http://"
 const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)" +
 	                    "/sum(kube_node_status_allocatable_cpu_cores)"
