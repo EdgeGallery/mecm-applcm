@@ -47,7 +47,7 @@ if [ ! "$valid_server_certificate" -eq "0" ]; then
   exit 1
 fi
 
-sed -i "s/^httpsaddr.*=.*$/httpsaddr = $(hostname -i)/g" conf/config.yaml
+sed -i "s/^  httpsaddr.:.$/  httpsaddr: $(hostname -i)/g" conf/config.yaml
 
 cd /usr/app
 umask 0027
