@@ -14,7 +14,7 @@
 
 FROM golang:1.14.2-alpine3.11 as builder
 
-ENV GOPROXY https://goproxy.io
+ENV GOPROXY https://proxy.golang.org
 ENV GO111MODULE on
 ENV HOME=/usr/app
 
@@ -61,9 +61,11 @@ WORKDIR $HOME
 # Copy in the application exe.
 COPY --from=builder $HOME/k8splugin $HOME/bin
 COPY --from=builder $HOME/start.sh $HOME/bin
-
+COPY --from=builder $HOME/conf/ $HOME/conf/
 
 RUN chmod 750 $HOME &&\
+    chmod 750 $HOME/conf &&\
+    chmod 640 $HOME/conf/config.yaml &&\
     chmod 550 -R $HOME/bin &&\
     mkdir -p -m 750 $HOME/log &&\
     chown -hR $USER_NAME:$GROUP_NAME $HOME

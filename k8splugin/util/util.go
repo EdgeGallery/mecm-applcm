@@ -17,12 +17,17 @@
 package util
 
 import (
+	"crypto/tls"
 	"errors"
+	"fmt"
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 	"github.com/dgrijalva/jwt-go"
+	"k8splugin/conf"
 	"os"
 	"regexp"
+	"github.com/spf13/viper"
+	"strings"
 )
 
 var (
@@ -54,6 +59,13 @@ const Failure = "Failure"
 const ActionConfig = "Unable to initialize action config"
 const HelmDriver = "HELM_DRIVER"
 const AppInsId = "app_ins_id"
+const maxHostNameLen = 253
+const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+
+var cipherSuiteMap = map[string]uint16{
+	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+}
 
 // Validate password
 func ValidatePassword(password *[]byte) (bool, error) {
@@ -212,4 +224,90 @@ func CreateDir(path string) bool {
 		}
 	}
 	return true
+}
+
+// Update tls configuration
+func GetTLSConfig(config *conf.ServerConfigurations, certificate string, key string) (*tls.Config, error) {
+
+	// Load the certificates from disk
+	loadedCert, err := tls.LoadX509KeyPair(certificate, key)
+	if err != nil {
+		return nil, fmt.Errorf("could not load server key pair: %s", err)
+	}
+
+	// Get valid server name
+	serverName := config.Servername
+	serverNameIsValid, validateServerNameErr := ValidateServerName(serverName)
+	if validateServerNameErr != nil || !serverNameIsValid {
+		log.Error("validate server name error")
+		return nil, validateServerNameErr
+	}
+	sslCiphers := config.Sslciphers
+	if len(sslCiphers) == 0 {
+		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
+	}
+	cipherSuites := getCipherSuites(sslCiphers)
+	if cipherSuites == nil {
+		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
+	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{loadedCert},
+		ServerName:   serverName,
+		MinVersion:   tls.VersionTLS12,
+		CipherSuites: cipherSuites,
+	}, nil
+}
+
+func getCipherSuites(sslCiphers string) []uint16 {
+	cipherSuiteArr := make([]uint16, 0, 5)
+	cipherSuiteNameList := strings.Split(sslCiphers, ",")
+	for _, cipherName := range cipherSuiteNameList {
+		cipherName = strings.TrimSpace(cipherName)
+		if len(cipherName) == 0 {
+			continue
+		}
+		mapValue, ok := cipherSuiteMap[cipherName]
+		if !ok {
+			log.Error("not recommended cipher suite")
+			return nil
+		}
+		cipherSuiteArr = append(cipherSuiteArr, mapValue)
+	}
+	if len(cipherSuiteArr) > 0 {
+		return cipherSuiteArr
+	}
+	return nil
+}
+
+// Validate Server Name
+func ValidateServerName(serverName string) (bool, error) {
+	if len(serverName) > maxHostNameLen {
+		return false, errors.New("server or host name validation failed")
+	}
+	return regexp.MatchString(ServerNameRegex, serverName)
+}
+
+func GetConfiguration(configPath string) (config *conf.Configurations, err error)  {
+
+	// Set the file name of the configurations file
+	viper.SetConfigName("config")
+
+	// Set the path to look for the configurations file
+	viper.AddConfigPath(configPath)
+
+	viper.SetConfigType("yaml")
+	var configuration conf.Configurations
+
+	if err = viper.ReadInConfig(); err != nil {
+		log.Error("failed to read configuration file, %v", err)
+		return nil, err
+	}
+
+	err = viper.Unmarshal(&configuration)
+	if err != nil {
+		log.Error("Unable to decode into struct, %v", err)
+		return nil, err
+	}
+
+	return &configuration, nil
 }

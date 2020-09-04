@@ -25,6 +25,7 @@ import (
 	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/status"
 	"io"
+	"k8splugin/conf"
 	"k8splugin/internal/lcmservice"
 	"k8splugin/models"
 	"k8splugin/pgdb"
@@ -46,6 +47,7 @@ type ServerGRPC struct {
 	certificate string
 	key         string
 	db          pgdb.Database
+	serverConfig *conf.ServerConfigurations
 }
 
 // GRPC service configuration used to create GRPC server
@@ -53,6 +55,7 @@ type ServerGRPCConfig struct {
 	Certificate string
 	Key         string
 	Port        int
+	ServerConfig *conf.ServerConfigurations
 }
 
 // Constructor to GRPC server
@@ -60,6 +63,7 @@ func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.port = cfg.Port
 	s.certificate = cfg.Certificate
 	s.key = cfg.Key
+	s.serverConfig = cfg.ServerConfig
 	log.Infof("Binding is successful")
 	return
 }
@@ -68,37 +72,40 @@ func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 func (s *ServerGRPC) Listen() (err error) {
 	var (
 		listener  net.Listener
-		grpcOpts  []grpc.ServerOption
-		grpcCreds credentials.TransportCredentials
 	)
 
 	// Listen announces on the network address
 	listener, err = net.Listen("tcp", ":"+strconv.Itoa(s.port))
 	if err != nil {
-		log.Fatalf("failed to listen on specified port")
+		log.Errorf("failed to listen on specified port")
+		return err
 	}
-	log.Info("Server started listening on specified port")
+	log.Infof("Server started listening on port {}", s.port)
 
-	// Secure connection if asked
-	if s.certificate != "" && s.key != "" {
-		grpcCreds, err = credentials.NewServerTLSFromFile(
-			s.certificate, s.key)
+	if s.serverConfig.SslEnable {
+		tlsConfig, err := util.GetTLSConfig(s.serverConfig, s.certificate, s.key);
 		if err != nil {
-			log.Fatalf("failed to create tls grpc server using given cert and key")
+			log.Errorf("failed to load certificates")
+			return err
 		}
-		grpcOpts = append(grpcOpts, grpc.Creds(grpcCreds))
+
+		// Create the TLS credentials
+		creds := credentials.NewTLS(tlsConfig)
+
+		// Create server with TLS credentials
+		s.server = grpc.NewServer(grpc.Creds(creds))
+	} else {
+		// Create server without TLS credentials
+		s.server = grpc.NewServer()
 	}
 
-	// Register server with GRPC
-	s.server = grpc.NewServer(grpcOpts...)
 	lcmservice.RegisterAppLCMServer(s.server, s)
-
-	log.Info("Server registered with GRPC")
+	log.Infof("Server registered with GRPC")
 
 	// Server start serving
 	err = s.server.Serve(listener)
 	if err != nil {
-		log.Fatalf("failed to listen for grpc connections.")
+		log.Errorf("failed to listen for GRPC connections.")
 		return err
 	}
 	return
