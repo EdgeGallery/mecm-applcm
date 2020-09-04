@@ -76,6 +76,14 @@ const lowerCaseRegex string = `[a-z]`
 const upperCaseRegex string = `[A-Z]`
 const maxPasswordCount = 2
 
+const HttpUrl string = "http://"
+const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)" +
+	                    "/sum(kube_node_status_allocatable_cpu_cores)"
+const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)" +
+	                    "/ sum(kube_node_status_allocatable_memory_bytes)"
+const DiskQuery string = "/api/v1/query?query=(sum (node_filesystem_size_bytes)-" +
+	                     "sum (node_filesystem_free_bytes)) / sum (node_filesystem_size_bytes)"
+
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,

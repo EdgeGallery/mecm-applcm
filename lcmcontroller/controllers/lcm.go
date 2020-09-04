@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/buger/jsonparser"
 	"github.com/ghodss/yaml"
@@ -347,9 +346,6 @@ func (c *LcmController) Query() {
 
 // Query KPI
 func (c *LcmController) QueryKPI() {
-
-	fmt.Println("Performing Http Get...QueryKPI")
-
 	var metricInfo models.MetricInfo
 
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
@@ -366,7 +362,6 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
-
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	_, err = c.getTenantId(clientIp)
 	if err != nil {
@@ -379,24 +374,19 @@ func (c *LcmController) QueryKPI() {
 		return
 	}
 	prometheusPort := util.GetAppConfig("promethuesPort")
-	cpu, errCpu:= setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores) " +
-		"/ sum(kube_node_status_allocatable_cpu_cores)")
+	cpu, errCpu:= getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.CpuQuery)
 
 	if errCpu != nil {
 		log.Fatalln(errCpu)
 	}
-	fmt.Println("API Response as String cpu:\n" + cpu)
-	mem, errMem := setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query" +
-		"=sum(kube_pod_container_resource_requests_memory_bytes) / sum(kube_node_status_allocatable_memory_bytes)")
+	mem, errMem := getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.MemQuery)
 	if errMem != nil {
 		log.Fatalln(errMem)
 	}
-	fmt.Println("API Response as String Mem:\n" + mem)
-	disk, err := setGet("http://" +hostIp + ":" +prometheusPort+ "/api/v1/query?query=(sum (node_filesystem_size_bytes) - sum (node_filesystem_free_bytes)) / sum (node_filesystem_size_bytes)")
+	disk, err := getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.DiskQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("API Response as String disk:\n" + disk)
 	metricInfo.CpuUsage = cpu
 	metricInfo.MemUsage = mem
 	metricInfo.DiskUsage = disk
@@ -411,9 +401,7 @@ func (c *LcmController) QueryKPI() {
 }
 
 // Query KPI
-func setGet(url string) (string, error) {
-	fmt.Println("Performing Http setGet")
-
+func getHostInfo(url string) (string, error) {
 	//url
 	resp, err := http.Get(url)
 	if err != nil {
@@ -426,15 +414,14 @@ func setGet(url string) (string, error) {
 	}
 	log.Info("response is received")
 
-	if resp.StatusCode != http.StatusCreated {
-		return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
+	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+		return string(body), nil
 	}
-	return string(body), nil
+	return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
 
 // Query Mep capabilities
 func (c *LcmController) QueryMepCapabilities()  {
-	fmt.Println("Performing Http Get QueryMepCapabilities")
 	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
@@ -466,7 +453,6 @@ func (c *LcmController) QueryMepCapabilities()  {
 	mepJson, err := json.Marshal(mepCapabilities)
 	log.Info("appJson", mepJson)
 	return
-
 }
 
 // Write error response
