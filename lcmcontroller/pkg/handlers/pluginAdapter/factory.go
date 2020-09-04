@@ -1,10 +1,8 @@
 package pluginAdapter
 
 import (
-	"crypto/tls"
 	"errors"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc/credentials"
 	"lcmcontroller/pkg/plugin"
 	"lcmcontroller/util"
 )
