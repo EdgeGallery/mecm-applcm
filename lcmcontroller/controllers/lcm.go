@@ -748,7 +748,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 	if count > util.MAX_NUMBER_OF_RECORDS {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Maximum number of app info records are exceeded for given tenant")
-		return err
+		return errors.New("maximum number of app info records are exceeded for given tenant")
 	}
 
 	err = c.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
@@ -773,7 +773,7 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 	if count > util.MAX_NUMBER_OF_RECORDS {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Maximum number of tenant records are exceeded")
-		return err
+		return errors.New("maximum number of tenant records are exceeded")
 	}
 
 	err = c.db.InsertOrUpdateData(tenantRecord, util.TenantId)
@@ -807,7 +807,6 @@ func (c *LcmController) deleteTenantRecord(tenantId string) error {
 	if err != nil {
 		return err
 	}
-	log.Info("terminate count", count)
 	if count == 0 {
 		err = c.db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
