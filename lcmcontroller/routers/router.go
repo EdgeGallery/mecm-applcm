@@ -28,9 +28,14 @@ const RootPath string = "/lcmcontroller/v1"
 func init() {
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "post:UploadConfig")
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "delete:RemoveConfig")
-	beego.Router(RootPath+"/app_instances/:appInstanceId/instantiate", &controllers.LcmController{}, "post:Instantiate")
-	beego.Router(RootPath+"/app_instances/:appInstanceId/terminate", &controllers.LcmController{}, "post:Terminate")
-	beego.Router(RootPath+"/app_instances/:appInstanceId", &controllers.LcmController{}, "get:Query")
-	beego.Router(RootPath+"/kpi/:hostIp", &controllers.LcmController{}, "get:QueryKPI")
-	beego.Router(RootPath+"/mep_capabilities/:hostIp", &controllers.LcmController{}, "get:QueryMepCapabilities")
+	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/instantiate", &controllers.LcmController{},
+	"post:Instantiate")
+	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/terminate", &controllers.LcmController{},
+	"post:Terminate")
+	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId", &controllers.LcmController{},
+	"get:Query")
+	beego.Router(RootPath+"/tenants/:tenantId/kpi/:hostIp", &controllers.LcmController{},
+	"get:QueryKPI")
+	beego.Router(RootPath+"/tenants/:tenantId/mep_capabilities/:hostIp", &controllers.LcmController{},
+	"get:QueryMepCapabilities")
 }
