@@ -48,12 +48,15 @@ const FailedToSendMetadataInfo string = "failed to send metadata information"
 const FailedToCreateClient string = "failed to create client: %v"
 const DeployTypeIsNotHelmBased = "Deployment type is not helm based"
 const InvalidToken string = "invalid token"
+const AppInsId = "app_ins_id"
+const TenantId = "tenant_id"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
 const MaxConfigFile int64 = 5242880
 const Timeout = 5
 const NonManoArtifactSets = "non_mano_artifact_sets"
+const MAX_NUMBER_OF_RECORDS = 50
 
 const BadRequest int = 400
 const StatusUnauthorized int = 401

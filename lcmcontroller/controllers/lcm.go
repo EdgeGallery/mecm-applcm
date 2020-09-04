@@ -166,7 +166,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	hostIp, appInsId, file, header, err := c.getInputParameters(clientIp)
+	hostIp, appInsId, file, header, tenantId, err := c.getInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -190,7 +190,11 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType)
+	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return
+	}
+	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId)
 	if err != nil {
 		return
 	}
@@ -229,6 +233,11 @@ func (c *LcmController) Terminate() {
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -261,6 +270,18 @@ func (c *LcmController) Terminate() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Terminate application failed")
 		return
 	}
+	err = c.deleteAppInfoRecord(appInsId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete app info record")
+		return
+	}
+
+	err = c.deleteTenantRecord(tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete tenant record")
+		return
+	}
+	c.ServeJSON()
 }
 
 // Query
@@ -283,6 +304,11 @@ func (c *LcmController) Query() {
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -337,7 +363,11 @@ func (c *LcmController) QueryKPI() {
 		return
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
+	_, err = c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -408,7 +438,11 @@ func (c *LcmController) QueryMepCapabilities()  {
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
+	_, err = c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -594,7 +628,7 @@ func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*mod
 		AppInsId: appInsId,
 	}
 	c.initDbAdapter()
-	readErr := c.db.ReadData(appInfoRecord, "app_ins_id")
+	readErr := c.db.ReadData(appInfoRecord, util.AppInsId)
 	if readErr != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"App info record does not exist in database")
@@ -624,6 +658,17 @@ func (c *LcmController) getAppInstId(clientIp string) (string, error) {
 		return "", err
 	}
 	return appInsId, nil
+}
+
+// Get app Instance Id
+func (c *LcmController) getTenantId(clientIp string) (string, error) {
+	tenantId := c.Ctx.Input.Param(":tenantId")
+	err := util.ValidateUUID(tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,"Tenant id is invalid")
+		return "", err
+	}
+	return tenantId, nil
 }
 
 // Create package path
@@ -687,14 +732,26 @@ func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg 
 }
 
 // Insert or update application info record
-func (c *LcmController)insertOrUpdateAppInfoRecord(appInsId string, hostIp string, deployType string) error {
+func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId:   appInsId,
 		HostIp:     hostIp,
 		DeployType: deployType,
+		TenantId:   tenantId,
 	}
 	c.initDbAdapter()
-	err := c.db.InsertOrUpdateData(appInfoRecord, "app_ins_id")
+	count, err := c.db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+	if err != nil {
+		return err
+	}
+
+	if count > util.MAX_NUMBER_OF_RECORDS {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Maximum number of app info records are exceeded for given tenant")
+		return err
+	}
+
+	err = c.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save app info record to database.")
 		return err
@@ -702,24 +759,88 @@ func (c *LcmController)insertOrUpdateAppInfoRecord(appInsId string, hostIp strin
 	return nil
 }
 
+// Insert or update tenant info record
+func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) error {
+	tenantRecord := &models.TenantInfoRecord{
+		TenantId:   tenantId,
+	}
+	c.initDbAdapter()
+	count, err := c.db.QueryCount("tenant_info_record")
+	if err != nil {
+		return err
+	}
+
+	if count > util.MAX_NUMBER_OF_RECORDS {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Maximum number of tenant records are exceeded")
+		return err
+	}
+
+	err = c.db.InsertOrUpdateData(tenantRecord, util.TenantId)
+	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		log.Error("Failed to save tenant record to database.")
+		return err
+	}
+	return nil
+}
+
+// Delete app info record
+func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId:   appInsId,
+	}
+	c.initDbAdapter()
+	err := c.db.DeleteData(appInfoRecord, util.AppInsId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete tenant record
+func (c *LcmController) deleteTenantRecord(tenantId string) error {
+	tenantRecord := &models.TenantInfoRecord{
+		TenantId:   tenantId,
+	}
+	c.initDbAdapter()
+	count, err := c.db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+	if err != nil {
+		return err
+	}
+	log.Info("terminate count", count)
+	if count == 0 {
+		err = c.db.DeleteData(tenantRecord, util.TenantId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+
 // Get input parameters
 func (c *LcmController) getInputParameters(clientIp string) (string, string, multipart.File,
-	*multipart.FileHeader, error) {
+	*multipart.FileHeader, string, error) {
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
-		return "", "", nil, nil, err
+		return "", "", nil, nil, "", err
 	}
 
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
-		return "", "", nil, nil, err
+		return "", "", nil, nil, "", err
 	}
 
 	file, header, err := c.getFile(clientIp)
 	if err != nil {
-		return "", "", nil, nil, err
+		return "", "", nil, nil, "", err
 	}
-	return hostIp, appInsId, file, header, nil
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", nil, nil, "", err
+	}
+
+	return hostIp, appInsId, file, header, tenantId, nil
 }
 
 // Init Db adapter

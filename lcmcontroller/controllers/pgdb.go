@@ -57,3 +57,21 @@ func (db *PgDb)  ReadData(data interface{}, cols ...string) (err error) {
 	err = db.ormer.Read(data, cols...)
 	return err
 }
+
+// Read data from lcmcontroller
+func (db *PgDb) DeleteData(data interface{}, cols ...string) (err error) {
+	_, err = db.ormer.Delete(data, cols...)
+	return err
+}
+
+// Query count for any given table name
+func (db *PgDb) QueryCount(tableName string) (int64, error) {
+	num, err := db.ormer.QueryTable(tableName).Count()
+	return num, err
+}
+
+// Query count based on fieldname and fieldvalue
+func (db *PgDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
+	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
+	return num, err
+}

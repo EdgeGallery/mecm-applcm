@@ -23,6 +23,7 @@ import (
 // Init application info record
 func init() {
 	orm.RegisterModel(new(AppInfoRecord))
+	orm.RegisterModel(new(TenantInfoRecord))
 }
 
 // Application info record
@@ -30,6 +31,12 @@ type AppInfoRecord struct {
 	AppInsId     string `orm:"pk"`
 	HostIp       string
 	DeployType   string
+	TenantId     string
+}
+
+// Tenant info record
+type TenantInfoRecord struct {
+	TenantId     string `orm:"pk"`
 }
 
 // Metric Information

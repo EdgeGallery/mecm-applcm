@@ -73,4 +73,7 @@ func init() {
 type Database interface {
 	InsertOrUpdateData(data interface{}, cols ...string) (err error)
 	ReadData(data interface{}, cols ...string) (err error)
+	DeleteData(data interface{}, cols ...string) (err error)
+	QueryCount(tableName string) (int64, error)
+	QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error)
 }
