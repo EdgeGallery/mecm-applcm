@@ -45,34 +45,35 @@ type ClientGRPCConfig struct {
 }
 
 // Create a GRPC client
-func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
+func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 
 	var (
 		grpcOpts  []grpc.DialOption
-		grpcCreds credentials.TransportCredentials
+		conn *grpc.ClientConn
 	)
 
-	c.chunkSize = cfg.ChunkSize
+	if util.GetAppConfig("client_ssl_enable") == "true" {
 
-	if cfg.RootCertificate != "" {
-		grpcCreds, err = credentials.NewClientTLSFromFile(cfg.RootCertificate, "localhost")
+		tlsConfig, err := util.TLSConfig(cfg.RootCertificate)
 		if err != nil {
-			log.Error("failed to create grpc tls client via provided root-cert")
-			return c, err
+			log.Errorf("failed to get TLS configuration with error {}", err)
+			return nil, err
 		}
-		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(grpcCreds))
+		creds := credentials.NewTLS(tlsConfig)
+     	// Create a connection with the TLS credentials
+		conn, err = grpc.Dial(cfg.Address, grpc.WithTransportCredentials(creds))
 	} else {
+		// Create non TLS connection
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
+		conn, err = grpc.Dial(cfg.Address, grpcOpts...)
 	}
 
-	c.conn, err = grpc.Dial(cfg.Address, grpcOpts...)
 	if err != nil {
-		log.Error("failed to start grpc connection with address")
+		log.Errorf("failed to dial GRPC connection for address {} with error {}", cfg.Address, err)
 		return c, err
 	}
 
-	c.client = lcmservice.NewAppLCMClient(c.conn)
-	return c, nil
+	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn)}, nil
 }
 
 // Instantiate application

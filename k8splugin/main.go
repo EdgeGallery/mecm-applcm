@@ -23,29 +23,34 @@ import (
 	_ "k8splugin/models"
 	_ "k8splugin/pgdb"
 	"k8splugin/pkg/server"
-	"os"
+	"k8splugin/util"
 	"strconv"
 )
 
-// Variables to be defined in deployment file
-var (
-	serverPort  = "8485"
-	certificate = os.Getenv("CERTIFICATE_PATH")
-	key         = os.Getenv("KEY_PATH")
+const (
+	configPath = "/usr/app/conf"
 )
 
 // Start k8splugin application
 func main() {
-	log.Info("Started k8s plugin server")
+	log.Info("Starting k8s plugin server")
+
+	config, err := util.GetConfiguration(configPath)
+
+	if err != nil {
+		log.Errorf("Exiting system...")
+		return
+	}
 
 	// Create GRPC server
-	sp, err := strconv.Atoi(serverPort)
-	serverConfig := server.ServerGRPCConfig{Certificate: certificate, Port: sp, Key: key}
+	port, err := strconv.Atoi(config.Server.Serverport)
+	serverConfig := server.ServerGRPCConfig{Port: port, ServerConfig: &config.Server}
 	grpcServer := server.NewServerGRPC(serverConfig)
 
 	// Start listening
 	err = grpcServer.Listen()
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Errorf("Exiting system...")
+		return
 	}
 }

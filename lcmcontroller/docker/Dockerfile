@@ -69,6 +69,7 @@ RUN chmod 750 $HOME &&\
     chmod 500 -R $HOME/views &&\
     chmod 640 $HOME/conf/app.conf &&\
     chmod 550 -R $HOME/bin &&\
+    mkdir -p -m 700 $HOME/ssl &&\
     mkdir -p -m 750 $HOME/log &&\
     chown -hR $USER_NAME:$GROUP_NAME $HOME
 

@@ -61,10 +61,13 @@ WORKDIR $HOME
 # Copy in the application exe.
 COPY --from=builder $HOME/k8splugin $HOME/bin
 COPY --from=builder $HOME/start.sh $HOME/bin
-
+COPY --from=builder $HOME/conf/ $HOME/conf/
 
 RUN chmod 750 $HOME &&\
+    chmod 750 $HOME/conf &&\
+    chmod 640 $HOME/conf/config.yaml &&\
     chmod 550 -R $HOME/bin &&\
+    mkdir -p -m 700 $HOME/ssl &&\
     mkdir -p -m 750 $HOME/log &&\
     chown -hR $USER_NAME:$GROUP_NAME $HOME
 
