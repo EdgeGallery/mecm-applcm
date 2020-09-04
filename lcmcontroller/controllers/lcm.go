@@ -284,6 +284,11 @@ func (c *LcmController) Query() {
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -342,7 +347,11 @@ func (c *LcmController) QueryKPI() {
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
+	_, err = c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -421,7 +430,11 @@ func (c *LcmController) QueryMepCapabilities()  {
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
+	_, err = c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -638,6 +651,17 @@ func (c *LcmController) getAppInstId(clientIp string) (string, error) {
 		return "", err
 	}
 	return appInsId, nil
+}
+
+// Get app Instance Id
+func (c *LcmController) getTenantId(clientIp string) (string, error) {
+	tenantId := c.Ctx.Input.Param(":tenantId")
+	err := util.ValidateUUID(tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,"Tenant id is invalid")
+		return "", err
+	}
+	return tenantId, nil
 }
 
 // Create package path
