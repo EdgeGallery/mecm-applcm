@@ -52,8 +52,6 @@ type ServerGRPC struct {
 
 // GRPC service configuration used to create GRPC server
 type ServerGRPCConfig struct {
-	Certificate string
-	Key         string
 	Port        int
 	ServerConfig *conf.ServerConfigurations
 }
@@ -61,8 +59,8 @@ type ServerGRPCConfig struct {
 // Constructor to GRPC server
 func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.port = cfg.Port
-	s.certificate = cfg.Certificate
-	s.key = cfg.Key
+	s.certificate = cfg.ServerConfig.Certfilepath
+	s.key = cfg.ServerConfig.Keyfilepath
 	s.serverConfig = cfg.ServerConfig
 	log.Infof("Binding is successful")
 	return
@@ -82,7 +80,7 @@ func (s *ServerGRPC) Listen() (err error) {
 	}
 	log.Infof("Server started listening on port {}", s.port)
 
-	if s.serverConfig.SslEnable {
+	if !s.serverConfig.Sslnotenabled {
 		tlsConfig, err := util.GetTLSConfig(s.serverConfig, s.certificate, s.key);
 		if err != nil {
 			log.Errorf("failed to load certificates")

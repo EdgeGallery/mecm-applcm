@@ -24,25 +24,18 @@ import (
 	_ "k8splugin/pgdb"
 	"k8splugin/pkg/server"
 	"k8splugin/util"
-	"os"
 	"strconv"
 )
 
 const (
 	configPath = "/usr/app/conf"
-	serverPort  = "8485"
-)
-
-var (
-	certificate = os.Getenv("CERTIFICATE_PATH")
-	key         = os.Getenv("KEY_PATH")
 )
 
 // Start k8splugin application
 func main() {
 	log.Info("Starting k8s plugin server")
 
-	configuration, err := util.GetConfiguration(configPath)
+	config, err := util.GetConfiguration(configPath)
 
 	if err != nil {
 		log.Errorf("Exiting system...")
@@ -50,8 +43,8 @@ func main() {
 	}
 
 	// Create GRPC server
-	sp, err := strconv.Atoi(serverPort)
-	serverConfig := server.ServerGRPCConfig{Certificate: certificate, Port: sp, Key: key, ServerConfig: &configuration.Server}
+	port, err := strconv.Atoi(config.Server.Serverport)
+	serverConfig := server.ServerGRPCConfig{Port: port, ServerConfig: &config.Server}
 	grpcServer := server.NewServerGRPC(serverConfig)
 
 	// Start listening

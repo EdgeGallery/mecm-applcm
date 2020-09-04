@@ -97,6 +97,7 @@ func (c *LcmController) UploadConfig() {
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
