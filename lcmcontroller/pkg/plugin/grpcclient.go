@@ -48,8 +48,8 @@ type ClientGRPCConfig struct {
 func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 
 	var (
-		grpcOpts  []grpc.DialOption
-		conn *grpc.ClientConn
+		grpcOpts []grpc.DialOption
+		conn     *grpc.ClientConn
 	)
 
 	if util.GetAppConfig("client_ssl_enable") == "true" {
@@ -60,7 +60,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 			return nil, err
 		}
 		creds := credentials.NewTLS(tlsConfig)
-     	// Create a connection with the TLS credentials
+		// Create a connection with the TLS credentials
 		conn, err = grpc.Dial(cfg.Address, grpc.WithTransportCredentials(creds))
 	} else {
 		// Create non TLS connection
@@ -105,7 +105,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 	defer stream.CloseSend()
 
 	//send metadata information
-	 req := &lcmservice.InstantiateRequest{
+	req := &lcmservice.InstantiateRequest{
 
 		Data: &lcmservice.InstantiateRequest_AccessToken{
 			AccessToken: accessToken,
@@ -191,13 +191,13 @@ func (c *ClientGRPC) Query(ctx context.Context, accessToken string,
 	appInsId string, hostIP string) (response string, error error) {
 
 	req := &lcmservice.QueryRequest{
-		AccessToken: accessToken,
+		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
-		HostIp:     hostIP,
+		HostIp:        hostIP,
 	}
 	resp, err := c.client.Query(ctx, req)
 	if err != nil {
-		return"", err
+		return "", err
 	}
 	return resp.Response, err
 }
@@ -207,8 +207,8 @@ func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, accessToken s
 	appInsId string) (status string, error error) {
 
 	req := &lcmservice.TerminateRequest{
-		HostIp:     hostIP,
-		AccessToken: accessToken,
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 	}
 	resp, err := c.client.Terminate(ctx, req)
@@ -221,7 +221,7 @@ func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, accessToken s
 // Remove configuration
 func (c *ClientGRPC) RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error) {
 	req := &lcmservice.RemoveCfgRequest{
-		HostIp:     hostIP,
+		HostIp:      hostIP,
 		AccessToken: accessToken,
 	}
 	resp, err := c.client.RemoveConfig(ctx, req)
@@ -230,7 +230,6 @@ func (c *ClientGRPC) RemoveConfig(ctx context.Context, hostIP string, accessToke
 	}
 	return resp.Status, err
 }
-
 
 // Upload Configuration
 func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.File,

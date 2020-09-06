@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	chunkSize       = 1024
+	chunkSize = 1024
 )
 
 // Get client based on client protocol type
@@ -17,7 +17,7 @@ func GetClient(pluginInfo string) (client ClientIntf, err error) {
 	switch clientProtocol {
 	case "grpc":
 		clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize,
-			RootCertificate: util.GetAppConfig("HTTPSClientCA")}
+			RootCertificate: "HTTPSClientCA"}
 		var client, err = plugin.NewClientGRPC(clientConfig)
 		if err != nil {
 			log.Errorf(util.FailedToCreateClient, err)
