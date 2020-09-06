@@ -17,7 +17,7 @@ func GetClient(pluginInfo string) (client ClientIntf, err error) {
 	switch clientProtocol {
 	case "grpc":
 		clientConfig := plugin.ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize,
-			RootCertificate: util.GetAppConfig("HTTPSClientCA")}
+			RootCertificate: "HTTPSClientCA"}
 		var client, err = plugin.NewClientGRPC(clientConfig)
 		if err != nil {
 			log.Errorf(util.FailedToCreateClient, err)
