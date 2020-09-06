@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	jwtPublicKey        = os.Getenv("JWT_PUBLIC_KEY")
+	jwtPublicKey = os.Getenv("JWT_PUBLIC_KEY")
 )
 
 const AccessToken string = "access_token"
@@ -81,11 +81,11 @@ const SingleFileTooBig = 0x6400000
 
 const HttpUrl string = "http://"
 const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)" +
-	                    "/sum(kube_node_status_allocatable_cpu_cores)"
+	"/sum(kube_node_status_allocatable_cpu_cores)"
 const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)" +
-	                    "/ sum(kube_node_status_allocatable_memory_bytes)"
+	"/ sum(kube_node_status_allocatable_memory_bytes)"
 const DiskQuery string = "/api/v1/query?query=(sum (node_filesystem_size_bytes)-" +
-	                     "sum (node_filesystem_free_bytes)) / sum (node_filesystem_size_bytes)"
+	"sum (node_filesystem_free_bytes)) / sum (node_filesystem_size_bytes)"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -168,7 +168,7 @@ func getPasswordValidCount(password *[]byte) int {
 		pwdValidCount++
 	}
 	pwdIsValid, err = regexp.Match(upperCaseRegex, *password)
-	if pwdIsValid && err == nil  {
+	if pwdIsValid && err == nil {
 		pwdValidCount++
 	}
 	// space validation for password complexity is not added
@@ -220,30 +220,30 @@ func ValidateAccessToken(accessToken string) error {
 	if token != nil && !token.Valid {
 		if claims["authorities"] == nil {
 			log.Info("Invalid token A")
-			return  errors.New(InvalidToken)
+			return errors.New(InvalidToken)
 		}
 		if claims["userId"] == nil {
 			log.Info("Invalid token UI")
-			return  errors.New(InvalidToken)
+			return errors.New(InvalidToken)
 		}
 		if claims["user_name"] == nil {
 			log.Info("Invalid token UN")
-			return  errors.New(InvalidToken)
+			return errors.New(InvalidToken)
 		}
 	} else if er, ok := err.(*jwt.ValidationError); ok {
 		if er.Errors&jwt.ValidationErrorMalformed != 0 {
 			log.Info("Invalid token")
-			return  errors.New(InvalidToken)
-		} else if er.Errors&(jwt.ValidationErrorExpired | jwt.ValidationErrorNotValidYet) != 0 {
+			return errors.New(InvalidToken)
+		} else if er.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
 			log.Infof("token expired or inactive")
-			return  errors.New("token expired or inactive")
+			return errors.New("token expired or inactive")
 		} else {
 			log.Info("Couldn't handle this token: ", err)
-			return  errors.New(err.Error())
+			return errors.New(err.Error())
 		}
 	} else {
 		log.Info("Couldn't handle this token: ", err)
-		return  errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 
 	log.Info("Token validated successfully")
@@ -267,7 +267,6 @@ func TLSConfig(crtName string) (*tls.Config, error) {
 	rootCAs := x509.NewCertPool()
 	rootCAs.AppendCertsFromPEM(crt)
 
-
 	sslCiphers := GetAppConfig("ssl_ciphers")
 	if len(sslCiphers) == 0 {
 		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
@@ -280,6 +279,7 @@ func TLSConfig(crtName string) (*tls.Config, error) {
 		RootCAs:      rootCAs,
 		MinVersion:   tls.VersionTLS12,
 		CipherSuites: cipherSuites,
+		ServerName:   GetAppConfig("serverName"),
 	}, nil
 }
 

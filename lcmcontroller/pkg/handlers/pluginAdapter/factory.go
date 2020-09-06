@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	chunkSize       = 1024
+	chunkSize = 1024
 )
 
 // Get client based on client protocol type

@@ -60,7 +60,7 @@ func (c *LcmController) UploadConfig() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -96,6 +96,7 @@ func (c *LcmController) UploadConfig() {
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
 		return
 	}
@@ -116,7 +117,7 @@ func (c *LcmController) RemoveConfig() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -137,6 +138,7 @@ func (c *LcmController) RemoveConfig() {
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
 		return
 	}
@@ -157,7 +159,7 @@ func (c *LcmController) Instantiate() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -167,9 +169,10 @@ func (c *LcmController) Instantiate() {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
-
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	hostIp, appInsId, file, header, tenantId, err := c.getInputParameters(clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -177,11 +180,13 @@ func (c *LcmController) Instantiate() {
 	pkgPath := PackageFolderPath + header.Filename
 	err = c.createPackagePath(pkgPath, clientIp, file)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
 	err = c.makeTargetDirectory(clientIp, packageName)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -189,20 +194,24 @@ func (c *LcmController) Instantiate() {
 	var mainServiceTemplateMf = PackageFolderPath + packageName + "/MainServiceTemplate.mf"
 	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
 	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
@@ -223,7 +232,7 @@ func (c *LcmController) Terminate() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -263,6 +272,7 @@ func (c *LcmController) Terminate() {
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
 		return
 	}
@@ -295,7 +305,7 @@ func (c *LcmController) Query() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -335,11 +345,13 @@ func (c *LcmController) Query() {
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.HostIp)
+	util.ClearByteArray(bKey)
 	if err != nil {
 		log.Info("Query failed")
 		return
@@ -355,7 +367,7 @@ func (c *LcmController) QueryKPI() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -367,27 +379,26 @@ func (c *LcmController) QueryKPI() {
 		return
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	util.ClearByteArray(bKey)
 	_, err = c.getTenantId(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 	prometheusPort := util.GetAppConfig("promethuesPort")
-	cpu, errCpu:= getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.CpuQuery)
+	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
 
 	if errCpu != nil {
 		log.Fatalln(errCpu)
 	}
-	mem, errMem := getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.MemQuery)
+	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
 	if errMem != nil {
 		log.Fatalln(errMem)
 	}
-	disk, err := getHostInfo(util.HttpUrl +hostIp + ":" +prometheusPort+ util.DiskQuery)
+	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -429,7 +440,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -442,14 +453,13 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	util.ClearByteArray(bKey)
 	_, err = c.getTenantId(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -460,7 +470,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 
 	mepPort := util.GetAppConfig("mepPort")
-	mepCapabilities, err := http.Get(util.HttpUrl +hostIp + ":" +mepPort+"/mec/v1/mgmt/tenant/" +tenantId+ "/hosts/"+ hostIp +":"+mepPort + "/mep-capabilities")
+	mepCapabilities, err := http.Get(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + ":" + mepPort + "/mep-capabilities")
 
 	mepJson, err := json.Marshal(mepCapabilities)
 
@@ -613,7 +623,7 @@ func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, t
 
 // Make target directory
 func (c *LcmController) makeTargetDirectory(clientIp string, packageName string) error {
-	err := os.Mkdir(PackageFolderPath + packageName, 0750)
+	err := os.Mkdir(PackageFolderPath+packageName, 0750)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to create target directory")
 		return err
@@ -669,7 +679,7 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	hostIp := c.GetString("hostIp")
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,"HostIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
 		return "", err
 	}
 	return hostIp, nil
@@ -691,7 +701,7 @@ func (c *LcmController) getTenantId(clientIp string) (string, error) {
 	tenantId := c.Ctx.Input.Param(":tenantId")
 	err := util.ValidateUUID(tenantId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,"Tenant id is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, "Tenant id is invalid")
 		return "", err
 	}
 	return tenantId, nil
@@ -702,18 +712,18 @@ func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file 
 
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,"Failed to copy csar file")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to copy csar file")
 		return err
 	}
 
 	newFile, err := os.Create(pkgPath)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,"Failed to create package path")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to create package path")
 		return err
 	}
 	defer newFile.Close()
 	if _, err := newFile.Write(buf.Bytes()); err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,"Failed to write csar file")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to write csar file")
 		return err
 	}
 	return nil
@@ -841,7 +851,6 @@ func (c *LcmController) deleteTenantRecord(tenantId string) error {
 	}
 	return nil
 }
-
 
 // Get input parameters
 func (c *LcmController) getInputParameters(clientIp string) (string, string, multipart.File,
