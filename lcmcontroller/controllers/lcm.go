@@ -215,7 +215,6 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	util.ClearByteArray(bKey)
 	if err != nil {
 		return
