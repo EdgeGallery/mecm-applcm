@@ -34,10 +34,9 @@ var (
 	jwtPublicKey        = os.Getenv("JWT_PUBLIC_KEY")
 )
 
-const XRealIp string = "X-Real-Ip"
 const AccessToken string = "access_token"
-const HelmPlugin string = "helmplugin"
-const HelmPluginPort string = "HELM_PLUGIN_PORT"
+const HelmPlugin string = "K8S_PLUGIN"
+const HelmPluginPort string = "K8S_PLUGIN_PORT"
 const AuthorizationFailed string = "Authorization failed"
 const InstantiationFailed string = "Instantiation failed"
 const Default string = "default"

@@ -57,7 +57,7 @@ type LcmController struct {
 // Upload Config
 func (c *LcmController) UploadConfig() {
 	log.Info("Add configuration request received.")
-	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
@@ -92,7 +92,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
+	pluginInfo := os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -113,7 +113,7 @@ func (c *LcmController) UploadConfig() {
 // Remove Config
 func (c *LcmController) RemoveConfig() {
 	log.Info("Delete configuration request received.")
-	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
@@ -133,7 +133,7 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
+	pluginInfo := os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -153,7 +153,7 @@ func (c *LcmController) RemoveConfig() {
 func (c *LcmController) Instantiate() {
 	log.Info("Application instantiation request received.")
 
-	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
@@ -219,7 +219,7 @@ func (c *LcmController) Terminate() {
 	log.Info("Application termination request received.")
 	var pluginInfo string
 
-	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
@@ -253,7 +253,7 @@ func (c *LcmController) Terminate() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
+		pluginInfo = os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -290,7 +290,7 @@ func (c *LcmController) Query() {
 	log.Info("Application query request received.")
 	var pluginInfo string
 
-	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
@@ -324,7 +324,7 @@ func (c *LcmController) Query() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
+		pluginInfo = os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -349,7 +349,7 @@ func (c *LcmController) Query() {
 func (c *LcmController) QueryKPI() {
 	var metricInfo models.MetricInfo
 
-	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
@@ -422,8 +422,8 @@ func getHostInfo(url string) (string, error) {
 }
 
 // Query Mep capabilities
-func (c *LcmController) QueryMepCapabilities()  {
-	clientIp := c.Ctx.Request.Header.Get(util.XRealIp)
+func (c *LcmController) QueryMepCapabilities() {
+	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest,util.ClientIpaddressInvalid)
@@ -676,7 +676,7 @@ func (c *LcmController) getAppInstId(clientIp string) (string, error) {
 	appInsId := c.Ctx.Input.Param(":appInstanceId")
 	err := util.ValidateUUID(appInsId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,"App instance invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, "App instance is invalid")
 		return "", err
 	}
 	return appInsId, nil
@@ -737,7 +737,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 				"Artifact not available in application package.")
 			return "", "", err
 		}
-		pluginInfo := util.HelmPlugin + ":" + os.Getenv(util.HelmPluginPort)
+		pluginInfo := os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
 		return artifact, pluginInfo, nil
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
