@@ -195,32 +195,56 @@ func (c *LcmController) Instantiate() {
 	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
 	if err != nil {
 		util.ClearByteArray(bKey)
+		_ = removeCsarFiles(packageName, header)
 		return
 	}
 
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
+		_ = removeCsarFiles(packageName, header)
 		return
 	}
 	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
+		_ = removeCsarFiles(packageName, header)
 		return
 	}
 
 	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
+		_ = removeCsarFiles(packageName, header)
 		return
 	}
 	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
+		_ = removeCsarFiles(packageName, header)
+		return
+	}
+	err = removeCsarFiles(packageName, header)
+	if err != nil {
 		return
 	}
 
 	c.ServeJSON()
+}
+
+// Remove CSAR files
+func removeCsarFiles(packageName string, header *multipart.FileHeader) error {
+	err := os.RemoveAll(PackageFolderPath + packageName)
+	if err != nil {
+		log.Error("Failed to remove csar folder")
+		return err
+	}
+	err = os.Remove(PackageFolderPath + header.Filename)
+	if err != nil {
+		log.Error("Failed to remove csar file")
+		return err
+	}
+	return nil
 }
 
 // Terminate application
@@ -797,7 +821,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 // Insert or update tenant info record
 func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
-		TenantId:   tenantId,
+		TenantId: tenantId,
 	}
 	c.initDbAdapter()
 	count, err := c.db.QueryCount("tenant_info_record")
@@ -822,7 +846,7 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 // Delete app info record
 func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
 	appInfoRecord := &models.AppInfoRecord{
-		AppInsId:   appInsId,
+		AppInsId: appInsId,
 	}
 	c.initDbAdapter()
 	err := c.db.DeleteData(appInfoRecord, util.AppInsId)
@@ -835,7 +859,7 @@ func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
 // Delete tenant record
 func (c *LcmController) deleteTenantRecord(tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
-		TenantId:   tenantId,
+		TenantId: tenantId,
 	}
 	c.initDbAdapter()
 	count, err := c.db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
