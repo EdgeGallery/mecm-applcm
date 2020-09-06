@@ -35,8 +35,8 @@ var (
 )
 
 const AccessToken string = "access_token"
-const HelmPlugin string = "K8S_PLUGIN"
-const HelmPluginPort string = "K8S_PLUGIN_PORT"
+const K8sPlugin string = "K8S_PLUGIN"
+const K8sPluginPort string = "K8S_PLUGIN_PORT"
 const AuthorizationFailed string = "Authorization failed"
 const InstantiationFailed string = "Instantiation failed"
 const Default string = "default"

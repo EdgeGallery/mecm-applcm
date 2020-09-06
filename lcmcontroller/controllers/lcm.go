@@ -92,7 +92,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo := os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
+	pluginInfo := os.Getenv(util.K8sPlugin) + ":" + os.Getenv(util.K8sPluginPort)
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -133,7 +133,7 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo := os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
+	pluginInfo := os.Getenv(util.K8sPlugin) + ":" + os.Getenv(util.K8sPluginPort)
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -253,7 +253,7 @@ func (c *LcmController) Terminate() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
+		pluginInfo = os.Getenv(util.K8sPlugin) + ":" + os.Getenv(util.K8sPluginPort)
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -324,7 +324,7 @@ func (c *LcmController) Query() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
+		pluginInfo = os.Getenv(util.K8sPlugin) + ":" + os.Getenv(util.K8sPluginPort)
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -737,7 +737,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 				"Artifact not available in application package.")
 			return "", "", err
 		}
-		pluginInfo := os.Getenv(util.HelmPlugin) + ":" + os.Getenv(util.HelmPluginPort)
+		pluginInfo := os.Getenv(util.K8sPlugin) + ":" + os.Getenv(util.K8sPluginPort)
 		return artifact, pluginInfo, nil
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
