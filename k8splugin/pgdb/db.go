@@ -39,8 +39,8 @@ func init() {
 	dbName := os.Getenv("K8S_PLUGIN_DB")
 	dbHost := os.Getenv("K8S_PLUGIN_DB_HOST")
 	dbPort := os.Getenv("K8S_PLUGIN_DB_PORT")
-	dbSslMode := os.Getenv(DB_SSL_MODE)
-	dbSslRootCert := os.Getenv(DB_SSL_ROOT_CER)
+	dbSslMode := DB_SSL_MODE
+	dbSslRootCert := DB_SSL_ROOT_CER
 
 	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
