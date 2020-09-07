@@ -27,7 +27,6 @@ func GetDbAdapter() (Database, error) {
 	dbAdapter := util.GetAppConfig("dbAdapter")
 	switch dbAdapter {
 	case "pgDb":
-		log.Info("In init db adapter")
 		db := &PgDb{}
 		err := db.InitDatabase()
 		if err != nil {
