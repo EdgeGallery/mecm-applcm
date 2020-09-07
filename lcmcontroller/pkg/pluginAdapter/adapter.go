@@ -27,7 +27,7 @@ import (
 // Plugin adapter which decides a specific client based on plugin info
 type PluginAdapter struct {
 	pluginInfo string
-	client ClientIntf
+	client     ClientIntf
 }
 
 // Constructor of PluginAdapter

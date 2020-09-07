@@ -19,23 +19,37 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
+	log "github.com/sirupsen/logrus"
 	"lcmcontroller/controllers"
+	"lcmcontroller/pkg/dbAdapter"
+	"os"
 )
 
 const RootPath string = "/lcmcontroller/v1"
 
 // Init lcmcontroller APIs
 func init() {
+	adapter := initDbAdapter()
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "post:UploadConfig")
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "delete:RemoveConfig")
-	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/instantiate", &controllers.LcmController{},
-	"post:Instantiate")
-	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/terminate", &controllers.LcmController{},
-	"post:Terminate")
-	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId", &controllers.LcmController{},
-	"get:Query")
+	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/instantiate",
+		&controllers.LcmController{Db: adapter}, "post:Instantiate")
+	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/terminate",
+		&controllers.LcmController{Db: adapter}, "post:Terminate")
+	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId", &controllers.LcmController{Db: adapter},
+		"get:Query")
 	beego.Router(RootPath+"/tenants/:tenantId/kpi/:hostIp", &controllers.LcmController{},
-	"get:QueryKPI")
+		"get:QueryKPI")
 	beego.Router(RootPath+"/tenants/:tenantId/mep_capabilities/:hostIp", &controllers.LcmController{},
-	"get:QueryMepCapabilities")
+		"get:QueryMepCapabilities")
+}
+
+// Init Db adapter
+func initDbAdapter() (pgDb dbAdapter.Database) {
+	adapter, err := dbAdapter.GetDbAdapter()
+	if err != nil {
+		log.Error("Failed to get database")
+		os.Exit(1)
+	}
+	return adapter
 }

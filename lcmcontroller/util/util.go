@@ -304,3 +304,39 @@ func getCipherSuites(sslCiphers string) []uint16 {
 	}
 	return nil
 }
+
+// Get db user
+func GetDbUser() string {
+	dbUser := os.Getenv("LCM_CNTLR_USER")
+	if dbUser == "" {
+		dbUser = "lcmcontroller"
+	}
+	return dbUser
+}
+
+// Get database name
+func GetDbName() string {
+	dbName := os.Getenv("LCM_CNTLR_DB")
+	if dbName == "" {
+		dbName = "lcmcontrollerdb"
+	}
+	return dbName
+}
+
+// Get database host
+func GetDbHost() string {
+	dbHost := os.Getenv("LCM_CNTLR_DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	return dbHost
+}
+
+// Get database port
+func GetDbPort() string {
+	dbPort := os.Getenv("LCM_CNTLR_DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	return dbPort
+}
