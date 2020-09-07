@@ -901,24 +901,6 @@ func (c *LcmController) getInputParameters(clientIp string) (string, string, mul
 	return hostIp, appInsId, file, header, tenantId, nil
 }
 
-// Init Db adapter
-func (c *LcmController) initDbAdapter() {
-	dbAdapter := util.GetAppConfig("dbAdapter")
-	switch dbAdapter {
-	case "pgDb":
-		if c.db == nil {
-			pgDbadapter, err := NewPgDbAdapter()
-			if err != nil {
-				return
-			}
-			c.db = pgDbadapter
-		}
-		return
-	default:
-		return
-	}
-}
-
 // To display log for received message
 func (c *LcmController) displayReceivedMsg(clientIp string) {
 	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
