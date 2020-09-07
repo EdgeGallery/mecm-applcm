@@ -49,6 +49,7 @@ const DeployTypeIsNotHelmBased = "Deployment type is not helm based"
 const InvalidToken string = "invalid token"
 const AppInsId = "app_ins_id"
 const TenantId = "tenant_id"
+const FailedToGetClient = "Failed to get client"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30

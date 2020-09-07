@@ -98,7 +98,7 @@ func (c *LcmController) UploadConfig() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -140,7 +140,7 @@ func (c *LcmController) RemoveConfig() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -297,7 +297,7 @@ func (c *LcmController) Terminate() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -370,7 +370,7 @@ func (c *LcmController) Query() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -660,7 +660,7 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 	artifact string, clientIp string, accessToken string, appInsId string) error {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return err
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
