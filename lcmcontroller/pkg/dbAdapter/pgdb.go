@@ -15,22 +15,26 @@
  */
 
 // db controller
-package controllers
+package dbAdapter
 
 import (
+	"errors"
 	"fmt"
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/util"
+	"os"
+	"strings"
+	"unsafe"
 )
 
 // Pg database
 type PgDb struct {
-	 ormer orm.Ormer
+	ormer orm.Ormer
 }
 
 // Constructor of PluginAdapter
-func NewPgDbAdapter() (pgDb *PgDb, err error) {
+func (db *PgDb) initOrmer() error {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error("panic handled:", err)
@@ -38,12 +42,13 @@ func NewPgDbAdapter() (pgDb *PgDb, err error) {
 		}
 	}()
 	o := orm.NewOrm()
-	err = o.Using(util.Default)
+	err := o.Using(util.Default)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	db.ormer = o
 
-	return &PgDb{ormer: o}, nil
+	return nil
 }
 
 // Insert or update data into lcmcontroller
@@ -53,7 +58,7 @@ func (db *PgDb) InsertOrUpdateData(data interface{}, cols ...string) (err error)
 }
 
 // Read data from lcmcontroller
-func (db *PgDb)  ReadData(data interface{}, cols ...string) (err error) {
+func (db *PgDb) ReadData(data interface{}, cols ...string) (err error) {
 	err = db.ormer.Read(data, cols...)
 	return err
 }
@@ -74,4 +79,52 @@ func (db *PgDb) QueryCount(tableName string) (int64, error) {
 func (db *PgDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
 	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
 	return num, err
+}
+
+// Init database
+func (db *PgDb) InitDatabase() error {
+
+	dbUser := util.GetDbUser()
+	dbPwd := os.Getenv("LCM_CNTLR_DB_PASSWORD")
+	dbName := util.GetDbName()
+	dbHost := util.GetDbHost()
+	dbPort := util.GetDbPort()
+	dbSslMode := util.GetAppConfig("DB_SSL_MODE")
+	dbSslRootCert := util.GetAppConfig("DB_SSL_ROOT_CERT")
+
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
+	if validateDbParamsErr != nil || !dbParamsAreValid {
+		return errors.New("failed to validate db parameters")
+	}
+	registerDriverErr := orm.RegisterDriver(util.DriverName, orm.DRPostgres)
+	if registerDriverErr != nil {
+		log.Error("Failed to register driver")
+		return registerDriverErr
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwd,
+		dbName, dbHost, dbPort, dbSslMode, dbSslRootCert)
+	bStr := b.String()
+
+	registerDataBaseErr := orm.RegisterDataBase(util.Default, util.DriverName, bStr)
+	//clear bStr
+	bKey1 := *(*[]byte)(unsafe.Pointer(&bStr))
+	util.ClearByteArray(bKey1)
+
+	if registerDataBaseErr != nil {
+		log.Error("Failed to register database")
+		return registerDataBaseErr
+	}
+	errRunSyncdb := orm.RunSyncdb(util.Default, false, false)
+	if errRunSyncdb != nil {
+		log.Error("Failed to sync database.")
+		return errRunSyncdb
+	}
+	err := db.initOrmer()
+	if err != nil {
+		log.Error("Failed to init ormer")
+		return err
+	}
+	return nil
 }

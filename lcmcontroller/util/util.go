@@ -49,6 +49,7 @@ const DeployTypeIsNotHelmBased = "Deployment type is not helm based"
 const InvalidToken string = "invalid token"
 const AppInsId = "app_ins_id"
 const TenantId = "tenant_id"
+const FailedToGetClient = "Failed to get client"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
@@ -303,4 +304,40 @@ func getCipherSuites(sslCiphers string) []uint16 {
 		return cipherSuiteArr
 	}
 	return nil
+}
+
+// Get db user
+func GetDbUser() string {
+	dbUser := os.Getenv("LCM_CNTLR_USER")
+	if dbUser == "" {
+		dbUser = "lcmcontroller"
+	}
+	return dbUser
+}
+
+// Get database name
+func GetDbName() string {
+	dbName := os.Getenv("LCM_CNTLR_DB")
+	if dbName == "" {
+		dbName = "lcmcontrollerdb"
+	}
+	return dbName
+}
+
+// Get database host
+func GetDbHost() string {
+	dbHost := os.Getenv("LCM_CNTLR_DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	return dbHost
+}
+
+// Get database port
+func GetDbPort() string {
+	dbPort := os.Getenv("LCM_CNTLR_DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	return dbPort
 }

@@ -30,6 +30,7 @@ import (
 	"io"
 	"io/ioutil"
 	"lcmcontroller/models"
+	"lcmcontroller/pkg/dbAdapter"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -38,7 +39,7 @@ import (
 	"unsafe"
 
 	log "github.com/sirupsen/logrus"
-	"lcmcontroller/pkg/handlers/pluginAdapter"
+	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
 	"os"
 )
@@ -51,7 +52,7 @@ var (
 // Lcm Controller
 type LcmController struct {
 	beego.Controller
-	db Database
+	Db dbAdapter.Database
 }
 
 // Upload Config
@@ -97,7 +98,7 @@ func (c *LcmController) UploadConfig() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -139,7 +140,7 @@ func (c *LcmController) RemoveConfig() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -296,7 +297,7 @@ func (c *LcmController) Terminate() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -369,7 +370,7 @@ func (c *LcmController) Query() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -659,7 +660,7 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 	artifact string, clientIp string, accessToken string, appInsId string) error {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get client")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return err
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -686,8 +687,8 @@ func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*mod
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId: appInsId,
 	}
-	c.initDbAdapter()
-	readErr := c.db.ReadData(appInfoRecord, util.AppInsId)
+
+	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
 	if readErr != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"App info record does not exist in database")
@@ -798,8 +799,8 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 		DeployType: deployType,
 		TenantId:   tenantId,
 	}
-	c.initDbAdapter()
-	count, err := c.db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+
+	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
 	if err != nil {
 		return err
 	}
@@ -810,7 +811,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 		return errors.New("maximum number of app info records are exceeded for given tenant")
 	}
 
-	err = c.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
+	err = c.Db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save app info record to database.")
 		return err
@@ -823,8 +824,8 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 	tenantRecord := &models.TenantInfoRecord{
 		TenantId: tenantId,
 	}
-	c.initDbAdapter()
-	count, err := c.db.QueryCount("tenant_info_record")
+
+	count, err := c.Db.QueryCount("tenant_info_record")
 	if err != nil {
 		return err
 	}
@@ -835,7 +836,7 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 		return errors.New("maximum number of tenant records are exceeded")
 	}
 
-	err = c.db.InsertOrUpdateData(tenantRecord, util.TenantId)
+	err = c.Db.InsertOrUpdateData(tenantRecord, util.TenantId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save tenant record to database.")
 		return err
@@ -848,8 +849,8 @@ func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId: appInsId,
 	}
-	c.initDbAdapter()
-	err := c.db.DeleteData(appInfoRecord, util.AppInsId)
+
+	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)
 	if err != nil {
 		return err
 	}
@@ -861,13 +862,13 @@ func (c *LcmController) deleteTenantRecord(tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
 		TenantId: tenantId,
 	}
-	c.initDbAdapter()
-	count, err := c.db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+
+	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
 	if err != nil {
 		return err
 	}
 	if count == 0 {
-		err = c.db.DeleteData(tenantRecord, util.TenantId)
+		err = c.Db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
 			return err
 		}
@@ -898,24 +899,6 @@ func (c *LcmController) getInputParameters(clientIp string) (string, string, mul
 	}
 
 	return hostIp, appInsId, file, header, tenantId, nil
-}
-
-// Init Db adapter
-func (c *LcmController) initDbAdapter() {
-	dbAdapter := util.GetAppConfig("dbAdapter")
-	switch dbAdapter {
-	case "pgDb":
-		if c.db == nil {
-			pgDbadapter, err := NewPgDbAdapter()
-			if err != nil {
-				return
-			}
-			c.db = pgDbadapter
-		}
-		return
-	default:
-		return
-	}
 }
 
 // To display log for received message
