@@ -23,6 +23,7 @@ import (
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"k8splugin/util"
+	"os"
 	"strings"
 	"unsafe"
 )
@@ -71,7 +72,7 @@ func (db *PgDb) ReadData(data interface{}, cols ...string) (err error) {
 // Init database
 func (db *PgDb) InitDatabase() error {
 	dbUser := util.GetDbUser()
-	dbPwd := "te9Fmv%qaq"
+	dbPwd := os.Getenv("K8S_PLUGIN_DB_PASSWORD")
 	dbName := util.GetDbName()
 	dbHost := util.GetDbHost()
 	dbPort := util.GetDbPort()

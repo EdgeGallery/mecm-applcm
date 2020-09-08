@@ -227,9 +227,20 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 		return "", err
 	}
 
+	appInfoJson, err := getJSONResponse(appInfo, response)
+	if err != nil {
+		return "", err
+	}
+	return appInfoJson, nil
+
+}
+
+// get JSON response
+func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string, error) {
 	if response != nil {
 		appInfoJson, err := json.Marshal(response)
 		if err != nil {
+			log.Info("Failed to json marshal")
 			return "", err
 		}
 		return string(appInfoJson), nil
@@ -237,6 +248,7 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 
 	appInfoJson, err := json.Marshal(appInfo)
 	if err != nil {
+		log.Info("Failed to json marshal")
 		return "", err
 	}
 
