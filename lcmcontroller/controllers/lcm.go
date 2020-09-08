@@ -22,11 +22,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/astaxie/beego"
-	"github.com/buger/jsonparser"
-	"github.com/ghodss/yaml"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"io"
 	"io/ioutil"
 	"lcmcontroller/models"
@@ -38,10 +33,17 @@ import (
 	"strings"
 	"unsafe"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/astaxie/beego"
+	"github.com/buger/jsonparser"
+	"github.com/ghodss/yaml"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -502,7 +504,6 @@ func (c *LcmController) QueryMepCapabilities() {
 		c.ServeJSON()
 	}
 	log.Info("appJson", mepJson)
-	return
 }
 
 // Write error response
@@ -788,7 +789,6 @@ func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg 
 	c.writeErrorResponse(errMsg, code)
 	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
 		" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
-	return
 }
 
 // Insert or update application info record

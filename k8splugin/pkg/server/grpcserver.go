@@ -18,12 +18,6 @@ package server
 import (
 	"bytes"
 	"context"
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	_ "google.golang.org/grpc/encoding/gzip"
-	"google.golang.org/grpc/status"
 	"io"
 	"k8splugin/conf"
 	"k8splugin/internal/lcmservice"
@@ -33,6 +27,13 @@ import (
 	"k8splugin/util"
 	"net"
 	"os"
+
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	_ "google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -475,10 +476,10 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument,"AppInsId is invalid"))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, "AppInsId is invalid"))
 	}
 
-	return hostIp, appInsId,nil
+	return hostIp, appInsId, nil
 }
 
 // Get helm package
@@ -514,7 +515,7 @@ func (s *ServerGRPC) getHelmPackage(stream lcmservice.AppLCM_InstantiateServer) 
 }
 
 // Get upload configuration file
-func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error){
+func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error) {
 	// Receive upload config file
 	file := bytes.Buffer{}
 	for {

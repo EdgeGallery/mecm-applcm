@@ -27,9 +27,9 @@ func init() {
 
 // Application instance info record
 type AppInstanceInfo struct {
-	AppInsId     string `orm:"pk"`
-	HostIp       string
-	WorkloadId   string
+	AppInsId   string `orm:"pk"`
+	HostIp     string
+	WorkloadId string
 }
 
 // Application Information
@@ -39,22 +39,21 @@ type AppInfo struct {
 
 // Pod Information
 type PodInfo struct {
-	PodStatus string `json:"podstatus"`
-	PodName string `json:"podname"`
+	PodStatus  string          `json:"podstatus"`
+	PodName    string          `json:"podname"`
 	Containers []ContainerInfo `json:"containers"`
 }
 
 // Container Information
-type ContainerInfo struct
-{
-	ContainerName string `json:"containername"`
-	MetricsUsage ContainerStats `json:"metricsusage"`
+type ContainerInfo struct {
+	ContainerName string         `json:"containername"`
+	MetricsUsage  ContainerStats `json:"metricsusage"`
 }
 
 // Container statistics
 type ContainerStats struct {
-	CpuUsage string `json:"cpuusage"`
-	MemUsage string `json:"memusage"`
+	CpuUsage  string `json:"cpuusage"`
+	MemUsage  string `json:"memusage"`
 	DiskUsage string `json:"diskusage"`
 }
 
@@ -65,7 +64,6 @@ type LabelSelector struct {
 
 // Label Info
 type Label struct {
-	Kind string
+	Kind     string
 	Selector string
 }
-
