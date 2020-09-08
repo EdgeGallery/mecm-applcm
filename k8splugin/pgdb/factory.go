@@ -16,9 +16,26 @@
 
 package pgdb
 
-// Database API's
-type Database interface {
-	InitDatabase() error
-	InsertOrUpdateData(data interface{}, cols ...string) (err error)
-	ReadData(data interface{}, cols ...string) (err error)
+import (
+	"errors"
+	log "github.com/sirupsen/logrus"
+	"os"
+)
+
+// Init Db adapter
+func GetDbAdapter() (Database, error) {
+	//dbAdapter := os.Getenv("dbAdapter")
+	dbAdapter := "pgDb"
+	switch dbAdapter {
+	case "pgDb":
+		db := &PgDb{}
+		err := db.InitDatabase()
+		if err != nil {
+			log.Error("Failed to register database")
+			os.Exit(1)
+		}
+		return db, nil
+	default:
+		return nil, errors.New("no database is found")
+	}
 }

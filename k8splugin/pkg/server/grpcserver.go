@@ -64,6 +64,12 @@ func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.certificate = cfg.ServerConfig.Certfilepath
 	s.key = cfg.ServerConfig.Keyfilepath
 	s.serverConfig = cfg.ServerConfig
+	dbAdapter, err := pgdb.GetDbAdapter()
+	if err != nil {
+		log.Error("Failed to get database")
+		os.Exit(1)
+	}
+	s.db = dbAdapter
 	log.Infof("Binding is successful")
 	return
 }
@@ -77,15 +83,15 @@ func (s *ServerGRPC) Listen() (err error) {
 	// Listen announces on the network address
 	listener, err = net.Listen("tcp", s.address+":"+s.port)
 	if err != nil {
-		log.Errorf("failed to listen on specified port")
+		log.Error("failed to listen on specified port")
 		return err
 	}
-	log.Infof("Server started listening on port {}", s.port)
+	log.Info("Server started listening on configured port")
 
 	if !s.serverConfig.Sslnotenabled {
 		tlsConfig, err := util.GetTLSConfig(s.serverConfig, s.certificate, s.key)
 		if err != nil {
-			log.Errorf("failed to load certificates")
+			log.Error("failed to load certificates")
 			return err
 		}
 
@@ -105,7 +111,7 @@ func (s *ServerGRPC) Listen() (err error) {
 	// Server start serving
 	err = s.server.Serve(listener)
 	if err != nil {
-		log.Errorf("failed to listen for GRPC connections.")
+		log.Error("failed to listen for GRPC connections.")
 		return err
 	}
 	return
@@ -123,18 +129,17 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 	// Create HELM Client
 	hc, err := adapter.NewHelmClient(hostIp)
 	if os.IsNotExist(err) {
-		return nil, s.logError(status.Errorf(codes.InvalidArgument,
+		return nil, s.logError(status.Error(codes.InvalidArgument,
 			"Kubeconfig corresponding to given Edge can't be found."))
 	}
 
 	appInstanceRecord := &models.AppInstanceInfo{
 		AppInsId: appInsId,
 	}
-	s.initDbAdapter()
 	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
-		return nil, s.logError(status.Errorf(codes.InvalidArgument,
-			"App info record does not exist in database. Err: %s", readErr))
+		return nil, s.logError(status.Error(codes.InvalidArgument,
+			"App info record does not exist in database."))
 	}
 
 	// Query Chart
@@ -161,11 +166,10 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 	appInstanceRecord := &models.AppInstanceInfo{
 		AppInsId: appInsId,
 	}
-	s.initDbAdapter()
 	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
-		return nil, s.logError(status.Errorf(codes.InvalidArgument,
-			"App info record does not exist in database. Err: %s", readErr))
+		return nil, s.logError(status.Error(codes.InvalidArgument,
+			"App info record does not exist in database."))
 	}
 
 	// Create HELM client
@@ -295,7 +299,7 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 	configPath := kubeconfigPath + hostIp
 	err = os.Remove(configPath)
 	if err != nil {
-		log.Error("host %s config delete failed....", err.Error())
+		log.Error("host config delete failed.")
 		return resp, err
 	}
 
@@ -351,7 +355,7 @@ func (s *ServerGRPC) contextError(ctx context.Context) error {
 // Logging error
 func (s *ServerGRPC) logError(err error) error {
 	if err != nil {
-		log.Errorf("Error Information: ", err)
+		log.Errorf("Error Information: %v", err)
 	}
 	return err
 }
@@ -361,34 +365,34 @@ func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_Insta
 	// Receive metadata which is access token
 	req, err := stream.Recv()
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.CannotReceivePackage, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.AccssTokenIsInvalid, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 	}
 
 	// Receive metadata which is app instance id
 	req, err = stream.Recv()
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.CannotReceivePackage, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	appInsId := req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, "App instance id is invalid", err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, "App instance id is invalid"))
 	}
 
 	// Receive metadata which is host ip
 	req, err = stream.Recv()
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.CannotReceivePackage, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	hostIp := req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument, util.HostIpIsInvalid, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
 
 	return hostIp, appInsId, nil
@@ -400,22 +404,22 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
-			util.AccssTokenIsInvalid, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.AccssTokenIsInvalid))
 	}
 
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
-			util.HostIpIsInvalid, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.HostIpIsInvalid))
 	}
 
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
-			"AppInsId is invalid", err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument,
+			"AppInsId is invalid"))
 	}
 
 	return hostIp, appInsId, nil
@@ -433,7 +437,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", s.logError(status.Errorf(codes.InvalidArgument, util.AccssTokenIsInvalid, err))
+		return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 	}
 
 	// Receive metadata which is host ip
@@ -445,7 +449,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", s.logError(status.Errorf(codes.InvalidArgument, util.HostIpIsInvalid, err))
+		return "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
 
 	return hostIp, nil
@@ -458,25 +462,23 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
-			util.AccssTokenIsInvalid, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.AccssTokenIsInvalid))
 	}
 
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
-			util.HostIpIsInvalid, err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
 
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Errorf(codes.InvalidArgument,
-			"AppInsId is invalid", err))
+		return "", "", s.logError(status.Error(codes.InvalidArgument,"AppInsId is invalid"))
 	}
 
-	return hostIp, appInsId, nil
+	return hostIp, appInsId,nil
 }
 
 // Get helm package
@@ -512,7 +514,7 @@ func (s *ServerGRPC) getHelmPackage(stream lcmservice.AppLCM_InstantiateServer) 
 }
 
 // Get upload configuration file
-func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error) {
+func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error){
 	// Receive upload config file
 	file := bytes.Buffer{}
 	for {
@@ -550,30 +552,10 @@ func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName st
 		HostIp:     hostIp,
 		WorkloadId: releaseName,
 	}
-	s.initDbAdapter()
 	err = s.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
-		return s.logError(status.Errorf(codes.InvalidArgument,
-			"Failed to save app info record to database. Err: %s", err))
+		return s.logError(status.Error(codes.InvalidArgument,
+			"Failed to save app info record to database."))
 	}
 	return nil
-}
-
-// Init Db adapter
-func (c *ServerGRPC) initDbAdapter() {
-	//	dbAdapter := os.Getenv("dbAdapter")
-	dbAdapter := "pgDb"
-	switch dbAdapter {
-	case "pgDb":
-		if c.db == nil {
-			pgDbadapter, err := pgdb.NewPgDbAdapter()
-			if err != nil {
-				return
-			}
-			c.db = pgDbadapter
-		}
-		return
-	default:
-		return
-	}
 }

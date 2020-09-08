@@ -299,15 +299,51 @@ func GetConfiguration(configPath string) (config *conf.Configurations, err error
 	var configuration conf.Configurations
 
 	if err = viper.ReadInConfig(); err != nil {
-		log.Error("failed to read configuration file, %v", err)
+		log.Error("failed to read configuration file")
 		return nil, err
 	}
 
 	err = viper.Unmarshal(&configuration)
 	if err != nil {
-		log.Error("Unable to decode into struct, %v", err)
+		log.Errorf("Unable to decode into struct, %v", err)
 		return nil, err
 	}
 
 	return &configuration, nil
+}
+
+// Get db user
+func GetDbUser() string {
+	dbUser := os.Getenv("K8S_PLUGIN_USER")
+	if dbUser == "" {
+		dbUser = "k8splugin"
+	}
+	return dbUser
+}
+
+// Get database name
+func GetDbName() string {
+	dbName := os.Getenv("K8S_PLUGIN_DB")
+	if dbName == "" {
+		dbName = "k8splugindb"
+	}
+	return dbName
+}
+
+// Get database host
+func GetDbHost() string {
+	dbHost := os.Getenv("K8S_PLUGIN_DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	return dbHost
+}
+
+// Get database port
+func GetDbPort() string {
+	dbPort := os.Getenv("K8S_PLUGIN_DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	return dbPort
 }

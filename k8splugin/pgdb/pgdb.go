@@ -18,10 +18,20 @@
 package pgdb
 
 import (
+	"errors"
 	"fmt"
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"k8splugin/util"
+	"os"
+	"strings"
+	"unsafe"
+)
+
+// Variables are required for db connections
+var (
+	DB_SSL_MODE        = "disable"
+	DB_SSL_ROOT_CER   = "ssl/ca.crt"
 )
 
 // Pg database
@@ -30,20 +40,21 @@ type PgDb struct {
 }
 
 // Constructor of PluginAdapter
-func NewPgDbAdapter() (pgDb *PgDb, err error) {
+func (db *PgDb) initOrmer() (err1 error) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error("panic handled:", err)
-			err = fmt.Errorf("recover panic as %s", err)
+			err1 = fmt.Errorf("recover panic as %s", err)
 		}
 	}()
 	o := orm.NewOrm()
-	err = o.Using(util.Default)
-	if err != nil {
-		return nil, err
+	err1 = o.Using(util.Default)
+	if err1 != nil {
+		return err1
 	}
+	db.ormer = o
 
-	return &PgDb{ormer: o}, nil
+	return nil
 }
 
 // Insert or update data into k8splugin
@@ -53,7 +64,54 @@ func (db *PgDb) InsertOrUpdateData(data interface{}, cols ...string) (err error)
 }
 
 // Read data from k8splugin
-func (db *PgDb)  ReadData(data interface{}, cols ...string) (err error) {
+func (db *PgDb) ReadData(data interface{}, cols ...string) (err error) {
 	err = db.ormer.Read(data, cols...)
 	return err
+}
+
+// Init database
+func (db *PgDb) InitDatabase() error {
+	dbUser := util.GetDbUser()
+	dbPwd := os.Getenv("K8S_PLUGIN_DB_PASSWORD")
+	dbName := util.GetDbName()
+	dbHost := util.GetDbHost()
+	dbPort := util.GetDbPort()
+	dbSslMode := DB_SSL_MODE
+	dbSslRootCert := DB_SSL_ROOT_CER
+
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
+	if validateDbParamsErr != nil || !dbParamsAreValid {
+		return errors.New("failed to validate db parameters")
+	}
+	registerDriverErr := orm.RegisterDriver(util.DriverName, orm.DRPostgres)
+	if registerDriverErr != nil {
+		log.Error("Failed to register driver")
+		return registerDriverErr
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwd,
+		dbName, dbHost, dbPort, dbSslMode, dbSslRootCert)
+	bStr := b.String()
+
+	registerDataBaseErr := orm.RegisterDataBase(util.Default, util.DriverName, bStr)
+	//clear bStr
+	bKey1 := *(*[]byte)(unsafe.Pointer(&bStr))
+	util.ClearByteArray(bKey1)
+
+	if registerDataBaseErr != nil {
+		log.Error("Failed to register database")
+		return registerDataBaseErr
+	}
+	errRunSyncdb := orm.RunSyncdb(util.Default, false, false)
+	if errRunSyncdb != nil {
+		log.Error("Failed to sync database.")
+		return errRunSyncdb
+	}
+	err := db.initOrmer()
+	if err != nil {
+		log.Error("Failed to init ormer")
+		return err
+	}
+	return nil
 }
