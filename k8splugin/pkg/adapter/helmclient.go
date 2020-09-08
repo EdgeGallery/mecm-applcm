@@ -21,15 +21,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ghodss/yaml"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8splugin/models"
 	"k8splugin/util"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/ghodss/yaml"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	log "github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
@@ -62,7 +63,7 @@ type Manifest struct {
 		Name      string `yaml:"name"`
 		Namespace string `yaml:"namespace"`
 		Labels    struct {
-			App string `yaml:"app"`
+			App       string `yaml:"app"`
 			Component string `yaml:"component"`
 		} `yaml:"labels"`
 	} `yaml:"metadata"`
@@ -82,7 +83,6 @@ type Manifest struct {
 		} `yaml:"template"`
 	} `yaml:"spec"`
 }
-
 
 // Constructor of helm client for a given host IP
 func NewHelmClient(hostIP string) (*HelmClient, error) {
@@ -198,12 +198,12 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 	}
 
 	for i := 0; i < len(manifest); i++ {
-		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service"  {
+		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service" {
 			appName := manifest[i].Metadata.Name
-			if  manifest[i].Metadata.Labels.App != "" {
+			if manifest[i].Metadata.Labels.App != "" {
 				appName = manifest[i].Metadata.Labels.App
 			}
-			pod := "app=" +  appName
+			pod := "app=" + appName
 			label.Kind = manifest[i].Kind
 			label.Selector = pod
 			labelSelector.Label = append(labelSelector.Label, label)
@@ -260,7 +260,7 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	config *rest.Config) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
-		if label.Kind == "Pod" || label.Kind == "Deployment"{
+		if label.Kind == "Pod" || label.Kind == "Deployment" {
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
 			}
@@ -290,7 +290,7 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config) (podInfo models.PodInfo, err error) {
 	for _, pod := range pods.Items {
 		podName := pod.GetObjectMeta().GetName()
-		podMetrics, err  := getPodMetrics(config, podName)
+		podMetrics, err := getPodMetrics(config, podName)
 		if err != nil {
 			return podInfo, err
 		}
@@ -301,7 +301,7 @@ func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.
 		}
 
 		podInfo.PodName = podName
-		phase := pod.Status.Phase;
+		phase := pod.Status.Phase
 		podInfo.PodStatus = string(phase)
 	}
 
@@ -363,10 +363,10 @@ func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 			cpu = cpu * 1000000
 			totalCpuUsage = strconv.FormatInt(cpu, 10)
 			memQuantity := node.Status.Allocatable.Memory()
-			memory, _ := memQuantity.AsInt64();
+			memory, _ := memQuantity.AsInt64()
 			totalMemUsage = strconv.FormatInt(memory, 10)
 			diskQuantity := node.Status.Allocatable.StorageEphemeral()
-			disk, _ :=  diskQuantity.AsInt64()
+			disk, _ := diskQuantity.AsInt64()
 			totalDiskUsage = strconv.FormatInt(disk, 10)
 		}
 	} else {
@@ -378,7 +378,7 @@ func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 
 // Split manifest yaml file
 func splitManifestYaml(data []byte) (manifest []Manifest, err error) {
-	manifestBuf :=  []Manifest{}
+	manifestBuf := []Manifest{}
 
 	yamlSeparator := "\n---"
 	yamlString := string(data)

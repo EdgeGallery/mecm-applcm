@@ -28,20 +28,20 @@ func init() {
 
 // Application info record
 type AppInfoRecord struct {
-	AppInsId     string `orm:"pk"`
-	HostIp       string
-	DeployType   string
-	TenantId     string
+	AppInsId   string `orm:"pk"`
+	HostIp     string
+	DeployType string
+	TenantId   string
 }
 
 // Tenant info record
 type TenantInfoRecord struct {
-	TenantId     string `orm:"pk"`
+	TenantId string `orm:"pk"`
 }
 
 // Metric Information
 type MetricInfo struct {
-	CpuUsage string `json:"cpuusage"`
-	MemUsage string `json:"memusgae"`
+	CpuUsage  string `json:"cpuusage"`
+	MemUsage  string `json:"memusgae"`
 	DiskUsage string `json:"diskusgae"`
 }

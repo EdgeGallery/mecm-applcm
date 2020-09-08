@@ -20,18 +20,19 @@ package pgdb
 import (
 	"errors"
 	"fmt"
-	"github.com/astaxie/beego/orm"
-	log "github.com/sirupsen/logrus"
 	"k8splugin/util"
 	"os"
 	"strings"
 	"unsafe"
+
+	"github.com/astaxie/beego/orm"
+	log "github.com/sirupsen/logrus"
 )
 
 // Variables are required for db connections
 var (
-	DB_SSL_MODE        = "disable"
-	DB_SSL_ROOT_CER   = "ssl/ca.crt"
+	DB_SSL_MODE     = "disable"
+	DB_SSL_ROOT_CER = "ssl/ca.crt"
 )
 
 // Pg database

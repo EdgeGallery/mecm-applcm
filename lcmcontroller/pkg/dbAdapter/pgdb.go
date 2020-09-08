@@ -20,12 +20,13 @@ package dbAdapter
 import (
 	"errors"
 	"fmt"
-	"github.com/astaxie/beego/orm"
-	log "github.com/sirupsen/logrus"
 	"lcmcontroller/util"
 	"os"
 	"strings"
 	"unsafe"
+
+	"github.com/astaxie/beego/orm"
+	log "github.com/sirupsen/logrus"
 )
 
 // Pg database
@@ -63,7 +64,7 @@ func (db *PgDb) ReadData(data interface{}, cols ...string) (err error) {
 	return err
 }
 
-// Read data from lcmcontroller
+// Delete data from lcmcontroller
 func (db *PgDb) DeleteData(data interface{}, cols ...string) (err error) {
 	_, err = db.ormer.Delete(data, cols...)
 	return err

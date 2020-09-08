@@ -20,18 +20,19 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	log "github.com/sirupsen/logrus"
-	"github.com/dgrijalva/jwt-go"
 	"k8splugin/conf"
 	"os"
 	"regexp"
-	"github.com/spf13/viper"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/go-playground/validator/v10"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 var (
-	jwtPublicKey        = os.Getenv("JWT_PUBLIC_KEY")
+	jwtPublicKey = os.Getenv("JWT_PUBLIC_KEY")
 )
 
 const DB_REGEX string = `^[\w-]{4,16}$`
@@ -94,7 +95,7 @@ func getPasswordValidCount(password *[]byte) int {
 		pwdValidCount++
 	}
 	pwdIsValid, err = regexp.Match(upperCaseRegex, *password)
-	if pwdIsValid && err == nil  {
+	if pwdIsValid && err == nil {
 		pwdValidCount++
 	}
 	// space validation for password complexity is not added
@@ -153,30 +154,30 @@ func ValidateAccessToken(accessToken string) error {
 	if token != nil && !token.Valid {
 		if claims["authorities"] == nil {
 			log.Info("Invalid token A")
-			return  errors.New(InvalidToken)
+			return errors.New(InvalidToken)
 		}
 		if claims["userId"] == nil {
 			log.Info("Invalid token UI")
-			return  errors.New(InvalidToken)
+			return errors.New(InvalidToken)
 		}
 		if claims["user_name"] == nil {
 			log.Info("Invalid token UN")
-			return  errors.New(InvalidToken)
+			return errors.New(InvalidToken)
 		}
 	} else if er, ok := err.(*jwt.ValidationError); ok {
 		if er.Errors&jwt.ValidationErrorMalformed != 0 {
 			log.Info("Invalid token")
-			return  errors.New(InvalidToken)
-		} else if er.Errors&(jwt.ValidationErrorExpired | jwt.ValidationErrorNotValidYet) != 0 {
+			return errors.New(InvalidToken)
+		} else if er.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
 			log.Infof("token expired or inactive")
-			return  errors.New("token expired or inactive")
+			return errors.New("token expired or inactive")
 		} else {
 			log.Info("Couldn't handle this token: ", err)
-			return  errors.New(err.Error())
+			return errors.New(err.Error())
 		}
 	} else {
 		log.Info("Couldn't handle this token: ", err)
-		return  errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 
 	log.Info("Token validated successfully")
@@ -287,7 +288,7 @@ func ValidateServerName(serverName string) (bool, error) {
 	return regexp.MatchString(ServerNameRegex, serverName)
 }
 
-func GetConfiguration(configPath string) (config *conf.Configurations, err error)  {
+func GetConfiguration(configPath string) (config *conf.Configurations, err error) {
 
 	// Set the file name of the configurations file
 	viper.SetConfigName("config")

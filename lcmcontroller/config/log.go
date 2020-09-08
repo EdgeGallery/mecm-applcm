@@ -18,10 +18,11 @@
 package config
 
 import (
-	"github.com/natefinch/lumberjack"
-	"github.com/sirupsen/logrus"
 	"lcmcontroller/util"
 	"os"
+
+	"github.com/natefinch/lumberjack"
+	"github.com/sirupsen/logrus"
 )
 
 // Initialize logging
@@ -36,10 +37,10 @@ func init() {
 		}
 		ioWriter := &lumberjack.Logger{
 			Filename:   fileName,
-			MaxSize:    util.MaxSize,   // megabytes
-			MaxBackups: util.MaxBackups,   // max archived files
-			MaxAge:     util.MaxAge,   // days
-			Compress:   true, // compression
+			MaxSize:    util.MaxSize,    // megabytes
+			MaxBackups: util.MaxBackups, // max archived files
+			MaxAge:     util.MaxAge,     // days
+			Compress:   true,            // compression
 		}
 		logrus.SetOutput(ioWriter)
 	} else {
