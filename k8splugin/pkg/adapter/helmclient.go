@@ -221,10 +221,18 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 		return "", err
 	}
 
-	appInfo, err := getResourcesBySelector(labelSelector, clientset, config)
+	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, config)
 	if err != nil {
 		log.Error("Failed to get pod statistics")
 		return "", err
+	}
+
+	if response != nil {
+		appInfoJson, err := json.Marshal(response)
+		if err != nil {
+			return "", err
+		}
+		return string(appInfoJson), nil
 	}
 
 	appInfoJson, err := json.Marshal(appInfo)
@@ -237,7 +245,7 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 
 // Get resources by selector
 func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
-	config *rest.Config) (appInfo models.AppInfo, err error) {
+	config *rest.Config) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
 		if label.Kind == "Pod" || label.Kind == "Deployment"{
@@ -247,19 +255,23 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 
 			pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
 			if err != nil {
-				return appInfo, err
+				return appInfo, nil, err
+			}
+			if len(pods.Items) == 0 {
+				response := map[string]string{"status": "not running"}
+				return appInfo, response, nil
 			}
 
 			podInfo, err := getPodInfo(pods, clientset, config)
 			if err != nil {
-				return appInfo, err
+				return appInfo, nil, err
 			}
 
 			appInfo.Pods = append(appInfo.Pods, podInfo)
 		}
 	}
 
-	return appInfo, nil
+	return appInfo, nil, nil
 }
 
 // Get pod information
