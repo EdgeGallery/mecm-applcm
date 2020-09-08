@@ -299,13 +299,13 @@ func GetConfiguration(configPath string) (config *conf.Configurations, err error
 	var configuration conf.Configurations
 
 	if err = viper.ReadInConfig(); err != nil {
-		log.Error("failed to read configuration file, %v", err)
+		log.Error("failed to read configuration file")
 		return nil, err
 	}
 
 	err = viper.Unmarshal(&configuration)
 	if err != nil {
-		log.Error("Unable to decode into struct, %v", err)
+		log.Errorf("Unable to decode into struct, %v", err)
 		return nil, err
 	}
 

@@ -129,7 +129,7 @@ func (hc *HelmClient) InstallChart(helmPkg bytes.Buffer) (string, error) {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
 		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
-			fmt.Sprintf(format, v)
+			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
 		return "", err
@@ -154,7 +154,7 @@ func (hc *HelmClient) UninstallChart(relName string) error {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
 		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
-			fmt.Sprintf(format, v)
+			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
 		return err
@@ -179,7 +179,7 @@ func (hc *HelmClient) QueryChart(relName string) (string, error) {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
 		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
-			fmt.Sprintf(format, v)
+			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
 		return "", err
