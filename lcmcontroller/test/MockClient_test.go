@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 )
 
-var SUCCESS_RETURN = "Success"
+const SUCCESS_RETURN = "Success"
 
 type MockClient struct{}
 

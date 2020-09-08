@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
+const (
 	FILE_PERMISSION os.FileMode = 0750
 	DIRECTORY                   = "/usr/app"
 	HOST_IP                     = "1.1.1.1"

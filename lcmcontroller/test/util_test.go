@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-var TEST_X_FWD_IP = "1.1.1.1:10000"
+const TEST_X_FWD_IP = "1.1.1.1:10000"
 
 // Creates a new file upload http request with optional extra params
 func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
