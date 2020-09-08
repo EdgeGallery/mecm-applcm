@@ -311,3 +311,39 @@ func GetConfiguration(configPath string) (config *conf.Configurations, err error
 
 	return &configuration, nil
 }
+
+// Get db user
+func GetDbUser() string {
+	dbUser := os.Getenv("K8S_PLUGIN_USER")
+	if dbUser == "" {
+		dbUser = "k8splugin"
+	}
+	return dbUser
+}
+
+// Get database name
+func GetDbName() string {
+	dbName := os.Getenv("K8S_PLUGIN_DB")
+	if dbName == "" {
+		dbName = "k8splugindb"
+	}
+	return dbName
+}
+
+// Get database host
+func GetDbHost() string {
+	dbHost := os.Getenv("K8S_PLUGIN_DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	return dbHost
+}
+
+// Get database port
+func GetDbPort() string {
+	dbPort := os.Getenv("K8S_PLUGIN_DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	return dbPort
+}

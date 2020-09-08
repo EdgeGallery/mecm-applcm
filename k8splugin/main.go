@@ -35,7 +35,6 @@ func main() {
 	log.Info("Starting k8s plugin server")
 
 	config, err := util.GetConfiguration(configPath)
-
 	if err != nil {
 		log.Errorf("Exiting system...")
 		return

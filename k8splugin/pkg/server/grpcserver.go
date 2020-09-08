@@ -64,6 +64,12 @@ func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.certificate = cfg.ServerConfig.Certfilepath
 	s.key = cfg.ServerConfig.Keyfilepath
 	s.serverConfig = cfg.ServerConfig
+	dbAdapter, err := pgdb.GetDbAdapter()
+	if err != nil {
+		log.Error("Failed to get database")
+		os.Exit(1)
+	}
+	s.db = dbAdapter
 	log.Infof("Binding is successful")
 	return
 }
@@ -130,7 +136,6 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 	appInstanceRecord := &models.AppInstanceInfo{
 		AppInsId: appInsId,
 	}
-	s.initDbAdapter()
 	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
 		return nil, s.logError(status.Errorf(codes.InvalidArgument,
@@ -161,7 +166,6 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 	appInstanceRecord := &models.AppInstanceInfo{
 		AppInsId: appInsId,
 	}
-	s.initDbAdapter()
 	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
 		return nil, s.logError(status.Errorf(codes.InvalidArgument,
@@ -476,7 +480,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 			"AppInsId is invalid", err))
 	}
 
-	return hostIp, appInsId, nil
+	return hostIp, appInsId,nil
 }
 
 // Get helm package
@@ -512,7 +516,7 @@ func (s *ServerGRPC) getHelmPackage(stream lcmservice.AppLCM_InstantiateServer) 
 }
 
 // Get upload configuration file
-func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error) {
+func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error){
 	// Receive upload config file
 	file := bytes.Buffer{}
 	for {
@@ -550,30 +554,10 @@ func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName st
 		HostIp:     hostIp,
 		WorkloadId: releaseName,
 	}
-	s.initDbAdapter()
 	err = s.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		return s.logError(status.Errorf(codes.InvalidArgument,
 			"Failed to save app info record to database. Err: %s", err))
 	}
 	return nil
-}
-
-// Init Db adapter
-func (c *ServerGRPC) initDbAdapter() {
-	//	dbAdapter := os.Getenv("dbAdapter")
-	dbAdapter := "pgDb"
-	switch dbAdapter {
-	case "pgDb":
-		if c.db == nil {
-			pgDbadapter, err := pgdb.NewPgDbAdapter()
-			if err != nil {
-				return
-			}
-			c.db = pgDbadapter
-		}
-		return
-	default:
-		return
-	}
 }
