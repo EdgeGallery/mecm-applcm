@@ -1,12 +1,14 @@
 package test
 
-type MockDb struct{}
+type MockDb struct {
+}
 
 func (db *MockDb) InitDatabase() error {
 	panic("implement me")
 }
 
 func (db *MockDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
+
 	return nil
 }
 

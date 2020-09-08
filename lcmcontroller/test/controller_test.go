@@ -15,9 +15,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	FILE_PERMISSION os.FileMode = 0750
+	DIRECTORY                   = "/usr/app"
+	HOST_IP                     = "1.1.1.1"
+)
+
 func TestInstantiateSuccess(t *testing.T) {
 
-	_ = os.Mkdir("/usr/app", 0750)
+	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
 
 	// Setting file path
 	path, _ := os.Getwd()
@@ -25,11 +31,12 @@ func TestInstantiateSuccess(t *testing.T) {
 
 	// Setting extra parameters
 	extraParams := map[string]string{
-		"hostIp": "1.1.1.1",
+		"hostIp": HOST_IP,
 	}
 
 	// Get Request
-	request, _ := newfileUploadRequest("https://1.1.1.1:10000//lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams, "file", path)
+	request, _ := newfileUploadRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
+		"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams, "file", path)
 
 	// Prepare Input
 	input := &context.BeegoInput{Context: &context.Context{Request: request}}
@@ -37,7 +44,9 @@ func TestInstantiateSuccess(t *testing.T) {
 	input.SetParam(":appInstanceId", "e921ce54-82c8-4532-b5c6-8516cf75f7a4")
 
 	// Prepare beego controller
-	beegoController := beego.Controller{Ctx: &context.Context{Input: input, Request: request, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}}, Data: make(map[interface{}]interface{})}
+	beegoController := beego.Controller{Ctx: &context.Context{Input: input, Request: request,
+		ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+		Data: make(map[interface{}]interface{})}
 
 	// Create LCM controller with mocked DB and prepared Beego controller
 	controller := &controllers.LcmController{Db: &MockDb{}, Controller: beegoController}
@@ -56,7 +65,7 @@ func TestInstantiateSuccess(t *testing.T) {
 	var c *beego.Controller
 	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
 		go func() {
-
+			// do nothing
 		}()
 	})
 	defer patch3.Reset()
@@ -64,7 +73,7 @@ func TestInstantiateSuccess(t *testing.T) {
 	// Test instantiate
 	controller.Instantiate()
 
-	_ = os.RemoveAll("/usr/app")
+	_ = os.RemoveAll(DIRECTORY)
 
 	// Check for success case wherein the status value will be default i.e. 0
 	assert.Equal(t, 0, controller.Ctx.ResponseWriter.Status, "TestInstantiateSuccess failed")
@@ -72,7 +81,7 @@ func TestInstantiateSuccess(t *testing.T) {
 
 func TestUploadSuccess(t *testing.T) {
 
-	_ = os.Mkdir("/usr/app", 0750)
+	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
 
 	// Setting file path
 	path, _ := os.Getwd()
@@ -80,11 +89,12 @@ func TestUploadSuccess(t *testing.T) {
 
 	// Setting extra parameters
 	extraParams := map[string]string{
-		"hostIp": "1.1.1.1",
+		"hostIp": HOST_IP,
 	}
 
 	// Get Request
-	request, _ := newfileUploadRequest("https://edgegallery:8094/lcmcontroller/v1/configuration", extraParams, "configFile", path)
+	request, _ := newfileUploadRequest("https://edgegallery:8094/lcmcontroller/v1/configuration", extraParams,
+		"configFile", path)
 
 	// Prepare Input
 	input := &context.BeegoInput{Context: &context.Context{Request: request}}
@@ -92,7 +102,9 @@ func TestUploadSuccess(t *testing.T) {
 	input.SetParam(":appInstanceId", "e921ce54-82c8-4532-b5c6-8516cf75f7a4")
 
 	// Prepare beego controller
-	beegoController := beego.Controller{Ctx: &context.Context{Input: input, Request: request, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}}, Data: make(map[interface{}]interface{})}
+	beegoController := beego.Controller{Ctx: &context.Context{Input: input, Request: request,
+		ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+		Data: make(map[interface{}]interface{})}
 
 	// Create LCM controller with mocked DB and prepared Beego controller
 	controller := &controllers.LcmController{Db: &MockDb{}, Controller: beegoController}
@@ -111,7 +123,7 @@ func TestUploadSuccess(t *testing.T) {
 	var c *beego.Controller
 	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
 		go func() {
-
+			// do nothing
 		}()
 	})
 	defer patch3.Reset()
@@ -119,7 +131,7 @@ func TestUploadSuccess(t *testing.T) {
 	// Test instantiate
 	controller.UploadConfig()
 
-	_ = os.RemoveAll("/usr/app")
+	_ = os.RemoveAll(DIRECTORY)
 
 	// Check for success case wherein the status value will be default i.e. 0
 	assert.Equal(t, 0, controller.Ctx.ResponseWriter.Status, "TestUploadSuccess failed")
