@@ -166,7 +166,7 @@ func (hc *HelmClient) UninstallChart(relName string) error {
 		log.Errorf("Unable to uninstall chart. Err: %s", err)
 		return err
 	}
-	log.Info("Successfully uninstalled chart. Response Info: %s", res.Info)
+	log.Infof("Successfully uninstalled chart. Response Info: %s", res.Info)
 	return nil
 }
 
