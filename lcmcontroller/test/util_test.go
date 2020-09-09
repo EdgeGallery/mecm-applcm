@@ -12,7 +12,7 @@ import (
 const TEST_X_FWD_IP = "1.1.1.1:10000"
 
 // Creates a new file upload http request with optional extra params
-func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
+func getHttpRequest(uri string, params map[string]string, paramName, path string, requestType string) (*http.Request, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", uri, body)
+	req, err := http.NewRequest(requestType, uri, body)
 
 	// Add additional headers
 	req.Header.Set("Content-Type", writer.FormDataContentType())
