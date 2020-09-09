@@ -76,10 +76,10 @@ func TestServer(t *testing.T) {
 	go startServer(grpcServer)
 	time.Sleep(1000 * time.Millisecond)
 	testInstantiate(t, dir, config)
-	testQuery(t, dir, config)
-	testTerminate(t, dir, config)
+	testQuery(t, config)
+	testTerminate(t, config)
 	testUpload(t, dir, config)
-	testRemoval(t, dir, config)
+	testRemoval(t, config)
 }
 
 func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
@@ -87,35 +87,35 @@ func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.Instantiate(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz", hostIpAddress, token,
 		appInstanceIdentifier)
-	assert.Equal(t, "Success", status, "Instantiation failed")
+	assert.Equal(t, util.Success, status, "Instantiation failed")
 }
 
-func testQuery(t *testing.T, dir string, config *conf.Configurations) {
+func testQuery(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.Query(token, appInstanceIdentifier, hostIpAddress)
 	assert.Equal(t, "{\"Output\":\"Success\"}", status, "Query failed")
 }
 
-func testTerminate(t *testing.T, dir string, config *conf.Configurations) {
+func testTerminate(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.Terminate(hostIpAddress, token, appInstanceIdentifier)
-	assert.Equal(t, "Success", status, "Terminate failed")
+	assert.Equal(t, util.Success, status, "Terminate failed")
 }
 
 func testUpload(t *testing.T, dir string, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.UploadConfig(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz", hostIpAddress, token)
-	assert.Equal(t, "Success", status, "Upload failed")
+	assert.Equal(t, util.Success, status, "Upload failed")
 }
 
-func testRemoval(t *testing.T, dir string, config *conf.Configurations) {
+func testRemoval(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.RemoveConfig(hostIpAddress, token)
-	assert.Equal(t, "Success", status, "Upload failed")
+	assert.Equal(t, util.Success, status, "Upload failed")
 }
 
 func startServer(server server.ServerGRPC) {
