@@ -137,15 +137,3 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 	log.Info("host configuration file deleted successfully.")
 	return resp, nil
 }
-
-// Query KPI
-func (s *ServerGRPC) QueryKPI(_ context.Context,
-	request *lcmservice.QueryKPIRequest) (*lcmservice.QueryKPIResponse, error) {
-	panic("implement me")
-}
-
-// Query Mep capabilities
-func (s *ServerGRPC) QueryMepCapabilities(ctx context.Context,
-	request *lcmservice.QueryMepCapRequest) (*lcmservice.QueryMepCapResponse, error) {
-	panic("implement me")
-}
