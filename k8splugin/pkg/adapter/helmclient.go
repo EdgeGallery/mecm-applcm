@@ -97,7 +97,7 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 }
 
 // Install a given helm chart
-func (hc *HelmClient) InstallChart(helmPkg bytes.Buffer) (string, error) {
+func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 	log.Info("Inside helm client")
 
 	// Create temporary file to hold helm chart
@@ -109,7 +109,7 @@ func (hc *HelmClient) InstallChart(helmPkg bytes.Buffer) (string, error) {
 	defer os.Remove(chartPath + util.TempFile)
 
 	// Write input bytes to temp file
-	_, err = helmPkg.WriteTo(file)
+	_, err = pkg.WriteTo(file)
 	if err != nil {
 		log.Error("Unable to write to file")
 		return "", err
@@ -149,7 +149,7 @@ func (hc *HelmClient) InstallChart(helmPkg bytes.Buffer) (string, error) {
 }
 
 // Un-Install a given helm chart
-func (hc *HelmClient) UninstallChart(relName string) error {
+func (hc *HelmClient) UnDeploy(relName string) error {
 	// Prepare action config and uninstall chart
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
@@ -171,7 +171,7 @@ func (hc *HelmClient) UninstallChart(relName string) error {
 }
 
 // Query a given chart
-func (hc *HelmClient) QueryChart(relName string) (string, error) {
+func (hc *HelmClient) Query(relName string) (string, error) {
 	log.Info("In Query Chart function")
 	var labelSelector models.LabelSelector
 	var label models.Label
