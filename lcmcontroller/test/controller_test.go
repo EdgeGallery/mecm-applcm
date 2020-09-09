@@ -124,8 +124,7 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
-		queryInput.SetParam(":tenantId", TENANT_ID)
-		queryInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
+		setParam(queryInput)
 
 		// Prepare beego controller
 		queryBeegoController := beego.Controller{Ctx: &context.Context{Input: queryInput, Request: queryRequest,
@@ -154,8 +153,7 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 
 		// Prepare Input
 		terminateInput := &context.BeegoInput{Context: &context.Context{Request: terminateRequest}}
-		terminateInput.SetParam(":tenantId", TENANT_ID)
-		terminateInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
+		setParam(terminateInput)
 
 		// Prepare beego controller
 		terminateBeegoController := beego.Controller{Ctx: &context.Context{Input: terminateInput,
@@ -184,8 +182,7 @@ func testInstantiate(t *testing.T, extraParams map[string]string, path string, t
 
 		// Prepare Input
 		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}}
-		instantiateInput.SetParam(":tenantId", TENANT_ID)
-		instantiateInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
+		setParam(instantiateInput)
 
 		// Prepare beego controller
 		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: instantiateInput,
@@ -213,8 +210,7 @@ func testUpload(t *testing.T, extraParams map[string]string, path string) {
 
 		// Prepare Input
 		uploadInput := &context.BeegoInput{Context: &context.Context{Request: uploadRequest}}
-		uploadInput.SetParam(":tenantId", TENANT_ID)
-		uploadInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
+		setParam(uploadInput)
 
 		// Prepare beego controller
 		uploadBeegoController := beego.Controller{Ctx: &context.Context{Input: uploadInput, Request: uploadRequest,
@@ -240,8 +236,7 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 
 		// Prepare Input
 		removeInput := &context.BeegoInput{Context: &context.Context{Request: removeRequest}}
-		removeInput.SetParam(":tenantId", TENANT_ID)
-		removeInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
+		setParam(removeInput)
 
 		// Prepare beego controller
 		removeBeegoController := beego.Controller{Ctx: &context.Context{Input: removeInput, Request: removeRequest,
@@ -257,4 +252,9 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, removeController.Ctx.ResponseWriter.Status, "Config removal failed")
 	})
+}
+
+func setParam(ctx *context.BeegoInput) {
+	ctx.SetParam(":tenantId", TENANT_ID)
+	ctx.SetParam(":appInstanceId", APP_INSTANCE_ID)
 }
