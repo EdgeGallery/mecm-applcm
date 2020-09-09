@@ -423,7 +423,7 @@ func (c *LcmController) QueryKPI() {
 	json.Unmarshal([]byte(cpu),&statInfo)
 
 	if len(statInfo.Data.Result[0].Value) >2 {
-		log.Info("Unexpected value found")
+		log.Info(util.UnexpectedValue)
 		return
 	}
 	var cpuResponse = map[string] interface {} {
@@ -437,7 +437,7 @@ func (c *LcmController) QueryKPI() {
 	}
 	json.Unmarshal([]byte(mem),&statInfo)
 	if len(statInfo.Data.Result[0].Value) >2 {
-		log.Info("Unexpected value found")
+		log.Info(util.UnexpectedValue)
 		return
 	}
 	var memResponse = map[string] interface {} {
@@ -452,7 +452,7 @@ func (c *LcmController) QueryKPI() {
 	json.Unmarshal([]byte(disk),&statInfo)
 
 	if len(statInfo.Data.Result[0].Value) >2 {
-		log.Info("Unexpected value found")
+		log.Info(util.UnexpectedValue)
 		return
 	}
 	var diskResponse = map[string] interface {} {
@@ -470,27 +470,8 @@ func (c *LcmController) QueryKPI() {
 		return
 	}
 	log.Info("metricInfoJson", metricInfoByteArray)
-	c.Data["json"] = stringsToJSON(string(metricInfoByteArray))
+	c.Data["json"] = string(metricInfoByteArray)
 	c.ServeJSON()
-}
-
-func stringsToJSON(str string) string {
-	var jsons bytes.Buffer
-	for _, r := range str {
-		rint := int(r)
-		if rint < 128 {
-			jsons.WriteRune(r)
-		} else {
-			jsons.WriteString("\\u")
-			if rint < 0x100 {
-				jsons.WriteString("00")
-			} else if rint < 0x1000 {
-				jsons.WriteString("0")
-			}
-			jsons.WriteString(strconv.FormatInt(int64(rint), 16))
-		}
-	}
-	return jsons.String()
 }
 
 // Query KPI
@@ -552,7 +533,7 @@ func (c *LcmController) QueryMepCapabilities() {
 
 	mepByteArray, err := json.Marshal(mepCapabilities)
 	if mepCapabilities.StatusCode >= 200 && mepCapabilities.StatusCode <= 299 {
-		c.Data["json"] = stringsToJSON(string(mepByteArray))
+		c.Data["json"] = string(mepByteArray)
 		c.ServeJSON()
 	}
 	return
