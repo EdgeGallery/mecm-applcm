@@ -36,14 +36,21 @@ import (
 )
 
 var (
-	//output = "{\"cpuusage\":{\"total\":1599629203.638,\"used\":\"0.3125\"},\"memusage\":{\"total\":1599629203.722,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599629203.801,\"used\":\"0.0000000000021572230319438497\"}}"
-	cpuOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599646388.843,\"0.3125\"]}]}}"
-	cpuQuery = "query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
-	memOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599647046.214,\"0.025087691598781055\"]}]}}"
-	memQuery = "query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
-	diskQuery = "query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
-	diskOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599647141.594,\"0.0000000000022286734699480752\"]}]}}"
-	finalOutput = "{\"cpuusage\":{\"total\":1599646388.843,\"used\":\"0.3125\"},\"memusage\":{\"total\":1599647046.214,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599647141.594,\"used\":\"0.0000000000022286734699480752\"}}"
+	cpuOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{}," +
+		"\"value\":[1599646388.843,\"0.3125\"]}]}}"
+	cpuQuery = "query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_" +
+		"allocatable_cpu_cores)"
+	memOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{}," +
+		"\"value\":[1599647046.214,\"0.025087691598781055\"]}]}}"
+	memQuery = "query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_" +
+		"allocatable_memory_bytes)"
+	diskQuery = "query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_" +
+		"filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
+	diskOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{}," +
+		"\"value\":[1599647141.594,\"0.0000000000022286734699480752\"]}]}}"
+	finalOutput = "{\"cpuusage\":{\"total\":1599646388.843,\"used\":\"0.3125\"},\"memusage\":{\"total" +
+		"\":1599647046.214,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599647141.594,\"used\":" +
+		"\"0.0000000000022286734699480752\"}}"
 	capabilityOutput = "{\"Output\":\"Success\"}"
 )
 
@@ -88,7 +95,7 @@ func TestKpi(t *testing.T) {
 	_ = os.Setenv("PROMETHEUS_PORT", port)
 
 	// Common steps
-	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
+	_ = os.Mkdir(directory, filePermission)
 	path, _ := os.Getwd()
 	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
 	extraParams := map[string]string{
@@ -100,7 +107,7 @@ func TestKpi(t *testing.T) {
 	t.Run("TestGetKpi", func(t *testing.T) {
 
 		// Get Request
-		kpiRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/"+TENANT_ID+
+		kpiRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/"+tenantIdentifier+
 			"/hosts/"+localIp+"/kpi", extraParams, "file", path, "GET")
 
 		// Prepare Input
@@ -122,6 +129,10 @@ func TestKpi(t *testing.T) {
 		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, "Get KPI failed")
 		assert.Equal(t, finalOutput, kpiController.Data["json"], "Query failed")
 	})
+
+	// Common cleaning state
+	// Clear the created artifacts
+	_ = os.RemoveAll(directory)
 }
 
 func TestMepCapabilities(t *testing.T) {
@@ -141,7 +152,7 @@ func TestMepCapabilities(t *testing.T) {
 	defer patch3.Reset()
 
 	// Create server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(capabilityOutput))
 	}))
@@ -155,7 +166,7 @@ func TestMepCapabilities(t *testing.T) {
 	_ = os.Setenv("MEP_PORT", port)
 
 	// Common steps
-	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
+	_ = os.Mkdir(directory, filePermission)
 	path, _ := os.Getwd()
 	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
 	extraParams := map[string]string{
@@ -167,7 +178,7 @@ func TestMepCapabilities(t *testing.T) {
 	t.Run("TestGetCapability", func(t *testing.T) {
 
 		// Get Request
-		capabilityRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/"+TENANT_ID+
+		capabilityRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/"+tenantIdentifier+
 			"/hosts/"+localIp+"/mep_capabilities", extraParams, "file", path, "GET")
 
 		// Prepare Input
@@ -189,9 +200,13 @@ func TestMepCapabilities(t *testing.T) {
 		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
 		assert.Equal(t, capabilityOutput, capabilityController.Data["json"], "Get Capability data failed")
 	})
+
+	// Common cleaning state
+	// Clear the created artifacts
+	_ = os.RemoveAll(directory)
 }
 
 func setRessourceParam(ctx *context.BeegoInput, localIp string) {
-		ctx.SetParam(":tenantId", TENANT_ID)
-		ctx.SetParam(":hostIp", localIp)
+	ctx.SetParam(":tenantId", tenantIdentifier)
+	ctx.SetParam(":hostIp", localIp)
 }

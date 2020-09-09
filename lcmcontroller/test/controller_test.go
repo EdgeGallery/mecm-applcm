@@ -17,6 +17,10 @@
 package test
 
 import (
+	"github.com/agiledragon/gomonkey"
+	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/context"
+	"github.com/stretchr/testify/assert"
 	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/pkg/dbAdapter"
@@ -26,19 +30,14 @@ import (
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/agiledragon/gomonkey"
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/context"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
-	FILE_PERMISSION os.FileMode = 0750
-	DIRECTORY       string      = "/usr/app"
-	HOST_IP         string      = "1.1.1.1"
-	TENANT_ID       string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
-	APP_INSTANCE_ID string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	filePermission        os.FileMode = 0750
+	directory             string      = "/usr/app"
+	hostIpAddress         string      = "1.1.1.1"
+	tenantIdentifier      string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -63,11 +62,11 @@ func TestLcmOperation(t *testing.T) {
 	defer patch3.Reset()
 
 	// Common steps
-	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
+	_ = os.Mkdir(directory, filePermission)
 	path, _ := os.Getwd()
 	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
 	extraParams := map[string]string{
-		"hostIp": HOST_IP,
+		"hostIp": hostIpAddress,
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
@@ -77,27 +76,27 @@ func TestLcmOperation(t *testing.T) {
 	testInstantiate(t, extraParams, path, testDb)
 
 	// Test query
-	testQuery(t, nil, "", testDb)
+	testQuery(t, nil, "", testDb, "Success")
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
 
 	// Common cleaning state
 	// Clear the created artifacts
-	_ = os.RemoveAll(DIRECTORY)
+	_ = os.RemoveAll(directory)
 }
 
 func TestConfigOperation(t *testing.T) {
 
 	// Common steps
 	// Create directory
-	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
+	_ = os.Mkdir(directory, filePermission)
 	// Setting file path
 	path, _ := os.Getwd()
 	path += "/config"
 	// Setting extra parameters
 	extraParams := map[string]string{
-		"hostIp": HOST_IP,
+		"hostIp": hostIpAddress,
 	}
 
 	// Mock the client
@@ -127,10 +126,10 @@ func TestConfigOperation(t *testing.T) {
 
 	// Common cleaning state
 	// Clear the created artifacts
-	_ = os.RemoveAll(DIRECTORY)
+	_ = os.RemoveAll(directory)
 }
 
-func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
 
 	t.Run("TestAppInstanceQuery", func(t *testing.T) {
 
@@ -155,7 +154,7 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, "Query failed")
-		assert.Equal(t, SUCCESS_RETURN, queryController.Data["json"], "Query failed")
+		assert.Equal(t, exOutput, queryController.Data["json"], "Query failed")
 	})
 }
 
@@ -271,6 +270,6 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 }
 
 func setParam(ctx *context.BeegoInput) {
-	ctx.SetParam(":tenantId", TENANT_ID)
-	ctx.SetParam(":appInstanceId", APP_INSTANCE_ID)
+	ctx.SetParam(":tenantId", tenantIdentifier)
+	ctx.SetParam(":appInstanceId", appInstanceIdentifier)
 }

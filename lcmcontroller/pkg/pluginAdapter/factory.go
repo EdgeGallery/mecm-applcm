@@ -24,11 +24,12 @@ import (
 
 const (
 	chunkSize = 1024
+	clientProtocol = "grpc"
 )
 
 // Get client based on client protocol type
 func GetClient(pluginInfo string) (client ClientIntf, err error) {
-	clientProtocol := util.GetAppConfig("clientProtocol")
+	// To support testability requirement client protocol is not taken from config currently.
 	switch clientProtocol {
 	case "grpc":
 		clientConfig := ClientGRPCConfig{Address: pluginInfo, ChunkSize: chunkSize,

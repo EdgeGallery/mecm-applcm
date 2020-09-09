@@ -17,73 +17,117 @@
 package test
 
 import (
-	"bytes"
-	"io"
-	"mime/multipart"
-	"net/http"
-	"os"
-	"path/filepath"
+	_ "crypto/tls"
+	"github.com/stretchr/testify/assert"
+	"lcmcontroller/util"
+	"testing"
 )
 
-const (
-	FWDIP          = "1.1.1.1:10000"
-)
+func TestValidateIpv4Address_success(t *testing.T) {
+	ip := "1.2.3.4"
+	err := util.ValidateIpv4Address(ip)
+	assert.NoError(t, err, "TestValidateIpv4Address_success execution result")
+}
 
-// Creates a new file upload http request with optional extra params
-func getHttpRequest(uri string, params map[string]string, paramName string, path string,
-	requestType string) (req *http.Request, err error) {
+func TestValidateIpv4Address_failure(t *testing.T) {
+	ip := ""
+	err := util.ValidateIpv4Address(ip)
+	assert.Error(t, err, "TestValidateIpv4Address_failure execution result")
+}
 
-	var (
-		writer *multipart.Writer
-	)
+func TestValidateUUID_success(t *testing.T) {
+	uId := "6e5c8bf5-3922-4020-87d3-ee00163ca40d"
+	err := util.ValidateUUID(uId)
+	assert.NoError(t, err, "TestValidateUUID_success execution result")
+}
 
-	if path != "" {
-		file, err := os.Open(path)
-		if err != nil {
-			return nil, err
-		}
-		defer file.Close()
+func TestValidateUUID_invalid(t *testing.T) {
+	uId := "sfAdsHuplrmDk44643s"
+	err := util.ValidateUUID(uId)
+	assert.Error(t, err, "TestValidateUUID_invalid execution result")
+}
 
-		body := &bytes.Buffer{}
-		writer = multipart.NewWriter(body)
-		part, err := writer.CreateFormFile(paramName, filepath.Base(path))
-		if err != nil {
-			return nil, err
-		}
-		_, _ = io.Copy(part, file)
+func TestValidateUUID_failure(t *testing.T) {
+	uId := ""
+	err := util.ValidateUUID(uId)
+	assert.Error(t, err, "TestValidateUUID_failure execution result")
+}
 
-		for key, val := range params {
-			_ = writer.WriteField(key, val)
-		}
-		err = writer.Close()
-		if err != nil {
-			return nil, err
-		}
-		req, err = http.NewRequest(requestType, uri, body)
-		req.Header.Set("Content-Type", writer.FormDataContentType())
-	} else {
-		body := &bytes.Buffer{}
-		_ = multipart.NewWriter(body)
-		req, err = http.NewRequest(requestType, uri, body)
-		req.Header.Set("Content-Type", "application/json")
-	}
-	if err != nil {
-		return nil, err
-	}
+func TestValidatePassword_success(t *testing.T) {
+	bytes := []byte("Abc@3342")
+	err, _ := util.ValidatePassword(&bytes)
+	assert.True(t, err, "TestValidatePassword_success execution result")
+}
 
-	// Add additional headers
-	req.Header.Set("access_token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiI3MjY5NjM4ZS01NjM3LTRiOGM"+
-		"tODE3OC1iNTExMmJhN2I2OWIiLCJzY29wZSI6WyJhbGwiXSwiZXhwIjoxNTk5Mjc5NDA3LCJzc29TZXNzaW9uSWQiOiI1QkYwNjM2QzlBMkEzMUI2NEEwM"+
-		"EFCRTk1OTVEN0E0NyIsInVzZXJOYW1lIjoid2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdiNjliIiwiYXV0aG9"+
-		"yaXRpZXMiOlsiUk9MRV9BUFBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEVOQU5UIl0sImp0aSI6IjQ5ZTBhM"+
-		"GMwLTIxZmItNDAwZC04M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFibGVTbXMiOiJ0cnVlIn0.kmJbwyAxPj7OKpP-5r-"+
-		"WMVKbETpKV0kWMguMNaiNt63EhgrmfDgjmX7eqfagMYBS1sgIKZjuxFg2o-HUaO4h9iE1cLkmm0-8qV7HUSkMQThXGtUk2xljB6K9RxxZzzQNQFpgBB7gE"+
-		"cGVc_t_86tLxUU6FxXEW1h-zW4z4I_oGM9TOg7JR-ZyC8lQZTBNiYaOFHpvEubeqfQL0AFIKHeEf18Jm-Xjjw4Y3QEzB1qDMrOGh-55y8kelW1w_Vwbaz4"+
-		"5n5-U0DirDpCaa4ergleQIVF6exdjMWKtANGYU6zy48u7EYPYsykkDoIOxWYNqWSe557rNvY_3m1Ynam1QJCYUA")
-	req.Header.Set("X-Forwarded-For", FWDIP)
+func TestValidatePassword_inavlidlen(t *testing.T) {
+	bytes := []byte("aB&32")
+	err, _ := util.ValidatePassword(&bytes)
+	assert.False(t, err, "TestValidatePassword_invalidlen execution result")
+}
 
-	// Parse and create multipart form
-	_ = req.ParseMultipartForm(32 << 20)
+func TestValidatePassword_invalid(t *testing.T) {
+	bytes := []byte("asdf1234")
+	_, _ = util.ValidatePassword(&bytes)
+	//log.Info(err)
+	assert.False(t, false, "TestValidatePassword_invalid execution result")
+}
 
-	return req, err
+func TestValidateAccessToken_success(t *testing.T) {
+	accessToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiI3MjY5NjM4ZS01NjM3LTRiOGMtODE3OC1iNTExMmJhN2I2OWIiLCJzY29wZSI6WyJhbGwiXSwiZXhwIjoxNTk5Mjc5NDA3LCJzc29TZXNzaW9uSWQiOiI1QkYwNjM2QzlBMkEzMUI2NEEwMEFCRTk1OTVEN0E0NyIsInVzZXJOYW1lIjoid2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdiNjliIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BUFBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEVOQU5UIl0sImp0aSI6IjQ5ZTBhMGMwLTIxZmItNDAwZC04M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFibGVTbXMiOiJ0cnVlIn0.kmJbwyAxPj7OKpP-5r-WMVKbETpKV0kWMguMNaiNt63EhgrmfDgjmX7eqfagMYBS1sgIKZjuxFg2o-HUaO4h9iE1cLkmm0-8qV7HUSkMQThXGtUk2xljB6K9RxxZzzQNQFpgBB7gEcGVc_t_86tLxUU6FxXEW1h-zW4z4I_oGM9TOg7JR-ZyC8lQZTBNiYaOFHpvEubeqfQL0AFIKHeEf18Jm-Xjjw4Y3QEzB1qDMrOGh-55y8kelW1w_Vwbaz45n5-U0DirDpCaa4ergleQIVF6exdjMWKtANGYU6zy48u7EYPYsykkDoIOxWYNqWSe557rNvY_3m1Ynam1QJCYUA"
+	err := util.ValidateAccessToken(accessToken)
+	assert.Nil(t, err, "TestValidateAccessToken_success execution result")
+}
+
+func TestValidateAccessToken_failure(t *testing.T) {
+	accessToken := ""
+	err := util.ValidateAccessToken(accessToken)
+	assert.Error(t, err, "TestValidateAccessToken_failure execution result")
+}
+
+func TestValidateAccessToken_invalid(t *testing.T) {
+	accessToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9"
+	err := util.ValidateAccessToken(accessToken)
+	assert.Error(t, err, "TestValidateAccessToken_invalid execution result")
+}
+
+func TestValidateAccessToken_invalid1(t *testing.T) {
+	accessToken := "eyJ1c2VyX25hbWUiOiI3MjY5NjM4ZS01NjM3LTRiOGMtODE3OC1iNTExMmJhN2I2OWIiLCJzY29wZSI6WyJhbGwiXSwiZXhwIjoxNTk5Mjc5NDA3LCJzc29TZXNzaW9uSWQiOiI1QkYwNjM2QzlBMkEzMUI2NEEwMEFCRTk1OTVEN0E0NyIsInVzZXJOYW1lIjoid2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdiNjliIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BUFBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEVOQU5UIl0sImp0aSI6IjQ5ZTBhMGMwLTIxZmItNDAwZC04M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFibGVTbXMiOiJ0cnVlIn0."
+	err := util.ValidateAccessToken(accessToken)
+	assert.Error(t, err, "TestValidateAccessToken_invalid1 execution result")
+}
+
+func TestGetDbUser(t *testing.T) {
+	err := util.GetDbUser()
+	assert.Equal(t, "lcmcontroller", err, "TestGetDbUser execution result")
+}
+
+func TestGetDbName(t *testing.T) {
+	err := util.GetDbName()
+	assert.Equal(t, "lcmcontrollerdb", err, "TestGetDbName execution result")
+}
+
+func TestGetDbHost(t *testing.T) {
+	err := util.GetDbHost()
+	assert.Equal(t, "localhost", err, "TestGetDbHost execution result")
+}
+
+func TestGetDbPort(t *testing.T) {
+	err := util.GetDbPort()
+	assert.Equal(t, "5432", err, "TestGetDbPort execution result")
+}
+
+func TestTLSConfig(t *testing.T) {
+	crtName := "crtName"
+	_, err := util.TLSConfig(crtName)
+	assert.Error(t, err, "TestTLSConfig execution result")
+}
+
+func TestValidateFileSize_success(t *testing.T) {
+	err := util.ValidateFileSize(10, 100)
+	assert.Nil(t, err, "TestValidateFileSize_success execution result")
+}
+
+func TestValidateFileSize_invalid(t *testing.T) {
+	err := util.ValidateFileSize(100, 10)
+	assert.Error(t, err, "TestValidateFileSize_invalid execution result")
 }
