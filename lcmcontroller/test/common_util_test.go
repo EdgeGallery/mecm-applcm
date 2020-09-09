@@ -25,8 +25,8 @@ import (
 	"path/filepath"
 )
 
-const (
-	FWDIP = "1.1.1.1:10000"
+var (
+	fwdIp = "1.1.1.1:10000"
 )
 
 // Creates a new file upload http request with optional extra params
@@ -83,7 +83,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 		"WMVKbETpKV0kWMguMNaiNt63EhgrmfDgjmX7eqfagMYBS1sgIKZjuxFg2o-HUaO4h9iE1cLkmm0-8qV7HUSkMQThXGtUk2xljB6K9RxxZzzQNQFpgBB7gE"+
 		"cGVc_t_86tLxUU6FxXEW1h-zW4z4I_oGM9TOg7JR-ZyC8lQZTBNiYaOFHpvEubeqfQL0AFIKHeEf18Jm-Xjjw4Y3QEzB1qDMrOGh-55y8kelW1w_Vwbaz4"+
 		"5n5-U0DirDpCaa4ergleQIVF6exdjMWKtANGYU6zy48u7EYPYsykkDoIOxWYNqWSe557rNvY_3m1Ynam1QJCYUA")
-	req.Header.Set("X-Forwarded-For", FWDIP)
+	req.Header.Set("X-Forwarded-For", fwdIp)
 
 	// Parse and create multipart form
 	_ = req.ParseMultipartForm(32 << 20)

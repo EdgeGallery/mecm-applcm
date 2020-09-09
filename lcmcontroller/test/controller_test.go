@@ -33,11 +33,11 @@ import (
 )
 
 var (
-	FILE_PERMISSION os.FileMode = 0750
-	DIRECTORY                   = "/usr/app"
-	HOST_IP                     = "1.1.1.1"
-	TENANT_ID                   = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
-	APP_INSTANCE_ID             = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	filePermission        os.FileMode = 0750
+	directory             string      = "/usr/app"
+	hostIpAddress         string      = "1.1.1.1"
+	tenantIdentifier      string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -62,11 +62,11 @@ func TestLcmOperation(t *testing.T) {
 	defer patch3.Reset()
 
 	// Common steps
-	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
+	_ = os.Mkdir(directory, filePermission)
 	path, _ := os.Getwd()
 	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
 	extraParams := map[string]string{
-		"hostIp": HOST_IP,
+		"hostIp": hostIpAddress,
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
@@ -83,20 +83,20 @@ func TestLcmOperation(t *testing.T) {
 
 	// Common cleaning state
 	// Clear the created artifacts
-	_ = os.RemoveAll(DIRECTORY)
+	_ = os.RemoveAll(directory)
 }
 
 func TestConfigOperation(t *testing.T) {
 
 	// Common steps
 	// Create directory
-	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
+	_ = os.Mkdir(directory, filePermission)
 	// Setting file path
 	path, _ := os.Getwd()
 	path += "/config"
 	// Setting extra parameters
 	extraParams := map[string]string{
-		"hostIp": HOST_IP,
+		"hostIp": hostIpAddress,
 	}
 
 	// Mock the client
@@ -126,7 +126,7 @@ func TestConfigOperation(t *testing.T) {
 
 	// Common cleaning state
 	// Clear the created artifacts
-	_ = os.RemoveAll(DIRECTORY)
+	_ = os.RemoveAll(directory)
 }
 
 func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
@@ -270,6 +270,6 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 }
 
 func setParam(ctx *context.BeegoInput) {
-	ctx.SetParam(":tenantId", TENANT_ID)
-	ctx.SetParam(":appInstanceId", APP_INSTANCE_ID)
+	ctx.SetParam(":tenantId", tenantIdentifier)
+	ctx.SetParam(":appInstanceId", appInstanceIdentifier)
 }

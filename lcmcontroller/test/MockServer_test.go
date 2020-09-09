@@ -75,7 +75,7 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 // Terminate HELM charts
 func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
 	resp = &lcmservice.TerminateResponse{
-		Status: "Success",
+		Status: SUCCESS_RETURN,
 	}
 	return resp, nil
 }
@@ -93,7 +93,7 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) (er
 	}
 
 	var res lcmservice.InstantiateResponse
-	res.Status = "Success"
+	res.Status = SUCCESS_RETURN
 	log.Info("Successful Instantiation")
 	err = stream.SendAndClose(&res)
 	if err != nil {
@@ -118,12 +118,12 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 	}
 
 	var res lcmservice.UploadCfgResponse
-	res.Status = "Success"
-	log.Info("Successful Termination")
+	res.Status = SUCCESS_RETURN
+	log.Info("Successful Upload")
 	err = stream.SendAndClose(&res)
 	if err != nil {
-		log.Info("Failed Instantiation")
-		return errors.New("Failed Instantiation")
+		log.Info("Failed to Upload")
+		return errors.New("Failed Upload")
 	}
 	return nil
 }
@@ -132,7 +132,7 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 func (s *ServerGRPC) RemoveConfig(_ context.Context,
 	request *lcmservice.RemoveCfgRequest) (*lcmservice.RemoveCfgResponse, error) {
 	resp := &lcmservice.RemoveCfgResponse{
-		Status: "Success",
+		Status: SUCCESS_RETURN,
 	}
 	log.Info("host configuration file deleted successfully.")
 	return resp, nil

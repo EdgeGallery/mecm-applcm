@@ -27,6 +27,12 @@ import (
 	"time"
 )
 
+var (
+	k8sPluginAddr     = "127.0.0.1"
+	k8sPluginPort     = "10001"
+	k8sPluginEndPoint = "12.0.0.1:10001"
+)
+
 func TestWithClient(t *testing.T) {
 
 	go startServer()
@@ -62,15 +68,15 @@ func doTest(t *testing.T) {
 	defer patch3.Reset()
 
 	// Set environment variables for lcmcontroller for k8spluging
-	_ = os.Setenv("K8S_PLUGIN", "127.0.0.1")
-	_ = os.Setenv("K8S_PLUGIN_PORT", "10001")
+	_ = os.Setenv("K8S_PLUGIN", k8sPluginAddr)
+	_ = os.Setenv("K8S_PLUGIN_PORT", k8sPluginPort)
 
 	// Common steps
-	_ = os.Mkdir(DIRECTORY, FILE_PERMISSION)
+	_ = os.Mkdir(directory, filePermission)
 	path, _ := os.Getwd()
 	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
 	extraParams := map[string]string{
-		"hostIp": HOST_IP,
+		"hostIp": hostIpAddress,
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
@@ -93,13 +99,13 @@ func doTest(t *testing.T) {
 
 	// Common cleaning state
 	// Clear the created artifacts
-	_ = os.RemoveAll(DIRECTORY)
+	_ = os.RemoveAll(directory)
 
 }
 
 func startServer() {
 	// Start GRPC Server
-	grpcServer := &ServerGRPC{Address: "127.0.0.1:10001"}
+	grpcServer := &ServerGRPC{Address: k8sPluginEndPoint}
 	// Start listening
 	_ = grpcServer.Listen()
 }
