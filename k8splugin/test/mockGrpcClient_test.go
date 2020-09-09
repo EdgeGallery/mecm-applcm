@@ -132,8 +132,10 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 }
 
 // Query application
-func (c *mockGrpcClient) Query(ctx context.Context, accessToken string,
-	appInsId string, hostIP string) (response string, error error) {
+func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP string) (response string, error error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
+	defer cancel()
 
 	req := &lcmservice.QueryRequest{
 		AccessToken:   accessToken,
@@ -145,8 +147,10 @@ func (c *mockGrpcClient) Query(ctx context.Context, accessToken string,
 }
 
 // Terminate application
-func (c *mockGrpcClient) Terminate(ctx context.Context, hostIP string, accessToken string,
-	appInsId string) (status string, error error) {
+func (c *mockGrpcClient) Terminate(hostIP string, accessToken string, appInsId string) (status string, error error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
+	defer cancel()
 
 	req := &lcmservice.TerminateRequest{
 		HostIp:        hostIP,

@@ -21,6 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"k8splugin/conf"
+	"k8splugin/models"
 	"k8splugin/pgdb"
 	"k8splugin/pkg/adapter"
 	"k8splugin/pkg/server"
@@ -48,7 +49,7 @@ func TestServer(t *testing.T) {
 
 	// Mock the required API
 	patch1 := gomonkey.ApplyFunc(pgdb.GetDbAdapter, func(_ string) (pgdb.Database, error) {
-		return &mockK8sPluginDb{}, nil
+		return &mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)}, nil
 	})
 	defer patch1.Reset()
 
@@ -75,6 +76,8 @@ func TestServer(t *testing.T) {
 	go startServer(grpcServer)
 	time.Sleep(1000 * time.Millisecond)
 	testInstantiate(t, dir, config)
+	testQuery(t, dir, config)
+	testTerminate(t, dir, config)
 }
 
 func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
@@ -83,6 +86,20 @@ func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
 	status, _ := client.Instantiate(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz", hostIpAddress, token,
 		appInstanceIdentifier)
 	assert.Equal(t, "Success", status, "Instantiation failed")
+}
+
+func testQuery(t *testing.T, dir string, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
+	status, _ := client.Query(token, appInstanceIdentifier, hostIpAddress)
+	assert.Equal(t, "{\"Output\":\"Success\"}", status, "Query failed")
+}
+
+func testTerminate(t *testing.T, dir string, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
+	status, _ := client.Terminate(hostIpAddress, token, appInstanceIdentifier)
+	assert.Equal(t, "Success", status, "Terminate failed")
 }
 
 func startServer(server server.ServerGRPC) {

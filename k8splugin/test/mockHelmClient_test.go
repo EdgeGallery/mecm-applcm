@@ -32,5 +32,5 @@ func (hc *mockedHelmClient) UnDeploy(relName string) error {
 
 func (hc *mockedHelmClient) Query(relName string) (string, error) {
 	// Output to be checked
-	return "", nil
+	return "{\"Output\":\"Success\"}", nil
 }

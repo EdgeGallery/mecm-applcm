@@ -16,7 +16,14 @@
 
 package test
 
+import (
+	"errors"
+	"k8splugin/models"
+	"k8splugin/util"
+)
+
 type mockK8sPluginDb struct {
+	appInstanceRecords map[string]models.AppInstanceInfo
 }
 
 func (db *mockK8sPluginDb) InitDatabase() error {
@@ -24,9 +31,26 @@ func (db *mockK8sPluginDb) InitDatabase() error {
 }
 
 func (db *mockK8sPluginDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
+	if cols[0] == util.AppInsId {
+		appInstance, ok := data.(*models.AppInstanceInfo)
+		if ok {
+			db.appInstanceRecords[appInstance.AppInsId] = *appInstance
+		}
+	}
 	return nil
 }
 
 func (db *mockK8sPluginDb) ReadData(data interface{}, cols ...string) (err error) {
+	if cols[0] == util.AppInsId {
+		appInstance, ok := data.(*models.AppInstanceInfo)
+		if ok {
+			readAppInstance := db.appInstanceRecords[appInstance.AppInsId]
+			if (readAppInstance == models.AppInstanceInfo{}) {
+				return errors.New("App Instance record not found")
+			}
+			appInstance.WorkloadId = readAppInstance.WorkloadId
+			appInstance.HostIp = readAppInstance.HostIp
+		}
+	}
 	return nil
 }
