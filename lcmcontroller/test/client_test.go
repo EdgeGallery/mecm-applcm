@@ -30,7 +30,7 @@ import (
 var (
 	k8sPluginAddr     = "127.0.0.1"
 	k8sPluginPort     = "10001"
-	k8sPluginEndPoint = "12.0.0.1:10001"
+	k8sPluginEndPoint = "127.0.0.1:10001"
 )
 
 func TestWithClient(t *testing.T) {
