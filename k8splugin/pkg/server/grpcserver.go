@@ -118,7 +118,7 @@ func (s *ServerGRPC) Listen() (err error) {
 	return
 }
 
-// Query HELM chart
+// Query application
 func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
 
 	// Input validation
@@ -127,11 +127,10 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 		return
 	}
 
-	// Create HELM Client
-	hc, err := adapter.NewHelmClient(hostIp)
-	if os.IsNotExist(err) {
-		return nil, s.logError(status.Error(codes.InvalidArgument,
-			"Kubeconfig corresponding to given Edge can't be found."))
+	// Get Client
+	client, err := adapter.GetClient("helm", hostIp)
+	if err != nil {
+		return
 	}
 
 	appInstanceRecord := &models.AppInstanceInfo{
@@ -144,7 +143,7 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 	}
 
 	// Query Chart
-	r, err := hc.QueryChart(appInstanceRecord.WorkloadId)
+	r, err := client.Query(appInstanceRecord.WorkloadId)
 	if err != nil {
 		return nil, s.logError(status.Errorf(codes.NotFound, "Chart not found for workloadId: %s. Err: %s",
 			appInstanceRecord.WorkloadId, err))
@@ -156,8 +155,9 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 	return resp, nil
 }
 
-// Terminate HELM charts
-func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
+// Terminate application
+func (s *ServerGRPC) Terminate(ctx context.Context,
+	req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
 	log.Info("In Terminate")
 
 	hostIp, appInsId, err := s.validateInputParamsForTerm(req)
@@ -173,15 +173,14 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 			"App info record does not exist in database."))
 	}
 
-	// Create HELM client
-	hc, err := adapter.NewHelmClient(hostIp)
-	if os.IsNotExist(err) {
-		return nil, s.logError(status.Errorf(codes.InvalidArgument,
-			"Kubeconfig corresponding to given Edge can't be found. Err: %s", err))
+	// Get Client
+	client, err := adapter.GetClient("helm", hostIp)
+	if err != nil {
+		return
 	}
 
 	// Uninstall chart
-	err = hc.UninstallChart(appInstanceRecord.WorkloadId)
+	err = client.UnDeploy(appInstanceRecord.WorkloadId)
 
 	if err != nil {
 		resp = &lcmservice.TerminateResponse{
@@ -198,7 +197,7 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 	}
 }
 
-// Instantiate HELM Chart
+// Instantiate application
 func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) error {
 	log.Info("Recieved instantiate request")
 
@@ -207,19 +206,18 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) err
 		return err
 	}
 
-	helmPkg, err := s.getHelmPackage(stream)
+	pkg, err := s.getPackage(stream)
 	if err != nil {
 		return err
 	}
 
-	// Create HELM client
-	hc, err := adapter.NewHelmClient(hostIp)
-	if os.IsNotExist(err) {
-		return s.logError(status.Errorf(codes.InvalidArgument,
-			"Kubeconfig corresponding to edge can't be found. Err: %s", err))
+	// Get client
+	client, err := adapter.GetClient("helm", hostIp)
+	if err != nil {
+		return err
 	}
 
-	releaseName, err := hc.InstallChart(helmPkg)
+	releaseName, err := client.Deploy(pkg)
 	var res lcmservice.InstantiateResponse
 	if err != nil {
 		res.Status = util.Failure
@@ -470,14 +468,14 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	return hostIp, appInsId, nil
 }
 
-// Get helm package
-func (s *ServerGRPC) getHelmPackage(stream lcmservice.AppLCM_InstantiateServer) (buf bytes.Buffer, err error) {
+// Get package
+func (s *ServerGRPC) getPackage(stream lcmservice.AppLCM_InstantiateServer) (buf bytes.Buffer, err error) {
 	// Receive package
-	helmPkg := bytes.Buffer{}
+	pkg := bytes.Buffer{}
 	for {
 		err := s.contextError(stream.Context())
 		if err != nil {
-			return helmPkg, err
+			return pkg, err
 		}
 
 		log.Debug("Waiting to receive more data")
@@ -488,18 +486,18 @@ func (s *ServerGRPC) getHelmPackage(stream lcmservice.AppLCM_InstantiateServer) 
 			break
 		}
 		if err != nil {
-			return helmPkg, s.logError(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err))
+			return pkg, s.logError(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err))
 		}
 
-		// Receive chunk and write to helm package
+		// Receive chunk and write to package
 		chunk := req.GetPackage()
 
-		_, err = helmPkg.Write(chunk)
+		_, err = pkg.Write(chunk)
 		if err != nil {
-			return helmPkg, s.logError(status.Errorf(codes.Internal, "cannot write chunk data: %v", err))
+			return pkg, s.logError(status.Errorf(codes.Internal, "cannot write chunk data: %v", err))
 		}
 	}
-	return helmPkg, nil
+	return pkg, nil
 }
 
 // Get upload configuration file
@@ -523,7 +521,7 @@ func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigSe
 			return file, s.logError(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err))
 		}
 
-		// Receive chunk and write to helm package
+		// Receive chunk and write to package
 		chunk := req.GetConfigFile()
 
 		_, err = file.Write(chunk)
