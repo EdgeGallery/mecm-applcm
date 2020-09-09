@@ -78,6 +78,8 @@ func TestServer(t *testing.T) {
 	testInstantiate(t, dir, config)
 	testQuery(t, dir, config)
 	testTerminate(t, dir, config)
+	testUpload(t, dir, config)
+	testRemoval(t, dir, config)
 }
 
 func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
@@ -100,6 +102,20 @@ func testTerminate(t *testing.T, dir string, config *conf.Configurations) {
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.Terminate(hostIpAddress, token, appInstanceIdentifier)
 	assert.Equal(t, "Success", status, "Terminate failed")
+}
+
+func testUpload(t *testing.T, dir string, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
+	status, _ := client.UploadConfig(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz", hostIpAddress, token)
+	assert.Equal(t, "Success", status, "Upload failed")
+}
+
+func testRemoval(t *testing.T, dir string, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
+	status, _ := client.RemoveConfig(hostIpAddress, token)
+	assert.Equal(t, "Success", status, "Upload failed")
 }
 
 func startServer(server server.ServerGRPC) {

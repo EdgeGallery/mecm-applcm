@@ -21,7 +21,6 @@ import (
 	"io"
 	"k8splugin/internal/lcmservice"
 	"k8splugin/util"
-	"mime/multipart"
 	"os"
 	"time"
 
@@ -162,7 +161,9 @@ func (c *mockGrpcClient) Terminate(hostIP string, accessToken string, appInsId s
 }
 
 // Remove configuration
-func (c *mockGrpcClient) RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error) {
+func (c *mockGrpcClient) RemoveConfig(hostIP string, accessToken string) (status string, error error) {
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
+	defer cancel()
 	req := &lcmservice.RemoveCfgRequest{
 		HostIp:      hostIP,
 		AccessToken: accessToken,
@@ -172,29 +173,67 @@ func (c *mockGrpcClient) RemoveConfig(ctx context.Context, hostIP string, access
 }
 
 // Upload Configuration
-func (c *mockGrpcClient) UploadConfig(ctx context.Context, multipartFile multipart.File,
-	hostIP string, accessToken string) (status string, error error) {
-	// Open a stream-based connection with the
-	// gRPC server
+func (c *mockGrpcClient) UploadConfig(deployArtifact string, hostIP string,
+	accessToken string) (status string, error error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
+	defer cancel()
+
+	// Get a file handle for the file we want to upload
+	file, _ := os.Open(deployArtifact)
+	defer file.Close()
+
+	// Open a stream-based connection with the gRPC server
 	stream, _ := c.client.UploadConfig(ctx)
 	defer stream.CloseSend()
+
 	//send metadata information
 	req := &lcmservice.UploadCfgRequest{
-
 		Data: &lcmservice.UploadCfgRequest_AccessToken{
 			AccessToken: accessToken,
 		},
 	}
 	_ = stream.Send(req)
-	//send metadata information
 	req = &lcmservice.UploadCfgRequest{
-
 		Data: &lcmservice.UploadCfgRequest_HostIp{
 			HostIp: hostIP,
 		},
 	}
 	_ = stream.Send(req)
+
+	// Allocate a buffer with `chunkSize` as the capacity
+	// and length (making a 0 array of the size of `chunkSize`)
+	buf := make([]byte, c.chunkSize)
+	var writing = true
+	for writing {
+		// put as many bytes as `chunkSize` into the
+		// buf array.
+		n, err := file.Read(buf)
+		if err != nil {
+			// ... if `eof` --> `writing=false`...
+			if err == io.EOF {
+				writing = false
+				continue
+			}
+			log.Error("failed while copying from file to buf")
+			return util.Failure, err
+		}
+		req := &lcmservice.UploadCfgRequest{
+			Data: &lcmservice.UploadCfgRequest_ConfigFile{
+				ConfigFile: buf[:n],
+			},
+		}
+		err = stream.Send(req)
+		if err != nil {
+			log.Error("failed to send chunk via stream")
+			return util.Failure, err
+		}
+	}
 	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Error("failed to receive upstream status response")
+		return util.Failure, err
+	}
 	return res.GetStatus(), err
 }
 
