@@ -389,7 +389,7 @@ func (c *LcmController) Query() {
 // Query KPI
 func (c *LcmController) QueryKPI() {
 	var metricInfo models.MetricInfo
-
+	var statInfo models.KpiModel
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
@@ -398,6 +398,7 @@ func (c *LcmController) QueryKPI() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	prometheusPort := util.GetPrometheusPort()
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -410,35 +411,86 @@ func (c *LcmController) QueryKPI() {
 	if err != nil {
 		return
 	}
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
 	}
-	prometheusPort := util.GetAppConfig("promethuesPort")
 	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
 
 	if errCpu != nil {
 		log.Fatalln(errCpu)
 	}
+	json.Unmarshal([]byte(cpu),&statInfo)
+
+	if len(statInfo.Data.Result[0].Value) >2 {
+		log.Info("Unexpected value found")
+		return
+	}
+	var cpuResponse = map[string] interface {} {
+		"total" :  statInfo.Data.Result[0].Value[0],
+		"used"  :  statInfo.Data.Result[0].Value[1],
+	}
+
 	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
 	if errMem != nil {
 		log.Fatalln(errMem)
 	}
+	json.Unmarshal([]byte(mem),&statInfo)
+	if len(statInfo.Data.Result[0].Value) >2 {
+		log.Info("Unexpected value found")
+		return
+	}
+	var memResponse = map[string] interface {} {
+		"total" :  statInfo.Data.Result[0].Value[0],
+		"used"  :  statInfo.Data.Result[0].Value[1],
+	}
+
 	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	metricInfo.CpuUsage = cpu
-	metricInfo.MemUsage = mem
-	metricInfo.DiskUsage = disk
-	metricInfoJson, err := json.Marshal(metricInfo)
+	json.Unmarshal([]byte(disk),&statInfo)
+
+	if len(statInfo.Data.Result[0].Value) >2 {
+		log.Info("Unexpected value found")
+		return
+	}
+	var diskResponse = map[string] interface {} {
+		"total" :  statInfo.Data.Result[0].Value[0],
+		"used"  :  statInfo.Data.Result[0].Value[1],
+	}
+
+	metricInfo.CpuUsage = cpuResponse
+	metricInfo.MemUsage = memResponse
+	metricInfo.DiskUsage = diskResponse
+
+	metricInfoByteArray, err := json.Marshal(metricInfo)
 	if err != nil {
 		log.Info("Failed to json marshal")
 		return
 	}
-	log.Info("metricInfoJson", metricInfoJson)
-	log.Info("appJson", metricInfoJson)
+	log.Info("metricInfoJson", metricInfoByteArray)
+	c.Data["json"] = stringsToJSON(string(metricInfoByteArray))
 	c.ServeJSON()
+}
+
+func stringsToJSON(str string) string {
+	var jsons bytes.Buffer
+	for _, r := range str {
+		rint := int(r)
+		if rint < 128 {
+			jsons.WriteRune(r)
+		} else {
+			jsons.WriteString("\\u")
+			if rint < 0x100 {
+				jsons.WriteString("00")
+			} else if rint < 0x1000 {
+				jsons.WriteString("0")
+			}
+			jsons.WriteString(strconv.FormatInt(int64(rint), 16))
+		}
+	}
+	return jsons.String()
 }
 
 // Query KPI
@@ -471,6 +523,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	mepPort := util.GetMepPort()
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -484,7 +537,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	if err != nil {
 		return
 	}
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
 	}
@@ -495,15 +548,14 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	mepPort := util.GetAppConfig("mepPort")
-	mepCapabilities, err := http.Get(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + ":" + mepPort + "/mep-capabilities")
+	mepCapabilities, err := http.Get(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + "/mep-capabilities")
 
-	mepJson, err := json.Marshal(mepCapabilities)
-
+	mepByteArray, err := json.Marshal(mepCapabilities)
 	if mepCapabilities.StatusCode >= 200 && mepCapabilities.StatusCode <= 299 {
+		c.Data["json"] = stringsToJSON(string(mepByteArray))
 		c.ServeJSON()
 	}
-	log.Info("appJson", mepJson)
+	return
 }
 
 // Write error response
@@ -705,6 +757,17 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		return "", err
+	}
+	return hostIp, nil
+}
+
+// Get host IP from url
+func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
+	hostIp := c.Ctx.Input.Param(":hostIp")
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid from url")
 		return "", err
 	}
 	return hostIp, nil

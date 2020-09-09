@@ -81,12 +81,9 @@ const TooBig = 0x6400000
 const SingleFileTooBig = 0x6400000
 
 const HttpUrl string = "http://"
-const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)" +
-	"/sum(kube_node_status_allocatable_cpu_cores)"
-const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)" +
-	"/ sum(kube_node_status_allocatable_memory_bytes)"
-const DiskQuery string = "/api/v1/query?query=(sum (node_filesystem_size_bytes)-" +
-	"sum (node_filesystem_free_bytes)) / sum (node_filesystem_size_bytes)"
+const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
+const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
+const DiskQuery string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -340,4 +337,22 @@ func GetDbPort() string {
 		dbPort = "5432"
 	}
 	return dbPort
+}
+
+// Get prometheus port
+func GetPrometheusPort() string {
+	prometheusPort  := os.Getenv("PROMETHEUS_PORT")
+	if prometheusPort == "" {
+		prometheusPort = "30009"
+	}
+	return prometheusPort
+}
+
+// Get mep port
+func GetMepPort() string {
+	mepPort := os.Getenv("MEP_PORT")
+	if mepPort == "" {
+		mepPort = "8088"
+	}
+	return mepPort
 }
