@@ -37,13 +37,13 @@ import (
 
 var (
 	//output = "{\"cpuusage\":{\"total\":1599629203.638,\"used\":\"0.3125\"},\"memusage\":{\"total\":1599629203.722,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599629203.801,\"used\":\"0.0000000000021572230319438497\"}}"
-	cpuOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599646388.843,\"0.3125\"]}]}}"
-	cpuQuery = "query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
-	memOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599647046.214,\"0.025087691598781055\"]}]}}"
-	memQuery = "query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
-	diskQuery = "query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
-	diskOutput = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599647141.594,\"0.0000000000022286734699480752\"]}]}}"
-	finalOutput = "{\"cpuusage\":{\"total\":1599646388.843,\"used\":\"0.3125\"},\"memusage\":{\"total\":1599647046.214,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599647141.594,\"used\":\"0.0000000000022286734699480752\"}}"
+	cpuOutput        = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599646388.843,\"0.3125\"]}]}}"
+	cpuQuery         = "query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
+	memOutput        = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599647046.214,\"0.025087691598781055\"]}]}}"
+	memQuery         = "query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
+	diskQuery        = "query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
+	diskOutput       = "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{},\"value\":[1599647141.594,\"0.0000000000022286734699480752\"]}]}}"
+	finalOutput      = "{\"cpuusage\":{\"total\":1599646388.843,\"used\":\"0.3125\"},\"memusage\":{\"total\":1599647046.214,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599647141.594,\"used\":\"0.0000000000022286734699480752\"}}"
 	capabilityOutput = "{\"Output\":\"Success\"}"
 )
 
@@ -122,6 +122,10 @@ func TestKpi(t *testing.T) {
 		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, "Get KPI failed")
 		assert.Equal(t, finalOutput, kpiController.Data["json"], "Query failed")
 	})
+
+	// Common cleaning state
+	// Clear the created artifacts
+	_ = os.RemoveAll(DIRECTORY)
 }
 
 func TestMepCapabilities(t *testing.T) {
@@ -189,9 +193,13 @@ func TestMepCapabilities(t *testing.T) {
 		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
 		assert.Equal(t, capabilityOutput, capabilityController.Data["json"], "Get Capability data failed")
 	})
+
+	// Common cleaning state
+	// Clear the created artifacts
+	_ = os.RemoveAll(DIRECTORY)
 }
 
 func setRessourceParam(ctx *context.BeegoInput, localIp string) {
-		ctx.SetParam(":tenantId", TENANT_ID)
-		ctx.SetParam(":hostIp", localIp)
+	ctx.SetParam(":tenantId", TENANT_ID)
+	ctx.SetParam(":hostIp", localIp)
 }

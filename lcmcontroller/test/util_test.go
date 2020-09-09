@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	FWDIP          = "1.1.1.1:10000"
+	FWDIP = "1.1.1.1:10000"
 )
 
 // Creates a new file upload http request with optional extra params
@@ -60,15 +60,18 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 			return nil, err
 		}
 		req, err = http.NewRequest(requestType, uri, body)
+		if err != nil {
+			return nil, err
+		}
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 	} else {
 		body := &bytes.Buffer{}
 		_ = multipart.NewWriter(body)
 		req, err = http.NewRequest(requestType, uri, body)
+		if err != nil {
+			return nil, err
+		}
 		req.Header.Set("Content-Type", "application/json")
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	// Add additional headers

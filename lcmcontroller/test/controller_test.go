@@ -17,6 +17,10 @@
 package test
 
 import (
+	"github.com/agiledragon/gomonkey"
+	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/context"
+	"github.com/stretchr/testify/assert"
 	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/pkg/dbAdapter"
@@ -26,19 +30,14 @@ import (
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/agiledragon/gomonkey"
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/context"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
 	FILE_PERMISSION os.FileMode = 0750
-	DIRECTORY       string      = "/usr/app"
-	HOST_IP         string      = "1.1.1.1"
-	TENANT_ID       string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
-	APP_INSTANCE_ID string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	DIRECTORY                   = "/usr/app"
+	HOST_IP                     = "1.1.1.1"
+	TENANT_ID                   = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	APP_INSTANCE_ID             = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -77,7 +76,7 @@ func TestLcmOperation(t *testing.T) {
 	testInstantiate(t, extraParams, path, testDb)
 
 	// Test query
-	testQuery(t, nil, "", testDb)
+	testQuery(t, nil, "", testDb, "Success")
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
@@ -130,7 +129,7 @@ func TestConfigOperation(t *testing.T) {
 	_ = os.RemoveAll(DIRECTORY)
 }
 
-func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
 
 	t.Run("TestAppInstanceQuery", func(t *testing.T) {
 
@@ -155,7 +154,7 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, "Query failed")
-		assert.Equal(t, SUCCESS_RETURN, queryController.Data["json"], "Query failed")
+		assert.Equal(t, exOutput, queryController.Data["json"], "Query failed")
 	})
 }
 
