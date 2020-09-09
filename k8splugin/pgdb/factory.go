@@ -23,9 +23,7 @@ import (
 )
 
 // Init Db adapter
-func GetDbAdapter() (Database, error) {
-	//dbAdapter := os.Getenv("dbAdapter")
-	dbAdapter := "pgDb"
+func GetDbAdapter(dbAdapter string) (Database, error) {
 	switch dbAdapter {
 	case "pgDb":
 		db := &PgDb{}

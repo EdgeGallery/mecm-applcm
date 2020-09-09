@@ -21,3 +21,4 @@ server:
   keyfilepath: "ssl/server_tls.key"
   serverport: 8095
   httpsaddr:
+  dbAdapter: "pgDb"

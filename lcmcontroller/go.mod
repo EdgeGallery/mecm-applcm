@@ -24,7 +24,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-playground/validator/v10 v10.3.0
 	github.com/golang/protobuf v1.4.2
-	github.com/lib/pq v1.0.0
+	github.com/lib/pq v1.3.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.4.0

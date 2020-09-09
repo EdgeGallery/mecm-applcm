@@ -30,4 +30,5 @@ type ServerConfigurations struct {
 	Keyfilepath   string
 	Serverport    string
 	Httpsaddr     string
+	DbAdapter     string
 }
