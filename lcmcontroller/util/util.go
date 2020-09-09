@@ -85,6 +85,8 @@ const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_req
 const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
 const DiskQuery string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
 const UnexpectedValue = "Unexpected value found"
+const MarshalError = "Failed to marshal json"
+const UnMarshalError = "Failed to unmarshal json"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,

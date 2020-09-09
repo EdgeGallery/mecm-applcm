@@ -418,12 +418,17 @@ func (c *LcmController) QueryKPI() {
 	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
 
 	if errCpu != nil {
-		log.Fatalln(errCpu)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
+		return
 	}
-	json.Unmarshal([]byte(cpu),&statInfo)
+	errors := json.Unmarshal([]byte(cpu),&statInfo)
+	if errors != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return
+	}
 
 	if len(statInfo.Data.Result[0].Value) >2 {
-		log.Info(util.UnexpectedValue)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	}
 	var cpuResponse = map[string] interface {} {
@@ -433,11 +438,16 @@ func (c *LcmController) QueryKPI() {
 
 	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
 	if errMem != nil {
-		log.Fatalln(errMem)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
+		return
 	}
-	json.Unmarshal([]byte(mem),&statInfo)
+	errorMem := json.Unmarshal([]byte(mem),&statInfo)
+	if errorMem != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return
+	}
 	if len(statInfo.Data.Result[0].Value) >2 {
-		log.Info(util.UnexpectedValue)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	}
 	var memResponse = map[string] interface {} {
@@ -447,12 +457,16 @@ func (c *LcmController) QueryKPI() {
 
 	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
 	if err != nil {
-		log.Fatalln(err)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
+		return
 	}
-	json.Unmarshal([]byte(disk),&statInfo)
-
+	errorDisk := json.Unmarshal([]byte(disk),&statInfo)
+	if errorDisk != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return
+	}
 	if len(statInfo.Data.Result[0].Value) >2 {
-		log.Info(util.UnexpectedValue)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	}
 	var diskResponse = map[string] interface {} {
@@ -466,7 +480,7 @@ func (c *LcmController) QueryKPI() {
 
 	metricInfoByteArray, err := json.Marshal(metricInfo)
 	if err != nil {
-		log.Info("Failed to json marshal")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
 		return
 	}
 	log.Info("metricInfoJson", metricInfoByteArray)
@@ -479,12 +493,12 @@ func getHostInfo(url string) (string, error) {
 	//url
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
 	defer resp.Body.Close()
-	body, err2 := ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		return "", err2
+	body, error := ioutil.ReadAll(resp.Body)
+	if error != nil {
+		return "", error
 	}
 	log.Info("response is received")
 
@@ -530,8 +544,16 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 
 	mepCapabilities, err := http.Get(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + "/mep-capabilities")
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
+		return
+	}
 
 	mepByteArray, err := json.Marshal(mepCapabilities)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
+		return
+	}
 	if mepCapabilities.StatusCode >= 200 && mepCapabilities.StatusCode <= 299 {
 		c.Data["json"] = string(mepByteArray)
 		c.ServeJSON()
