@@ -421,19 +421,19 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
 		return
 	}
-	errors := json.Unmarshal([]byte(cpu),&statInfo)
+	errors := json.Unmarshal([]byte(cpu), &statInfo)
 	if errors != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
 
-	if len(statInfo.Data.Result[0].Value) >2 {
+	if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	}
-	var cpuResponse = map[string] interface {} {
-		"total" :  statInfo.Data.Result[0].Value[0],
-		"used"  :  statInfo.Data.Result[0].Value[1],
+	var cpuResponse = map[string]interface{}{
+		"total": statInfo.Data.Result[0].Value[0],
+		"used":  statInfo.Data.Result[0].Value[1],
 	}
 
 	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
@@ -441,18 +441,18 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
 		return
 	}
-	errorMem := json.Unmarshal([]byte(mem),&statInfo)
+	errorMem := json.Unmarshal([]byte(mem), &statInfo)
 	if errorMem != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	if len(statInfo.Data.Result[0].Value) >2 {
+	if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	}
-	var memResponse = map[string] interface {} {
-		"total" :  statInfo.Data.Result[0].Value[0],
-		"used"  :  statInfo.Data.Result[0].Value[1],
+	var memResponse = map[string]interface{}{
+		"total": statInfo.Data.Result[0].Value[0],
+		"used":  statInfo.Data.Result[0].Value[1],
 	}
 
 	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
@@ -460,18 +460,18 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
 		return
 	}
-	errorDisk := json.Unmarshal([]byte(disk),&statInfo)
+	errorDisk := json.Unmarshal([]byte(disk), &statInfo)
 	if errorDisk != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	if len(statInfo.Data.Result[0].Value) >2 {
+	if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	}
-	var diskResponse = map[string] interface {} {
-		"total" :  statInfo.Data.Result[0].Value[0],
-		"used"  :  statInfo.Data.Result[0].Value[1],
+	var diskResponse = map[string]interface{}{
+		"total": statInfo.Data.Result[0].Value[0],
+		"used":  statInfo.Data.Result[0].Value[1],
 	}
 
 	metricInfo.CpuUsage = cpuResponse
@@ -869,7 +869,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 		return err
 	}
 
-	if count > util.MAX_NUMBER_OF_RECORDS {
+	if count > util.MaxNumberOfRecords {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Maximum number of app info records are exceeded for given tenant")
 		return errors.New("maximum number of app info records are exceeded for given tenant")
@@ -894,7 +894,7 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 		return err
 	}
 
-	if count > util.MAX_NUMBER_OF_RECORDS {
+	if count > util.MaxNumberOfRecords {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Maximum number of tenant records are exceeded")
 		return errors.New("maximum number of tenant records are exceeded")
