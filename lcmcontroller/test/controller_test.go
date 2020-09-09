@@ -21,6 +21,8 @@ const (
 	FILE_PERMISSION os.FileMode = 0750
 	DIRECTORY                   = "/usr/app"
 	HOST_IP                     = "1.1.1.1"
+	TENANT_ID                   = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	APP_INSTANCE_ID             = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
 )
 
 func TestLcm(t *testing.T) {
@@ -122,8 +124,8 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
-		queryInput.SetParam(":tenantId", "e921ce54-82c8-4532-b5c6-8516cf75f7a6")
-		queryInput.SetParam(":appInstanceId", "e921ce54-82c8-4532-b5c6-8516cf75f7a4")
+		queryInput.SetParam(":tenantId", TENANT_ID)
+		queryInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
 
 		// Prepare beego controller
 		queryBeegoController := beego.Controller{Ctx: &context.Context{Input: queryInput, Request: queryRequest,
@@ -152,8 +154,8 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 
 		// Prepare Input
 		terminateInput := &context.BeegoInput{Context: &context.Context{Request: terminateRequest}}
-		terminateInput.SetParam(":tenantId", "e921ce54-82c8-4532-b5c6-8516cf75f7a6")
-		terminateInput.SetParam(":appInstanceId", "e921ce54-82c8-4532-b5c6-8516cf75f7a4")
+		terminateInput.SetParam(":tenantId", TENANT_ID)
+		terminateInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
 
 		// Prepare beego controller
 		terminateBeegoController := beego.Controller{Ctx: &context.Context{Input: terminateInput,
@@ -182,8 +184,8 @@ func testInstantiate(t *testing.T, extraParams map[string]string, path string, t
 
 		// Prepare Input
 		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}}
-		instantiateInput.SetParam(":tenantId", "e921ce54-82c8-4532-b5c6-8516cf75f7a6")
-		instantiateInput.SetParam(":appInstanceId", "e921ce54-82c8-4532-b5c6-8516cf75f7a4")
+		instantiateInput.SetParam(":tenantId", TENANT_ID)
+		instantiateInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
 
 		// Prepare beego controller
 		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: instantiateInput,
@@ -211,8 +213,8 @@ func testUpload(t *testing.T, extraParams map[string]string, path string) {
 
 		// Prepare Input
 		uploadInput := &context.BeegoInput{Context: &context.Context{Request: uploadRequest}}
-		uploadInput.SetParam(":tenantId", "e921ce54-82c8-4532-b5c6-8516cf75f7a6")
-		uploadInput.SetParam(":appInstanceId", "e921ce54-82c8-4532-b5c6-8516cf75f7a4")
+		uploadInput.SetParam(":tenantId", TENANT_ID)
+		uploadInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
 
 		// Prepare beego controller
 		uploadBeegoController := beego.Controller{Ctx: &context.Context{Input: uploadInput, Request: uploadRequest,
@@ -238,8 +240,8 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 
 		// Prepare Input
 		removeInput := &context.BeegoInput{Context: &context.Context{Request: removeRequest}}
-		removeInput.SetParam(":tenantId", "e921ce54-82c8-4532-b5c6-8516cf75f7a6")
-		removeInput.SetParam(":appInstanceId", "e921ce54-82c8-4532-b5c6-8516cf75f7a4")
+		removeInput.SetParam(":tenantId", TENANT_ID)
+		removeInput.SetParam(":appInstanceId", APP_INSTANCE_ID)
 
 		// Prepare beego controller
 		removeBeegoController := beego.Controller{Ctx: &context.Context{Input: removeInput, Request: removeRequest,
