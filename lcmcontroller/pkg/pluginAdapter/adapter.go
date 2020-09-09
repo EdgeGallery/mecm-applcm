@@ -63,6 +63,7 @@ func (c *PluginAdapter) Query(accessToken, appInsId, host string) (response stri
 		log.Errorf("failed to query information")
 		return "", err
 	}
+	log.Info("Query completed with status: Success")
 	return response, nil
 }
 
@@ -79,7 +80,7 @@ func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId stri
 		return util.Failure, err
 	}
 
-	log.Info("termination success with status: ", status)
+	log.Info("termination completed with status: ", status)
 	return status, nil
 }
 
