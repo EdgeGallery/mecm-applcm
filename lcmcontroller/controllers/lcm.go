@@ -542,21 +542,14 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	mepCapabilities, err := http.Get(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + "/mep-capabilities")
+	mepCapabilities, err := getHostInfo(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + "/mep-capabilities")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
 		return
 	}
 
-	mepByteArray, err := json.Marshal(mepCapabilities)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
-		return
-	}
-	if mepCapabilities.StatusCode >= 200 && mepCapabilities.StatusCode <= 299 {
-		c.Data["json"] = string(mepByteArray)
-		c.ServeJSON()
-	}
+	c.Data["json"] = mepCapabilities
+	c.ServeJSON()
 }
 
 // Write error response

@@ -35,10 +35,10 @@ import (
 
 var (
 	FILE_PERMISSION os.FileMode = 0750
-	DIRECTORY                   = "/usr/app"
-	HOST_IP                     = "1.1.1.1"
-	TENANT_ID                   = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
-	APP_INSTANCE_ID             = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	DIRECTORY       string      = "/usr/app"
+	HOST_IP         string      = "1.1.1.1"
+	TENANT_ID       string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	APP_INSTANCE_ID string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
 )
 
 func TestLcmOperation(t *testing.T) {
