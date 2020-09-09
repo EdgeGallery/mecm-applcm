@@ -389,7 +389,7 @@ func (c *LcmController) Query() {
 // Query KPI
 func (c *LcmController) QueryKPI() {
 	var metricInfo models.MetricInfo
-
+	var statInfo models.KpiModel
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
@@ -398,6 +398,7 @@ func (c *LcmController) QueryKPI() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	prometheusPort := util.GetPrometheusPort()
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -410,34 +411,80 @@ func (c *LcmController) QueryKPI() {
 	if err != nil {
 		return
 	}
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
 	}
-	prometheusPort := util.GetAppConfig("promethuesPort")
 	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
 
 	if errCpu != nil {
-		log.Fatalln(errCpu)
-	}
-	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
-	if errMem != nil {
-		log.Fatalln(errMem)
-	}
-	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	metricInfo.CpuUsage = cpu
-	metricInfo.MemUsage = mem
-	metricInfo.DiskUsage = disk
-	metricInfoJson, err := json.Marshal(metricInfo)
-	if err != nil {
-		log.Info("Failed to json marshal")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
 		return
 	}
-	log.Info("metricInfoJson", metricInfoJson)
-	log.Info("appJson", metricInfoJson)
+	errors := json.Unmarshal([]byte(cpu),&statInfo)
+	if errors != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return
+	}
+
+	if len(statInfo.Data.Result[0].Value) >2 {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
+		return
+	}
+	var cpuResponse = map[string] interface {} {
+		"total" :  statInfo.Data.Result[0].Value[0],
+		"used"  :  statInfo.Data.Result[0].Value[1],
+	}
+
+	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
+	if errMem != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
+		return
+	}
+	errorMem := json.Unmarshal([]byte(mem),&statInfo)
+	if errorMem != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return
+	}
+	if len(statInfo.Data.Result[0].Value) >2 {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
+		return
+	}
+	var memResponse = map[string] interface {} {
+		"total" :  statInfo.Data.Result[0].Value[0],
+		"used"  :  statInfo.Data.Result[0].Value[1],
+	}
+
+	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
+		return
+	}
+	errorDisk := json.Unmarshal([]byte(disk),&statInfo)
+	if errorDisk != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return
+	}
+	if len(statInfo.Data.Result[0].Value) >2 {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
+		return
+	}
+	var diskResponse = map[string] interface {} {
+		"total" :  statInfo.Data.Result[0].Value[0],
+		"used"  :  statInfo.Data.Result[0].Value[1],
+	}
+
+	metricInfo.CpuUsage = cpuResponse
+	metricInfo.MemUsage = memResponse
+	metricInfo.DiskUsage = diskResponse
+
+	metricInfoByteArray, err := json.Marshal(metricInfo)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
+		return
+	}
+	log.Info("metricInfoJson", metricInfoByteArray)
+	c.Data["json"] = string(metricInfoByteArray)
 	c.ServeJSON()
 }
 
@@ -446,12 +493,12 @@ func getHostInfo(url string) (string, error) {
 	//url
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
 	defer resp.Body.Close()
-	body, err2 := ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		return "", err2
+	body, error := ioutil.ReadAll(resp.Body)
+	if error != nil {
+		return "", error
 	}
 	log.Info("response is received")
 
@@ -471,6 +518,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	mepPort := util.GetMepPort()
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -484,7 +532,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	if err != nil {
 		return
 	}
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
 	}
@@ -495,15 +543,22 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	mepPort := util.GetAppConfig("mepPort")
-	mepCapabilities, err := http.Get(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + ":" + mepPort + "/mep-capabilities")
+	mepCapabilities, err := http.Get(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + "/mep-capabilities")
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
+		return
+	}
 
-	mepJson, err := json.Marshal(mepCapabilities)
-
+	mepByteArray, err := json.Marshal(mepCapabilities)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
+		return
+	}
 	if mepCapabilities.StatusCode >= 200 && mepCapabilities.StatusCode <= 299 {
+		c.Data["json"] = string(mepByteArray)
 		c.ServeJSON()
 	}
-	log.Info("appJson", mepJson)
+	return
 }
 
 // Write error response
@@ -705,6 +760,17 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		return "", err
+	}
+	return hostIp, nil
+}
+
+// Get host IP from url
+func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
+	hostIp := c.Ctx.Input.Param(":hostIp")
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid from url")
 		return "", err
 	}
 	return hostIp, nil

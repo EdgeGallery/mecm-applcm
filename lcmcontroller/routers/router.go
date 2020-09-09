@@ -38,9 +38,9 @@ func init() {
 		&controllers.LcmController{Db: adapter}, "post:Terminate")
 	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId", &controllers.LcmController{Db: adapter},
 		"get:Query")
-	beego.Router(RootPath+"/tenants/:tenantId/kpi/:hostIp", &controllers.LcmController{},
+	beego.Router(RootPath+"/tenants/:tenantId/hosts/:hostIp/kpi", &controllers.LcmController{},
 		"get:QueryKPI")
-	beego.Router(RootPath+"/tenants/:tenantId/mep_capabilities/:hostIp", &controllers.LcmController{},
+	beego.Router(RootPath+"/tenants/:tenantId/hosts/:hostIp/mep_capabilities", &controllers.LcmController{},
 		"get:QueryMepCapabilities")
 }
 

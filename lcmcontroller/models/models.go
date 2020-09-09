@@ -41,7 +41,20 @@ type TenantInfoRecord struct {
 
 // Metric Information
 type MetricInfo struct {
-	CpuUsage  string `json:"cpuusage"`
-	MemUsage  string `json:"memusgae"`
-	DiskUsage string `json:"diskusgae"`
+	CpuUsage  map[string]interface{} `json:"cpuusage"`
+	MemUsage  map[string]interface{}`json:"memusage"`
+	DiskUsage  map[string]interface{}`json:"diskusage"`
+}
+
+// Kpi Information
+type KpiModel struct {
+	Status string `json:"status"`
+	Data   struct {
+		ResultType string `json:"resultType"`
+		Result     []struct {
+			Metric struct {
+			} `json:"metric"`
+			Value []interface{} `json:"value"`
+		} `json:"result"`
+	} `json:"data"`
 }
