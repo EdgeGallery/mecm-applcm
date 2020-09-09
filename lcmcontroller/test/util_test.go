@@ -27,7 +27,6 @@ import (
 
 const (
 	FWDIP          = "1.1.1.1:10000"
-	HOST_IP_STRING = "hostIp"
 )
 
 // Creates a new file upload http request with optional extra params
