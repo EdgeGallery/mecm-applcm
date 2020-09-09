@@ -421,8 +421,8 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
 		return
 	}
-	errors := json.Unmarshal([]byte(cpu), &statInfo)
-	if errors != nil {
+	err = json.Unmarshal([]byte(cpu), &statInfo)
+	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
@@ -495,9 +495,9 @@ func getHostInfo(url string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, error := ioutil.ReadAll(resp.Body)
-	if error != nil {
-		return "", error
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
 	}
 	log.Info("response is received")
 
