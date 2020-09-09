@@ -329,18 +329,6 @@ func validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (stri
 	return hostIp, nil
 }
 
-// Query KPI
-func (s *ServerGRPC) QueryKPI(_ context.Context,
-	request *lcmservice.QueryKPIRequest) (*lcmservice.QueryKPIResponse, error) {
-	panic("implement me")
-}
-
-// Query Mep capabilities
-func (s *ServerGRPC) QueryMepCapabilities(ctx context.Context,
-	request *lcmservice.QueryMepCapRequest) (*lcmservice.QueryMepCapResponse, error) {
-	panic("implement me")
-}
-
 // Context Error
 func (s *ServerGRPC) contextError(ctx context.Context) error {
 	switch ctx.Err() {

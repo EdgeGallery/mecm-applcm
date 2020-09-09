@@ -70,30 +70,10 @@ message RemoveCfgResponse {
   string status = 1;
 }
 
-message QueryKPIRequest {
-  string accessToken = 1;
-  string hostIp = 2;
-}
-
-message QueryKPIResponse {
-  string response = 1;
-}
-
-message QueryMepCapRequest {
-  string accessToken = 1;
-  string hostIp = 2;
-}
-
-message QueryMepCapResponse {
-  string response = 1;
-}
-
 service AppLCM {
   rpc instantiate (stream InstantiateRequest) returns (InstantiateResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc query (QueryRequest) returns (QueryResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
-  rpc queryKPI (QueryKPIRequest) returns (QueryKPIResponse) {}
-  rpc queryMepCapabilities (QueryMepCapRequest) returns (QueryMepCapResponse) {}
 }
