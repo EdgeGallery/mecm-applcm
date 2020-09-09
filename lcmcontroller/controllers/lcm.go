@@ -483,7 +483,6 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
 		return
 	}
-	log.Info("metricInfoJson", metricInfoByteArray)
 	c.Data["json"] = string(metricInfoByteArray)
 	c.ServeJSON()
 }
@@ -558,7 +557,6 @@ func (c *LcmController) QueryMepCapabilities() {
 		c.Data["json"] = string(mepByteArray)
 		c.ServeJSON()
 	}
-	return
 }
 
 // Write error response

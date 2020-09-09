@@ -56,7 +56,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 
 		tlsConfig, err := util.TLSConfig(cfg.RootCertificate)
 		if err != nil {
-			log.Errorf("failed to get TLS configuration with error {}", err)
+			log.Error("failed to get TLS configuration with error")
 			return nil, err
 		}
 		creds := credentials.NewTLS(tlsConfig)
@@ -69,7 +69,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 	}
 
 	if err != nil {
-		log.Errorf("failed to dial GRPC connection for address {} with error {}", cfg.Address, err)
+		log.Error("failed to dial GRPC connection for address")
 		return c, err
 	}
 
@@ -157,7 +157,6 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 			// ... if `eof` --> `writing=false`...
 			if err == io.EOF {
 				writing = false
-				err = nil
 				continue
 			}
 			log.Error("failed while copying from file to buf")
@@ -288,7 +287,6 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 			// ... if `eof` --> `writing=false`...
 			if err == io.EOF {
 				writing = false
-				err = nil
 				continue
 			}
 			log.Error("failed while copying from file to buf")

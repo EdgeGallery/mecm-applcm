@@ -35,17 +35,17 @@ type PgDb struct {
 }
 
 // Constructor of PluginAdapter
-func (db *PgDb) initOrmer() error {
+func (db *PgDb) initOrmer() (err1 error) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error("panic handled:", err)
-			err = fmt.Errorf("recover panic as %s", err)
+			err1 = fmt.Errorf("recover panic as %s", err)
 		}
 	}()
 	o := orm.NewOrm()
-	err := o.Using(util.Default)
-	if err != nil {
-		return err
+	err1 = o.Using(util.Default)
+	if err1 != nil {
+		return err1
 	}
 	db.ormer = o
 
