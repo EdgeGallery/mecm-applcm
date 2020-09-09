@@ -6,16 +6,16 @@ import (
 	"lcmcontroller/util"
 )
 
-type MockDb struct {
+type mockDb struct {
 	appInstanceRecords map[string]models.AppInfoRecord
 	tenantRecords      map[string]models.TenantInfoRecord
 }
 
-func (db *MockDb) InitDatabase() error {
+func (db *mockDb) InitDatabase() error {
 	panic("implement me")
 }
 
-func (db *MockDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
+func (db *mockDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
@@ -31,7 +31,7 @@ func (db *MockDb) InsertOrUpdateData(data interface{}, cols ...string) (err erro
 	return nil
 }
 
-func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
+func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
@@ -56,7 +56,7 @@ func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
 	return nil
 }
 
-func (db *MockDb) DeleteData(data interface{}, cols ...string) (err error) {
+func (db *mockDb) DeleteData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
@@ -80,10 +80,10 @@ func (db *MockDb) DeleteData(data interface{}, cols ...string) (err error) {
 	return nil
 }
 
-func (db *MockDb) QueryCount(tableName string) (int64, error) {
+func (db *mockDb) QueryCount(tableName string) (int64, error) {
 	return 0, nil
 }
 
-func (db *MockDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
+func (db *mockDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
 	return 0, nil
 }
