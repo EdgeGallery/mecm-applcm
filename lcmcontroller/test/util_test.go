@@ -51,7 +51,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 		if err != nil {
 			return nil, err
 		}
-		_, err = io.Copy(part, file)
+		_, _ = io.Copy(part, file)
 
 		for key, val := range params {
 			_ = writer.WriteField(key, val)
@@ -64,7 +64,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 	} else {
 		body := &bytes.Buffer{}
-		writer = multipart.NewWriter(body)
+		_ = multipart.NewWriter(body)
 		req, err = http.NewRequest(requestType, uri, body)
 		req.Header.Set("Content-Type", "application/json")
 	}
