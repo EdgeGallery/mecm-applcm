@@ -661,210 +661,6 @@ func (x *RemoveCfgResponse) GetStatus() string {
 	return ""
 }
 
-type QueryKPIRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	AccessToken string `protobuf:"bytes,1,opt,name=accessToken,proto3" json:"accessToken,omitempty"`
-	HostIp      string `protobuf:"bytes,2,opt,name=hostIp,proto3" json:"hostIp,omitempty"`
-}
-
-func (x *QueryKPIRequest) Reset() {
-	*x = QueryKPIRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_lcmservice_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryKPIRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryKPIRequest) ProtoMessage() {}
-
-func (x *QueryKPIRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lcmservice_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryKPIRequest.ProtoReflect.Descriptor instead.
-func (*QueryKPIRequest) Descriptor() ([]byte, []int) {
-	return file_lcmservice_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *QueryKPIRequest) GetAccessToken() string {
-	if x != nil {
-		return x.AccessToken
-	}
-	return ""
-}
-
-func (x *QueryKPIRequest) GetHostIp() string {
-	if x != nil {
-		return x.HostIp
-	}
-	return ""
-}
-
-type QueryKPIResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Response string `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
-}
-
-func (x *QueryKPIResponse) Reset() {
-	*x = QueryKPIResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_lcmservice_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryKPIResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryKPIResponse) ProtoMessage() {}
-
-func (x *QueryKPIResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lcmservice_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryKPIResponse.ProtoReflect.Descriptor instead.
-func (*QueryKPIResponse) Descriptor() ([]byte, []int) {
-	return file_lcmservice_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *QueryKPIResponse) GetResponse() string {
-	if x != nil {
-		return x.Response
-	}
-	return ""
-}
-
-type QueryMepCapRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	AccessToken string `protobuf:"bytes,1,opt,name=accessToken,proto3" json:"accessToken,omitempty"`
-	HostIp      string `protobuf:"bytes,2,opt,name=hostIp,proto3" json:"hostIp,omitempty"`
-}
-
-func (x *QueryMepCapRequest) Reset() {
-	*x = QueryMepCapRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_lcmservice_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryMepCapRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryMepCapRequest) ProtoMessage() {}
-
-func (x *QueryMepCapRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lcmservice_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryMepCapRequest.ProtoReflect.Descriptor instead.
-func (*QueryMepCapRequest) Descriptor() ([]byte, []int) {
-	return file_lcmservice_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *QueryMepCapRequest) GetAccessToken() string {
-	if x != nil {
-		return x.AccessToken
-	}
-	return ""
-}
-
-func (x *QueryMepCapRequest) GetHostIp() string {
-	if x != nil {
-		return x.HostIp
-	}
-	return ""
-}
-
-type QueryMepCapResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Response string `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
-}
-
-func (x *QueryMepCapResponse) Reset() {
-	*x = QueryMepCapResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_lcmservice_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryMepCapResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryMepCapResponse) ProtoMessage() {}
-
-func (x *QueryMepCapResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lcmservice_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryMepCapResponse.ProtoReflect.Descriptor instead.
-func (*QueryMepCapResponse) Descriptor() ([]byte, []int) {
-	return file_lcmservice_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *QueryMepCapResponse) GetResponse() string {
-	if x != nil {
-		return x.Response
-	}
-	return ""
-}
-
 var File_lcmservice_proto protoreflect.FileDescriptor
 
 var file_lcmservice_proto_rawDesc = []byte{
@@ -921,23 +717,7 @@ var file_lcmservice_proto_rawDesc = []byte{
 	0x74, 0x49, 0x70, 0x22, 0x2b, 0x0a, 0x11, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x43, 0x66, 0x67,
 	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74,
 	0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
-	0x22, 0x4b, 0x0a, 0x0f, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x50, 0x49, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73, 0x54, 0x6f, 0x6b,
-	0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73,
-	0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x6f, 0x73, 0x74, 0x49, 0x70, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x68, 0x6f, 0x73, 0x74, 0x49, 0x70, 0x22, 0x2e, 0x0a,
-	0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x50, 0x49, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x4e, 0x0a,
-	0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x65, 0x70, 0x43, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73, 0x54, 0x6f, 0x6b,
-	0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73,
-	0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x6f, 0x73, 0x74, 0x49, 0x70, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x68, 0x6f, 0x73, 0x74, 0x49, 0x70, 0x22, 0x31, 0x0a,
-	0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x65, 0x70, 0x43, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x32, 0xac, 0x04, 0x0a, 0x06, 0x41, 0x70, 0x70, 0x4c, 0x43, 0x4d, 0x12, 0x52, 0x0a, 0x0b, 0x69,
+	0x32, 0x88, 0x03, 0x0a, 0x06, 0x41, 0x70, 0x70, 0x4c, 0x43, 0x4d, 0x12, 0x52, 0x0a, 0x0b, 0x69,
 	0x6e, 0x73, 0x74, 0x61, 0x6e, 0x74, 0x69, 0x61, 0x74, 0x65, 0x12, 0x1e, 0x2e, 0x6c, 0x63, 0x6d,
 	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x74, 0x69,
 	0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x6c, 0x63, 0x6d,
@@ -961,18 +741,8 @@ var file_lcmservice_proto_rawDesc = []byte{
 	0x63, 0x6d, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
 	0x43, 0x66, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x6c, 0x63, 0x6d,
 	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x43, 0x66,
-	0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x47, 0x0a, 0x08, 0x71,
-	0x75, 0x65, 0x72, 0x79, 0x4b, 0x50, 0x49, 0x12, 0x1b, 0x2e, 0x6c, 0x63, 0x6d, 0x73, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x50, 0x49, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x6c, 0x63, 0x6d, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4b, 0x50, 0x49, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x00, 0x12, 0x59, 0x0a, 0x14, 0x71, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x65, 0x70,
-	0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x12, 0x1e, 0x2e, 0x6c,
-	0x63, 0x6d, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d,
-	0x65, 0x70, 0x43, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x6c,
-	0x63, 0x6d, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d,
-	0x65, 0x70, 0x43, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -987,7 +757,7 @@ func file_lcmservice_proto_rawDescGZIP() []byte {
 	return file_lcmservice_proto_rawDescData
 }
 
-var file_lcmservice_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_lcmservice_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_lcmservice_proto_goTypes = []interface{}{
 	(*InstantiateRequest)(nil),  // 0: lcmservice.InstantiateRequest
 	(*InstantiateResponse)(nil), // 1: lcmservice.InstantiateResponse
@@ -999,31 +769,23 @@ var file_lcmservice_proto_goTypes = []interface{}{
 	(*UploadCfgResponse)(nil),   // 7: lcmservice.UploadCfgResponse
 	(*RemoveCfgRequest)(nil),    // 8: lcmservice.RemoveCfgRequest
 	(*RemoveCfgResponse)(nil),   // 9: lcmservice.RemoveCfgResponse
-	(*QueryKPIRequest)(nil),     // 10: lcmservice.QueryKPIRequest
-	(*QueryKPIResponse)(nil),    // 11: lcmservice.QueryKPIResponse
-	(*QueryMepCapRequest)(nil),  // 12: lcmservice.QueryMepCapRequest
-	(*QueryMepCapResponse)(nil), // 13: lcmservice.QueryMepCapResponse
 }
 var file_lcmservice_proto_depIdxs = []int32{
-	0,  // 0: lcmservice.AppLCM.instantiate:input_type -> lcmservice.InstantiateRequest
-	2,  // 1: lcmservice.AppLCM.terminate:input_type -> lcmservice.TerminateRequest
-	4,  // 2: lcmservice.AppLCM.query:input_type -> lcmservice.QueryRequest
-	6,  // 3: lcmservice.AppLCM.uploadConfig:input_type -> lcmservice.UploadCfgRequest
-	8,  // 4: lcmservice.AppLCM.removeConfig:input_type -> lcmservice.RemoveCfgRequest
-	10, // 5: lcmservice.AppLCM.queryKPI:input_type -> lcmservice.QueryKPIRequest
-	12, // 6: lcmservice.AppLCM.queryMepCapabilities:input_type -> lcmservice.QueryMepCapRequest
-	1,  // 7: lcmservice.AppLCM.instantiate:output_type -> lcmservice.InstantiateResponse
-	3,  // 8: lcmservice.AppLCM.terminate:output_type -> lcmservice.TerminateResponse
-	5,  // 9: lcmservice.AppLCM.query:output_type -> lcmservice.QueryResponse
-	7,  // 10: lcmservice.AppLCM.uploadConfig:output_type -> lcmservice.UploadCfgResponse
-	9,  // 11: lcmservice.AppLCM.removeConfig:output_type -> lcmservice.RemoveCfgResponse
-	11, // 12: lcmservice.AppLCM.queryKPI:output_type -> lcmservice.QueryKPIResponse
-	13, // 13: lcmservice.AppLCM.queryMepCapabilities:output_type -> lcmservice.QueryMepCapResponse
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	0, // 0: lcmservice.AppLCM.instantiate:input_type -> lcmservice.InstantiateRequest
+	2, // 1: lcmservice.AppLCM.terminate:input_type -> lcmservice.TerminateRequest
+	4, // 2: lcmservice.AppLCM.query:input_type -> lcmservice.QueryRequest
+	6, // 3: lcmservice.AppLCM.uploadConfig:input_type -> lcmservice.UploadCfgRequest
+	8, // 4: lcmservice.AppLCM.removeConfig:input_type -> lcmservice.RemoveCfgRequest
+	1, // 5: lcmservice.AppLCM.instantiate:output_type -> lcmservice.InstantiateResponse
+	3, // 6: lcmservice.AppLCM.terminate:output_type -> lcmservice.TerminateResponse
+	5, // 7: lcmservice.AppLCM.query:output_type -> lcmservice.QueryResponse
+	7, // 8: lcmservice.AppLCM.uploadConfig:output_type -> lcmservice.UploadCfgResponse
+	9, // 9: lcmservice.AppLCM.removeConfig:output_type -> lcmservice.RemoveCfgResponse
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_lcmservice_proto_init() }
@@ -1152,54 +914,6 @@ func file_lcmservice_proto_init() {
 				return nil
 			}
 		}
-		file_lcmservice_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryKPIRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_lcmservice_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryKPIResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_lcmservice_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMepCapRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_lcmservice_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMepCapResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	file_lcmservice_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*InstantiateRequest_AccessToken)(nil),
@@ -1218,7 +932,7 @@ func file_lcmservice_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_lcmservice_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1249,8 +963,6 @@ type AppLCMClient interface {
 	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	UploadConfig(ctx context.Context, opts ...grpc.CallOption) (AppLCM_UploadConfigClient, error)
 	RemoveConfig(ctx context.Context, in *RemoveCfgRequest, opts ...grpc.CallOption) (*RemoveCfgResponse, error)
-	QueryKPI(ctx context.Context, in *QueryKPIRequest, opts ...grpc.CallOption) (*QueryKPIResponse, error)
-	QueryMepCapabilities(ctx context.Context, in *QueryMepCapRequest, opts ...grpc.CallOption) (*QueryMepCapResponse, error)
 }
 
 type appLCMClient struct {
@@ -1356,24 +1068,6 @@ func (c *appLCMClient) RemoveConfig(ctx context.Context, in *RemoveCfgRequest, o
 	return out, nil
 }
 
-func (c *appLCMClient) QueryKPI(ctx context.Context, in *QueryKPIRequest, opts ...grpc.CallOption) (*QueryKPIResponse, error) {
-	out := new(QueryKPIResponse)
-	err := c.cc.Invoke(ctx, "/lcmservice.AppLCM/queryKPI", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *appLCMClient) QueryMepCapabilities(ctx context.Context, in *QueryMepCapRequest, opts ...grpc.CallOption) (*QueryMepCapResponse, error) {
-	out := new(QueryMepCapResponse)
-	err := c.cc.Invoke(ctx, "/lcmservice.AppLCM/queryMepCapabilities", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // AppLCMServer is the server API for AppLCM service.
 type AppLCMServer interface {
 	Instantiate(AppLCM_InstantiateServer) error
@@ -1381,8 +1075,6 @@ type AppLCMServer interface {
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
 	UploadConfig(AppLCM_UploadConfigServer) error
 	RemoveConfig(context.Context, *RemoveCfgRequest) (*RemoveCfgResponse, error)
-	QueryKPI(context.Context, *QueryKPIRequest) (*QueryKPIResponse, error)
-	QueryMepCapabilities(context.Context, *QueryMepCapRequest) (*QueryMepCapResponse, error)
 }
 
 // UnimplementedAppLCMServer can be embedded to have forward compatible implementations.
@@ -1403,12 +1095,6 @@ func (*UnimplementedAppLCMServer) UploadConfig(AppLCM_UploadConfigServer) error 
 }
 func (*UnimplementedAppLCMServer) RemoveConfig(context.Context, *RemoveCfgRequest) (*RemoveCfgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveConfig not implemented")
-}
-func (*UnimplementedAppLCMServer) QueryKPI(context.Context, *QueryKPIRequest) (*QueryKPIResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryKPI not implemented")
-}
-func (*UnimplementedAppLCMServer) QueryMepCapabilities(context.Context, *QueryMepCapRequest) (*QueryMepCapResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryMepCapabilities not implemented")
 }
 
 func RegisterAppLCMServer(s *grpc.Server, srv AppLCMServer) {
@@ -1521,42 +1207,6 @@ func _AppLCM_RemoveConfig_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AppLCM_QueryKPI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryKPIRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AppLCMServer).QueryKPI(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lcmservice.AppLCM/QueryKPI",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppLCMServer).QueryKPI(ctx, req.(*QueryKPIRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AppLCM_QueryMepCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryMepCapRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AppLCMServer).QueryMepCapabilities(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lcmservice.AppLCM/QueryMepCapabilities",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppLCMServer).QueryMepCapabilities(ctx, req.(*QueryMepCapRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _AppLCM_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "lcmservice.AppLCM",
 	HandlerType: (*AppLCMServer)(nil),
@@ -1572,14 +1222,6 @@ var _AppLCM_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "removeConfig",
 			Handler:    _AppLCM_RemoveConfig_Handler,
-		},
-		{
-			MethodName: "queryKPI",
-			Handler:    _AppLCM_QueryKPI_Handler,
-		},
-		{
-			MethodName: "queryMepCapabilities",
-			Handler:    _AppLCM_QueryMepCapabilities_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
