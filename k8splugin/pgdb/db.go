@@ -21,4 +21,5 @@ type Database interface {
 	InitDatabase() error
 	InsertOrUpdateData(data interface{}, cols ...string) (err error)
 	ReadData(data interface{}, cols ...string) (err error)
+	DeleteData(data interface{}, cols ...string) (err error)
 }
