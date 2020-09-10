@@ -38,6 +38,7 @@ var (
 const DB_REGEX string = `^[\w-]{4,16}$`
 const DB_USER_REGEX = DB_REGEX
 const DB_NAME_REGEX = DB_REGEX
+const NAMESPACE_REGEX = DB_REGEX
 const HOST_REGEX string = `^[\w-.]{4,16}$`
 const PORT_REGEX string = `^([1-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`
 const minPasswordSize = 8
@@ -58,10 +59,18 @@ const AccssTokenIsInvalid = "AccessToken is invalid"
 const Success = "Success"
 const Failure = "Failure"
 const ActionConfig = "Unable to initialize action config"
-const HelmDriver = "HELM_DRIVER"
+const InvalidNamespace = "Invalid namespace"
+const HelmDriver = ""
 const AppInsId = "app_ins_id"
 const maxHostNameLen = 253
 const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+
+// Default environment variables
+const dbuser    = "k8splugin"
+const dbname    = "k8splugindb"
+const dbhost    = "mecm-postgres"
+const dbport    = "5432"
+const namespace = "default"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -288,6 +297,7 @@ func ValidateServerName(serverName string) (bool, error) {
 	return regexp.MatchString(ServerNameRegex, serverName)
 }
 
+// Get configuration
 func GetConfiguration(configPath string) (config *conf.Configurations, err error) {
 
 	// Set the file name of the configurations file
@@ -317,7 +327,7 @@ func GetConfiguration(configPath string) (config *conf.Configurations, err error
 func GetDbUser() string {
 	dbUser := os.Getenv("K8S_PLUGIN_USER")
 	if dbUser == "" {
-		dbUser = "k8splugin"
+		dbUser = dbuser
 	}
 	return dbUser
 }
@@ -326,7 +336,7 @@ func GetDbUser() string {
 func GetDbName() string {
 	dbName := os.Getenv("K8S_PLUGIN_DB")
 	if dbName == "" {
-		dbName = "k8splugindb"
+		dbName = dbname
 	}
 	return dbName
 }
@@ -335,7 +345,7 @@ func GetDbName() string {
 func GetDbHost() string {
 	dbHost := os.Getenv("K8S_PLUGIN_DB_HOST")
 	if dbHost == "" {
-		dbHost = "localhost"
+		dbHost = dbhost
 	}
 	return dbHost
 }
@@ -344,7 +354,26 @@ func GetDbHost() string {
 func GetDbPort() string {
 	dbPort := os.Getenv("K8S_PLUGIN_DB_PORT")
 	if dbPort == "" {
-		dbPort = "5432"
+		dbPort = dbport
 	}
 	return dbPort
 }
+
+// Get release namespace
+func GetReleaseNamespace() string {
+	releaseNamespace := os.Getenv("RELEASE_NAMESPACE")
+	if releaseNamespace == "" {
+		releaseNamespace = namespace
+	}
+	return releaseNamespace
+}
+
+// Validate namespace
+func ValidateNameSpace(nameSpace string) (bool, error) {
+	nameSpaceIsValid, validateNameSpaceErr := regexp.MatchString(NAMESPACE_REGEX, nameSpace)
+	if validateNameSpaceErr != nil || !nameSpaceIsValid {
+		return nameSpaceIsValid, validateNameSpaceErr
+	}
+	return true, nil
+}
+

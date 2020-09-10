@@ -44,9 +44,7 @@ import (
 
 // Variables to be defined in deployment file
 var (
-	chartPath        = os.Getenv("CHART_PATH")
 	kubeconfigPath   = "/usr/app/config/"
-	releaseNamespace = os.Getenv("RELEASE_NAMESPACE")
 )
 
 // Helm client
@@ -101,12 +99,12 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 	log.Info("Inside helm client")
 
 	// Create temporary file to hold helm chart
-	file, err := os.Create(chartPath + util.TempFile)
+	file, err := os.Create(util.TempFile)
 	if err != nil {
 		log.Error("Unable to create file")
 		return "", err
 	}
-	defer os.Remove(chartPath + util.TempFile)
+	defer os.Remove(util.TempFile)
 
 	// Write input bytes to temp file
 	_, err = pkg.WriteTo(file)
@@ -116,7 +114,7 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 	}
 
 	// Load the file to chart
-	chart, err := loader.Load(chartPath + util.TempFile)
+	chart, err := loader.Load(util.TempFile)
 	if err != nil {
 		log.Error("Unable to load chart from file")
 		return "", err
@@ -125,10 +123,18 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 	// Release name will be taken from the name in chart's metadata
 	relName := chart.Metadata.Name
 
+	// Get release namespace
+	releaseNamespace := util.GetReleaseNamespace()
+	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
+	if err != nil || !nameSpace {
+		log.Error(util.InvalidNamespace)
+		return "", err
+	}
+
 	// Initialize action config
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
+		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
@@ -150,10 +156,17 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 
 // Un-Install a given helm chart
 func (hc *HelmClient) UnDeploy(relName string) error {
+	// Get release namespace
+	releaseNamespace := util.GetReleaseNamespace()
+	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
+	if err != nil || !nameSpace {
+		log.Error(util.InvalidNamespace)
+		return err
+	}
 	// Prepare action config and uninstall chart
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
+		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
@@ -173,12 +186,17 @@ func (hc *HelmClient) UnDeploy(relName string) error {
 // Query a given chart
 func (hc *HelmClient) Query(relName string) (string, error) {
 	log.Info("In Query Chart function")
-	var labelSelector models.LabelSelector
-	var label models.Label
 
+	// Get release namespace
+	releaseNamespace := util.GetReleaseNamespace()
+	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
+	if err != nil || !nameSpace {
+		log.Error(util.InvalidNamespace)
+		return "", err
+	}
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
+		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
@@ -197,19 +215,6 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 		return "", err
 	}
 
-	for i := 0; i < len(manifest); i++ {
-		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service" {
-			appName := manifest[i].Metadata.Name
-			if manifest[i].Metadata.Labels.App != "" {
-				appName = manifest[i].Metadata.Labels.App
-			}
-			pod := "app=" + appName
-			label.Kind = manifest[i].Kind
-			label.Selector = pod
-			labelSelector.Label = append(labelSelector.Label, label)
-		}
-	}
-
 	// uses the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", hc.kubeconfig)
 	if err != nil {
@@ -220,6 +225,8 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	
+	labelSelector := getLabelSelector(manifest)
 
 	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, config)
 	if err != nil {
@@ -233,6 +240,27 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	}
 	return appInfoJson, nil
 
+}
+
+// Get label selector
+func getLabelSelector(manifest []Manifest) models.LabelSelector {
+	var labelSelector models.LabelSelector
+	var label models.Label
+
+	for i := 0; i < len(manifest); i++ {
+		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service" {
+			appName := manifest[i].Metadata.Name
+			if manifest[i].Metadata.Labels.App != "" {
+				appName = manifest[i].Metadata.Labels.App
+			}
+			pod := "app=" + appName
+			label.Kind = manifest[i].Kind
+			label.Selector = pod
+			labelSelector.Label = append(labelSelector.Label, label)
+		}
+	}
+
+	return labelSelector
 }
 
 // get JSON response
