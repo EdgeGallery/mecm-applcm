@@ -359,3 +359,21 @@ func GetMepPort() string {
 	}
 	return mepPort
 }
+
+// Get k8splugin address
+func GetK8sPlugin() string {
+	k8sPlugin := os.Getenv(K8sPlugin)
+	if k8sPlugin == "" {
+		k8sPlugin = "mecm-k8splugin"
+	}
+	return k8sPlugin
+}
+
+// Get k8splugin port
+func GetK8sPluginPort() string {
+	k8sPluginPort := os.Getenv(K8sPluginPort)
+	if k8sPluginPort == "" {
+		k8sPluginPort = "8095"
+	}
+	return k8sPluginPort
+}

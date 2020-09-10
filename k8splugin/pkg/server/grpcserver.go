@@ -193,6 +193,15 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 		resp = &lcmservice.TerminateResponse{
 			Status: util.Success,
 		}
+
+		err := s.deleteAppInfoRecord(appInsId)
+		if err != nil {
+			resp = &lcmservice.TerminateResponse{
+				Status: util.Failure,
+			}
+
+			return resp, s.logError(status.Errorf(codes.NotFound, "Failed to delete record from database"))
+		}
 		return resp, nil
 	}
 }
@@ -543,6 +552,20 @@ func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName st
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		return s.logError(status.Error(codes.InvalidArgument,
 			"Failed to save app info record to database."))
+	}
+	return nil
+}
+
+// Delete app instance record
+func (s *ServerGRPC) deleteAppInfoRecord(appInsId string) error {
+	appInfoRecord := &models.AppInstanceInfo{
+		AppInsId: appInsId,
+	}
+
+	err := s.db.DeleteData(appInfoRecord, util.AppInsId)
+	if err != nil {
+		return s.logError(status.Error(codes.InvalidArgument,
+			"Failed to delete app info record from database."))
 	}
 	return nil
 }

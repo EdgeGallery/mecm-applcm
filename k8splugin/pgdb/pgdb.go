@@ -70,6 +70,12 @@ func (db *PgDb) ReadData(data interface{}, cols ...string) (err error) {
 	return err
 }
 
+// Delete data from k8splugin
+func (db *PgDb) DeleteData(data interface{}, cols ...string) (err error) {
+	_, err = db.ormer.Delete(data, cols...)
+	return err
+}
+
 // Init database
 func (db *PgDb) InitDatabase() error {
 	dbUser := util.GetDbUser()
