@@ -187,6 +187,18 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId: appInsId,
+	}
+
+	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
+	if readErr == nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"App instance info record already exists")
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	packageName := getPackageName(header)
 	pkgPath := PackageFolderPath + header.Filename
 	err = c.createPackagePath(pkgPath, clientIp, file)
@@ -210,6 +222,19 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
+	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		_ = removeCsarFiles(packageName, header)
+		return
+	}
+	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		_ = removeCsarFiles(packageName, header)
+		return
+	}
+
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -223,18 +248,6 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		_ = removeCsarFiles(packageName, header)
-		return
-	}
-	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		_ = removeCsarFiles(packageName, header)
-		return
-	}
 	err = removeCsarFiles(packageName, header)
 	if err != nil {
 		return
