@@ -95,7 +95,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo := GetPluginInfo()
+	pluginInfo := getPluginInfo()
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -115,7 +115,7 @@ func (c *LcmController) UploadConfig() {
 }
 
 // Get plugin info
-func GetPluginInfo() string {
+func getPluginInfo() string {
 	k8sPlugin := util.GetK8sPlugin()
 	k8sPluginPort := util.GetK8sPluginPort()
 	pluginInfo := k8sPlugin + ":" + k8sPluginPort
@@ -145,7 +145,7 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo := GetPluginInfo()
+	pluginInfo := getPluginInfo()
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -297,7 +297,7 @@ func (c *LcmController) Terminate() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = GetPluginInfo()
+		pluginInfo = getPluginInfo()
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -370,7 +370,7 @@ func (c *LcmController) Query() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = GetPluginInfo()
+		pluginInfo = getPluginInfo()
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -842,7 +842,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 			return "", "", err
 		}
 
-		pluginInfo := GetPluginInfo()
+		pluginInfo := getPluginInfo()
 		return artifact, pluginInfo, nil
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
