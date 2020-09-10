@@ -68,7 +68,6 @@ func TestValidatePassword_inavlidlen(t *testing.T) {
 func TestValidatePassword_invalid(t *testing.T) {
 	bytes := []byte("asdf1234")
 	_, _ = util.ValidatePassword(&bytes)
-	//log.Info(err)
 	assert.False(t, false, "TestValidatePassword_invalid execution result")
 }
 
@@ -108,7 +107,7 @@ func TestGetDbName(t *testing.T) {
 
 func TestGetDbHost(t *testing.T) {
 	err := util.GetDbHost()
-	assert.Equal(t, "mecm-postgres", err, "TestGetDbHost execution result")
+	assert.Equal(t, "mepm-postgres", err, "TestGetDbHost execution result")
 }
 
 func TestGetDbPort(t *testing.T) {
@@ -130,4 +129,39 @@ func TestValidateFileSize_success(t *testing.T) {
 func TestValidateFileSize_invalid(t *testing.T) {
 	err := util.ValidateFileSize(100, 10)
 	assert.Error(t, err, "TestValidateFileSize_invalid execution result")
+}
+
+func TestGetCipherSuites(t *testing.T) {
+	sslCiphers := "Dgashsdjh35xgkdgfsdhg"
+	err := util.GetCipherSuites(sslCiphers)
+	assert.Nil(t, err, "")
+}
+
+func TestGetPasswordValidCount(t *testing.T) {
+	bytes := []byte("abdsflh")
+	err := util.GetPasswordValidCount(&bytes)
+	assert.Equal(t, 1, err, "dfdf")
+}
+
+func TestGetPasswordValidCount1(t *testing.T) {
+	bytes := []byte("GSHDAK")
+	err := util.GetPasswordValidCount(&bytes)
+	assert.Equal(t, 2, err, "dfdf")
+}
+
+func TestGetPasswordValidCount2(t *testing.T) {
+	bytes := []byte("3393")
+	err := util.GetPasswordValidCount(&bytes)
+	assert.Equal(t, 2, err, "dfdf")
+}
+
+func TestGetPasswordValidCount3(t *testing.T) {
+	bytes := []byte("&$%")
+	err := util.GetPasswordValidCount(&bytes)
+	assert.Equal(t, 1, err, "dfdf")
+}
+
+func TestGetAppConfig(t *testing.T) {
+	appConfig := "appConfig"
+	util.GetAppConfig(appConfig)
 }
