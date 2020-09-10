@@ -439,12 +439,6 @@ func (c *LcmController) Query() {
 // Query KPI
 func (c *LcmController) QueryKPI() {
 	var metricInfo models.MetricInfo
-	var statInfo models.KpiModel
-
-	var cpuUtilization map[string]interface{}
-	var memUsage map[string]interface{}
-	var diskUtilization map[string]interface{}
-
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateIpv4Address(clientIp)
 	if err != nil {
@@ -461,63 +455,24 @@ func (c *LcmController) QueryKPI() {
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	util.ClearByteArray(bKey)
-	_, err = c.getTenantId(clientIp)
+
+	hostIp, prometheusPort, err := c.getInputParametersQueryKpi(clientIp)
 	if err != nil {
 		return
 	}
-	hostIp, err := c.getUrlHostIP(clientIp)
+
+	cpuUtilization, err := c.getCpuUsage(hostIp, prometheusPort, clientIp)
 	if err != nil {
 		return
 	}
-	prometheusPort := util.GetPrometheusPort()
-	port, err := util.ValidatePort(prometheusPort)
-	if err != nil || !port {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
-		return
-	}
-	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
-	if errCpu != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
-		return
-	}
-	err = json.Unmarshal([]byte(cpu), &statInfo)
+
+	memUsage, err := c.getMemoryUsage(hostIp, prometheusPort, clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	cpuUtilization,err = c.metricValue(statInfo)
+
+	diskUtilization, err := c.diskUsage(hostIp, prometheusPort, clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,util.UnexpectedValue)
-		return
-	}
-	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
-	if errMem != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
-		return
-	}
-	errorMem := json.Unmarshal([]byte(mem), &statInfo)
-	if errorMem != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
-		return
-	}
-	memUsage,err = c.metricValue(statInfo)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
-		return
-	}
-	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
-		return
-	}
-	errorDisk := json.Unmarshal([]byte(disk), &statInfo)
-	if errorDisk != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
-		return
-	}
-	diskUtilization,err = c.metricValue(statInfo)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	}
 	metricInfo.CpuUsage = cpuUtilization
@@ -1027,7 +982,7 @@ func (c *LcmController) metricValue(statInfo models.KpiModel)(metricResponse map
 	err = util.ValidateIpv4Address(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
+		return metricResponse, err
 	}
 	c.displayReceivedMsg(clientIp)
 
@@ -1038,7 +993,7 @@ func (c *LcmController) metricValue(statInfo models.KpiModel)(metricResponse map
 		}
 	} else if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
-		return
+		return metricResponse, errors.New(util.UnexpectedValue)
 	} else {
 		metricResponse = map[string]interface{}{
 			"total": statInfo.Data.Result[0].Value[0],
@@ -1046,4 +1001,82 @@ func (c *LcmController) metricValue(statInfo models.KpiModel)(metricResponse map
 		}
     }
 	return metricResponse, nil
+}
+
+func (c *LcmController) getInputParametersQueryKpi(clientIp string) (string, string, error) {
+	_, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", err
+	}
+	hostIp, err := c.getUrlHostIP(clientIp)
+	if err != nil {
+		return "", "", err
+	}
+	prometheusPort := util.GetPrometheusPort()
+	port, err := util.ValidatePort(prometheusPort)
+	if err != nil || !port {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
+		return "", "", err
+	}
+	return hostIp, prometheusPort, nil
+}
+
+func (c *LcmController) getCpuUsage(hostIp, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
+	var statInfo models.KpiModel
+
+	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
+	if errCpu != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
+		return cpuUtilization, nil
+	}
+	err = json.Unmarshal([]byte(cpu), &statInfo)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return cpuUtilization, nil
+	}
+	cpuUtilization, err = c.metricValue(statInfo)
+	if err != nil {
+		return cpuUtilization, nil
+	}
+	return cpuUtilization, nil
+}
+
+func (c *LcmController) getMemoryUsage(hostIp, prometheusPort, clientIp string) (memUsage map[string]interface{}, err error) {
+	var statInfo models.KpiModel
+
+	mem, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
+		return memUsage, err
+	}
+	err = json.Unmarshal([]byte(mem), &statInfo)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return memUsage, err
+	}
+	memUsage, err = c.metricValue(statInfo)
+	if err != nil {
+		return memUsage, err
+	}
+	return memUsage, nil
+}
+
+func (c *LcmController) diskUsage(hostIp string, prometheusPort, clientIp string) (diskUtilization map[string]interface{}, err error) {
+	var statInfo models.KpiModel
+
+	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
+		return diskUtilization, err
+	}
+	err = json.Unmarshal([]byte(disk), &statInfo)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return diskUtilization, err
+	}
+	diskUtilization,err = c.metricValue(statInfo)
+	if err != nil {
+		return diskUtilization, err
+	}
+	return diskUtilization, nil
 }
