@@ -34,7 +34,7 @@ import (
 
 var (
 	filePermission        os.FileMode = 0750
-	directory             string      = "/usr/app"
+	directory             string      = "/packages/"
 	hostIpAddress         string      = "1.1.1.1"
 	tenantIdentifier      string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
 	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
@@ -62,9 +62,10 @@ func TestLcmOperation(t *testing.T) {
 	defer patch3.Reset()
 
 	// Common steps
-	_ = os.Mkdir(directory, filePermission)
-	path, _ := os.Getwd()
-	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	baseDir, _ := os.Getwd()
+	path := baseDir + "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	controllers.PackageFolderPath = baseDir + directory
+	_ = os.Mkdir(baseDir + directory, filePermission)
 	extraParams := map[string]string{
 		"hostIp": hostIpAddress,
 	}
@@ -83,14 +84,12 @@ func TestLcmOperation(t *testing.T) {
 
 	// Common cleaning state
 	// Clear the created artifacts
-	_ = os.RemoveAll(directory)
+	_ = os.RemoveAll(baseDir + directory)
 }
 
 func TestConfigOperation(t *testing.T) {
 
 	// Common steps
-	// Create directory
-	_ = os.Mkdir(directory, filePermission)
 	// Setting file path
 	path, _ := os.Getwd()
 	path += "/config"
@@ -123,10 +122,6 @@ func TestConfigOperation(t *testing.T) {
 
 	// Test removal
 	testRemoval(t, extraParams, path)
-
-	// Common cleaning state
-	// Clear the created artifacts
-	_ = os.RemoveAll(directory)
 }
 
 func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {

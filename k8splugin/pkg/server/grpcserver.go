@@ -37,7 +37,7 @@ import (
 )
 
 var (
-	kubeconfigPath = "/usr/app/config/"
+	KubeconfigPath = "/usr/app/config/"
 )
 
 // GRPC server
@@ -260,12 +260,12 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 		return err
 	}
 
-	if !util.CreateDir(kubeconfigPath) {
+	if !util.CreateDir(KubeconfigPath) {
 		log.Infof("failed to create config dir")
 		return err
 	}
 
-	configPath := kubeconfigPath + hostIp
+	configPath := KubeconfigPath + hostIp
 	newFile, err := os.Create(configPath)
 	if err != nil {
 		log.Info("config file upload error.")
@@ -304,7 +304,7 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 	if err != nil {
 		return resp, err
 	}
-	configPath := kubeconfigPath + hostIp
+	configPath := KubeconfigPath + hostIp
 	err = os.Remove(configPath)
 	if err != nil {
 		log.Error("host config delete failed.")

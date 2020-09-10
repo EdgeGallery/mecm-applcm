@@ -32,9 +32,12 @@ import (
 )
 
 var (
-	hostIpAddress         = "1.1.1.1"
-	appInstanceIdentifier = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
-	token                 = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiI3MjY5NjM4ZS01NjM3LTRiOGMtODE3OC" +
+	hostIpAddress         string      = "1.1.1.1"
+	filePermission        os.FileMode = 0750
+	directory             string      = "/config/"
+	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	token                 string      = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiI3MjY5NjM4ZS01NjM3LT" +
+		"RiOGMtODE3OC" +
 		"1iNTExMmJhN2I2OWIiLCJzY29wZSI6WyJhbGwiXSwiZXhwIjoxNTk5Mjc5NDA3LCJzc29TZXNzaW9uSWQiOiI1QkYwNjM2QzlBMkEzMUI2N" +
 		"EEwMEFCRTk1OTVEN0E0NyIsInVzZXJOYW1lIjoid2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdi" +
 		"NjliIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BUFBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEV" +
@@ -78,8 +81,17 @@ func TestServer(t *testing.T) {
 	testInstantiate(t, dir, config)
 	testQuery(t, config)
 	testTerminate(t, config)
+
+	// Pre steps
+	baseDir, _ := os.Getwd()
+	server.KubeconfigPath = baseDir + directory
+	_ = os.Mkdir(baseDir+directory, filePermission)
+
 	testUpload(t, dir, config)
 	testRemoval(t, config)
+
+	// Cleanup
+	_ = os.RemoveAll(baseDir + directory)
 }
 
 func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {

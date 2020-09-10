@@ -19,6 +19,7 @@ package test
 import (
 	"github.com/agiledragon/gomonkey"
 	"github.com/astaxie/beego"
+	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"os"
@@ -72,9 +73,10 @@ func doTest(t *testing.T) {
 	_ = os.Setenv("K8S_PLUGIN_PORT", k8sPluginPort)
 
 	// Common steps
-	_ = os.Mkdir(directory, filePermission)
-	path, _ := os.Getwd()
-	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	baseDir, _ := os.Getwd()
+	path := baseDir + "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	controllers.PackageFolderPath = baseDir + directory
+	_ = os.Mkdir(baseDir + directory, filePermission)
 	extraParams := map[string]string{
 		"hostIp": hostIpAddress,
 	}
@@ -103,7 +105,7 @@ func doTest(t *testing.T) {
 
 	// Common cleaning state
 	// Clear the created artifacts
-	_ = os.RemoveAll(directory)
+	_ = os.RemoveAll(baseDir + directory)
 
 }
 

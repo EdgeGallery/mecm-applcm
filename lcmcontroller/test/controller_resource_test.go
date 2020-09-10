@@ -94,8 +94,7 @@ func TestKpi(t *testing.T) {
 	port := parts[1]
 	_ = os.Setenv("PROMETHEUS_PORT", port)
 
-	// Common steps
-	_ = os.Mkdir(directory, filePermission)
+	//// Common steps
 	path, _ := os.Getwd()
 	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
 	extraParams := map[string]string{
@@ -129,10 +128,6 @@ func TestKpi(t *testing.T) {
 		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, "Get KPI failed")
 		assert.Equal(t, finalOutput, kpiController.Data["json"], "Query failed")
 	})
-
-	// Common cleaning state
-	// Clear the created artifacts
-	_ = os.RemoveAll(directory)
 }
 
 func TestMepCapabilities(t *testing.T) {
@@ -166,7 +161,6 @@ func TestMepCapabilities(t *testing.T) {
 	_ = os.Setenv("MEP_PORT", port)
 
 	// Common steps
-	_ = os.Mkdir(directory, filePermission)
 	path, _ := os.Getwd()
 	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
 	extraParams := map[string]string{
@@ -200,10 +194,6 @@ func TestMepCapabilities(t *testing.T) {
 		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
 		assert.Equal(t, capabilityOutput, capabilityController.Data["json"], "Get Capability data failed")
 	})
-
-	// Common cleaning state
-	// Clear the created artifacts
-	_ = os.RemoveAll(directory)
 }
 
 func setRessourceParam(ctx *context.BeegoInput, localIp string) {
