@@ -485,7 +485,7 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	cpuUtilization,err = c.cpuUsage(statInfo)
+	cpuUtilization,err = c.metricValue(statInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,util.UnexpectedValue)
 		return
@@ -500,7 +500,7 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	memUsage,err = c.memUsage(statInfo)
+	memUsage,err = c.metricValue(statInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
@@ -515,7 +515,7 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	diskUtilization,err = c.diskUsage(statInfo)
+	diskUtilization,err = c.metricValue(statInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
@@ -1021,8 +1021,8 @@ func (c *LcmController) displayReceivedMsg(clientIp string) {
 		" Resource [" + c.Ctx.Input.URL() + "]")
 }
 
-// Returns Cpu Usage
-func (c *LcmController) cpuUsage(statInfo models.KpiModel)(cpuResponse map[string]interface{}, err error) {
+// Returns the utilization details
+func (c *LcmController) metricValue(statInfo models.KpiModel)(metricResponse map[string]interface{}, err error) {
 	clientIp := c.Ctx.Input.IP()
 	err = util.ValidateIpv4Address(clientIp)
 	if err != nil {
@@ -1032,7 +1032,7 @@ func (c *LcmController) cpuUsage(statInfo models.KpiModel)(cpuResponse map[strin
 	c.displayReceivedMsg(clientIp)
 
 	if len(statInfo.Data.Result) == 0 {
-		cpuResponse = map[string]interface{}{
+		metricResponse = map[string]interface{}{
 			"total": "0.0",
 			"used" : "0.0",
 		}
@@ -1040,62 +1040,10 @@ func (c *LcmController) cpuUsage(statInfo models.KpiModel)(cpuResponse map[strin
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
 	} else {
-		cpuResponse = map[string]interface{}{
+		metricResponse = map[string]interface{}{
 			"total": statInfo.Data.Result[0].Value[0],
 			"used":  statInfo.Data.Result[0].Value[1],
 		}
-	}
-	return cpuResponse, nil
-}
-
-func (c *LcmController) memUsage(statInfo models.KpiModel)(memResponse map[string]interface{}, err error) {
-	clientIp := c.Ctx.Input.IP()
-	err = util.ValidateIpv4Address(clientIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	if len(statInfo.Data.Result) == 0 {
-		memResponse = map[string]interface{}{
-			"total": "0.0",
-			"used" : "0.0",
-		}
-	} else if len(statInfo.Data.Result[0].Value) > 2 {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
-		return
-	} else {
-		memResponse = map[string]interface{}{
-			"total": statInfo.Data.Result[0].Value[0],
-			"used":  statInfo.Data.Result[0].Value[1],
-		}
-	}
-	return memResponse, nil
-}
-
-func (c *LcmController) diskUsage(statInfo models.KpiModel)(diskResponse map[string]interface{}, err error) {
-	clientIp := c.Ctx.Input.IP()
-	err = util.ValidateIpv4Address(clientIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	if len(statInfo.Data.Result) == 0 {
-		diskResponse = map[string]interface{}{
-			"total": "0.0",
-			"used" : "0.0",
-		}
-	} else if len(statInfo.Data.Result[0].Value) > 2 {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
-		return
-	} else {
-		diskResponse = map[string]interface{}{
-			"total": statInfo.Data.Result[0].Value[0],
-			"used":  statInfo.Data.Result[0].Value[1],
-		}
-	}
-	return diskResponse, nil
+    }
+	return metricResponse, nil
 }
