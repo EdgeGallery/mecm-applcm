@@ -91,6 +91,10 @@ func doTest(t *testing.T) {
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
 
+	// Update path to config file
+	path, _ = os.Getwd()
+	path += "/config"
+
 	// Test upload
 	testUpload(t, extraParams, path)
 
