@@ -134,7 +134,7 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 	// Initialize action config
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
+		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
@@ -166,7 +166,7 @@ func (hc *HelmClient) UnDeploy(relName string) error {
 	// Prepare action config and uninstall chart
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
+		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
@@ -198,7 +198,7 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	}
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
-		os.Getenv(util.HelmDriver), func(format string, v ...interface{}) {
+		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
