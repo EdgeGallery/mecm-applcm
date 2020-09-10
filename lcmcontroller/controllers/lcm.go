@@ -481,15 +481,21 @@ func (c *LcmController) QueryKPI() {
 		return
 	}
 
-	if len(statInfo.Data.Result[0].Value) > 2 {
+	var cpuResponse map[string]interface{}
+	if len(statInfo.Data.Result) == 0 {
+		cpuResponse = map[string]interface{}{
+			"total": "0.0",
+			"used" : "0.0",
+		}
+	} else if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
+	} else {
+		cpuResponse = map[string]interface{}{
+			"total": statInfo.Data.Result[0].Value[0],
+			"used":  statInfo.Data.Result[0].Value[1],
+		}
 	}
-	var cpuResponse = map[string]interface{}{
-		"total": statInfo.Data.Result[0].Value[0],
-		"used":  statInfo.Data.Result[0].Value[1],
-	}
-
 	mem, errMem := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
 	if errMem != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
@@ -500,15 +506,22 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	if len(statInfo.Data.Result[0].Value) > 2 {
+
+	var memResponse map[string]interface{}
+	if len(statInfo.Data.Result) == 0 {
+		memResponse = map[string]interface{}{
+			"total": "0.0",
+			"used" : "0.0",
+		}
+	} else if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
+	} else {
+		memResponse = map[string]interface{}{
+			"total": statInfo.Data.Result[0].Value[0],
+			"used":  statInfo.Data.Result[0].Value[1],
+		}
 	}
-	var memResponse = map[string]interface{}{
-		"total": statInfo.Data.Result[0].Value[0],
-		"used":  statInfo.Data.Result[0].Value[1],
-	}
-
 	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
@@ -519,13 +532,20 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return
 	}
-	if len(statInfo.Data.Result[0].Value) > 2 {
+	var diskResponse map[string]interface{}
+	if len(statInfo.Data.Result) == 0 {
+		diskResponse = map[string]interface{}{
+			"total": "0.0",
+			"used" : "0.0",
+		}
+	} else if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
 		return
-	}
-	var diskResponse = map[string]interface{}{
-		"total": statInfo.Data.Result[0].Value[0],
-		"used":  statInfo.Data.Result[0].Value[1],
+	} else {
+		diskResponse = map[string]interface{}{
+			"total": statInfo.Data.Result[0].Value[0],
+			"used":  statInfo.Data.Result[0].Value[1],
+		}
 	}
 
 	metricInfo.CpuUsage = cpuResponse
