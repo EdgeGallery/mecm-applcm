@@ -66,7 +66,7 @@ const BadRequest int = 400
 const StatusUnauthorized int = 401
 const StatusInternalServerError int = 500
 
-const DbRegex string = `^[\w-]{4,16}$`
+const DbRegex string = `^[\w-]{4,32}$`
 const DbUserRegex = DbRegex
 const DbNameRegex = DbRegex
 const SericeNameRegex = DbRegex
@@ -96,11 +96,11 @@ const UnMarshalError = "Failed to unmarshal json"
 // Default environment variables
 const dbuser = "lcmcontroller"
 const dbname = "lcmcontrollerdb"
-const dbhost = "mecm-postgres"
+const dbhost = "mepm-postgres"
 const dbport = "5432"
 const prometheusport = "30009"
 const mepport = "8088"
-const k8splugin = "mecm-k8splugin"
+const k8splugin = "mecm-mepm-k8splugin"
 const k8spluginport = "8095"
 
 var cipherSuiteMap = map[string]uint16{
