@@ -127,7 +127,7 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 	releaseNamespace := util.GetReleaseNamespace()
 	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
 	if err != nil || !nameSpace {
-		log.Error("Invalid namespace")
+		log.Error(util.InvalidNamespace)
 		return "", err
 	}
 
@@ -160,7 +160,7 @@ func (hc *HelmClient) UnDeploy(relName string) error {
 	releaseNamespace := util.GetReleaseNamespace()
 	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
 	if err != nil || !nameSpace {
-		log.Error("Invalid namespace")
+		log.Error(util.InvalidNamespace)
 		return err
 	}
 	// Prepare action config and uninstall chart
@@ -186,14 +186,12 @@ func (hc *HelmClient) UnDeploy(relName string) error {
 // Query a given chart
 func (hc *HelmClient) Query(relName string) (string, error) {
 	log.Info("In Query Chart function")
-	var labelSelector models.LabelSelector
-	var label models.Label
 
 	// Get release namespace
 	releaseNamespace := util.GetReleaseNamespace()
 	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
 	if err != nil || !nameSpace {
-		log.Error("Invalid namespace")
+		log.Error(util.InvalidNamespace)
 		return "", err
 	}
 	actionConfig := new(action.Configuration)
@@ -217,19 +215,6 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 		return "", err
 	}
 
-	for i := 0; i < len(manifest); i++ {
-		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service" {
-			appName := manifest[i].Metadata.Name
-			if manifest[i].Metadata.Labels.App != "" {
-				appName = manifest[i].Metadata.Labels.App
-			}
-			pod := "app=" + appName
-			label.Kind = manifest[i].Kind
-			label.Selector = pod
-			labelSelector.Label = append(labelSelector.Label, label)
-		}
-	}
-
 	// uses the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", hc.kubeconfig)
 	if err != nil {
@@ -240,6 +225,8 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	
+	labelSelector := getLabelSelector(manifest)
 
 	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, config)
 	if err != nil {
@@ -253,6 +240,27 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	}
 	return appInfoJson, nil
 
+}
+
+// Get label selector
+func getLabelSelector(manifest []Manifest) models.LabelSelector {
+	var labelSelector models.LabelSelector
+	var label models.Label
+
+	for i := 0; i < len(manifest); i++ {
+		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service" {
+			appName := manifest[i].Metadata.Name
+			if manifest[i].Metadata.Labels.App != "" {
+				appName = manifest[i].Metadata.Labels.App
+			}
+			pod := "app=" + appName
+			label.Kind = manifest[i].Kind
+			label.Selector = pod
+			labelSelector.Label = append(labelSelector.Label, label)
+		}
+	}
+
+	return labelSelector
 }
 
 // get JSON response
