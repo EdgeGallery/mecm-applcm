@@ -88,6 +88,14 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
+	err = util.ValidateFileExtensionEmpty(header.Filename)
+	if err != nil || len(header.Filename) > util.MaxFileNameSize {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"File shouldn't contains any extension or filename is larger than max size")
+		return
+	}
+
 	err = util.ValidateFileSize(header.Size, util.MaxConfigFile)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -203,6 +211,14 @@ func (c *LcmController) Instantiate() {
 	hostIp, appInsId, file, header, tenantId, err := c.getInputParameters(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
+		return
+	}
+
+	err = util.ValidateFileExtensionCsar(header.Filename)
+	if err != nil || len(header.Filename) > util.MaxFileNameSize {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"File doesn't contain csar extension or filename is larger than max size")
 		return
 	}
 

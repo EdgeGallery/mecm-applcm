@@ -26,6 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -59,6 +60,7 @@ const MaxConfigFile int64 = 5242880
 const Timeout = 180
 const NonManoArtifactSets = "non_mano_artifact_sets"
 const MaxNumberOfRecords = 50
+const MaxFileNameSize = 64
 
 const BadRequest int = 400
 const StatusUnauthorized int = 401
@@ -146,6 +148,24 @@ func ValidateFileSize(fileSize int64, maxFileSize int64) error {
 		return nil
 	}
 	return errors.New("invalid file, file size is larger than max size")
+}
+
+// Validate file extenstion
+func ValidateFileExtensionEmpty(fileName string) error {
+	extension := filepath.Ext(fileName)
+	if extension != "" {
+		return errors.New("file shouldn't contains any extension")
+	}
+	return nil
+}
+
+// Validate file extenstion
+func ValidateFileExtensionCsar(fileName string) error {
+	extension := filepath.Ext(fileName)
+	if extension != ".csar" {
+		return errors.New("file extension is not csar")
+	}
+	return nil
 }
 
 // Clear byte array from memory
