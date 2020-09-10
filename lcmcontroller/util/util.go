@@ -50,6 +50,8 @@ const InvalidToken string = "invalid token"
 const AppInsId = "app_ins_id"
 const TenantId = "tenant_id"
 const FailedToGetClient = "Failed to get client"
+const FailedToGetPluginInfo = "Failed to get plugin info"
+const PortIsNotValid = "port is not valid"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
@@ -329,7 +331,8 @@ func ValidatePort(port string) (bool, error) {
 // Validate service name
 func ValidateServiceName(serviceName string) (bool, error) {
 	serviceNameIsValid, valServiceNameErr := regexp.MatchString(SericeNameRegex, serviceName)
-	if valServiceNameErr != nil || !serviceNameIsValid {
+	hostIpIsValid, hostIpNameErr := regexp.MatchString(HostRegex, serviceName)
+	if (valServiceNameErr != nil || !serviceNameIsValid) && (hostIpNameErr != nil || !hostIpIsValid) {
 		return serviceNameIsValid, valServiceNameErr
 	}
 	return true, nil

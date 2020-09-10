@@ -98,7 +98,7 @@ func (c *LcmController) UploadConfig() {
 	pluginInfo, err := getPluginInfo()
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get plugin info")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
 		return
 	}
 
@@ -130,7 +130,7 @@ func getPluginInfo() (string, error) {
 	k8sPluginPort := util.GetK8sPluginPort()
 	port, err := util.ValidatePort(k8sPluginPort)
 	if err != nil || !port {
-		return "", errors.New("port is not valid")
+		return "", errors.New(util.PortIsNotValid)
 	}
 	pluginInfo := k8sPlugin + ":" + k8sPluginPort
 	return pluginInfo, nil
@@ -162,7 +162,7 @@ func (c *LcmController) RemoveConfig() {
 	pluginInfo, err := getPluginInfo()
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get plugin info")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
 		return
 	}
 
@@ -332,7 +332,7 @@ func (c *LcmController) Terminate() {
 		pluginInfo, err = getPluginInfo()
 		if err != nil {
 			util.ClearByteArray(bKey)
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get plugin info")
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
 			return
 		}
 	default:
@@ -410,7 +410,7 @@ func (c *LcmController) Query() {
 		pluginInfo, err = getPluginInfo()
 		if err != nil {
 			util.ClearByteArray(bKey)
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get plugin info")
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
 			return
 		}
 	default:
@@ -467,7 +467,7 @@ func (c *LcmController) QueryKPI() {
 	prometheusPort := util.GetPrometheusPort()
 	port, err := util.ValidatePort(prometheusPort)
 	if err != nil || !port {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "port is not valid")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
 		return
 	}
 	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
@@ -598,7 +598,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	mepPort := util.GetMepPort()
 	port, err := util.ValidatePort(mepPort)
 	if err != nil || !port {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "port is not valid")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
 		return
 	}
 
@@ -896,7 +896,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 
 		pluginInfo, err := getPluginInfo()
 		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to get plugin info")
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
 			return "", "", err
 		}
 		return artifact, pluginInfo, nil

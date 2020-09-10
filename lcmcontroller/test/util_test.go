@@ -108,7 +108,7 @@ func TestGetDbName(t *testing.T) {
 
 func TestGetDbHost(t *testing.T) {
 	err := util.GetDbHost()
-	assert.Equal(t, "localhost", err, "TestGetDbHost execution result")
+	assert.Equal(t, "mecm-postgres", err, "TestGetDbHost execution result")
 }
 
 func TestGetDbPort(t *testing.T) {
