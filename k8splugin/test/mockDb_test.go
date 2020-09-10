@@ -54,3 +54,8 @@ func (db *mockK8sPluginDb) ReadData(data interface{}, cols ...string) (err error
 	}
 	return nil
 }
+
+func (db *mockK8sPluginDb) DeleteData(data interface{}, cols ...string) (err error) {
+	return nil
+}
+
