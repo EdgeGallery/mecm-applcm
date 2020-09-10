@@ -68,7 +68,7 @@ const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-z
 // Default environment variables
 const dbuser    = "k8splugin"
 const dbname    = "k8splugindb"
-const dbhost    = "mecm-postgres"
+const dbhost    = "mepm-postgres"
 const dbport    = "5432"
 const namespace = "default"
 

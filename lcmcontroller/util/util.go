@@ -66,7 +66,7 @@ const BadRequest int = 400
 const StatusUnauthorized int = 401
 const StatusInternalServerError int = 500
 
-const DbRegex string = `^[\w-]{4,16}$`
+const DbRegex string = `^[\w-]{4,32}$`
 const DbUserRegex = DbRegex
 const DbNameRegex = DbRegex
 const SericeNameRegex = DbRegex
@@ -96,11 +96,11 @@ const UnMarshalError = "Failed to unmarshal json"
 // Default environment variables
 const dbuser = "lcmcontroller"
 const dbname = "lcmcontrollerdb"
-const dbhost = "mecm-postgres"
+const dbhost = "mepm-postgres"
 const dbport = "5432"
 const prometheusport = "30009"
 const mepport = "8088"
-const k8splugin = "mecm-k8splugin"
+const k8splugin = "mecm-mepm-k8splugin"
 const k8spluginport = "8095"
 
 var cipherSuiteMap = map[string]uint16{
@@ -179,7 +179,7 @@ func ClearByteArray(data []byte) {
 func ValidatePassword(password *[]byte) (bool, error) {
 	if len(*password) >= minPasswordSize && len(*password) <= maxPasswordSize {
 		// password must satisfy any two conditions
-		pwdValidCount := getPasswordValidCount(password)
+		pwdValidCount := GetPasswordValidCount(password)
 		if pwdValidCount < maxPasswordCount {
 			return false, errors.New("password must contain at least two types of the either one lowercase" +
 				" character, one uppercase character, one digit or one special character")
@@ -191,7 +191,7 @@ func ValidatePassword(password *[]byte) (bool, error) {
 }
 
 // To get password valid count
-func getPasswordValidCount(password *[]byte) int {
+func GetPasswordValidCount(password *[]byte) int {
 	var pwdValidCount = 0
 	pwdIsValid, err := regexp.Match(singleDigitRegex, *password)
 	if pwdIsValid && err == nil {
@@ -305,7 +305,7 @@ func TLSConfig(crtName string) (*tls.Config, error) {
 	if len(sslCiphers) == 0 {
 		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
 	}
-	cipherSuites := getCipherSuites(sslCiphers)
+	cipherSuites := GetCipherSuites(sslCiphers)
 	if cipherSuites == nil {
 		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
 	}
@@ -318,7 +318,7 @@ func TLSConfig(crtName string) (*tls.Config, error) {
 }
 
 // To get cipher suites
-func getCipherSuites(sslCiphers string) []uint16 {
+func GetCipherSuites(sslCiphers string) []uint16 {
 	cipherSuiteArr := make([]uint16, 0, 5)
 	cipherSuiteNameList := strings.Split(sslCiphers, ",")
 	for _, cipherName := range cipherSuiteNameList {
