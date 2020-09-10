@@ -95,7 +95,12 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo := getPluginInfo()
+	pluginInfo, err := getPluginInfo()
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
+		return
+	}
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -115,11 +120,20 @@ func (c *LcmController) UploadConfig() {
 }
 
 // Get plugin info
-func getPluginInfo() string {
+func getPluginInfo() (string, error) {
 	k8sPlugin := util.GetK8sPlugin()
+	name, err := util.ValidateServiceName(k8sPlugin)
+	if err != nil || !name {
+		return "", errors.New("service name is not valid")
+	}
+
 	k8sPluginPort := util.GetK8sPluginPort()
+	port, err := util.ValidatePort(k8sPluginPort)
+	if err != nil || !port {
+		return "", errors.New(util.PortIsNotValid)
+	}
 	pluginInfo := k8sPlugin + ":" + k8sPluginPort
-	return pluginInfo
+	return pluginInfo, nil
 }
 
 // Remove Config
@@ -145,7 +159,12 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo := getPluginInfo()
+	pluginInfo, err := getPluginInfo()
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
+		return
+	}
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -187,6 +206,18 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId: appInsId,
+	}
+
+	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
+	if readErr == nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"App instance info record already exists")
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	packageName := getPackageName(header)
 	pkgPath := PackageFolderPath + header.Filename
 	err = c.createPackagePath(pkgPath, clientIp, file)
@@ -210,6 +241,19 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
+	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		_ = removeCsarFiles(packageName, header)
+		return
+	}
+	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		_ = removeCsarFiles(packageName, header)
+		return
+	}
+
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -223,18 +267,6 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		_ = removeCsarFiles(packageName, header)
-		return
-	}
-	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		_ = removeCsarFiles(packageName, header)
-		return
-	}
 	err = removeCsarFiles(packageName, header)
 	if err != nil {
 		return
@@ -297,7 +329,12 @@ func (c *LcmController) Terminate() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = getPluginInfo()
+		pluginInfo, err = getPluginInfo()
+		if err != nil {
+			util.ClearByteArray(bKey)
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
+			return
+		}
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -370,7 +407,12 @@ func (c *LcmController) Query() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo = getPluginInfo()
+		pluginInfo, err = getPluginInfo()
+		if err != nil {
+			util.ClearByteArray(bKey)
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
+			return
+		}
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -406,7 +448,6 @@ func (c *LcmController) QueryKPI() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	prometheusPort := util.GetPrometheusPort()
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -423,8 +464,13 @@ func (c *LcmController) QueryKPI() {
 	if err != nil {
 		return
 	}
+	prometheusPort := util.GetPrometheusPort()
+	port, err := util.ValidatePort(prometheusPort)
+	if err != nil || !port {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
+		return
+	}
 	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
-
 	if errCpu != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
 		return
@@ -525,7 +571,6 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	mepPort := util.GetMepPort()
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
@@ -547,6 +592,13 @@ func (c *LcmController) QueryMepCapabilities() {
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
+		return
+	}
+
+	mepPort := util.GetMepPort()
+	port, err := util.ValidatePort(mepPort)
+	if err != nil || !port {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
 		return
 	}
 
@@ -842,7 +894,11 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 			return "", "", err
 		}
 
-		pluginInfo := getPluginInfo()
+		pluginInfo, err := getPluginInfo()
+		if err != nil {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
+			return "", "", err
+		}
 		return artifact, pluginInfo, nil
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)

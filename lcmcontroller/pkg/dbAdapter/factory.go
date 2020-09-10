@@ -17,9 +17,7 @@ package dbAdapter
 
 import (
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"lcmcontroller/util"
-	"os"
 )
 
 // Init Db adapter
@@ -30,8 +28,7 @@ func GetDbAdapter() (Database, error) {
 		db := &PgDb{}
 		err := db.InitDatabase()
 		if err != nil {
-			log.Error("Failed to register database")
-			os.Exit(1)
+			return nil, errors.New("failed to register database")
 		}
 		return db, nil
 	default:

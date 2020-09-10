@@ -19,7 +19,6 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
-	log "github.com/sirupsen/logrus"
 	"lcmcontroller/controllers"
 	"lcmcontroller/pkg/dbAdapter"
 	"os"
@@ -48,7 +47,6 @@ func init() {
 func initDbAdapter() (pgDb dbAdapter.Database) {
 	adapter, err := dbAdapter.GetDbAdapter()
 	if err != nil {
-		log.Error("Failed to get database")
 		os.Exit(1)
 	}
 	return adapter

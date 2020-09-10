@@ -50,6 +50,8 @@ const InvalidToken string = "invalid token"
 const AppInsId = "app_ins_id"
 const TenantId = "tenant_id"
 const FailedToGetClient = "Failed to get client"
+const FailedToGetPluginInfo = "Failed to get plugin info"
+const PortIsNotValid = "port is not valid"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
@@ -65,6 +67,7 @@ const StatusInternalServerError int = 500
 const DbRegex string = `^[\w-]{4,16}$`
 const DbUserRegex = DbRegex
 const DbNameRegex = DbRegex
+const SericeNameRegex = DbRegex
 const HostRegex string = `^[\w-.]{4,16}$`
 const PortRegex string = `^[0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]$`
 
@@ -87,6 +90,16 @@ const DiskQuery string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-s
 const UnexpectedValue = "Unexpected value found"
 const MarshalError = "Failed to marshal json"
 const UnMarshalError = "Failed to unmarshal json"
+
+// Default environment variables
+const dbuser = "lcmcontroller"
+const dbname = "lcmcontrollerdb"
+const dbhost = "mecm-postgres"
+const dbport = "5432"
+const prometheusport = "30009"
+const mepport = "8088"
+const k8splugin = "mecm-k8splugin"
+const k8spluginport = "8095"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -306,11 +319,30 @@ func getCipherSuites(sslCiphers string) []uint16 {
 	return nil
 }
 
+// Validate port
+func ValidatePort(port string) (bool, error) {
+	portIsValid, validatePortErr := regexp.MatchString(PortRegex, port)
+	if validatePortErr != nil || !portIsValid {
+		return portIsValid, validatePortErr
+	}
+	return true, nil
+}
+
+// Validate service name
+func ValidateServiceName(serviceName string) (bool, error) {
+	serviceNameIsValid, valServiceNameErr := regexp.MatchString(SericeNameRegex, serviceName)
+	hostIpIsValid, hostIpNameErr := regexp.MatchString(HostRegex, serviceName)
+	if (valServiceNameErr != nil || !serviceNameIsValid) && (hostIpNameErr != nil || !hostIpIsValid) {
+		return serviceNameIsValid, valServiceNameErr
+	}
+	return true, nil
+}
+
 // Get db user
 func GetDbUser() string {
 	dbUser := os.Getenv("LCM_CNTLR_USER")
 	if dbUser == "" {
-		dbUser = "lcmcontroller"
+		dbUser = dbuser
 	}
 	return dbUser
 }
@@ -319,7 +351,7 @@ func GetDbUser() string {
 func GetDbName() string {
 	dbName := os.Getenv("LCM_CNTLR_DB")
 	if dbName == "" {
-		dbName = "lcmcontrollerdb"
+		dbName = dbname
 	}
 	return dbName
 }
@@ -328,7 +360,7 @@ func GetDbName() string {
 func GetDbHost() string {
 	dbHost := os.Getenv("LCM_CNTLR_DB_HOST")
 	if dbHost == "" {
-		dbHost = "localhost"
+		dbHost = dbhost
 	}
 	return dbHost
 }
@@ -337,7 +369,7 @@ func GetDbHost() string {
 func GetDbPort() string {
 	dbPort := os.Getenv("LCM_CNTLR_DB_PORT")
 	if dbPort == "" {
-		dbPort = "5432"
+		dbPort = dbport
 	}
 	return dbPort
 }
@@ -346,7 +378,7 @@ func GetDbPort() string {
 func GetPrometheusPort() string {
 	prometheusPort := os.Getenv("PROMETHEUS_PORT")
 	if prometheusPort == "" {
-		prometheusPort = "30009"
+		prometheusPort = prometheusport
 	}
 	return prometheusPort
 }
@@ -355,7 +387,7 @@ func GetPrometheusPort() string {
 func GetMepPort() string {
 	mepPort := os.Getenv("MEP_PORT")
 	if mepPort == "" {
-		mepPort = "8088"
+		mepPort = mepport
 	}
 	return mepPort
 }
@@ -364,7 +396,7 @@ func GetMepPort() string {
 func GetK8sPlugin() string {
 	k8sPlugin := os.Getenv(K8sPlugin)
 	if k8sPlugin == "" {
-		k8sPlugin = "mecm-k8splugin"
+		k8sPlugin = k8splugin
 	}
 	return k8sPlugin
 }
@@ -373,7 +405,7 @@ func GetK8sPlugin() string {
 func GetK8sPluginPort() string {
 	k8sPluginPort := os.Getenv(K8sPluginPort)
 	if k8sPluginPort == "" {
-		k8sPluginPort = "8095"
+		k8sPluginPort = k8spluginport
 	}
 	return k8sPluginPort
 }
