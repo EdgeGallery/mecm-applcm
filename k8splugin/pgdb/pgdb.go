@@ -31,7 +31,7 @@ import (
 
 // Variables are required for db connections
 var (
-	DB_SSL_MODE     = "disable"
+	DB_SSL_MODE     = "enable"
 	DB_SSL_ROOT_CER = "ssl/ca.crt"
 )
 
