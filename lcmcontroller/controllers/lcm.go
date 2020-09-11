@@ -234,7 +234,6 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	packageName := getPackageName(header)
 	pkgPath := PackageFolderPath + header.Filename
 	err = c.createPackagePath(pkgPath, clientIp, file)
 	if err != nil {
@@ -242,68 +241,53 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err = c.makeTargetDirectory(clientIp, packageName)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	c.openPackage(pkgPath)
+	packageName := c.openPackage(pkgPath)
 	var mainServiceTemplateMf = PackageFolderPath + packageName + "/MainServiceTemplate.mf"
 	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		_ = removeCsarFiles(packageName, header)
+		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
 
 	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		_ = removeCsarFiles(packageName, header)
+		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
 	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
 	util.ClearByteArray(bKey)
+	c.removeCsarFiles(packageName, header, clientIp)
 	if err != nil {
-		_ = removeCsarFiles(packageName, header)
 		return
 	}
 
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
-		util.ClearByteArray(bKey)
-		_ = removeCsarFiles(packageName, header)
 		return
 	}
 	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId)
 	if err != nil {
-		util.ClearByteArray(bKey)
-		_ = removeCsarFiles(packageName, header)
 		return
 	}
-
-	err = removeCsarFiles(packageName, header)
-	if err != nil {
-		return
-	}
-
 	c.ServeJSON()
 }
 
 // Remove CSAR files
-func removeCsarFiles(packageName string, header *multipart.FileHeader) error {
+func (c *LcmController) removeCsarFiles(packageName string, header *multipart.FileHeader, clientIp string) {
 	err := os.RemoveAll(PackageFolderPath + packageName)
 	if err != nil {
-		log.Error("Failed to remove csar folder")
-		return err
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to remove folder")
+		return
 	}
 	err = os.Remove(PackageFolderPath + header.Filename)
 	if err != nil {
-		log.Error("Failed to remove csar file")
-		return err
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to remove csar file")
+		return
 	}
-	return nil
 }
 
 // Terminate application
@@ -653,12 +637,14 @@ func (c *LcmController) getApplicationDeploymentType(mainServiceTemplateMf strin
 }
 
 // Opens package
-func (c *LcmController) openPackage(packagePath string) {
+func (c *LcmController) openPackage(packagePath string) string {
 	zipReader, _ := zip.OpenReader(packagePath)
 	if len(zipReader.File) > util.TooManyFile {
 		c.writeErrorResponse("Too many files contains in zip file", util.StatusInternalServerError)
 	}
 	var totalWrote int64
+	filePath := zipReader.Reader.File[0].FileHeader.Name
+	dirPath := strings.Split(filePath, "/")
 	for _, file := range zipReader.Reader.File {
 
 		zippedFile, err := file.Open()
@@ -678,6 +664,8 @@ func (c *LcmController) openPackage(packagePath string) {
 		}
 		totalWrote = wrote
 	}
+
+	return dirPath[0]
 }
 
 // Extract files
@@ -713,16 +701,6 @@ func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, t
 		totalWrote += wt
 	}
 	return false, totalWrote
-}
-
-// Make target directory
-func (c *LcmController) makeTargetDirectory(clientIp string, packageName string) error {
-	err := os.Mkdir(PackageFolderPath+packageName, 0750)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to create target directory")
-		return err
-	}
-	return nil
 }
 
 // Instantiate application
@@ -832,16 +810,6 @@ func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file 
 		return err
 	}
 	return nil
-}
-
-// Get package name
-func getPackageName(header *multipart.FileHeader) string {
-	var packageName = ""
-	f := strings.Split(header.Filename, ".")
-	if len(f) > 0 {
-		packageName = f[0]
-	}
-	return packageName
 }
 
 // Get artifact and plugin info
@@ -993,7 +961,7 @@ func (c *LcmController) displayReceivedMsg(clientIp string) {
 }
 
 // Returns the utilization details
-func (c *LcmController) metricValue(statInfo models.KpiModel)(metricResponse map[string]interface{}, err error) {
+func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse map[string]interface{}, err error) {
 	clientIp := c.Ctx.Input.IP()
 	err = util.ValidateIpv4Address(clientIp)
 	if err != nil {
@@ -1005,7 +973,7 @@ func (c *LcmController) metricValue(statInfo models.KpiModel)(metricResponse map
 	if len(statInfo.Data.Result) == 0 {
 		metricResponse = map[string]interface{}{
 			"total": "0.0",
-			"used" : "0.0",
+			"used":  "0.0",
 		}
 	} else if len(statInfo.Data.Result[0].Value) > 2 {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
@@ -1015,7 +983,7 @@ func (c *LcmController) metricValue(statInfo models.KpiModel)(metricResponse map
 			"total": statInfo.Data.Result[0].Value[0],
 			"used":  statInfo.Data.Result[0].Value[1],
 		}
-    }
+	}
 	return metricResponse, nil
 }
 
@@ -1090,7 +1058,7 @@ func (c *LcmController) diskUsage(hostIp string, prometheusPort, clientIp string
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return diskUtilization, err
 	}
-	diskUtilization,err = c.metricValue(statInfo)
+	diskUtilization, err = c.metricValue(statInfo)
 	if err != nil {
 		return diskUtilization, err
 	}
