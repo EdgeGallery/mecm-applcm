@@ -54,16 +54,27 @@ const InvalidToken string = "invalid token"
 const CannotReceivePackage = "Cannot receive package metadata."
 const FilePerm = 0750
 const TempFile = "temp.tar.gz"
-const HostIpIsInvalid = "HostIp is invalid"
-const AccssTokenIsInvalid = "AccessToken is invalid"
+const HostIpIsInvalid = "hostIp is invalid"
+const AccssTokenIsInvalid = "accessToken is invalid"
 const Success = "Success"
 const Failure = "Failure"
 const ActionConfig = "Unable to initialize action config"
 const InvalidNamespace = "Invalid namespace"
 const HelmDriver = ""
+const DeployType = "helm"
 const AppInsId = "app_ins_id"
 const maxHostNameLen = 253
 const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+
+const FailedToDispRecvMsg    = "failed to display receive msg"
+const FailedToValInputParams = "failed to validate input parameters"
+const FailedToGetClient      = "failed to get client"
+const AppRecordDoesNotExit   = "app info record does not exist in database\""
+const Query        = "Query"
+const Instantiate  = "Instantiate"
+const Terminate    = "Terminate"
+const UploadConfig = "UploadConfig"
+const RemoveConfig = "RemoveConfig"
 
 // Default environment variables
 const dbuser    = "k8splugin"

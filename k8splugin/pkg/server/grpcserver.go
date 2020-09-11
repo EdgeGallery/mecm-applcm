@@ -18,6 +18,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"google.golang.org/grpc/peer"
 	"io"
 	"k8splugin/conf"
 	"k8splugin/internal/lcmservice"
@@ -27,6 +28,7 @@ import (
 	"k8splugin/util"
 	"net"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -119,18 +121,30 @@ func (s *ServerGRPC) Listen() (err error) {
 }
 
 // Query application
-func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
+func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
+
+	resp = &lcmservice.QueryResponse{
+		Response: util.Failure,
+	}
+
+	err = s.displayReceivedMsg(ctx, util.Query)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.Query, util.FailedToDispRecvMsg)
+		return resp, err
+	}
 
 	// Input validation
 	hostIp, appInsId, err := s.validateInputParamsForQuery(req)
 	if err != nil {
-		return
+		s.displayResponseMsg(ctx, util.Query, util.FailedToValInputParams)
+		return resp, err
 	}
 
 	// Get Client
-	client, err := adapter.GetClient("helm", hostIp)
+	client, err := adapter.GetClient(util.DeployType, hostIp)
 	if err != nil {
-		return
+		s.displayResponseMsg(ctx, util.Query, util.FailedToGetClient)
+		return resp, err
 	}
 
 	appInstanceRecord := &models.AppInstanceInfo{
@@ -138,200 +152,237 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 	}
 	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
-		return nil, s.logError(status.Error(codes.InvalidArgument,
-			"App info record does not exist in database."))
+		log.Error(util.AppRecordDoesNotExit)
+		s.displayResponseMsg(ctx, util.Query, util.AppRecordDoesNotExit)
+		return resp, err
 	}
 
 	// Query Chart
 	r, err := client.Query(appInstanceRecord.WorkloadId)
 	if err != nil {
-		return nil, s.logError(status.Errorf(codes.NotFound, "Chart not found for workloadId: %s. Err: %s",
-			appInstanceRecord.WorkloadId, err))
+		log.Errorf("Chart not found for workloadId: %s. Err: %s", appInstanceRecord.WorkloadId, err)
+		s.displayResponseMsg(ctx, util.Query, "chart not found for workloadId")
+		return resp, err
 	}
 	resp = &lcmservice.QueryResponse{
 		Response: r,
 	}
-	log.Info("Query is success")
+	log.Info("query is success")
 	return resp, nil
 }
 
 // Terminate application
 func (s *ServerGRPC) Terminate(ctx context.Context,
 	req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
-	log.Info("In Terminate")
+
+	resp = &lcmservice.TerminateResponse{
+		Status: util.Failure,
+	}
+
+	err = s.displayReceivedMsg(ctx, util.Terminate)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.Terminate, util.FailedToDispRecvMsg)
+		return resp, err
+	}
 
 	hostIp, appInsId, err := s.validateInputParamsForTerm(req)
 	if err != nil {
-		return
+		s.displayResponseMsg(ctx, util.Terminate, util.FailedToValInputParams)
+		return resp, err
 	}
 	appInstanceRecord := &models.AppInstanceInfo{
 		AppInsId: appInsId,
 	}
 	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
 	if readErr != nil {
-		return nil, s.logError(status.Error(codes.InvalidArgument,
-			"App info record does not exist in database."))
+		log.Error(util.AppRecordDoesNotExit)
+		s.displayResponseMsg(ctx, util.Terminate, util.AppRecordDoesNotExit)
+		return resp, err
 	}
 
 	// Get Client
-	client, err := adapter.GetClient("helm", hostIp)
+	client, err := adapter.GetClient(util.DeployType, hostIp)
 	if err != nil {
-		return
+		s.displayResponseMsg(ctx, util.Terminate, util.FailedToGetClient)
+		return resp, err
 	}
 
 	// Uninstall chart
 	err = client.UnDeploy(appInstanceRecord.WorkloadId)
-
 	if err != nil {
-		resp = &lcmservice.TerminateResponse{
-			Status: util.Failure,
-		}
-
-		return resp, s.logError(status.Errorf(codes.NotFound, "Chart not found for workloadId: %s. Err: %s",
-			appInstanceRecord.WorkloadId, err))
+		log.Errorf("Chart not found for workloadId: %s. Err: %s", appInstanceRecord.WorkloadId, err)
+		s.displayResponseMsg(ctx, util.Terminate, "chart not found for workloadId")
+		return resp, err
 	} else {
+		err := s.deleteAppInfoRecord(appInsId)
+		if err != nil {
+			s.displayResponseMsg(ctx, util.Terminate, "failed to delete app info record from database")
+			return resp, err
+		}
 		resp = &lcmservice.TerminateResponse{
 			Status: util.Success,
 		}
-
-		err := s.deleteAppInfoRecord(appInsId)
-		if err != nil {
-			resp = &lcmservice.TerminateResponse{
-				Status: util.Failure,
-			}
-
-			return resp, s.logError(status.Errorf(codes.NotFound, "Failed to delete record from database"))
-		}
+		log.Info("terminate is success")
 		return resp, nil
 	}
 }
 
 // Instantiate application
 func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) error {
-	log.Info("Recieved instantiate request")
+	var res lcmservice.InstantiateResponse
+	res.Status = util.Failure
+
+	ctx := stream.Context()
+	err := s.displayReceivedMsg(ctx, util.Instantiate)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToDispRecvMsg)
+		sendInstantiateResponse(stream, &res)
+		return err
+	}
 
 	hostIp, appInsId, err := s.validateInputParamsForInstan(stream)
 	if err != nil {
+		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToValInputParams)
+		sendInstantiateResponse(stream, &res)
 		return err
 	}
 
 	pkg, err := s.getPackage(stream)
 	if err != nil {
+		s.displayResponseMsg(ctx, util.Instantiate, "failed to get package")
+		sendInstantiateResponse(stream, &res)
 		return err
 	}
 
 	// Get client
-	client, err := adapter.GetClient("helm", hostIp)
+	client, err := adapter.GetClient(util.DeployType, hostIp)
 	if err != nil {
+		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToGetClient)
+		sendInstantiateResponse(stream, &res)
 		return err
 	}
 
 	releaseName, err := client.Deploy(pkg)
-	var res lcmservice.InstantiateResponse
 	if err != nil {
-		res.Status = util.Failure
-		log.Info("Instantiation Failed")
+		log.Info("instantiation Failed")
+		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")
+		sendInstantiateResponse(stream, &res)
+		return err
 	} else {
-		res.Status = util.Success
-		log.Info("Successful Instantiation")
 		err = s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName)
 		if err != nil {
+			s.displayResponseMsg(ctx, util.Instantiate, "failed to insert or update app record")
+			sendInstantiateResponse(stream, &res)
 			return err
 		}
-	}
-
-	err = stream.SendAndClose(&res)
-	if err != nil {
-		return s.logError(status.Errorf(codes.Unknown, "cannot send response: %v", err))
+		log.Info("successful instantiation")
+		res.Status = util.Success
+		sendInstantiateResponse(stream, &res)
 	}
 	return nil
 }
 
 // Upload file configuration
 func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (err error) {
+	var res lcmservice.UploadCfgResponse
+	res.Status = util.Failure
+
+	ctx := stream.Context()
+	err = s.displayReceivedMsg(ctx, util.UploadConfig)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, util.FailedToDispRecvMsg)
+		sendUploadCfgResponse(stream, &res)
+		return err
+	}
 
 	hostIp, err := s.validateInputParamsForUploadCfg(stream)
 	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, util.FailedToValInputParams)
+		sendUploadCfgResponse(stream, &res)
 		return
 	}
 
 	file, err := s.getUploadConfigFile(stream)
 	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to get upload config file")
+		sendUploadCfgResponse(stream, &res)
 		return err
 	}
 
 	if !util.CreateDir(KubeconfigPath) {
-		log.Infof("failed to create config dir")
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to create config directory")
+		sendUploadCfgResponse(stream, &res)
 		return err
 	}
 
 	configPath := KubeconfigPath + hostIp
 	newFile, err := os.Create(configPath)
 	if err != nil {
-		log.Info("config file upload error.")
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to create config path")
+		sendUploadCfgResponse(stream, &res)
 		return err
 	}
 
 	defer newFile.Close()
 	_, err = newFile.Write(file.Bytes())
-
-	var res lcmservice.UploadCfgResponse
-
 	if err != nil {
-		res.Status = util.Failure
-		log.Error("config IO operation error.")
+		s.displayResponseMsg(ctx, util.UploadConfig, "config IO operation error")
+		sendUploadCfgResponse(stream, &res)
+		return err
 	} else {
+		log.Info("successfully uploaded config file")
 		res.Status = util.Success
-		log.Info("Uploaded config file successfully")
+		sendUploadCfgResponse(stream, &res)
 	}
-
-	err = stream.SendAndClose(&res)
-	if err != nil {
-		return s.logError(status.Errorf(codes.Unknown, "cannot send response: %v", err))
-	}
-
-	return
+	return nil
 }
 
 // Remove file configuration
-func (s *ServerGRPC) RemoveConfig(_ context.Context,
+func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 	request *lcmservice.RemoveCfgRequest) (*lcmservice.RemoveCfgResponse, error) {
+
 	resp := &lcmservice.RemoveCfgResponse{
 		Status: util.Failure,
 	}
 
-	hostIp, err := validateInputParamsForRemoveCfg(request)
+	err := s.displayReceivedMsg(ctx, util.RemoveConfig)
 	if err != nil {
+		s.displayResponseMsg(ctx, util.RemoveConfig, util.FailedToDispRecvMsg)
+		return resp, err
+	}
+
+	hostIp, err := s.validateInputParamsForRemoveCfg(request)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.RemoveConfig, util.FailedToValInputParams)
 		return resp, err
 	}
 	configPath := KubeconfigPath + hostIp
 	err = os.Remove(configPath)
 	if err != nil {
-		log.Error("host config delete failed.")
+		log.Error("failed to remove host config file")
+		s.displayResponseMsg(ctx, util.RemoveConfig, "failed to remove host config file")
 		return resp, err
 	}
 
 	resp = &lcmservice.RemoveCfgResponse{
 		Status: util.Success,
 	}
-	log.Info("host configuration file deleted successfully.")
+	log.Info("host configuration file deleted successfully")
 	return resp, nil
 }
 
 // Validate input parameters for remove config
-func validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (string, error) {
+func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (string, error) {
 	accessToken := request.GetAccessToken()
 	err := util.ValidateAccessToken(accessToken)
 	if err != nil {
-		log.Info("accessToken validation failed, invalid accessToken")
-		return "", err
+		return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 	}
 
 	hostIp := request.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		log.Info("hostIp validation failed, invalid ipaddress")
-		return "", err
+		return "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
 	return hostIp, nil
 }
@@ -377,7 +428,7 @@ func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_Insta
 	appInsId := req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, "App instance id is invalid"))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, "app instance id is invalid"))
 	}
 
 	// Receive metadata which is host ip
@@ -415,7 +466,7 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument,
-			"AppInsId is invalid"))
+			"appInsId is invalid"))
 	}
 
 	return hostIp, appInsId, nil
@@ -471,7 +522,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, "AppInsId is invalid"))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, "appInsId is invalid"))
 	}
 
 	return hostIp, appInsId, nil
@@ -495,7 +546,7 @@ func (s *ServerGRPC) getPackage(stream lcmservice.AppLCM_InstantiateServer) (buf
 			break
 		}
 		if err != nil {
-			return pkg, s.logError(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err))
+			return pkg, s.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
 		}
 
 		// Receive chunk and write to package
@@ -503,7 +554,7 @@ func (s *ServerGRPC) getPackage(stream lcmservice.AppLCM_InstantiateServer) (buf
 
 		_, err = pkg.Write(chunk)
 		if err != nil {
-			return pkg, s.logError(status.Errorf(codes.Internal, "cannot write chunk data: %v", err))
+			return pkg, s.logError(status.Error(codes.Internal, "cannot write chunk data"))
 		}
 	}
 	return pkg, nil
@@ -527,7 +578,7 @@ func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigSe
 			break
 		}
 		if err != nil {
-			return file, s.logError(status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err))
+			return file, s.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
 		}
 
 		// Receive chunk and write to package
@@ -535,7 +586,7 @@ func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigSe
 
 		_, err = file.Write(chunk)
 		if err != nil {
-			return file, s.logError(status.Errorf(codes.Internal, "cannot write chunk data: %v", err))
+			return file, s.logError(status.Error(codes.Internal, "cannot write chunk data"))
 		}
 	}
 	return file, nil
@@ -551,7 +602,7 @@ func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName st
 	err = s.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		return s.logError(status.Error(codes.InvalidArgument,
-			"Failed to save app info record to database."))
+			"failed to save app info record to database."))
 	}
 	return nil
 }
@@ -565,7 +616,66 @@ func (s *ServerGRPC) deleteAppInfoRecord(appInsId string) error {
 	err := s.db.DeleteData(appInfoRecord, util.AppInsId)
 	if err != nil {
 		return s.logError(status.Error(codes.InvalidArgument,
-			"Failed to delete app info record from database."))
+			"failed to delete app info record from database"))
 	}
 	return nil
+}
+
+// Display received message
+func (s *ServerGRPC) displayReceivedMsg(ctx context.Context, rpcName string) error {
+	clientIp, err := s.getClientAddress(ctx)
+	if err != nil {
+		return err
+	}
+
+	log.Info("Received message from ClientIP [" + clientIp + "]" + " RpcName [" + rpcName + "]")
+	return nil
+}
+
+// display response message
+func (s *ServerGRPC) displayResponseMsg(ctx context.Context, rpcName string, errMsg string) {
+	clientIp, err := s.getClientAddress(ctx)
+	if err != nil {
+		return
+	}
+
+	log.Info("Response message for ClientIP [" + clientIp + "]" +
+		" RpcName [" + rpcName + "] Result [Failure: " + errMsg + ".]")
+	return
+}
+
+// Get client address
+func (s *ServerGRPC) getClientAddress(ctx context.Context) (remoteIp string, err error) {
+	pr, ok := peer.FromContext(ctx)
+	if !ok {
+		return "",  s.logError(status.Errorf(codes.NotFound, "failed to get peer from ctx"))
+	}
+	if pr.Addr == net.Addr(nil) {
+		return "",  s.logError(status.Errorf(codes.NotFound, "failed to get peer address"))
+	}
+	clientAddr := pr.Addr.String()
+	clientIp := strings.Split(clientAddr, ":")
+	return clientIp[0], nil
+}
+
+// Send instantiate response
+func sendInstantiateResponse(stream lcmservice.AppLCM_InstantiateServer,
+	res *lcmservice.InstantiateResponse) {
+	err := stream.SendAndClose(res)
+	if err != nil {
+		log.Errorf("cannot send response: %v", err)
+		return
+	}
+	return
+}
+
+// Send upload config response
+func sendUploadCfgResponse(stream lcmservice.AppLCM_UploadConfigServer,
+	res *lcmservice.UploadCfgResponse) {
+	err := stream.SendAndClose(res)
+	if err != nil {
+		log.Errorf("cannot send response: %v", err)
+		return
+	}
+	return
 }
