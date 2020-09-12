@@ -47,10 +47,10 @@ func TestValidateUUIDSuccess(t *testing.T) {
 	assert.NoError(t, err, "TestValidateUUIDSuccess execution result")
 }
 
-func TestValidateUUID_invalid(t *testing.T) {
+func TestValidateUUIDInvalid(t *testing.T) {
 	uId := "sfAdsHuplrmDk44643s"
 	err := util.ValidateUUID(uId)
-	assert.Error(t, err, "TestValidateUUID_invalid execution result")
+	assert.Error(t, err, "TestValidateUUIDInvalid execution result")
 }
 
 func TestValidateUUIDFailure(t *testing.T) {
@@ -65,17 +65,17 @@ func TestValidatePasswordSuccess(t *testing.T) {
 	assert.True(t, err, "TestValidatePasswordSuccess execution result")
 }
 
-func TestValidatePassword_inavlidlen(t *testing.T) {
+func TestValidatePasswordInavlidlen(t *testing.T) {
 	bytes := []byte("aB&32")
 	err, _ := util.ValidatePassword(&bytes)
-	assert.False(t, err, "TestValidatePassword_invalidlen execution result")
+	assert.False(t, err, "TestValidatePasswordInvalidlen execution result")
 }
 
-func TestValidatePassword_invalid(t *testing.T) {
+func TestValidatePasswordInvalid(t *testing.T) {
 	bytes := []byte("asdf1234")
 	util.ValidatePassword(&bytes)
 	//log.Info(err)
-	assert.False(t, false, "TestValidatePassword_invalid execution result")
+	assert.False(t, false, "TestValidatePasswordInvalid execution result")
 }
 
 func TestValidateAccessTokenSuccess(t *testing.T) {
@@ -140,7 +140,7 @@ func TestValidateServerNameSuccess(t *testing.T) {
 	assert.True(t, err, "TestValidateServerName execution result")
 }
 
-func TestValidateServerName_maxLen(t *testing.T) {
+func TestValidateServerNameMaxLen(t *testing.T) {
 	serverName := "45262352eeetdg374dffffffffffffffffffffffffffffffffytttttttttttttttttttttttttttttttttttttttttttttt" +
 		"tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt" +
 		"tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt" +

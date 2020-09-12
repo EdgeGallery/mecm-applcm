@@ -173,7 +173,7 @@ func TestGetPasswordValidCount3(t *testing.T) {
 	assert.Equal(t, 1, err, "TestGetPasswordValidCount3 execution failure")
 }
 
-func TestGetAppConfig(t *testing.T) {
+func TestGetAppConfig(_ *testing.T) {
 	appConfig := "appConfig"
 	util.GetAppConfig(appConfig)
 }
