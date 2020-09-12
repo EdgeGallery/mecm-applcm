@@ -124,7 +124,9 @@ func TestKpi(t *testing.T) {
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, "Get KPI failed")
-		assert.Equal(t, finalOutput, kpiController.Data["json"], "Query failed")
+
+		response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, finalOutput, response.Body.String(), "Query failed")
 	})
 }
 
@@ -190,7 +192,8 @@ func TestMepCapabilities(t *testing.T) {
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
-		assert.Equal(t, capabilityOutput, capabilityController.Data["json"], "Get Capability data failed")
+		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, capabilityOutput, response.Body.String(), "Get Capability data failed")
 	})
 }
 

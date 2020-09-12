@@ -432,8 +432,11 @@ func (c *LcmController) Query() {
 		log.Info("Query failed")
 		return
 	}
-	c.Data["json"] = response
-	c.ServeJSON()
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+	}
+	return
 }
 
 // Query KPI
@@ -484,8 +487,12 @@ func (c *LcmController) QueryKPI() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
 		return
 	}
-	c.Data["json"] = string(metricInfoByteArray)
-	c.ServeJSON()
+
+	_, err = c.Ctx.ResponseWriter.Write(metricInfoByteArray)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+	}
+	return
 }
 
 // Query KPI
@@ -555,8 +562,11 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	c.Data["json"] = mepCapabilities
-	c.ServeJSON()
+	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+	}
+	return
 }
 
 // Write error response
