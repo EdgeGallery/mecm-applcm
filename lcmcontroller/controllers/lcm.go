@@ -434,8 +434,7 @@ func (c *LcmController) Query() {
 	}
 	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"failed to write response into context")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 	}
 	return
 }
@@ -491,10 +490,8 @@ func (c *LcmController) QueryKPI() {
 
 	_, err = c.Ctx.ResponseWriter.Write(metricInfoByteArray)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"failed to write response into context")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 	}
-
 	return
 }
 
@@ -567,8 +564,7 @@ func (c *LcmController) QueryMepCapabilities() {
 
 	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"failed to write response into context")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 	}
 	return
 }

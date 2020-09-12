@@ -92,6 +92,7 @@ const DiskQuery string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-s
 const UnexpectedValue = "unexpected value found"
 const MarshalError = "Failed to marshal json"
 const UnMarshalError = "Failed to unmarshal json"
+const FailedToWriteRes = "Failed to write response into context"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
