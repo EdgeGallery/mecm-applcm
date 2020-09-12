@@ -1,0 +1,129 @@
+/*
+ * Copyright 2020 Huawei Technologies Co., Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package adapter
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	log "github.com/sirupsen/logrus"
+	"k8s.io/client-go/tools/clientcmd"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/restmapper"
+)
+
+// Helm client
+type YamlClient struct {
+	hostIP     string
+	kubeconfig string
+}
+
+var (
+	decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+)
+
+// Constructor of helm client for a given host IP
+func NewYamlClient(hostIP string) (*YamlClient, error) {
+	// Kubeconfig file will be picked based on host IP and will be check for existence
+	exists, err := fileExists(kubeconfigPath + hostIP)
+	if exists {
+		return &YamlClient{hostIP: hostIP, kubeconfig: kubeconfigPath + hostIP}, nil
+	} else {
+		log.Error("No file exist with name")
+		return nil, err
+	}
+}
+
+func (yc *YamlClient) Deploy(pkg bytes.Buffer) (string, error) {
+
+	// Create context and rest config
+	ctx := context.Background()
+	config, err := clientcmd.BuildConfigFromFlags("", yc.kubeconfig)
+	if err != nil {
+		return "", err
+	}
+
+	// 1. Prepare a RESTMapper to find GVR
+	dc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return "", err
+	}
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
+
+	// 2. Prepare the dynamic client
+	dyn, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	// 3. Decode YAML manifest into unstructured.Unstructured
+	obj := &unstructured.Unstructured{}
+	_, gvk, err := decUnstructured.Decode(pkg.Bytes(), nil, obj)
+	if err != nil {
+		return "", err
+	}
+
+	// 4. Find GVR
+	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return "", err
+	}
+
+	// 5. Obtain REST interface for the GVR
+	var dr dynamic.ResourceInterface
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		// namespaced resources should specify the namespace
+		dr = dyn.Resource(mapping.Resource).Namespace(obj.GetNamespace())
+	} else {
+		// for cluster-wide resources
+		dr = dyn.Resource(mapping.Resource)
+	}
+
+	// 6. Marshal object into JSON
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+
+	// 7. Create or Update the object with SSA
+	//     types.ApplyPatchType indicates SSA.
+	//     FieldManager specifies the field owner ID.
+	_, err = dr.Patch(ctx, obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
+		FieldManager: "sample-controller",
+	})
+
+	if err != nil {
+		return "Success", err
+	}
+	return "", nil
+}
+
+func (yc *YamlClient) UnDeploy(relName string) error {
+	return nil
+}
+
+func (yc *YamlClient) Query(relName string) (string, error) {
+	return "", nil
+}
