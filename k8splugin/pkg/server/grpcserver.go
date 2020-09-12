@@ -67,7 +67,7 @@ func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.certificate = cfg.ServerConfig.Certfilepath
 	s.key = cfg.ServerConfig.Keyfilepath
 	s.serverConfig = cfg.ServerConfig
-	dbAdapter, err := pgdb.GetDbAdapter(cfg.ServerConfig.DbAdapter)
+	dbAdapter, err := pgdb.GetDbAdapter(cfg.ServerConfig)
 	if err != nil {
 		log.Error("Failed to get database")
 		os.Exit(1)

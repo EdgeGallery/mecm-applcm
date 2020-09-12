@@ -26,7 +26,7 @@ type mockK8sPluginDb struct {
 	appInstanceRecords map[string]models.AppInstanceInfo
 }
 
-func (db *mockK8sPluginDb) InitDatabase() error {
+func (db *mockK8sPluginDb) InitDatabase(_ string) error {
 	panic("implement me")
 }
 

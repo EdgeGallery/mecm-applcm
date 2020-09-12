@@ -31,7 +31,6 @@ import (
 
 // Variables are required for db connections
 var (
-	DB_SSL_MODE     = "enable"
 	DB_SSL_ROOT_CER = "ssl/ca.crt"
 )
 
@@ -77,13 +76,12 @@ func (db *PgDb) DeleteData(data interface{}, cols ...string) (err error) {
 }
 
 // Init database
-func (db *PgDb) InitDatabase() error {
+func (db *PgDb) InitDatabase(dbSslMode string) error {
 	dbUser := util.GetDbUser()
 	dbPwd := os.Getenv("K8S_PLUGIN_DB_PASSWORD")
 	dbName := util.GetDbName()
 	dbHost := util.GetDbHost()
 	dbPort := util.GetDbPort()
-	dbSslMode := DB_SSL_MODE
 	dbSslRootCert := DB_SSL_ROOT_CER
 
 	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)

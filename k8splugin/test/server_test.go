@@ -51,7 +51,7 @@ var (
 func TestServer(t *testing.T) {
 
 	// Mock the required API
-	patch1 := gomonkey.ApplyFunc(pgdb.GetDbAdapter, func(_ string) (pgdb.Database, error) {
+	patch1 := gomonkey.ApplyFunc(pgdb.GetDbAdapter, func(_ *conf.ServerConfigurations) (pgdb.Database, error) {
 		return &mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)}, nil
 	})
 	defer patch1.Reset()

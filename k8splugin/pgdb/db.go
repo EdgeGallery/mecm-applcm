@@ -18,7 +18,7 @@ package pgdb
 
 // Database API's
 type Database interface {
-	InitDatabase() error
+	InitDatabase(dbSslMode string) error
 	InsertOrUpdateData(data interface{}, cols ...string) (err error)
 	ReadData(data interface{}, cols ...string) (err error)
 	DeleteData(data interface{}, cols ...string) (err error)

@@ -31,4 +31,5 @@ type ServerConfigurations struct {
 	Serverport    string
 	Httpsaddr     string
 	DbAdapter     string
+	DbSslMode     string
 }
