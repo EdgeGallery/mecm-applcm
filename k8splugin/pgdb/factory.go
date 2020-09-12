@@ -18,18 +18,17 @@ package pgdb
 
 import (
 	"errors"
-	log "github.com/sirupsen/logrus"
+	"k8splugin/conf"
 	"os"
 )
 
 // Init Db adapter
-func GetDbAdapter(dbAdapter string) (Database, error) {
-	switch dbAdapter {
+func GetDbAdapter(serverConfigs *conf.ServerConfigurations) (Database, error) {
+	switch serverConfigs.DbAdapter {
 	case "pgDb":
 		db := &PgDb{}
-		err := db.InitDatabase()
+		err := db.InitDatabase(serverConfigs.DbSslMode)
 		if err != nil {
-			log.Error("Failed to register database")
 			os.Exit(1)
 		}
 		return db, nil

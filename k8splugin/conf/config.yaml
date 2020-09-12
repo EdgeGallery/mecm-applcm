@@ -22,3 +22,4 @@ server:
   serverport: 8095
   httpsaddr:
   dbAdapter: "pgDb"
+  dbSslMode: "disable"
