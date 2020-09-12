@@ -149,7 +149,8 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, "Query failed")
-		assert.Equal(t, exOutput, queryController.Data["json"], "Query failed")
+		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, exOutput, response.Body.String(), "Query failed")
 	})
 }
 
