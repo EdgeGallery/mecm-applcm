@@ -253,22 +253,9 @@ func ValidateAccessToken(accessToken string) error {
 	})
 
 	if token != nil && !token.Valid {
-		if claims["authorities"] == nil {
-			log.Info("Invalid token A")
-			return errors.New(InvalidToken)
-		}
-		if claims["userId"] == nil {
-			log.Info("Invalid token UI")
-			return errors.New(InvalidToken)
-		}
-		if claims["user_name"] == nil {
-			log.Info("Invalid token UN")
-			return errors.New(InvalidToken)
-		}
-		err = token.Claims.Valid()
+		err := validateTokenClaims(claims)
 		if err != nil {
-			log.Info("token expired")
-			return errors.New(InvalidToken)
+			return err
 		}
 	} else if er, ok := err.(*jwt.ValidationError); ok {
 		if er.Errors&jwt.ValidationErrorMalformed != 0 {
@@ -287,6 +274,28 @@ func ValidateAccessToken(accessToken string) error {
 	}
 
 	log.Info("Token validated successfully")
+	return nil
+}
+
+// Validate token claims
+func validateTokenClaims(claims jwt.MapClaims) error {
+	if claims["authorities"] == nil {
+		log.Info("Invalid token A")
+		return errors.New(InvalidToken)
+	}
+	if claims["userId"] == nil {
+		log.Info("Invalid token UI")
+		return errors.New(InvalidToken)
+	}
+	if claims["user_name"] == nil {
+		log.Info("Invalid token UN")
+		return errors.New(InvalidToken)
+	}
+	err := claims.Valid()
+	if err != nil {
+		log.Info("token expired")
+		return errors.New(InvalidToken)
+	}
 	return nil
 }
 
