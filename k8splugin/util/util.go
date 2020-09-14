@@ -184,6 +184,11 @@ func ValidateAccessToken(accessToken string) error {
 			log.Info("Invalid token UN")
 			return errors.New(InvalidToken)
 		}
+		err = token.Claims.Valid()
+		if err != nil {
+			log.Info("token expired")
+			return errors.New(InvalidToken)
+		}
 	} else if er, ok := err.(*jwt.ValidationError); ok {
 		if er.Errors&jwt.ValidationErrorMalformed != 0 {
 			log.Info("Invalid token")
