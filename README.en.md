@@ -1,36 +1,16 @@
 # mecm-applcm
 
 #### Description
-repo for mecm applcm
+Application life cycle manager is part of MEP manager whose responsibility is to handle the host level life cycle management including  Instantiation, Termination etc. it provides a pluggable architecture to support multiple infrastructure. Currently Kubernetes based plugin is available for usage.
 
-#### Software Architecture
-Software architecture description
+#### Compile and build
+The AppLcm project is containerized based on docker, and it is divided into two steps during compilation and construction.
 
-#### Installation
+#### Compile
+AppLcm is a GOLANG program written based on GOLANG 1.14.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+#### Build image
+The AppLcm project provides a dockerfile file for mirroring. You can use the following commands when making a mirror
 
-#### Instructions
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### Contribution
-
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
-
-
-#### Gitee Feature
-
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+docker build -t edgegallery/mecm-lcmcontroller:latest -f docker/Dockerfile .
+docker build -t edgegallery/mecm-k8splugin:latest -f docker/Dockerfile .
