@@ -24,6 +24,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+
 	"lcmcontroller/models"
 	"lcmcontroller/pkg/dbAdapter"
 	"mime/multipart"
@@ -103,6 +104,12 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
+	err = c.validateYamlFile(clientIp, file)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	pluginInfo, err := getPluginInfo()
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -116,6 +123,7 @@ func (c *LcmController) UploadConfig() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
+
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	_, err = adapter.UploadConfig(file, hostIp, accessToken)
 	util.ClearByteArray(bKey)
@@ -125,6 +133,23 @@ func (c *LcmController) UploadConfig() {
 	}
 
 	c.ServeJSON()
+}
+
+// Validate kubeconfig file
+func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) error {
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, file); err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to copy file into buffer")
+		return err
+	}
+
+	_, err := yaml.YAMLToJSON(buf.Bytes())
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "KubeConfig file validation is failed")
+		return err
+	}
+	return nil
 }
 
 // Get plugin info
@@ -436,7 +461,6 @@ func (c *LcmController) Query() {
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 	}
-	return
 }
 
 // Query KPI
@@ -492,7 +516,6 @@ func (c *LcmController) QueryKPI() {
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 	}
-	return
 }
 
 // Query KPI
@@ -566,7 +589,6 @@ func (c *LcmController) QueryMepCapabilities() {
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 	}
-	return
 }
 
 // Write error response
