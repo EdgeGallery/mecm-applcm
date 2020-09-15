@@ -17,19 +17,19 @@ module lcmcontroller
 go 1.14
 
 require (
-	github.com/agiledragon/gomonkey v2.0.2+incompatible
-	github.com/astaxie/beego v1.12.2
-	github.com/buger/jsonparser v1.0.0
+	github.com/agiledragon/gomonkey v2.0.1+incompatible
+	github.com/astaxie/beego v1.12.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-playground/validator/v10 v10.3.0
+	github.com/go-playground/validator/v10 v10.2.0
 	github.com/golang/protobuf v1.4.2
 	github.com/lib/pq v1.7.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
+	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 // indirect
 	github.com/sirupsen/logrus v1.6.0
-	github.com/stretchr/testify v1.4.0
-	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
+	github.com/stretchr/testify v1.6.1
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
 	google.golang.org/grpc v1.31.0
-	google.golang.org/protobuf v1.23.0
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )

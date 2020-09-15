@@ -24,7 +24,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-
 	"lcmcontroller/models"
 	"lcmcontroller/pkg/dbAdapter"
 	"mime/multipart"
@@ -35,7 +34,6 @@ import (
 	"unsafe"
 
 	"github.com/astaxie/beego"
-	"github.com/buger/jsonparser"
 	"github.com/ghodss/yaml"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -647,24 +645,37 @@ func (c *LcmController) getApplicationDeploymentType(mainServiceTemplateMf strin
 	templateMf, err := ioutil.ReadFile(mainServiceTemplateMf)
 	if err != nil {
 		c.writeErrorResponse("Failed to read file", util.StatusInternalServerError)
+		return "", err
 	}
 
 	jsondata, err := yaml.YAMLToJSON(templateMf)
 	if err != nil {
 		c.writeErrorResponse("failed to convert from YAML to JSON", util.StatusInternalServerError)
+		return "", err
 	}
 
-	helmDeploy, _, _, _ := jsonparser.Get(jsondata, util.NonManoArtifactSets, "applcm_helm_chart_deployment")
-	k8sDeploy, _, _, _ := jsonparser.Get(jsondata, util.NonManoArtifactSets, "applcm_k8s_chart_deployment")
-	vmDeploy, _, _, _ := jsonparser.Get(jsondata, util.NonManoArtifactSets, "applcm_VM_chart_deployment")
-
-	if helmDeploy != nil {
-		deployType = "helm"
-	} else if k8sDeploy != nil {
-		deployType = "kubernetes"
-	} else if vmDeploy != nil {
-		deployType = "vm"
+	var mainService map[string]interface{}
+	err = json.Unmarshal(jsondata, &mainService)
+	if err != nil {
+		c.writeErrorResponse("failed to unmarshal json data", util.StatusInternalServerError)
+		return "", err
 	}
+
+	for key, value := range mainService {
+		if key == "non_mano_artifact_sets" {
+			manoArtifact := value.(map[string]interface{})
+			for key1 := range manoArtifact {
+				if key1 == "applcm_helm_chart_deployment" {
+					deployType = "helm"
+				} else if key1 == "applcm_k8s_chart_deployment" {
+					deployType = "kubernetes"
+				} else if key1 == "applcm_VM_chart_deployment" {
+					deployType = "vm"
+				}
+			}
+		}
+	}
+
 	return deployType, nil
 }
 
