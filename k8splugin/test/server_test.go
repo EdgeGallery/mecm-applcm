@@ -18,6 +18,7 @@ package test
 
 import (
 	"github.com/agiledragon/gomonkey"
+	"github.com/dgrijalva/jwt-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"k8splugin/conf"
@@ -36,16 +37,7 @@ var (
 	filePermission        os.FileMode = 0750
 	directory             string      = "/config/"
 	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
-	token                 string      = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiI3MjY5NjM4ZS01NjM3LT" +
-		"RiOGMtODE3OC" +
-		"1iNTExMmJhN2I2OWIiLCJzY29wZSI6WyJhbGwiXSwiZXhwIjoxNTk5Mjc5NDA3LCJzc29TZXNzaW9uSWQiOiI1QkYwNjM2QzlBMkEzMUI2N" +
-		"EEwMEFCRTk1OTVEN0E0NyIsInVzZXJOYW1lIjoid2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdi" +
-		"NjliIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BUFBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEV" +
-		"OQU5UIl0sImp0aSI6IjQ5ZTBhMGMwLTIxZmItNDAwZC04M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFibG" +
-		"VTbXMiOiJ0cnVlIn0.kmJbwyAxPj7OKpP-5r-WMVKbETpKV0kWMguMNaiNt63EhgrmfDgjmX7eqfagMYBS1sgIKZjuxFg2o-HUaO4h9iE1c" +
-		"Lkmm0-8qV7HUSkMQThXGtUk2xljB6K9RxxZzzQNQFpgBB7gEcGVc_t_86tLxUU6FxXEW1h-zW4z4I_oGM9TOg7JR-ZyC8lQZTBNiYaOFHpv" +
-		"EubeqfQL0AFIKHeEf18Jm-Xjjw4Y3QEzB1qDMrOGh-55y8kelW1w_Vwbaz45n5-U0DirDpCaa4ergleQIVF6exdjMWKtANGYU6zy48u7EYP" +
-		"YsykkDoIOxWYNqWSe557rNvY_3m1Ynam1QJCYUA"
+	token                 string      = createToken(1)
 )
 
 func TestServer(t *testing.T) {
@@ -136,4 +128,17 @@ func startServer(server server.ServerGRPC) {
 		log.Errorf("Exiting system...")
 		return
 	}
+}
+
+func createToken(userid uint64) string {
+	//Creating Access Token
+	atClaims := jwt.MapClaims{}
+	atClaims["authorities"] = "authorities"
+	atClaims["user_name"] = "lcmcontroller"
+	atClaims["authorized"] = true
+	atClaims["userId"] = userid
+	atClaims["exp"] = time.Now().Add(time.Minute * 60).Unix()
+	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	token, _ := at.SignedString([]byte("jdnfksdmfksd"))
+	return token
 }

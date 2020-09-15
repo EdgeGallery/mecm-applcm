@@ -72,15 +72,7 @@ func TestValidatePasswordInvalid(t *testing.T) {
 }
 
 func TestValidateAccessTokenSuccess(t *testing.T) {
-	accessToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiI3MjY5NjM4ZS01NjM3LTRiOGMtODE3OC1iNTExM" +
-		"mJhN2I2OWIiLCJzY29wZSI6WyJhbGwiXSwiZXhwIjoxNTk5Mjc5NDA3LCJzc29TZXNzaW9uSWQiOiI1QkYwNjM2QzlBMkEzMUI2NEEwME" +
-		"FCRTk1OTVEN0E0NyIsInVzZXJOYW1lIjoid2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdiNjl" +
-		"iIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BUFBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEVO" +
-		"QU5UIl0sImp0aSI6IjQ5ZTBhMGMwLTIxZmItNDAwZC04M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFib" +
-		"GVTbXMiOiJ0cnVlIn0.kmJbwyAxPj7OKpP-5r-WMVKbETpKV0kWMguMNaiNt63EhgrmfDgjmX7eqfagMYBS1sgIKZjuxFg2o-HUaO4h9i" +
-		"E1cLkmm0-8qV7HUSkMQThXGtUk2xljB6K9RxxZzzQNQFpgBB7gEcGVc_t_86tLxUU6FxXEW1h-zW4z4I_oGM9TOg7JR-ZyC8lQZTBNiYaO" +
-		"FHpvEubeqfQL0AFIKHeEf18Jm-Xjjw4Y3QEzB1qDMrOGh-55y8kelW1w_Vwbaz45n5-U0DirDpCaa4ergleQIVF6exdjMWKtANGYU6zy48" +
-		"u7EYPYsykkDoIOxWYNqWSe557rNvY_3m1Ynam1QJCYUA"
+	accessToken := createToken(1)
 	err := util.ValidateAccessToken(accessToken)
 	assert.Nil(t, err, "TestValidateAccessTokenSuccess execution result")
 }
