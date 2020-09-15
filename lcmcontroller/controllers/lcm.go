@@ -52,36 +52,6 @@ var (
 	PackageArtifactPath = "/Artifacts/Deployment/"
 )
 
-// Kube configuration
-type KubeConfig struct {
-	APIVersion string `yaml:"apiVersion"`
-	Clusters   []struct {
-		Cluster struct {
-			CertificateAuthorityData string `yaml:"certificate-authority-data"`
-			Server                   string `yaml:"server"`
-		} `yaml:"cluster"`
-		Name string `yaml:"name"`
-	} `yaml:"clusters"`
-	Contexts []struct {
-		Context struct {
-			Cluster string `yaml:"cluster"`
-			User    string `yaml:"user"`
-		} `yaml:"context"`
-		Name string `yaml:"name"`
-	} `yaml:"contexts"`
-	CurrentContext string `yaml:"current-context"`
-	Kind           string `yaml:"kind"`
-	Preferences    struct {
-	} `yaml:"preferences"`
-	Users []struct {
-		Name string `yaml:"name"`
-		User struct {
-			Password string `yaml:"password"`
-			Username string `yaml:"username"`
-		} `yaml:"user"`
-	} `yaml:"users"`
-}
-
 // Lcm Controller
 type LcmController struct {
 	beego.Controller
@@ -167,14 +137,14 @@ func (c *LcmController) UploadConfig() {
 
 // Validate kubeconfig file
 func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) error {
-	cfg := KubeConfig{}
+
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to copy file into buffer")
 		return err
 	}
 
-	err := yaml.Unmarshal(buf.Bytes(), &cfg)
+	_, err := yaml.YAMLToJSON(buf.Bytes())
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "KubeConfig file validation is failed")
 		return err
