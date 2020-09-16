@@ -78,13 +78,15 @@ func (db *PgDb) DeleteData(data interface{}, cols ...string) (err error) {
 // Init database
 func (db *PgDb) InitDatabase(dbSslMode string) error {
 	dbUser := util.GetDbUser()
-	dbPwd := os.Getenv("K8S_PLUGIN_DB_PASSWORD")
+	dbPwd := []byte(os.Getenv("K8S_PLUGIN_DB_PASSWORD"))
 	dbName := util.GetDbName()
 	dbHost := util.GetDbHost()
 	dbPort := util.GetDbPort()
 	dbSslRootCert := DB_SSL_ROOT_CER
 
-	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
+	dbPwdStr := string(dbPwd)
+	util.ClearByteArray(dbPwd)
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwdStr, dbName, dbHost, dbPort)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
 		return errors.New("failed to validate db parameters")
 	}
@@ -95,7 +97,7 @@ func (db *PgDb) InitDatabase(dbSslMode string) error {
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwd,
+	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwdStr,
 		dbName, dbHost, dbPort, dbSslMode, dbSslRootCert)
 	bStr := b.String()
 
@@ -103,6 +105,9 @@ func (db *PgDb) InitDatabase(dbSslMode string) error {
 	//clear bStr
 	bKey1 := *(*[]byte)(unsafe.Pointer(&bStr))
 	util.ClearByteArray(bKey1)
+
+	bKey := *(*[]byte)(unsafe.Pointer(&dbPwdStr))
+	util.ClearByteArray(bKey)
 
 	if registerDataBaseErr != nil {
 		log.Error("Failed to register database")

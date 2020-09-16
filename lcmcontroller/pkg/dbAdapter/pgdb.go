@@ -86,14 +86,16 @@ func (db *PgDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (i
 func (db *PgDb) InitDatabase() error {
 
 	dbUser := util.GetDbUser()
-	dbPwd := os.Getenv("LCM_CNTLR_DB_PASSWORD")
+	dbPwd := []byte(os.Getenv("LCM_CNTLR_DB_PASSWORD"))
 	dbName := util.GetDbName()
 	dbHost := util.GetDbHost()
 	dbPort := util.GetDbPort()
 	dbSslMode := util.GetAppConfig("DB_SSL_MODE")
 	dbSslRootCert := util.GetAppConfig("DB_SSL_ROOT_CERT")
 
-	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwd, dbName, dbHost, dbPort)
+	dbPwdStr := string(dbPwd)
+	util.ClearByteArray(dbPwd)
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwdStr, dbName, dbHost, dbPort)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
 		return errors.New("failed to validate db parameters")
 	}
@@ -104,7 +106,7 @@ func (db *PgDb) InitDatabase() error {
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwd,
+	fmt.Fprintf(&b, "user=%s password=%s dbname=%s host=%s port=%s sslmode=%s sslrootcert=%s", dbUser, dbPwdStr,
 		dbName, dbHost, dbPort, dbSslMode, dbSslRootCert)
 	bStr := b.String()
 
@@ -112,6 +114,9 @@ func (db *PgDb) InitDatabase() error {
 	//clear bStr
 	bKey1 := *(*[]byte)(unsafe.Pointer(&bStr))
 	util.ClearByteArray(bKey1)
+
+	bKey := *(*[]byte)(unsafe.Pointer(&dbPwdStr))
+	util.ClearByteArray(bKey)
 
 	if registerDataBaseErr != nil {
 		log.Error("Failed to register database")
