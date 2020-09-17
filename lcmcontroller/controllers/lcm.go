@@ -518,10 +518,24 @@ func (c *LcmController) QueryKPI() {
 
 // Query KPI
 func getHostInfo(url string) (string, error) {
-	//url
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
+	var resp *http.Response
+	var err error
+
+	if util.GetAppConfig("query_ssl_enable") == "true" {
+		url = strings.ReplaceAll(url, "http", "https")
+		req, errNewRequest := http.NewRequest("", url, nil)
+		if errNewRequest != nil {
+			return "", errNewRequest
+		}
+		resp, err = util.DoRequest(req)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		resp, err = http.Get(url)
+		if err != nil {
+			return "", err
+		}
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

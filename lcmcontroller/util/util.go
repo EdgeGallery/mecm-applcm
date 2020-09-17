@@ -25,6 +25,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -443,4 +444,20 @@ func GetK8sPluginPort() string {
 		k8sPluginPort = k8spluginport
 	}
 	return k8sPluginPort
+}
+
+// Does https request
+func DoRequest(req *http.Request) (*http.Response, error) {
+	config, err := TLSConfig("QUERY_SSL_ROOT_CERT")
+	if err != nil {
+		log.Error("Unable to send request")
+		return nil, err
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: config,
+	}
+	client := &http.Client{Transport: tr}
+
+	return client.Do(req)
 }
