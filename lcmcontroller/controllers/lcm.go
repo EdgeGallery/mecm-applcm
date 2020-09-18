@@ -592,7 +592,7 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	mepCapabilities, err := getHostInfo(hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + "/mep-capabilities")
+	mepCapabilities, err := getHostInfo(hostIp + ":" + mepPort + util.BaseUriMec + tenantId + "/hosts/" + hostIp + util.CapabilityUri)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
 		return

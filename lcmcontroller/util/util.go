@@ -95,6 +95,8 @@ const UnexpectedValue = "unexpected value found"
 const MarshalError = "Failed to marshal json"
 const UnMarshalError = "Failed to unmarshal json"
 const FailedToWriteRes = "Failed to write response into context"
+const BaseUriMec = "/mec/v1/mgmt/tenant/"
+const CapabilityUri = "/mep-capabilities"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
