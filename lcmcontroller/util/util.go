@@ -87,6 +87,7 @@ const TooBig = 0x6400000
 const SingleFileTooBig = 0x6400000
 
 const HttpUrl string = "http://"
+const HttpsUrl string = "https://"
 const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
 const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
 const DiskQuery string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
@@ -448,7 +449,7 @@ func GetK8sPluginPort() string {
 
 // Does https request
 func DoRequest(req *http.Request) (*http.Response, error) {
-	config, err := TLSConfig("QUERY_SSL_ROOT_CERT")
+	config, err := TLSConfig("DB_SSL_ROOT_CERT")
 	if err != nil {
 		log.Error("Unable to send request")
 		return nil, err
