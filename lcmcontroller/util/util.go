@@ -25,6 +25,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -86,6 +87,7 @@ const TooBig = 0x6400000
 const SingleFileTooBig = 0x6400000
 
 const HttpUrl string = "http://"
+const HttpsUrl string = "https://"
 const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
 const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
 const DiskQuery string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
@@ -93,6 +95,8 @@ const UnexpectedValue = "unexpected value found"
 const MarshalError = "Failed to marshal json"
 const UnMarshalError = "Failed to unmarshal json"
 const FailedToWriteRes = "Failed to write response into context"
+const BaseUriMec = "/mec/v1/mgmt/tenant/"
+const CapabilityUri = "/mep-capabilities"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
@@ -443,4 +447,20 @@ func GetK8sPluginPort() string {
 		k8sPluginPort = k8spluginport
 	}
 	return k8sPluginPort
+}
+
+// Does https request
+func DoRequest(req *http.Request) (*http.Response, error) {
+	config, err := TLSConfig("DB_SSL_ROOT_CERT")
+	if err != nil {
+		log.Error("Unable to send request")
+		return nil, err
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: config,
+	}
+	client := &http.Client{Transport: tr}
+
+	return client.Do(req)
 }

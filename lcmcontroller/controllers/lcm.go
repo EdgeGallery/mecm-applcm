@@ -518,10 +518,25 @@ func (c *LcmController) QueryKPI() {
 
 // Query KPI
 func getHostInfo(url string) (string, error) {
-	//url
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
+	var resp *http.Response
+	var err error
+
+	if util.GetAppConfig("query_ssl_enable") == "true" {
+		url = util.HttpsUrl + url
+		req, errNewRequest := http.NewRequest("", url, nil)
+		if errNewRequest != nil {
+			return "", errNewRequest
+		}
+		resp, err = util.DoRequest(req)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		url = util.HttpUrl + url
+		resp, err = http.Get(url)
+		if err != nil {
+			return "", err
+		}
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -577,7 +592,7 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	mepCapabilities, err := getHostInfo(util.HttpUrl + hostIp + ":" + mepPort + "/mec/v1/mgmt/tenant/" + tenantId + "/hosts/" + hostIp + "/mep-capabilities")
+	mepCapabilities, err := getHostInfo(hostIp + ":" + mepPort + util.BaseUriMec + tenantId + "/hosts/" + hostIp + util.CapabilityUri)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
 		return
@@ -1051,7 +1066,7 @@ func (c *LcmController) getInputParametersQueryKpi(clientIp string) (string, str
 func (c *LcmController) getCpuUsage(hostIp, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	cpu, errCpu := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.CpuQuery)
+	cpu, errCpu := getHostInfo(hostIp + ":" + prometheusPort + util.CpuQuery)
 	if errCpu != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
 		return cpuUtilization, nil
@@ -1071,7 +1086,7 @@ func (c *LcmController) getCpuUsage(hostIp, prometheusPort, clientIp string) (cp
 func (c *LcmController) getMemoryUsage(hostIp, prometheusPort, clientIp string) (memUsage map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	mem, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.MemQuery)
+	mem, err := getHostInfo(hostIp + ":" + prometheusPort + util.MemQuery)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
 		return memUsage, err
@@ -1091,7 +1106,7 @@ func (c *LcmController) getMemoryUsage(hostIp, prometheusPort, clientIp string) 
 func (c *LcmController) diskUsage(hostIp string, prometheusPort, clientIp string) (diskUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	disk, err := getHostInfo(util.HttpUrl + hostIp + ":" + prometheusPort + util.DiskQuery)
+	disk, err := getHostInfo(hostIp + ":" + prometheusPort + util.DiskQuery)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
 		return diskUtilization, err
