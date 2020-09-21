@@ -35,9 +35,6 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/ghodss/yaml"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
 	"os"
@@ -126,7 +123,7 @@ func (c *LcmController) UploadConfig() {
 	_, err = adapter.UploadConfig(file, hostIp, accessToken)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Upload configuration failed")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -207,7 +204,7 @@ func (c *LcmController) RemoveConfig() {
 	_, err = adapter.RemoveConfig(hostIp, accessToken)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Remove configuration failed")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 	c.ServeJSON()
@@ -374,7 +371,7 @@ func (c *LcmController) Terminate() {
 	_, err = adapter.Terminate(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Terminate application failed")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 	err = c.deleteAppInfoRecord(appInsId)
@@ -770,20 +767,10 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 		return err
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, resStatus := adapter.Instantiate(hostIp, artifact, accessToken, appInsId)
+	err, _ = adapter.Instantiate(hostIp, artifact, accessToken, appInsId)
 	if err != nil {
-		st, ok := status.FromError(err)
-		if ok && st.Code() == codes.InvalidArgument {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.InstantiationFailed)
-			return err
-		} else {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.InstantiationFailed)
-		}
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
-	}
-	if resStatus == "Failure" {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.InstantiationFailed)
-		return errors.New("instantiation failed")
 	}
 	return nil
 }
