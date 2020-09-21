@@ -449,7 +449,7 @@ func (c *LcmController) Query() {
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.HostIp)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		log.Info("Query failed")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
