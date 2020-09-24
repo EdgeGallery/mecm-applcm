@@ -641,7 +641,6 @@ func (s *ServerGRPC) displayResponseMsg(ctx context.Context, rpcName string, err
 
 	log.Info("Response message for ClientIP [" + clientIp + "]" +
 		" RpcName [" + rpcName + "] Result [Failure: " + errMsg + ".]")
-	return
 }
 
 // Get client address
@@ -666,7 +665,6 @@ func sendInstantiateResponse(stream lcmservice.AppLCM_InstantiateServer,
 		log.Errorf("cannot send response: %v", err)
 		return
 	}
-	return
 }
 
 // Send upload config response
@@ -677,5 +675,4 @@ func sendUploadCfgResponse(stream lcmservice.AppLCM_UploadConfigServer,
 		log.Errorf("cannot send response: %v", err)
 		return
 	}
-	return
 }

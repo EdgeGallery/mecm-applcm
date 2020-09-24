@@ -73,9 +73,8 @@ func TestValidatePasswordInavlidlen(t *testing.T) {
 
 func TestValidatePasswordInvalid(t *testing.T) {
 	bytes := []byte("asdf1234")
-	util.ValidatePassword(&bytes)
-	//log.Info(err)
-	assert.False(t, false, "TestValidatePasswordInvalid execution result")
+	err, _ := util.ValidatePassword(&bytes)
+	assert.True(t, err, "TestValidatePasswordInvalid execution result")
 }
 
 func TestValidateAccessTokenSuccess(t *testing.T) {
