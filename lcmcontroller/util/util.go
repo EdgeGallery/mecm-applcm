@@ -66,6 +66,7 @@ const MaxFileNameSize = 64
 const BadRequest int = 400
 const StatusUnauthorized int = 401
 const StatusInternalServerError int = 500
+const StatusNotFound int = 404
 
 const DbRegex string = `^[\w-]{4,32}$`
 const DbUserRegex = DbRegex
