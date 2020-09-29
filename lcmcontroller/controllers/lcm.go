@@ -449,6 +449,11 @@ func (c *LcmController) Query() {
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.HostIp)
 	util.ClearByteArray(bKey)
 	if err != nil {
+		res := strings.Contains(err.Error(), "not found")
+		if res {
+			c.handleLoggingForError(clientIp, util.StatusNotFound, err.Error())
+			return
+		}
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
