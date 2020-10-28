@@ -19,6 +19,7 @@ package pluginAdapter
 import (
 	"io"
 	"lcmcontroller/internal/lcmservice"
+	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
 	"os"
@@ -78,7 +79,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 
 // Instantiate application
 func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-	accessToken string, appInsId string, ak string, sk string) (status string, error error) {
+	accessToken string, akSkAppInfo models.AkSkAppIdInfo) (status string, error error) {
 	var (
 		writing = true
 		buf     []byte
@@ -118,45 +119,8 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 		return util.Failure, err
 	}
 
-	//send metadata information
-	req = &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_Ak{
-			Ak: ak,
-		},
-	}
-
-	err = stream.Send(req)
+	err = sendAkSkAppInsId(stream, akSkAppInfo)
 	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
-		return util.Failure, err
-	}
-
-	//send metadata information
-	req = &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_Sk{
-			Sk: sk,
-		},
-	}
-
-	err = stream.Send(req)
-	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
-		return util.Failure, err
-	}
-
-	//send metadata information
-	req = &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_AppInstanceId{
-			AppInstanceId: appInsId,
-		},
-	}
-
-	err = stream.Send(req)
-	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
 		return util.Failure, err
 	}
 
@@ -211,6 +175,53 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 		return util.Failure, err
 	}
 	return res.GetStatus(), err
+}
+
+// Send ak, sk and appInsId values
+func sendAkSkAppInsId(stream lcmservice.AppLCM_InstantiateClient, akSkAppInfo models.AkSkAppIdInfo) error {
+	//send metadata information
+	req := &lcmservice.InstantiateRequest{
+
+		Data: &lcmservice.InstantiateRequest_Ak{
+			Ak: akSkAppInfo.Ak,
+		},
+	}
+
+	err := stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return err
+	}
+
+	//send metadata information
+	req = &lcmservice.InstantiateRequest{
+
+		Data: &lcmservice.InstantiateRequest_Sk{
+			Sk: akSkAppInfo.Sk,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return err
+	}
+
+	//send metadata information
+	req = &lcmservice.InstantiateRequest{
+
+		Data: &lcmservice.InstantiateRequest_AppInstanceId{
+			AppInstanceId: akSkAppInfo.AppInsId,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return err
+	}
+
+	return nil
 }
 
 // Query application

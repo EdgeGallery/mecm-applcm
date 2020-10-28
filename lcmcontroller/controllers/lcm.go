@@ -284,7 +284,11 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId, ak, sk)
+	var akSkAppInfo models.AkSkAppIdInfo
+	akSkAppInfo.AppInsId = appInsId
+	akSkAppInfo.Ak = ak
+	akSkAppInfo.Sk = sk
+	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, akSkAppInfo)
 	util.ClearByteArray(bKey)
 	c.removeCsarFiles(packageName, header, clientIp)
 	if err != nil {
@@ -773,14 +777,14 @@ func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, t
 
 // Instantiate application
 func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
-	artifact string, clientIp string, accessToken string, appInsId string, ak string, sk string) error {
+	artifact string, clientIp string, accessToken string, akSkAppInfo models.AkSkAppIdInfo) error {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return err
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, _ = adapter.Instantiate(hostIp, artifact, accessToken, appInsId, ak, sk)
+	err, _ = adapter.Instantiate(hostIp, artifact, accessToken, akSkAppInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err

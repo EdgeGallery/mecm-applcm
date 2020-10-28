@@ -17,6 +17,7 @@ package pluginAdapter
 
 import (
 	"context"
+	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
 	"time"
@@ -37,12 +38,12 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 
 // Instantiate application
 func (c *PluginAdapter) Instantiate(host string, deployArtifact string,
-	accessToken string, appInsId string, ak string, sk string) (error error, status string) {
+	accessToken string, akSkAppInfo models.AkSkAppIdInfo) (error error, status string) {
 	log.Info("Instantiation started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.Instantiate(ctx, deployArtifact, host, accessToken, appInsId, ak, sk)
+	status, err := c.client.Instantiate(ctx, deployArtifact, host, accessToken, akSkAppInfo)
 	if err != nil {
 		log.Error("failed to instantiate application")
 		return err, util.Failure

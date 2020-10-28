@@ -58,3 +58,10 @@ type KpiModel struct {
 		} `json:"result"`
 	} `json:"data"`
 }
+
+// Ak sk and appInsId info
+type AkSkAppIdInfo struct {
+	AppInsId string
+	Ak       string
+	Sk       string
+}
