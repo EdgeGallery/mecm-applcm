@@ -17,6 +17,8 @@
 package pluginAdapter
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"io"
 	"lcmcontroller/internal/lcmservice"
 	"lcmcontroller/util"
@@ -118,6 +120,40 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 		return util.Failure, err
 	}
 
+	ak, sk, err := generateAkSk()
+	if err != nil {
+		log.Error("Failed to generate ak sk values")
+		return util.Failure, err
+	}
+
+	//send metadata information
+	req = &lcmservice.InstantiateRequest{
+
+		Data: &lcmservice.InstantiateRequest_Ak{
+			Ak: ak,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return util.Failure, err
+	}
+
+	//send metadata information
+	req = &lcmservice.InstantiateRequest{
+
+		Data: &lcmservice.InstantiateRequest_Sk{
+			Sk: sk,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return util.Failure, err
+	}
+
 	//send metadata information
 	req = &lcmservice.InstantiateRequest{
 
@@ -183,6 +219,24 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 		return util.Failure, err
 	}
 	return res.GetStatus(), err
+}
+
+// Generate ak sk values
+func generateAkSk() (string, string, error) {
+	akBuff := make([]byte, 14)
+	_, err := rand.Read(akBuff)
+	if err != nil {
+		return "", "", err
+	}
+	ak := base64.StdEncoding.EncodeToString(akBuff)
+
+	skBuff := make([]byte, 28)
+	_, err = rand.Read(skBuff)
+	if err != nil {
+		return "", "", err
+	}
+	sk := base64.StdEncoding.EncodeToString(skBuff)
+	return ak, sk, nil
 }
 
 // Query application
