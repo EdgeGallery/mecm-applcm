@@ -284,7 +284,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	var akSkAppInfo models.AkSkAppIdInfo
+	var akSkAppInfo models.AppAuthConfig
 	akSkAppInfo.AppInsId = appInsId
 	akSkAppInfo.Ak = ak
 	akSkAppInfo.Sk = sk
@@ -777,7 +777,7 @@ func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, t
 
 // Instantiate application
 func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
-	artifact string, clientIp string, accessToken string, akSkAppInfo models.AkSkAppIdInfo) error {
+	artifact string, clientIp string, accessToken string, akSkAppInfo models.AppAuthConfig) error {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
