@@ -22,6 +22,8 @@ message InstantiateRequest {
     string appInstanceId = 2;
     string hostIp = 3;
     bytes package = 4;
+    string ak     = 5;
+    string sk     = 6;
   };
 }
 
