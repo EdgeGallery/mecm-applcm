@@ -38,7 +38,7 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 
 // Instantiate application
 func (c *PluginAdapter) Instantiate(host string, deployArtifact string,
-	accessToken string, akSkAppInfo models.AkSkAppIdInfo) (error error, status string) {
+	accessToken string, akSkAppInfo models.AppAuthConfig) (error error, status string) {
 	log.Info("Instantiation started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()

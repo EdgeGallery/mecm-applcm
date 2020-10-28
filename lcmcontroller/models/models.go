@@ -60,7 +60,7 @@ type KpiModel struct {
 }
 
 // Ak sk and appInsId info
-type AkSkAppIdInfo struct {
+type AppAuthConfig struct {
 	AppInsId string
 	Ak       string
 	Sk       string

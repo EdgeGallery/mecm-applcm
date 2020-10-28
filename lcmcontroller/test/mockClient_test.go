@@ -18,6 +18,7 @@ package test
 
 import (
 	"context"
+	"lcmcontroller/models"
 	"mime/multipart"
 )
 
@@ -26,7 +27,7 @@ const SUCCESS_RETURN = "Success"
 type mockClient struct{}
 
 func (mc *mockClient) Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-	accessToken string, appInsId string) (status string, error error) {
+	accessToken string, akSkAppInfo models.AppAuthConfig) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
