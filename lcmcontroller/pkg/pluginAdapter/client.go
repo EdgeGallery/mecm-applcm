@@ -16,6 +16,7 @@
 package pluginAdapter
 
 import (
+	"lcmcontroller/models"
 	"mime/multipart"
 
 	"golang.org/x/net/context"
@@ -24,7 +25,7 @@ import (
 // GRPC client APIs
 type ClientIntf interface {
 	Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-		accessToken string, appInsId string) (status string, error error)
+		accessToken string, akSkAppInfo models.AkSkAppIdInfo) (status string, error error)
 	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
 	Query(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
 	UploadConfig(ctx context.Context, multipartFile multipart.File,
