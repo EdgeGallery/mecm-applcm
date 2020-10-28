@@ -276,7 +276,15 @@ func (c *LcmController) Instantiate() {
 		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
-	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId)
+
+	ak, sk, err := util.GenerateAkSk()
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to generate ak sk values")
+		return
+	}
+
+	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appInsId, ak, sk)
 	util.ClearByteArray(bKey)
 	c.removeCsarFiles(packageName, header, clientIp)
 	if err != nil {
@@ -765,14 +773,14 @@ func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, t
 
 // Instantiate application
 func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
-	artifact string, clientIp string, accessToken string, appInsId string) error {
+	artifact string, clientIp string, accessToken string, appInsId string, ak string, sk string) error {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return err
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, _ = adapter.Instantiate(hostIp, artifact, accessToken, appInsId)
+	err, _ = adapter.Instantiate(hostIp, artifact, accessToken, appInsId, ak, sk)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err

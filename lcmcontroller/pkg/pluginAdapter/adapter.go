@@ -37,12 +37,12 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 
 // Instantiate application
 func (c *PluginAdapter) Instantiate(host string, deployArtifact string,
-	accessToken string, appInsId string) (error error, status string) {
+	accessToken string, appInsId string, ak string, sk string) (error error, status string) {
 	log.Info("Instantiation started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.Instantiate(ctx, deployArtifact, host, accessToken, appInsId)
+	status, err := c.client.Instantiate(ctx, deployArtifact, host, accessToken, appInsId, ak, sk)
 	if err != nil {
 		log.Error("failed to instantiate application")
 		return err, util.Failure

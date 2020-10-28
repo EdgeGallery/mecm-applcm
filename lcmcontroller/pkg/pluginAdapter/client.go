@@ -24,7 +24,7 @@ import (
 // GRPC client APIs
 type ClientIntf interface {
 	Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-		accessToken string, appInsId string) (status string, error error)
+		accessToken string, appInsId string, ak string, sk string) (status string, error error)
 	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
 	Query(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
 	UploadConfig(ctx context.Context, multipartFile multipart.File,
