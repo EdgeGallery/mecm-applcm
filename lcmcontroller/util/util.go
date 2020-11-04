@@ -507,3 +507,34 @@ func GetAPIGwPort() string {
 	}
 	return apiGwPort
 }
+
+// Send app auth configuration request
+func PostAppAuthConfigReq(akSkAppInfo models.AppAuthConfig) error {
+	requestBody, err := json.Marshal(map[string]string{"appInsId": akSkAppInfo.AppInsId, "ak": akSkAppInfo.Ak,
+		"sk": akSkAppInfo.Sk})
+	if err != nil {
+		log.Error("Failed to marshal the request body information")
+		return err
+	}
+	url := HttpsUrl + GetAPIGwAddr() + ":" + GetAPIGwPort() + "/mepauth/v1/appconfig"
+	req, errNewRequest := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	if errNewRequest != nil {
+		return errNewRequest
+	}
+	response, errDo := DoRequest(req)
+	if errDo != nil {
+		return errDo
+	}
+	defer response.Body.Close()
+	_, err2 := ioutil.ReadAll(response.Body)
+	if err2 != nil {
+		return err2
+	}
+	log.Info("response is received")
+
+	if response.StatusCode != http.StatusCreated {
+		return errors.New("created failed, status is " + strconv.Itoa(response.StatusCode))
+	}
+
+	return nil
+}
