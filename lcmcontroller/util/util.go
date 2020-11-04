@@ -100,6 +100,10 @@ const UnMarshalError = "Failed to unmarshal json"
 const FailedToWriteRes = "Failed to write response into context"
 const BaseUriMec = "/mec/v1/mgmt/tenant/"
 const CapabilityUri = "/mep-capabilities"
+const ApiGwAddr = "API_GW_ADDR"
+const ApiGwPort = "API_GW_PORT"
+const apigwAddr = "edgegallery"
+const apigwPort = "8444"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
@@ -484,4 +488,22 @@ func GenerateAkSk() (string, string, error) {
 	}
 	sk := base64.StdEncoding.EncodeToString(skBuff)
 	return ak, sk, nil
+}
+
+// Get API Gateway address
+func GetAPIGwAddr() string {
+	apiGwAddr := os.Getenv(ApiGwAddr)
+	if apiGwAddr == "" {
+		apiGwAddr = apigwAddr
+	}
+	return apiGwAddr
+}
+
+// Get API Gateway port
+func GetAPIGwPort() string {
+	apiGwPort := os.Getenv(ApiGwPort)
+	if apiGwPort == "" {
+		apiGwPort = apigwPort
+	}
+	return apiGwPort
 }
