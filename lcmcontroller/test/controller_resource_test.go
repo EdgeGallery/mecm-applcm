@@ -44,7 +44,7 @@ var (
 	memQuery  = "query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_" +
 		"allocatable_memory_bytes)"
 	diskQuery = "query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_" +
-		"filesystem_size_bytes)/sum(node_filesystem_size_bytes)"
+		"filesystem_size_bytes)"
 	diskOutput  = commonOut + "\"value\":[1599647141.594,\"0.0000000000022286734699480752\"]}]}}"
 	finalOutput = "{\"cpuusage\":{\"total\":1599646388.843,\"used\":\"0.3125\"},\"memusage\":{\"total" +
 		"\":1599647046.214,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599647141.594,\"used\":" +
