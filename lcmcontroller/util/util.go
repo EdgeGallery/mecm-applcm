@@ -17,24 +17,18 @@
 package util
 
 import (
-	"bytes"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"github.com/astaxie/beego"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"lcmcontroller/models"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -476,24 +470,6 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 	return client.Do(req)
 }
 
-// Generate ak sk values
-func GenerateAkSk() (string, string, error) {
-	akBuff := make([]byte, 14)
-	_, err := rand.Read(akBuff)
-	if err != nil {
-		return "", "", err
-	}
-	ak := base64.StdEncoding.EncodeToString(akBuff)
-
-	skBuff := make([]byte, 28)
-	_, err = rand.Read(skBuff)
-	if err != nil {
-		return "", "", err
-	}
-	sk := base64.StdEncoding.EncodeToString(skBuff)
-	return ak, sk, nil
-}
-
 // Get API Gateway address
 func GetAPIGwAddr() string {
 	apiGwAddr := os.Getenv(ApiGwAddr)
@@ -510,35 +486,4 @@ func GetAPIGwPort() string {
 		apiGwPort = apigwPort
 	}
 	return apiGwPort
-}
-
-// Send app auth configuration request
-func PostAppAuthConfigReq(akSkAppInfo models.AppAuthConfig) error {
-	requestBody, err := json.Marshal(map[string]string{"appInsId": akSkAppInfo.AppInsId, "ak": akSkAppInfo.Ak,
-		"sk": akSkAppInfo.Sk})
-	if err != nil {
-		log.Error("Failed to marshal the request body information")
-		return err
-	}
-	url := HttpsUrl + GetAPIGwAddr() + ":" + GetAPIGwPort() + "/mepauth/v1/appconfig"
-	req, errNewRequest := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
-	if errNewRequest != nil {
-		return errNewRequest
-	}
-	response, errDo := DoRequest(req)
-	if errDo != nil {
-		return errDo
-	}
-	defer response.Body.Close()
-	_, err2 := ioutil.ReadAll(response.Body)
-	if err2 != nil {
-		return err2
-	}
-	log.Info("response is received")
-
-	if response.StatusCode != http.StatusCreated {
-		return errors.New("created failed, status is " + strconv.Itoa(response.StatusCode))
-	}
-
-	return nil
 }
