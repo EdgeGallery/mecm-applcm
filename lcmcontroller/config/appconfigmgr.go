@@ -79,27 +79,3 @@ func PostAppAuthConfigReq(akSkAppInfo models.AppAuthConfig) error {
 	return nil
 }
 
-// Delete app auth configuration request
-func DeleteAppAuthConfigReq(appInsId string) error {
-	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/appconfig/" + "appInsId/" + appInsId
-	req, errNewRequest := http.NewRequest("DELETE", url, nil)
-	if errNewRequest != nil {
-		return errNewRequest
-	}
-	response, errDo := util.DoRequest(req)
-	if errDo != nil {
-		return errDo
-	}
-	defer response.Body.Close()
-	_, err2 := ioutil.ReadAll(response.Body)
-	if err2 != nil {
-		return err2
-	}
-	log.Info("response is received")
-
-	if response.StatusCode != http.StatusCreated {
-		return errors.New("created failed, status is " + strconv.Itoa(response.StatusCode))
-	}
-
-	return nil
-}
