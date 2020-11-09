@@ -24,6 +24,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"lcmcontroller/config"
 	"lcmcontroller/models"
 	"lcmcontroller/pkg/dbAdapter"
 	"mime/multipart"
@@ -277,7 +278,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	ak, sk, err := util.GenerateAkSk()
+	ak, sk, err := config.GenerateAkSk()
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to generate ak sk values")
@@ -288,6 +289,15 @@ func (c *LcmController) Instantiate() {
 	akSkAppInfo.AppInsId = appInsId
 	akSkAppInfo.Ak = ak
 	akSkAppInfo.Sk = sk
+	err = config.PostAppAuthConfigReq(akSkAppInfo)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to send app auth config request to mep")
+		util.ClearByteArray(bKey)
+		c.removeCsarFiles(packageName, header, clientIp)
+		return
+	}
+
 	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, akSkAppInfo)
 	util.ClearByteArray(bKey)
 	c.removeCsarFiles(packageName, header, clientIp)

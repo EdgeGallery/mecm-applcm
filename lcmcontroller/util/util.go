@@ -17,10 +17,8 @@
 package util
 
 import (
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"errors"
 	"github.com/astaxie/beego"
 	"github.com/dgrijalva/jwt-go"
@@ -470,24 +468,6 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 	client := &http.Client{Transport: tr}
 
 	return client.Do(req)
-}
-
-// Generate ak sk values
-func GenerateAkSk() (string, string, error) {
-	akBuff := make([]byte, 14)
-	_, err := rand.Read(akBuff)
-	if err != nil {
-		return "", "", err
-	}
-	ak := base64.StdEncoding.EncodeToString(akBuff)
-
-	skBuff := make([]byte, 28)
-	_, err = rand.Read(skBuff)
-	if err != nil {
-		return "", "", err
-	}
-	sk := base64.StdEncoding.EncodeToString(skBuff)
-	return ak, sk, nil
 }
 
 // Get API Gateway address
