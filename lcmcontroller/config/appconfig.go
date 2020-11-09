@@ -29,21 +29,36 @@ import (
 	"strconv"
 )
 
-// App config manager
-type AppConfigMgr struct {
+// Ak sk and appInsId info
+type AppAuthConfig struct {
+	AppInsId string
 	Ak       string
 	Sk       string
-	AppInsId string
+}
+
+// App config adapter
+type AppConfigAdapter struct {
+	AppAuthCfg AppAuthConfig
 }
 
 // Constructor to Application configuration
-func NewAppConfigMgr(appInsId string) (acm AppConfigMgr) {
-	acm.AppInsId = appInsId
+func NewAppConfigMgr(appInsId string, appAuthCfg AppAuthConfig) (acm AppConfigAdapter) {
+	acm.AppAuthCfg.AppInsId = appInsId
+	if (appAuthCfg != AppAuthConfig{}) {
+		acm.AppAuthCfg.Ak = appAuthCfg.Ak
+		acm.AppAuthCfg.Sk = appAuthCfg.Sk
+	}
+	return
+}
+
+// Constructor to Application configuration
+func NewAppAuthCfg(appInsId string) (appAuthCfg AppAuthConfig) {
+	appAuthCfg.AppInsId = appInsId
 	return
 }
 
 // Generate ak sk values
-func (acm *AppConfigMgr) GenerateAkSk() error {
+func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 	akBuff := make([]byte, 14)
 	_, err := rand.Read(akBuff)
 	if err != nil {
@@ -57,14 +72,14 @@ func (acm *AppConfigMgr) GenerateAkSk() error {
 		return err
 	}
 	sk := base64.StdEncoding.EncodeToString(skBuff)
-	acm.Ak = ak
-	acm.Sk = sk
+	appAuthCfg.Ak = ak
+	appAuthCfg.Sk = sk
 	return nil
 }
 
 // Send app auth configuration request
-func (acm *AppConfigMgr) PostAppAuthConfig() error {
-	requestBody, err := json.Marshal(map[string]string{"appInsId": acm.AppInsId, "ak": acm.Ak, "sk": acm.Sk})
+func (acm *AppConfigAdapter) PostAppAuthConfig() error {
+	requestBody, err := json.Marshal(map[string]string{"appInsId": acm.AppAuthCfg.AppInsId, "ak": acm.AppAuthCfg.Ak, "sk": acm.AppAuthCfg.Sk})
 	if err != nil {
 		log.Error("Failed to marshal the request body information")
 		return err
