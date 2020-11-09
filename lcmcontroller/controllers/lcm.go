@@ -278,7 +278,8 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	ak, sk, err := config.GenerateAkSk()
+	acm := config.NewAppConfigMgr(appInsId)
+	err = acm.GenerateAkSk()
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to generate ak sk values")
@@ -287,9 +288,9 @@ func (c *LcmController) Instantiate() {
 
 	var akSkAppInfo models.AppAuthConfig
 	akSkAppInfo.AppInsId = appInsId
-	akSkAppInfo.Ak = ak
-	akSkAppInfo.Sk = sk
-	err = config.PostAppAuthConfigReq(akSkAppInfo)
+	akSkAppInfo.Ak = acm.Ak
+	akSkAppInfo.Sk = acm.Sk
+	err = acm.PostAppAuthConfig()
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to send app auth config request to mep")

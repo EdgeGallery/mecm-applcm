@@ -24,34 +24,47 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"net/http"
 	"strconv"
 )
 
+// App config manager
+type AppConfigMgr struct {
+	Ak       string
+	Sk       string
+	AppInsId string
+}
+
+// Constructor to Application configuration
+func NewAppConfigMgr(appInsId string) (acm AppConfigMgr) {
+	acm.AppInsId = appInsId
+	return
+}
+
 // Generate ak sk values
-func GenerateAkSk() (string, string, error) {
+func (acm *AppConfigMgr) GenerateAkSk() error {
 	akBuff := make([]byte, 14)
 	_, err := rand.Read(akBuff)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	ak := base64.StdEncoding.EncodeToString(akBuff)
 
 	skBuff := make([]byte, 28)
 	_, err = rand.Read(skBuff)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	sk := base64.StdEncoding.EncodeToString(skBuff)
-	return ak, sk, nil
+	acm.Ak = ak
+	acm.Sk = sk
+	return nil
 }
 
 // Send app auth configuration request
-func PostAppAuthConfigReq(akSkAppInfo models.AppAuthConfig) error {
-	requestBody, err := json.Marshal(map[string]string{"appInsId": akSkAppInfo.AppInsId, "ak": akSkAppInfo.Ak,
-		"sk": akSkAppInfo.Sk})
+func (acm *AppConfigMgr) PostAppAuthConfig() error {
+	requestBody, err := json.Marshal(map[string]string{"appInsId": acm.AppInsId, "ak": acm.Ak, "sk": acm.Sk})
 	if err != nil {
 		log.Error("Failed to marshal the request body information")
 		return err
