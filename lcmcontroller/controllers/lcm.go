@@ -278,19 +278,10 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	appAuthConfig := config.NewAppAuthCfg(appInsId)
-	err = appAuthConfig.GenerateAkSK()
+	err, appAuthConfig, acm := processAkSkConfig(appInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to generate ak sk values")
-		return
-	}
-
-	acm := config.NewAppConfigMgr(appInsId, appAuthConfig)
-	err = acm.PostAppAuthConfig()
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to send app auth config request to mep")
+			"Failed to process Ak Sk configuration")
 		util.ClearByteArray(bKey)
 		c.removeCsarFiles(packageName, header, clientIp)
 		return
@@ -300,6 +291,11 @@ func (c *LcmController) Instantiate() {
 	util.ClearByteArray(bKey)
 	c.removeCsarFiles(packageName, header, clientIp)
 	if err != nil {
+		err := acm.DeleteAppAuthConfig()
+		if err != nil {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+				"Failed to delete app auth config request to mep")
+		}
 		return
 	}
 
@@ -312,6 +308,22 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 	c.ServeJSON()
+}
+
+// Process Ak Sk configuration
+func processAkSkConfig(appInsId string) (error, config.AppAuthConfig, config.AppConfigAdapter) {
+	appAuthConfig := config.NewAppAuthCfg(appInsId)
+	err := appAuthConfig.GenerateAkSK()
+	if err != nil {
+		return err, config.AppAuthConfig{}, config.AppConfigAdapter{}
+	}
+
+	acm := config.NewAppConfigMgr(appInsId, appAuthConfig)
+	/*err = acm.PostAppAuthConfig()
+	if err != nil {
+		return err, config.AppAuthConfig{}, config.AppConfigAdapter{}
+	}*/
+	return nil, appAuthConfig, acm
 }
 
 // Remove CSAR files
@@ -405,6 +417,15 @@ func (c *LcmController) Terminate() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete tenant record")
 		return
 	}
+
+	acm := config.NewAppConfigMgr(appInsId, config.AppAuthConfig{})
+	err = acm.DeleteAppAuthConfig()
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to delete app auth config request to mep")
+		return
+	}
+
 	c.ServeJSON()
 }
 
