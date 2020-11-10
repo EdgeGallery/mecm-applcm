@@ -24,34 +24,62 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"net/http"
 	"strconv"
 )
 
+// Ak sk and appInsId info
+type AppAuthConfig struct {
+	AppInsId string
+	Ak       string
+	Sk       string
+}
+
+// App config adapter
+type AppConfigAdapter struct {
+	AppAuthCfg AppAuthConfig
+}
+
+// Constructor to Application configuration
+func NewAppConfigMgr(appInsId string, appAuthCfg AppAuthConfig) (acm AppConfigAdapter) {
+	acm.AppAuthCfg.AppInsId = appInsId
+	if (appAuthCfg != AppAuthConfig{}) {
+		acm.AppAuthCfg.Ak = appAuthCfg.Ak
+		acm.AppAuthCfg.Sk = appAuthCfg.Sk
+	}
+	return
+}
+
+// Constructor to Application configuration
+func NewAppAuthCfg(appInsId string) (appAuthCfg AppAuthConfig) {
+	appAuthCfg.AppInsId = appInsId
+	return
+}
+
 // Generate ak sk values
-func GenerateAkSk() (string, string, error) {
+func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 	akBuff := make([]byte, 14)
 	_, err := rand.Read(akBuff)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	ak := base64.StdEncoding.EncodeToString(akBuff)
 
 	skBuff := make([]byte, 28)
 	_, err = rand.Read(skBuff)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	sk := base64.StdEncoding.EncodeToString(skBuff)
-	return ak, sk, nil
+	appAuthCfg.Ak = ak
+	appAuthCfg.Sk = sk
+	return nil
 }
 
 // Send app auth configuration request
-func PostAppAuthConfigReq(akSkAppInfo models.AppAuthConfig) error {
-	requestBody, err := json.Marshal(map[string]string{"appInsId": akSkAppInfo.AppInsId, "ak": akSkAppInfo.Ak,
-		"sk": akSkAppInfo.Sk})
+func (acm *AppConfigAdapter) PostAppAuthConfig() error {
+	requestBody, err := json.Marshal(map[string]string{"appInsId": acm.AppAuthCfg.AppInsId, "ak": acm.AppAuthCfg.Ak, "sk": acm.AppAuthCfg.Sk})
 	if err != nil {
 		log.Error("Failed to marshal the request body information")
 		return err

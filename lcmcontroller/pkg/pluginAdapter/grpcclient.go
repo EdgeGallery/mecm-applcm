@@ -18,8 +18,8 @@ package pluginAdapter
 
 import (
 	"io"
+	"lcmcontroller/config"
 	"lcmcontroller/internal/lcmservice"
-	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
 	"os"
@@ -79,7 +79,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 
 // Instantiate application
 func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-	accessToken string, akSkAppInfo models.AppAuthConfig) (status string, error error) {
+	accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
 	var (
 		writing = true
 		buf     []byte
@@ -178,7 +178,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 }
 
 // Send ak, sk and appInsId values
-func sendAkSkAppInsId(stream lcmservice.AppLCM_InstantiateClient, akSkAppInfo models.AppAuthConfig) error {
+func sendAkSkAppInsId(stream lcmservice.AppLCM_InstantiateClient, akSkAppInfo config.AppAuthConfig) error {
 	//send metadata information
 	req := &lcmservice.InstantiateRequest{
 

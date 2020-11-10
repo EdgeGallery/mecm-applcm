@@ -58,10 +58,3 @@ type KpiModel struct {
 		} `json:"result"`
 	} `json:"data"`
 }
-
-// Ak sk and appInsId info
-type AppAuthConfig struct {
-	AppInsId string
-	Ak       string
-	Sk       string
-}

@@ -278,18 +278,16 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	ak, sk, err := config.GenerateAkSk()
+	appAuthConfig := config.NewAppAuthCfg(appInsId)
+	err = appAuthConfig.GenerateAkSK()
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to generate ak sk values")
 		return
 	}
 
-	var akSkAppInfo models.AppAuthConfig
-	akSkAppInfo.AppInsId = appInsId
-	akSkAppInfo.Ak = ak
-	akSkAppInfo.Sk = sk
-	err = config.PostAppAuthConfigReq(akSkAppInfo)
+	acm := config.NewAppConfigMgr(appInsId, appAuthConfig)
+	err = acm.PostAppAuthConfig()
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to send app auth config request to mep")
@@ -298,7 +296,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, akSkAppInfo)
+	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appAuthConfig)
 	util.ClearByteArray(bKey)
 	c.removeCsarFiles(packageName, header, clientIp)
 	if err != nil {
@@ -787,7 +785,7 @@ func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, t
 
 // Instantiate application
 func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
-	artifact string, clientIp string, accessToken string, akSkAppInfo models.AppAuthConfig) error {
+	artifact string, clientIp string, accessToken string, akSkAppInfo config.AppAuthConfig) error {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
