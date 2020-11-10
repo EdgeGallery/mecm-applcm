@@ -17,15 +17,18 @@
 package test
 
 import (
+	"bytes"
 	"github.com/agiledragon/gomonkey"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/pkg/dbAdapter"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
@@ -60,6 +63,15 @@ func TestLcmOperation(t *testing.T) {
 		}()
 	})
 	defer patch3.Reset()
+
+	patch4 := gomonkey.ApplyFunc(util.DoRequest, func(_ *http.Request) (*http.Response, error) {
+		// do nothing
+		return &http.Response{
+			Body:       ioutil.NopCloser(bytes.NewBufferString("lcmcontroller")),
+			StatusCode: 201,
+		}, nil
+	})
+	defer patch4.Reset()
 
 	// Common steps
 	baseDir, _ := os.Getwd()

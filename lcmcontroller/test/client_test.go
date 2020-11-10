@@ -17,11 +17,14 @@
 package test
 
 import (
+	"bytes"
 	"github.com/agiledragon/gomonkey"
 	"github.com/astaxie/beego"
+	"io/ioutil"
 	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
+	"net/http"
 	"os"
 	"reflect"
 	"testing"
@@ -67,6 +70,15 @@ func doTest(t *testing.T) {
 		}()
 	})
 	defer patch3.Reset()
+
+	patch4 := gomonkey.ApplyFunc(util.DoRequest, func(_ *http.Request) (*http.Response, error) {
+		// do nothing
+		return &http.Response{
+			Body: ioutil.NopCloser(bytes.NewBufferString("lcmcontroller")),
+			StatusCode: 201,
+		}, nil
+	})
+	defer patch4.Reset()
 
 	// Set environment variables for lcmcontroller for k8spluging
 	_ = os.Setenv("K8S_PLUGIN", k8sPluginAddr)
