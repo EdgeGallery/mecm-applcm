@@ -300,6 +300,11 @@ func (c *LcmController) Instantiate() {
 	util.ClearByteArray(bKey)
 	c.removeCsarFiles(packageName, header, clientIp)
 	if err != nil {
+		err := acm.DeleteAppAuthConfig()
+		if err != nil {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+				"Failed to delete app auth config request to mep")
+		}
 		return
 	}
 
@@ -405,6 +410,15 @@ func (c *LcmController) Terminate() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete tenant record")
 		return
 	}
+
+	acm := config.NewAppConfigMgr(appInsId, config.AppAuthConfig{})
+	err = acm.DeleteAppAuthConfig()
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to delete app auth config request to mep")
+		return
+	}
+
 	c.ServeJSON()
 }
 
