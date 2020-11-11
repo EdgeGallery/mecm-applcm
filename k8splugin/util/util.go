@@ -456,10 +456,6 @@ func processTarFile(uncompressedStream *gzip.Reader) (string, error) {
 		if err == io.EOF || header == nil {
 			break
 		}
-		if err != nil {
-			log.Error("failed to get the next file")
-			return "", err
-		}
 
 		if header.Typeflag == tar.TypeDir {
 			if err := os.MkdirAll(header.Name, 0755); err != nil {
@@ -484,7 +480,7 @@ func processTarFile(uncompressedStream *gzip.Reader) (string, error) {
 // Handle regular file
 func handleRegularFile(dir string, header *tar.Header, tarReader *tar.Reader) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		log.Error("failed to create the director")
+		log.Error("failed to create the directory")
 		return err
 	}
 	outFile, err := os.Create(header.Name)
