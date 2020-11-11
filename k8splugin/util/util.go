@@ -458,10 +458,7 @@ func processTarFile(uncompressedStream *gzip.Reader) (string, error) {
 		}
 
 		if header.Typeflag == tar.TypeDir {
-			if err := os.MkdirAll(header.Name, 0755); err != nil {
-				log.Error("failed to create the director")
-				return "", err
-			}
+			_ = os.MkdirAll(header.Name, 0755)
 		} else if header.Typeflag == tar.TypeReg {
 			dir, _ := filepath.Split(header.Name)
 			if count == 0 {
