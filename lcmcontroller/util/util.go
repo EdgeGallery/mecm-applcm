@@ -103,6 +103,7 @@ const ApiGwAddr = "API_GW_ADDR"
 const ApiGwPort = "API_GW_PORT"
 const apigwAddr = "edgegallery"
 const apigwPort = "8444"
+const mecmRole = "ROLE_MECM_TENANT"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
@@ -294,23 +295,9 @@ func validateTokenClaims(claims jwt.MapClaims) error {
 		return errors.New(InvalidToken)
 	}
 
-	roleName := "defaultRole"
-	log.Info(roleName)
-
-	for key, value := range claims {
-		if key == "authorities" {
-			authorities := value.([]interface{})
-			arr := reflect.ValueOf(authorities)
-			for i := 0; i < arr.Len(); i++ {
-				if arr.Index(i).Interface() == "ROLE_MECM_TENANT" {
-					roleName = "ROLE_MECM_TENANT"
-				}
-			}
-			if roleName != "ROLE_MECM_TENANT" {
-				log.Info("Invalid token UI")
-				return errors.New(InvalidToken)
-			}
-		}
+	err := ValidateRole(claims)
+	if err != nil {
+		return err
 	}
 
 	if claims["userId"] == nil {
@@ -321,12 +308,35 @@ func validateTokenClaims(claims jwt.MapClaims) error {
 		log.Info("Invalid token UN")
 		return errors.New(InvalidToken)
 	}
-	err := claims.Valid()
+	err = claims.Valid()
 	if err != nil {
 		log.Info("token expired")
 		return errors.New(InvalidToken)
 	}
 	return nil
+}
+
+func ValidateRole(claims  jwt.MapClaims) error {
+	roleName := "defaultRole"
+	log.Info(roleName)
+
+	for key, value := range claims {
+		if key == "authorities" {
+			authorities := value.([]interface{})
+			arr := reflect.ValueOf(authorities)
+			for i := 0; i < arr.Len(); i++ {
+				if arr.Index(i).Interface() == mecmRole {
+					roleName = mecmRole
+					break
+				}
+			}
+			if roleName != mecmRole {
+				log.Info("Invalid token A")
+				return errors.New(InvalidToken)
+			}
+		}
+	}
+	return  nil
 }
 
 // Update tls configuration
