@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -292,6 +293,26 @@ func validateTokenClaims(claims jwt.MapClaims) error {
 		log.Info("Invalid token A")
 		return errors.New(InvalidToken)
 	}
+
+	roleName := "defaultRole"
+	log.Info(roleName)
+
+	for key, value := range claims {
+		if key == "authorities" {
+			authorities := value.([]interface{})
+			arr := reflect.ValueOf(authorities)
+			for i := 0; i < arr.Len(); i++ {
+				if arr.Index(i).Interface() == "ROLE_MECM_TENANT" {
+					roleName = "ROLE_MECM_TENANT"
+				}
+			}
+			if roleName != "ROLE_MECM_TENANT" {
+				log.Info("Invalid token UI")
+				return errors.New(InvalidToken)
+			}
+		}
+	}
+
 	if claims["userId"] == nil {
 		log.Info("Invalid token UI")
 		return errors.New(InvalidToken)
