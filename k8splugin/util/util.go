@@ -64,6 +64,8 @@ const HelmDriver = ""
 const DeployType = "helm"
 const AppInsId = "app_ins_id"
 const maxHostNameLen = 253
+const maxAkLen = 20
+const maxSkLen = 40
 const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
 
 const FailedToDispRecvMsg    = "failed to display receive msg"
@@ -402,3 +404,18 @@ func ValidateNameSpace(nameSpace string) (bool, error) {
 	return true, nil
 }
 
+// Validate ak
+func ValidateAk(ak string) error {
+	if len(ak) > maxAkLen {
+		return errors.New("ak validation failed")
+	}
+	return nil
+}
+
+// Validate sk
+func ValidateSk(sk string) error {
+	if len(sk) > maxSkLen {
+		return errors.New("sk validation failed")
+	}
+	return nil
+}

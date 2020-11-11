@@ -37,6 +37,8 @@ var (
 	filePermission        os.FileMode = 0750
 	directory             string      = "/config/"
 	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	ak                    string      = "aQqizVqpGLWLaqKJZgU="
+	sk                    string      = "d0mutLOkfj1/vTQZY9s679lnp6199wqR9d5FVg=="
 	token                 string      = createToken(1)
 )
 
@@ -90,7 +92,7 @@ func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.Instantiate(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz", hostIpAddress, token,
-		appInstanceIdentifier)
+		appInstanceIdentifier, ak, sk)
 	assert.Equal(t, util.Success, status, "Instantiation failed")
 }
 

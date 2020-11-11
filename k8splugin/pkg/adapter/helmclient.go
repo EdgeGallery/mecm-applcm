@@ -21,16 +21,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ghodss/yaml"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"k8splugin/config"
 	"k8splugin/models"
 	"k8splugin/util"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/ghodss/yaml"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	log "github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
@@ -95,7 +95,7 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 }
 
 // Install a given helm chart
-func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
+func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error) {
 	log.Info("Inside helm client")
 
 	// Create temporary file to hold helm chart
@@ -113,8 +113,34 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 		return "", err
 	}
 
+	tarFile, err := os.Open(util.TempFile)
+	if err != nil {
+		log.Error("Failed to open the tar file")
+		return "", err
+	}
+	defer tarFile.Close()
+
+	appAuthCfg := config.NewAppConfigBuilder(appInsId, ak, sk)
+	dirName, err := appAuthCfg.ExtractTarFile(tarFile)
+	if err != nil {
+		log.Error("Unable to extract tar file")
+		return "", err
+	}
+
+	err = appAuthCfg.UpdateValuesFile(dirName)
+	if err != nil {
+		return "", err
+	}
+
+	err = appAuthCfg.CreateTarFile(dirName, "./")
+	if err != nil {
+		log.Error("Failed to create a tar.gz file")
+		return "", err
+	}
+	defer os.Remove(dirName + ".tar.gz")
+	defer  os.RemoveAll(dirName)
 	// Load the file to chart
-	chart, err := loader.Load(util.TempFile)
+	chart, err := loader.Load(dirName + ".tar.gz")
 	if err != nil {
 		log.Error("Unable to load chart from file")
 		return "", err

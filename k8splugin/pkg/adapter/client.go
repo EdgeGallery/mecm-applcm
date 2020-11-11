@@ -20,7 +20,7 @@ import "bytes"
 
 // Client APIs
 type ClientIntf interface {
-	Deploy(pkg bytes.Buffer) (string, error)
+	Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error)
 	UnDeploy(relName string) error
 	Query(relName string) (string, error)
 }

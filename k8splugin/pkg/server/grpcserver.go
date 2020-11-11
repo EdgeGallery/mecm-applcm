@@ -240,7 +240,7 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) err
 		return err
 	}
 
-	hostIp, appInsId, err := s.validateInputParamsForInstan(stream)
+	hostIp, appInsId, ak, sk, err := s.validateInputParamsForInstan(stream)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToValInputParams)
 		sendInstantiateResponse(stream, &res)
@@ -262,7 +262,7 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) err
 		return err
 	}
 
-	releaseName, err := client.Deploy(pkg)
+	releaseName, err := client.Deploy(pkg, appInsId, ak, sk)
 	if err != nil {
 		log.Info("instantiation failed")
 		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")
@@ -408,41 +408,64 @@ func (s *ServerGRPC) logError(err error) error {
 }
 
 // Validate input parameters for instantiation
-func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_InstantiateServer) (string, string, error) {
+func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_InstantiateServer) (string, string,
+	string, string, error) {
 	// Receive metadata which is access token
 	req, err := stream.Recv()
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+	}
+
+	// Receive metadata which is ak
+	req, err = stream.Recv()
+	if err != nil {
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+	}
+	ak := req.GetAk()
+	err = util.ValidateAk(ak)
+	if err != nil {
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, "ak length is invalid"))
+	}
+
+	// Receive metadata which is sk
+	req, err = stream.Recv()
+	if err != nil {
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+	}
+	sk := req.GetSk()
+	err = util.ValidateSk(sk)
+	if err != nil {
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, "sk length is invalid"))
 	}
 
 	// Receive metadata which is app instance id
 	req, err = stream.Recv()
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	appInsId := req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, "app instance id is invalid"))
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, "app instance id is invalid"))
 	}
 
 	// Receive metadata which is host ip
 	req, err = stream.Recv()
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	hostIp := req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
 
-	return hostIp, appInsId, nil
+	return hostIp, appInsId, ak, sk, nil
 }
 
 // Validate input parameters for termination
