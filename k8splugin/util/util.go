@@ -429,8 +429,6 @@ func ValidateSk(sk string) error {
 
 // extract the tar.gz file
 func ExtractTarFile(gzipStream io.Reader) (string, error) {
-	var dirName []string
-	var count = 0
 
 	uncompressedStream, err := gzip.NewReader(gzipStream)
 	if err != nil {
@@ -438,10 +436,24 @@ func ExtractTarFile(gzipStream io.Reader) (string, error) {
 		return "", err
 	}
 
+	dirName, err := processTarFile(uncompressedStream)
+	if err != nil {
+		log.Error("failed to process the tar file")
+		return "", err
+	}
+
+	return dirName, nil
+}
+
+// Process tar file
+func processTarFile(uncompressedStream *gzip.Reader) (string, error) {
+	var dirName []string
+	var count = 0
+
 	tarReader := tar.NewReader(uncompressedStream)
 	for true {
 		header, err := tarReader.Next()
-		if err == io.EOF || header == nil{
+		if err == io.EOF || header == nil {
 			break
 		}
 		if err != nil {
@@ -460,23 +472,32 @@ func ExtractTarFile(gzipStream io.Reader) (string, error) {
 				dirName = strings.Split(dir, "/")
 				count += 1
 			}
-			if err := os.MkdirAll(dir, 0755); err != nil {
-				log.Error("failed to create the director")
-				return "", err
-			}
-			outFile, err := os.Create(header.Name)
+			err := handleRegularFile(dir, header, tarReader)
 			if err != nil {
-				log.Error("failed to create the file")
-				return "", nil
-			}
-			defer outFile.Close()
-			if _, err := io.Copy(outFile, tarReader); err != nil {
-				log.Error("failed to copy the file")
 				return "", err
 			}
 		}
 	}
 	return dirName[0], nil
+}
+
+// Handle regular file
+func handleRegularFile(dir string, header *tar.Header, tarReader *tar.Reader) error {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Error("failed to create the director")
+		return err
+	}
+	outFile, err := os.Create(header.Name)
+	if err != nil {
+		log.Error("failed to create the file")
+		return err
+	}
+	defer outFile.Close()
+	if _, err := io.Copy(outFile, tarReader); err != nil {
+		log.Error("failed to copy the file")
+		return err
+	}
+	return nil
 }
 
 // update values yaml file
@@ -501,7 +522,7 @@ func UpdateValuesFile(configPath, appInsId, ak, sk string) error {
 	}
 	appConfig := appAuthConfig["appconfig"]
 	appConfig1 := appConfig.(map[string]interface{})
-	appConfig1["appnamespace"] = "default"
+	appConfig1["appnamespace"] = Default
 	akskInfo := appConfig1["aksk"]
 	akskConfig := akskInfo.(map[string]interface{})
 	akskConfig["appInsId"] = appInsId
