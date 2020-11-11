@@ -21,16 +21,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ghodss/yaml"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"k8splugin/config"
 	"k8splugin/models"
 	"k8splugin/util"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/ghodss/yaml"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	log "github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
@@ -120,18 +120,19 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 	}
 	defer tarFile.Close()
 
-	dirName, err := util.ExtractTarFile(tarFile)
+	appAuthCfg := config.NewAppConfigBuilder(appInsId, ak, sk)
+	dirName, err := appAuthCfg.ExtractTarFile(tarFile)
 	if err != nil {
 		log.Error("Unable to extract tar file")
 		return "", err
 	}
 
-	err = util.UpdateValuesFile(dirName, appInsId, ak, sk)
+	err = appAuthCfg.UpdateValuesFile(dirName)
 	if err != nil {
 		return "", err
 	}
 
-	err = util.CreateTarFile(dirName, "./")
+	err = appAuthCfg.CreateTarFile(dirName, "./")
 	if err != nil {
 		log.Error("Failed to create a tar.gz file")
 		return "", err

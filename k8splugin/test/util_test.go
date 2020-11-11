@@ -21,6 +21,7 @@ import (
 	_ "crypto/tls"
 	"github.com/stretchr/testify/assert"
 	_ "io"
+	"k8splugin/config"
 	"k8splugin/util"
 	_ "mime/multipart"
 	_ "net/http"
@@ -175,18 +176,18 @@ func TestExtractTarFile(t *testing.T)  {
 		return
 	}
 	defer tarFile.Close()
-
-	dirName, err := util.ExtractTarFile(tarFile)
+	appAuthCfg := config.NewAppConfigBuilder(appInstanceIdentifier, ak, sk)
+	dirName, err := appAuthCfg.ExtractTarFile(tarFile)
 	if err != nil {
 		return
 	}
 	defer  os.RemoveAll(dirName)
 	assert.Equal(t, "7e9b913f-748a-42b7-a088-abe3f750f04c", dirName,
 		"TestExtractTarFile execution result")
-	err = util.UpdateValuesFile(dirName, appInstanceIdentifier, ak, sk)
+	err = appAuthCfg.UpdateValuesFile(dirName)
 	assert.Nil(t, err, "TestUpdateValuesFile execution result")
 
-	err = util.CreateTarFile(dirName,  "./")
+	err = appAuthCfg.CreateTarFile(dirName,  "./")
 	assert.Nil(t, err, "TestCreateTarFile execution result")
 	defer os.Remove(dirName + ".tar.gz")
 }
