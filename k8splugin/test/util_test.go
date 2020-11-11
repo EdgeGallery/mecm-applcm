@@ -24,6 +24,7 @@ import (
 	"k8splugin/util"
 	_ "mime/multipart"
 	_ "net/http"
+	"os"
 	_ "os"
 	_ "path/filepath"
 	"testing"
@@ -143,4 +144,49 @@ func TestValidateServerNameMaxLen(t *testing.T) {
 func TestCreateDirSuccess(t *testing.T) {
 	util.CreateDir("/home/Downloads")
 	assert.True(t, true, "TestCreateDirSuccess execution result")
+}
+
+func TestValidateAkMaxLen(t *testing.T) {
+	ak := "45262352eeetdg374dfffffffffffffffffff"
+	err := util.ValidateAk(ak)
+	assert.Equal(t, "ak validation failed", err.Error(), "TestValidateAK_maxLen execution result")
+}
+
+func TestValidateSkMaxLen(t *testing.T) {
+	sk := "423124565262352eeetgggggggfstrewqyzx8756432"
+	err := util.ValidateSk(sk)
+	assert.Equal(t, "sk validation failed", err.Error(), "TestValidateSk_maxLen execution result")
+}
+
+func TestValidateAkSuccess(t *testing.T) {
+	err := util.ValidateAk(ak)
+	assert.Nil(t, err, "TestValidateAkSuccess execution result")
+}
+
+func TestValidateSkSuccess(t *testing.T) {
+	err := util.ValidateSk(sk)
+	assert.Nil(t, err, "TestValidateAkSuccess execution result")
+}
+
+func TestExtractTarFile(t *testing.T)  {
+	dir, _ := os.Getwd()
+	tarFile, err := os.Open(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz",)
+	if err != nil {
+		return
+	}
+	defer tarFile.Close()
+
+	dirName, err := util.ExtractTarFile(tarFile)
+	if err != nil {
+		return
+	}
+	defer  os.RemoveAll(dirName)
+	assert.Equal(t, "7e9b913f-748a-42b7-a088-abe3f750f04c", dirName,
+		"TestExtractTarFile execution result")
+	err = util.UpdateValuesFile(dirName, appInstanceIdentifier, ak, sk)
+	assert.Nil(t, err, "TestUpdateValuesFile execution result")
+
+	err = util.CreateTarFile(dirName,  "./")
+	assert.Nil(t, err, "TestCreateTarFile execution result")
+	defer os.Remove(dirName + ".tar.gz")
 }

@@ -22,7 +22,7 @@ import "bytes"
 type mockedHelmClient struct {
 }
 
-func (hc *mockedHelmClient) Deploy(pkg bytes.Buffer) (string, error) {
+func (hc *mockedHelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error) {
 	return "testRelease", nil
 }
 

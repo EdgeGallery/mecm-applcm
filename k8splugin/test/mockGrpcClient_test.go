@@ -58,7 +58,7 @@ func (c *mockGrpcClient) dialToServer(address string) {
 
 // Instantiate application
 func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, accessToken string,
-	appInsId string) (status string, error error) {
+	appInsId string, ak string, sk string) (status string, error error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
@@ -75,6 +75,20 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 	req := &lcmservice.InstantiateRequest{
 		Data: &lcmservice.InstantiateRequest_AccessToken{
 			AccessToken: accessToken,
+		},
+	}
+	_ = stream.Send(req)
+
+	req = &lcmservice.InstantiateRequest{
+		Data: &lcmservice.InstantiateRequest_Ak{
+			Ak: ak,
+		},
+	}
+	_ = stream.Send(req)
+
+	req = &lcmservice.InstantiateRequest{
+		Data: &lcmservice.InstantiateRequest_Sk{
+			Sk: sk,
 		},
 	}
 	_ = stream.Send(req)

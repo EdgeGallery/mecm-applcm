@@ -95,7 +95,7 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 }
 
 // Install a given helm chart
-func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
+func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error) {
 	log.Info("Inside helm client")
 
 	// Create temporary file to hold helm chart
@@ -113,8 +113,33 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer) (string, error) {
 		return "", err
 	}
 
+	tarFile, err := os.Open(util.TempFile)
+	if err != nil {
+		log.Error("Failed to open the tar file")
+		return "", err
+	}
+	defer tarFile.Close()
+
+	dirName, err := util.ExtractTarFile(tarFile)
+	if err != nil {
+		log.Error("Unable to extract tar file")
+		return "", err
+	}
+
+	err = util.UpdateValuesFile(dirName, appInsId, ak, sk)
+	if err != nil {
+		return "", err
+	}
+
+	err = util.CreateTarFile(dirName, "./")
+	if err != nil {
+		log.Error("Failed to create a tar.gz file")
+		return "", err
+	}
+	defer os.Remove(dirName + ".tar.gz")
+	defer  os.RemoveAll(dirName)
 	// Load the file to chart
-	chart, err := loader.Load(util.TempFile)
+	chart, err := loader.Load(dirName + ".tar.gz")
 	if err != nil {
 		log.Error("Unable to load chart from file")
 		return "", err
