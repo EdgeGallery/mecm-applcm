@@ -120,21 +120,10 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 	}
 	defer tarFile.Close()
 
-	appAuthCfg := config.NewAppConfigBuilder(appInsId, ak, sk)
-	dirName, err := appAuthCfg.ExtractTarFile(tarFile)
+	appAuthCfg := config.NewBuildAppAuthConfig(appInsId, ak, sk)
+	dirName, err := appAuthCfg.AddValues(tarFile)
 	if err != nil {
-		log.Error("Unable to extract tar file")
-		return "", err
-	}
-
-	err = appAuthCfg.UpdateValuesFile(dirName)
-	if err != nil {
-		return "", err
-	}
-
-	err = appAuthCfg.CreateTarFile(dirName, "./")
-	if err != nil {
-		log.Error("Failed to create a tar.gz file")
+		log.Error("Failed to add values in values file")
 		return "", err
 	}
 	defer os.Remove(dirName + ".tar.gz")

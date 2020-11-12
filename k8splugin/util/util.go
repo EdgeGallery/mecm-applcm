@@ -87,6 +87,9 @@ const dbhost    = "mepm-postgres"
 const dbport    = "5432"
 const namespace = "default"
 
+const TooManyFile int = 1024
+const TooBig = 0x6400000
+const SingleFileTooBig = 0x6400000
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,

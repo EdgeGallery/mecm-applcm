@@ -169,25 +169,20 @@ func TestValidateSkSuccess(t *testing.T) {
 	assert.Nil(t, err, "TestValidateAkSuccess execution result")
 }
 
-func TestExtractTarFile(t *testing.T)  {
+func TestAddValues(t *testing.T)  {
 	dir, _ := os.Getwd()
 	tarFile, err := os.Open(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz",)
 	if err != nil {
 		return
 	}
 	defer tarFile.Close()
-	appAuthCfg := config.NewAppConfigBuilder(appInstanceIdentifier, ak, sk)
-	dirName, err := appAuthCfg.ExtractTarFile(tarFile)
+	appAuthCfg := config.NewBuildAppAuthConfig(appInstanceIdentifier, ak, sk)
+	dirName, err := appAuthCfg.AddValues(tarFile)
 	if err != nil {
 		return
 	}
 	defer  os.RemoveAll(dirName)
-	assert.Equal(t, "7e9b913f-748a-42b7-a088-abe3f750f04c", dirName,
-		"TestExtractTarFile execution result")
-	err = appAuthCfg.UpdateValuesFile(dirName)
-	assert.Nil(t, err, "TestUpdateValuesFile execution result")
-
-	err = appAuthCfg.CreateTarFile(dirName,  "./")
-	assert.Nil(t, err, "TestCreateTarFile execution result")
 	defer os.Remove(dirName + ".tar.gz")
+	assert.Equal(t, "7e9b913f-748a-42b7-a088-abe3f750f04c", dirName,
+		"TestAddValues execution result")
 }

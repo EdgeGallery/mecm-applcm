@@ -20,6 +20,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/ghodss/yaml"
 	log "github.com/sirupsen/logrus"
@@ -32,14 +33,14 @@ import (
 )
 
 // Ak sk and appInsId info
-type AppAuthConfig struct {
+type AppAuthConfigBuilder struct {
 	AppInsId string
 	Ak       string
 	Sk       string
 }
 
 // Constructor to Application configuration
-func NewAppConfigBuilder(appInsId string, ak string, sk string) (appAuthCfg AppAuthConfig) {
+func NewBuildAppAuthConfig(appInsId string, ak string, sk string) (appAuthCfg AppAuthConfigBuilder) {
 	appAuthCfg.AppInsId = appInsId
 	appAuthCfg.Ak = ak
 	appAuthCfg.Sk = sk
@@ -47,12 +48,14 @@ func NewAppConfigBuilder(appInsId string, ak string, sk string) (appAuthCfg AppA
 }
 
 // extract the tar.gz file
-func (_ *AppAuthConfig) ExtractTarFile(gzipStream io.Reader) (string, error) {
+func (_ *AppAuthConfigBuilder) extractTarFile(gzipStream io.Reader) (string, error) {
+
 	uncompressedStream, err := gzip.NewReader(gzipStream)
 	if err != nil {
 		log.Error("failed to read the file")
 		return "", err
 	}
+
 
 	dirName, err := processTarFile(uncompressedStream)
 	if err != nil {
@@ -67,6 +70,8 @@ func (_ *AppAuthConfig) ExtractTarFile(gzipStream io.Reader) (string, error) {
 func processTarFile(uncompressedStream *gzip.Reader) (string, error) {
 	var dirName []string
 	var count = 0
+	var totalWrote int64
+	fileCount := 0
 
 	tarReader := tar.NewReader(uncompressedStream)
 	for true {
@@ -83,36 +88,49 @@ func processTarFile(uncompressedStream *gzip.Reader) (string, error) {
 				dirName = strings.Split(dir, "/")
 				count += 1
 			}
-			err := handleRegularFile(dir, header, tarReader)
+			tw, err := handleRegularFile(dir, header, tarReader, totalWrote, fileCount)
 			if err != nil {
 				return "", err
 			}
+			totalWrote = tw
 		}
+		fileCount++
 	}
 	return dirName[0], nil
 }
 
 // Handle regular file
-func handleRegularFile(dir string, header *tar.Header, tarReader *tar.Reader) error {
+func handleRegularFile(dir string, header *tar.Header, tarReader *tar.Reader,
+	totalWrote int64, fileCount int) (int64, error) {
+	if fileCount > util.TooManyFile {
+		log.Error("too many files contains in tar file")
+		return totalWrote, errors.New("too many files contains in tar file")
+	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		log.Error("failed to create the directory")
-		return err
+		return totalWrote, err
 	}
 	outFile, err := os.Create(header.Name)
 	if err != nil {
 		log.Error("failed to create the file")
-		return err
+		return totalWrote, err
+	}
+	if header.Size > util.SingleFileTooBig || totalWrote > util.TooBig {
+		log.Error("size of the file is too big")
+		return totalWrote, err
 	}
 	defer outFile.Close()
-	if _, err := io.Copy(outFile, tarReader); err != nil {
+	wt, err := io.Copy(outFile, tarReader)
+	if err != nil {
 		log.Error("failed to copy the file")
-		return err
+		return totalWrote, err
 	}
-	return nil
+	totalWrote += wt
+	return totalWrote, nil
 }
 
 // update values yaml file
-func (appAuthCfg *AppAuthConfig) UpdateValuesFile(configPath string) error {
+func (appAuthCfg *AppAuthConfigBuilder) addAppAuthCfgInValuesFile(configPath string) error {
 	values, err := ioutil.ReadFile(configPath + "/values.yaml")
 	if err != nil {
 		log.Error("Failed to read values yaml file")
@@ -156,7 +174,7 @@ func (appAuthCfg *AppAuthConfig) UpdateValuesFile(configPath string) error {
 }
 
 // create a tar file
-func (_ *AppAuthConfig) CreateTarFile(source, target string) error {
+func (_ *AppAuthConfigBuilder) createTarFile(source, target string) error {
 	filename := filepath.Base(source)
 
 	target = filepath.Join(target, fmt.Sprintf("%s.tar.gz", filename))
@@ -215,4 +233,26 @@ func (_ *AppAuthConfig) CreateTarFile(source, target string) error {
 			_, err = io.Copy(tarball, file)
 			return err
 		})
+}
+
+func (appAuthCfg *AppAuthConfigBuilder) AddValues(tarFile *os.File) (string, error) {
+	dirName, err := appAuthCfg.extractTarFile(tarFile)
+	if err != nil {
+		log.Error("Unable to extract tar file")
+		return "", err
+	}
+
+	err = appAuthCfg.addAppAuthCfgInValuesFile(dirName)
+	if err != nil {
+		return "", err
+	}
+
+	err = appAuthCfg.createTarFile(dirName, "./")
+	if err != nil {
+		log.Error("Failed to create a tar.gz file")
+		return "", err
+	}
+
+	return dirName, nil
+
 }
