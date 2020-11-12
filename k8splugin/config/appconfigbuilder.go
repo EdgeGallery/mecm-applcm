@@ -235,6 +235,7 @@ func (_ *AppAuthConfigBuilder) createTarFile(source, target string) error {
 		})
 }
 
+// add ak, sk and appInsId values in values yaml file
 func (appAuthCfg *AppAuthConfigBuilder) AddValues(tarFile *os.File) (string, error) {
 	dirName, err := appAuthCfg.extractTarFile(tarFile)
 	if err != nil {
@@ -254,5 +255,4 @@ func (appAuthCfg *AppAuthConfigBuilder) AddValues(tarFile *os.File) (string, err
 	}
 
 	return dirName, nil
-
 }
