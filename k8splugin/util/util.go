@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"k8splugin/conf"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -77,6 +78,7 @@ const Instantiate  = "Instantiate"
 const Terminate    = "Terminate"
 const UploadConfig = "UploadConfig"
 const RemoveConfig = "RemoveConfig"
+const mecmRole = "ROLE_MECM_TENANT"
 
 // Default environment variables
 const dbuser    = "k8splugin"
@@ -84,6 +86,7 @@ const dbname    = "k8splugindb"
 const dbhost    = "mepm-postgres"
 const dbport    = "5432"
 const namespace = "default"
+
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -204,6 +207,12 @@ func validateTokenClaims(claims jwt.MapClaims) error {
 		log.Info("Invalid token A")
 		return errors.New(InvalidToken)
 	}
+
+	err := ValidateRole(claims)
+	if err != nil {
+		return err
+	}
+
 	if claims["userId"] == nil {
 		log.Info("Invalid token UI")
 		return errors.New(InvalidToken)
@@ -212,12 +221,35 @@ func validateTokenClaims(claims jwt.MapClaims) error {
 		log.Info("Invalid token UN")
 		return errors.New(InvalidToken)
 	}
-	err := claims.Valid()
+	err = claims.Valid()
 	if err != nil {
 		log.Info("token expired")
 		return errors.New(InvalidToken)
 	}
 	return nil
+}
+
+func ValidateRole(claims  jwt.MapClaims) error {
+	roleName := "defaultRole"
+	log.Info(roleName)
+
+	for key, value := range claims {
+		if key == "authorities" {
+			authorities := value.([]interface{})
+			arr := reflect.ValueOf(authorities)
+			for i := 0; i < arr.Len(); i++ {
+				if arr.Index(i).Interface() == mecmRole {
+					roleName = mecmRole
+					break
+				}
+			}
+			if roleName != mecmRole {
+				log.Info("Invalid token A")
+				return errors.New(InvalidToken)
+			}
+		}
+	}
+	return  nil
 }
 
 // Validate UUID

@@ -135,7 +135,11 @@ func startServer(server server.ServerGRPC) {
 func createToken(userid uint64) string {
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
-	atClaims["authorities"] = "authorities"
+	roleName := make([]string, 3)
+	roleName[0] = "ROLE_MECM_TENANT"
+	roleName[1] = "ROLE_APPSTORE_TENANT"
+	roleName[2] = "ROLE_DEVELOPER_TENANT"
+	atClaims["authorities"] = roleName
 	atClaims["user_name"] = "lcmcontroller"
 	atClaims["authorized"] = true
 	atClaims["userId"] = userid
