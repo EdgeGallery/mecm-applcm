@@ -41,6 +41,17 @@ type AppConfigAdapter struct {
 	AppAuthCfg AppAuthConfig
 }
 
+// Credential Info
+type Credentials struct {
+	AccessKeyId string `json:"accessKeyId"`
+	SecretKey   string `json:"secretKey"`
+}
+
+// AuthInfo
+type AuthInfo struct {
+	Credentials Credentials `json:"credentials"`
+}
+
 // Constructor to Application configuration
 func NewAppConfigMgr(appInsId string, appAuthCfg AppAuthConfig) (acm AppConfigAdapter) {
 	acm.AppAuthCfg.AppInsId = appInsId
@@ -79,12 +90,20 @@ func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 
 // Send app auth configuration request
 func (acm *AppConfigAdapter) PostAppAuthConfig() error {
-	requestBody, err := json.Marshal(map[string]string{"appInsId": acm.AppAuthCfg.AppInsId, "ak": acm.AppAuthCfg.Ak, "sk": acm.AppAuthCfg.Sk})
+	authInfo := AuthInfo{
+		Credentials{
+			AccessKeyId: acm.AppAuthCfg.Ak,
+			SecretKey:   acm.AppAuthCfg.Sk,
+		},
+	}
+
+	requestBody, err := json.Marshal(authInfo)
 	if err != nil {
 		log.Error("Failed to marshal the request body information")
 		return err
 	}
-	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/appconfig"
+	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/applications/" +
+		acm.AppAuthCfg.AppInsId + "/confs"
 	req, errNewRequest := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 	if errNewRequest != nil {
 		return errNewRequest
