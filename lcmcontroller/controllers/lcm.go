@@ -622,12 +622,6 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
 	mepPort := util.GetMepPort()
 	port, err := util.ValidatePort(mepPort)
 	if err != nil || !port {
