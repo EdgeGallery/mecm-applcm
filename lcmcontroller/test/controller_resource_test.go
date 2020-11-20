@@ -56,9 +56,9 @@ var (
 						" \"{\"capabilityId\":\"2\",\"capabilityName\":\"2\",\"status\": \"ACTIVE\",\"version\": \"4.5.8\",\"\n" +
 						" \"\"consumers\": [{\"applicationInstanceId\":\"88922760-861b-4578-aae5-77b8fcb06142\"}]}]\"}}"
     capabilityIdOutput = "\"{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\",\"\n " +
-		"\"\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},\"\n " +
-		"\"{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},\"\n " +
-		"\"{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}"
+    	                 "\"\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},\"\n " +
+		                 "\"{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},\"\n " +
+		                 "\"{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}"
 )
 
 func TestKpi(t *testing.T) {
