@@ -41,6 +41,8 @@ func init() {
 		"get:QueryKPI")
 	beego.Router(RootPath+"/tenants/:tenantId/hosts/:hostIp/mep_capabilities", &controllers.LcmController{},
 		"get:QueryMepCapabilities")
+	beego.Router(RootPath+"/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId", &controllers.LcmController{},
+		"get:QueryMepCapabilities")
 }
 
 // Init Db adapter

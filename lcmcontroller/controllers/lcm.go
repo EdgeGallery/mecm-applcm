@@ -635,7 +635,18 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
-	mepCapabilities, err := getHostInfo(hostIp + ":" + mepPort + util.BaseUriMec + tenantId + "/hosts/" + hostIp + util.CapabilityUri)
+	capabilityId, err := c.getUrlCapabilityId(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MepCapabilityIsNotValid)
+		return
+	}
+
+	uri := util.CapabilityUri
+	if len(capabilityId) != 0 {
+		uri = util.CapabilityUri + "/" + capabilityId
+	}
+
+	mepCapabilities, err := getHostInfo(hostIp + ":" + mepPort + uri)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
 		return
@@ -857,6 +868,17 @@ func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
 		return "", err
 	}
 	return hostIp, nil
+}
+
+// Get mep capability id from url
+func (c *LcmController) getUrlCapabilityId(clientIp string) (string, error) {
+	capabilityId := c.Ctx.Input.Param(":capabilityId")
+	err := util.ValidateMepCapabilityId(capabilityId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "capability id is invalid from url")
+		return "", err
+	}
+	return capabilityId, nil
 }
 
 // Get app Instance Id
