@@ -55,6 +55,7 @@ const TenantId = "tenant_id"
 const FailedToGetClient = "Failed to get client"
 const FailedToGetPluginInfo = "Failed to get plugin info"
 const PortIsNotValid = "port is not valid"
+const MepCapabilityIsNotValid = "MEP capability id is not valid"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
@@ -83,6 +84,7 @@ const singleDigitRegex string = `\d`
 const lowerCaseRegex string = `[a-z]`
 const upperCaseRegex string = `[A-Z]`
 const maxPasswordCount = 2
+const maxMepCapabilityIdLen = 32
 
 const TooManyFile int = 1024
 const TooBig = 0x6400000
@@ -98,7 +100,7 @@ const MarshalError = "Failed to marshal json"
 const UnMarshalError = "Failed to unmarshal json"
 const FailedToWriteRes = "Failed to write response into context"
 const BaseUriMec = "/mec/v1/mgmt/tenant/"
-const CapabilityUri = "/mep-capabilities"
+const CapabilityUri = "/mepcfg/mec_platform_config/v1/capabilities"
 const ApiGwAddr = "API_GW_ADDR"
 const ApiGwPort = "API_GW_PORT"
 const apigwAddr = "edgegallery"
@@ -150,6 +152,14 @@ func ValidateIpv4Address(id string) error {
 	if len(id) != 0 {
 		validate := validator.New()
 		return validate.Var(id, "required,ipv4")
+	}
+	return nil
+}
+
+// Validate IPv4 address
+func ValidateMepCapabilityId(id string) error {
+	if len(id) > maxMepCapabilityIdLen {
+		return errors.New("MEP capability ID length exceeded max length 32")
 	}
 	return nil
 }
