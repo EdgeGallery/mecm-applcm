@@ -263,7 +263,7 @@ func (c *LcmController) Instantiate() {
 	}
 
 	packageName := c.openPackage(pkgPath)
-	var mainServiceTemplateMf = PackageFolderPath + packageName + "/MainServiceTemplate.mf"
+	var mainServiceTemplateMf = PackageFolderPath + packageName + "/positioning-service.mf"
 	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -319,10 +319,10 @@ func processAkSkConfig(appInsId string) (error, config.AppAuthConfig, config.App
 	}
 
 	acm := config.NewAppConfigMgr(appInsId, appAuthConfig)
-	/*err = acm.PostAppAuthConfig()
+	err = acm.PostAppAuthConfig()
 	if err != nil {
 		return err, config.AppAuthConfig{}, config.AppConfigAdapter{}
-	}*/
+	}
 	return nil, appAuthConfig, acm
 }
 
@@ -704,7 +704,8 @@ func (c *LcmController) getDeploymentArtifact(dir string, ext string) (string, e
 // Get deployment type from main service template file
 func (c *LcmController) getApplicationDeploymentType(mainServiceTemplateMf string) (string, error) {
 
-	var deployType string
+	var deployType = "helm"
+
 	templateMf, err := ioutil.ReadFile(mainServiceTemplateMf)
 	if err != nil {
 		c.writeErrorResponse("Failed to read file", util.StatusInternalServerError)
