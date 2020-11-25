@@ -99,7 +99,7 @@ func TestKpi(t *testing.T) {
 
 	//// Common steps
 	path, _ := os.Getwd()
-	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	path += "/positioning_with_mepagent_new.csar"
 	extraParams := map[string]string{
 		"hostIp": localIp,
 	}
@@ -167,7 +167,7 @@ func TestMepCapabilities(t *testing.T) {
 
 	// Common steps
 	path, _ := os.Getwd()
-	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	path += "/positioning_with_mepagent_new.csar"
 	extraParams := map[string]string{
 		"hostIp": localIp,
 	}
@@ -234,7 +234,7 @@ func TestMepCapabilitiesId(t *testing.T) {
 
 	// Common steps
 	path, _ := os.Getwd()
-	path += "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	path += "/positioning_with_mepagent_new.csar"
 	extraParams := map[string]string{
 		"hostIp": localIp,
 	}

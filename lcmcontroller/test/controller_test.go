@@ -75,7 +75,7 @@ func TestLcmOperation(t *testing.T) {
 
 	// Common steps
 	baseDir, _ := os.Getwd()
-	path := baseDir + "/22406fba-fd5d-4f55-b3fa-89a45fee913a.csar"
+	path := baseDir + "/positioning_with_mepagent_new.csar"
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir + directory, filePermission)
 	extraParams := map[string]string{
