@@ -617,10 +617,6 @@ func (c *LcmController) QueryMepCapabilities() {
 	if err != nil {
 		return
 	}
-	hostIp, err := c.getUrlHostIP(clientIp)
-	if err != nil {
-		return
-	}
 
 	mepPort := util.GetMepPort()
 	port, err := util.ValidatePort(mepPort)
@@ -640,7 +636,7 @@ func (c *LcmController) QueryMepCapabilities() {
 		uri = util.CapabilityUri + "/" + capabilityId
 	}
 
-	mepCapabilities, err := getHostInfo(hostIp + ":" + mepPort + uri)
+	mepCapabilities, err := getHostInfo("mep-mm5.mep" + ":" + mepPort + uri)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
 		return

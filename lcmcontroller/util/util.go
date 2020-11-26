@@ -113,7 +113,7 @@ const dbname = "lcmcontrollerdb"
 const dbhost = "mepm-postgres"
 const dbport = "5432"
 const prometheusport = "30009"
-const mepport = "8088"
+const mepport = "80"
 const k8splugin = "mecm-mepm-k8splugin"
 const k8spluginport = "8095"
 
