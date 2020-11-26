@@ -129,7 +129,8 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 
 // Delete app auth configuration request
 func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
-	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/appconfig/" + "appInsId/" + acm.AppAuthCfg.AppInsId
+	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/applications/" +
+		acm.AppAuthCfg.AppInsId + "/confs"
 	req, errNewRequest := http.NewRequest("DELETE", url, nil)
 	if errNewRequest != nil {
 		return errNewRequest
