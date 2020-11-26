@@ -104,12 +104,13 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 	}
 	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/applications/" +
 		acm.AppAuthCfg.AppInsId + "/confs"
-	req, errNewRequest := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	req, errNewRequest := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if errNewRequest != nil {
 		return errNewRequest
 	}
 	response, errDo := util.DoRequest(req)
 	if errDo != nil {
+		log.Error("Failed to send the request to mep", errDo)
 		return errDo
 	}
 	defer response.Body.Close()
