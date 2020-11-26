@@ -379,6 +379,7 @@ func TLSConfig(crtName string) (*tls.Config, error) {
 		MinVersion:   tls.VersionTLS12,
 		CipherSuites: cipherSuites,
 		ServerName:   GetAppConfig("serverName"),
+		InsecureSkipVerify: true,
 	}, nil
 }
 

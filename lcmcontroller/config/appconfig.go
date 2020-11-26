@@ -120,7 +120,7 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 	}
 	log.Info("response is received")
 
-	if response.StatusCode != http.StatusCreated {
+	if response.StatusCode != http.StatusOK {
 		return errors.New("created failed, status is " + strconv.Itoa(response.StatusCode))
 	}
 
@@ -129,7 +129,8 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 
 // Delete app auth configuration request
 func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
-	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/appconfig/" + "appInsId/" + acm.AppAuthCfg.AppInsId
+	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/applications/" +
+		acm.AppAuthCfg.AppInsId + "/confs"
 	req, errNewRequest := http.NewRequest("DELETE", url, nil)
 	if errNewRequest != nil {
 		return errNewRequest
@@ -145,7 +146,7 @@ func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
 	}
 	log.Info("response is received")
 
-	if response.StatusCode != http.StatusCreated {
+	if response.StatusCode != http.StatusOK {
 		return errors.New("created failed, status is " + strconv.Itoa(response.StatusCode))
 	}
 
