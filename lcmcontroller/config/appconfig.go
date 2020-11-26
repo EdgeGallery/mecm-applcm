@@ -120,7 +120,7 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 	}
 	log.Info("response is received")
 
-	if response.StatusCode != http.StatusCreated {
+	if response.StatusCode != http.StatusOK {
 		return errors.New("created failed, status is " + strconv.Itoa(response.StatusCode))
 	}
 
@@ -145,7 +145,7 @@ func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
 	}
 	log.Info("response is received")
 
-	if response.StatusCode != http.StatusCreated {
+	if response.StatusCode != http.StatusOK {
 		return errors.New("created failed, status is " + strconv.Itoa(response.StatusCode))
 	}
 
