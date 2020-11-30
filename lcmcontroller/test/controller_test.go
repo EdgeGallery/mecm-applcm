@@ -68,7 +68,7 @@ func TestLcmOperation(t *testing.T) {
 		// do nothing
 		return &http.Response{
 			Body:       ioutil.NopCloser(bytes.NewBufferString("lcmcontroller")),
-			StatusCode: 201,
+			StatusCode: 200,
 		}, nil
 	})
 	defer patch4.Reset()
