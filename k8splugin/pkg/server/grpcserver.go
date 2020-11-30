@@ -240,7 +240,7 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) err
 		return err
 	}
 
-	hostIp, appInsId, ak, sk, err := s.validateInputParamsForInstan(stream)
+	hostIp, appInsId, ak, sk, err := s.validateInputForInstantiation(stream)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToValInputParams)
 		sendInstantiateResponse(stream, &res)
@@ -374,7 +374,7 @@ func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 // Validate input parameters for remove config
 func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (string, error) {
 	accessToken := request.GetAccessToken()
-	err := util.ValidateAccessToken(accessToken)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 	}
@@ -408,7 +408,7 @@ func (s *ServerGRPC) logError(err error) error {
 }
 
 // Validate input parameters for instantiation
-func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_InstantiateServer) (string, string,
+func (s *ServerGRPC) validateInputForInstantiation(stream lcmservice.AppLCM_InstantiateServer) (string, string,
 	string, string, error) {
 	// Receive metadata which is access token
 	req, err := stream.Recv()
@@ -416,7 +416,7 @@ func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_Insta
 		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 	}
@@ -472,7 +472,7 @@ func (s *ServerGRPC) validateInputParamsForInstan(stream lcmservice.AppLCM_Insta
 func (s *ServerGRPC) validateInputParamsForTerm(
 	req *lcmservice.TerminateRequest) (hostIp string, appInsId string, err error) {
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AccssTokenIsInvalid))
@@ -505,7 +505,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 		return
 	}
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 	}
@@ -530,7 +530,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	req *lcmservice.QueryRequest) (hostIp string, appInsId string, err error) {
 
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AccssTokenIsInvalid))

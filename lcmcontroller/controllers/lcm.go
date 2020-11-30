@@ -65,7 +65,7 @@ func (c *LcmController) UploadConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -176,7 +176,7 @@ func (c *LcmController) RemoveConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -223,7 +223,7 @@ func (c *LcmController) Instantiate() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -355,7 +355,7 @@ func (c *LcmController) Terminate() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -442,7 +442,7 @@ func (c *LcmController) Query() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -516,7 +516,7 @@ func (c *LcmController) QueryKPI() {
 	c.displayReceivedMsg(clientIp)
 
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -605,7 +605,7 @@ func (c *LcmController) QueryMepCapabilities() {
 	c.displayReceivedMsg(clientIp)
 
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return

@@ -105,7 +105,8 @@ const ApiGwAddr = "API_GW_ADDR"
 const ApiGwPort = "API_GW_PORT"
 const apigwAddr = "edgegallery"
 const apigwPort = "8444"
-const mecmRole = "ROLE_MECM_TENANT"
+const MecmTenantRole = "ROLE_MECM_TENANT"
+const MecmGuestRole = "ROLE_MECM_GUEST"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
@@ -263,7 +264,7 @@ func ValidateDbParams(dbUser string, dbPwd string, dbName string, dbHost string,
 }
 
 // Validate access token
-func ValidateAccessToken(accessToken string) error {
+func ValidateAccessToken(accessToken string, allowedRoles []string) error {
 	if accessToken == "" {
 		return errors.New("require token")
 	}
@@ -274,7 +275,7 @@ func ValidateAccessToken(accessToken string) error {
 	})
 
 	if token != nil && !token.Valid {
-		err := validateTokenClaims(claims)
+		err := validateTokenClaims(claims, allowedRoles)
 		if err != nil {
 			return err
 		}
@@ -299,13 +300,13 @@ func ValidateAccessToken(accessToken string) error {
 }
 
 // Validate token claims
-func validateTokenClaims(claims jwt.MapClaims) error {
+func validateTokenClaims(claims jwt.MapClaims, allowedRoles []string) error {
 	if claims["authorities"] == nil {
 		log.Info("Invalid token A")
 		return errors.New(InvalidToken)
 	}
 
-	err := ValidateRole(claims)
+	err := ValidateRole(claims, allowedRoles)
 	if err != nil {
 		return err
 	}
@@ -326,7 +327,7 @@ func validateTokenClaims(claims jwt.MapClaims) error {
 	return nil
 }
 
-func ValidateRole(claims  jwt.MapClaims) error {
+func ValidateRole(claims  jwt.MapClaims, allowedRoles []string) error {
 	roleName := "defaultRole"
 	log.Info(roleName)
 
@@ -335,18 +336,30 @@ func ValidateRole(claims  jwt.MapClaims) error {
 			authorities := value.([]interface{})
 			arr := reflect.ValueOf(authorities)
 			for i := 0; i < arr.Len(); i++ {
-				if arr.Index(i).Interface() == mecmRole {
-					roleName = mecmRole
+				if arr.Index(i).Interface() == MecmTenantRole {
+					roleName = MecmTenantRole
+					break
+				} else if arr.Index(i).Interface() == MecmGuestRole {
+					roleName = MecmGuestRole
 					break
 				}
 			}
-			if roleName != mecmRole {
+			if !isRoleAllowed(roleName, allowedRoles) {
 				log.Info("Invalid token A")
 				return errors.New(InvalidToken)
 			}
 		}
 	}
 	return  nil
+}
+
+func isRoleAllowed(actual string, allowed []string) bool {
+	for _, v := range allowed {
+		if v == actual {
+			return true
+		}
+	}
+	return false
 }
 
 // Update tls configuration
