@@ -74,8 +74,8 @@ func doTest(t *testing.T) {
 	patch4 := gomonkey.ApplyFunc(util.DoRequest, func(_ *http.Request) (*http.Response, error) {
 		// do nothing
 		return &http.Response{
-			Body: ioutil.NopCloser(bytes.NewBufferString("lcmcontroller")),
-			StatusCode: 201,
+			Body:       ioutil.NopCloser(bytes.NewBufferString("lcmcontroller")),
+			StatusCode: 200,
 		}, nil
 	})
 	defer patch4.Reset()
