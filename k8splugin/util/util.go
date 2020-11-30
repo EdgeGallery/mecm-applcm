@@ -78,7 +78,8 @@ const Instantiate  = "Instantiate"
 const Terminate    = "Terminate"
 const UploadConfig = "UploadConfig"
 const RemoveConfig = "RemoveConfig"
-const mecmRole = "ROLE_MECM_TENANT"
+const MecmTenantRole = "ROLE_MECM_TENANT"
+const MecmGuestRole = "ROLE_MECM_GUEST"
 
 // Default environment variables
 const dbuser    = "k8splugin"
@@ -169,7 +170,7 @@ func ClearByteArray(data []byte) {
 }
 
 // Validate access token
-func ValidateAccessToken(accessToken string) error {
+func ValidateAccessToken(accessToken string, allowedRoles []string) error {
 	if accessToken == "" {
 		return errors.New("require token")
 	}
@@ -180,7 +181,7 @@ func ValidateAccessToken(accessToken string) error {
 	})
 
 	if token != nil && !token.Valid {
-		err := validateTokenClaims(claims)
+		err := validateTokenClaims(claims, allowedRoles)
 		if err != nil {
 			return err
 		}
@@ -205,13 +206,13 @@ func ValidateAccessToken(accessToken string) error {
 }
 
 // Validate token claims
-func validateTokenClaims(claims jwt.MapClaims) error {
+func validateTokenClaims(claims jwt.MapClaims, allowedRoles []string) error {
 	if claims["authorities"] == nil {
 		log.Info("Invalid token A")
 		return errors.New(InvalidToken)
 	}
 
-	err := ValidateRole(claims)
+	err := ValidateRole(claims, allowedRoles)
 	if err != nil {
 		return err
 	}
@@ -232,7 +233,7 @@ func validateTokenClaims(claims jwt.MapClaims) error {
 	return nil
 }
 
-func ValidateRole(claims  jwt.MapClaims) error {
+func ValidateRole(claims  jwt.MapClaims, allowedRoles []string) error {
 	roleName := "defaultRole"
 	log.Info(roleName)
 
@@ -241,18 +242,30 @@ func ValidateRole(claims  jwt.MapClaims) error {
 			authorities := value.([]interface{})
 			arr := reflect.ValueOf(authorities)
 			for i := 0; i < arr.Len(); i++ {
-				if arr.Index(i).Interface() == mecmRole {
-					roleName = mecmRole
+				if arr.Index(i).Interface() == MecmTenantRole {
+					roleName = MecmTenantRole
+					break
+				} else if arr.Index(i).Interface() == MecmGuestRole {
+					roleName = MecmGuestRole
 					break
 				}
 			}
-			if roleName != mecmRole {
+			if !isRoleAllowed(roleName, allowedRoles) {
 				log.Info("Invalid token A")
 				return errors.New(InvalidToken)
 			}
 		}
 	}
 	return  nil
+}
+
+func isRoleAllowed(actual string, allowed []string) bool {
+	for _, v := range allowed {
+		if v == actual {
+			return true
+		}
+	}
+	return false
 }
 
 // Validate UUID
