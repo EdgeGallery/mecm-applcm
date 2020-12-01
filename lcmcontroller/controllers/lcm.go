@@ -427,6 +427,11 @@ func (c *LcmController) Terminate() {
 	c.ServeJSON()
 }
 
+// Heath Check
+func (c *LcmController) HealthCheck() {
+	_, _ = c.Ctx.ResponseWriter.Write([]byte("ok"))
+}
+
 // Query
 func (c *LcmController) Query() {
 	log.Info("Application query request received.")

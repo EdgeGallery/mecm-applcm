@@ -29,6 +29,7 @@ const RootPath string = "/lcmcontroller/v1"
 // Init lcmcontroller APIs
 func init() {
 	adapter := initDbAdapter()
+	beego.Router(RootPath+"/health", &controllers.LcmController{}, "get:HealthCheck")
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "post:UploadConfig")
 	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "delete:RemoveConfig")
 	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/instantiate",
