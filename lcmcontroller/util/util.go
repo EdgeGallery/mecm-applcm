@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -541,4 +542,39 @@ func GetAPIGwPort() string {
 		apiGwPort = apigwPort
 	}
 	return apiGwPort
+}
+
+// Get hostinfo
+func GetHostInfo(url string) (string, error) {
+	var resp *http.Response
+	var err error
+
+	if GetAppConfig("query_ssl_enable") == "true" {
+		url = HttpsUrl + url
+		req, errNewRequest := http.NewRequest("", url, nil)
+		if errNewRequest != nil {
+			return "", errNewRequest
+		}
+		resp, err = DoRequest(req)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		url = HttpUrl + url
+		resp, err = http.Get(url)
+		if err != nil {
+			return "", err
+		}
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	log.Info("response is received")
+
+	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+		return string(body), nil
+	}
+	return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
