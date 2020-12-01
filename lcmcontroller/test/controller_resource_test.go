@@ -154,18 +154,14 @@ func TestMepCapabilities(t *testing.T) {
 	})
 	defer patch3.Reset()
 
-	// Create server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(capabilityOutput))
-	}))
-	defer ts.Close()
+	patch4 := gomonkey.ApplyFunc(util.GetHostInfo, func(_ string) (string, error) {
+		// do nothing
+		return capabilityOutput, nil
+	})
+	defer patch4.Reset()
 
-	// Get base HOST IP and PORT of running server
-	u, _ := url.Parse(ts.URL)
-	parts := strings.Split(u.Host, ":")
-	localIp := parts[0]
-	port := parts[1]
+	localIp := "127.0.0.1"
+	port := "80"
 	_ = os.Setenv("MEP_PORT", port)
 
 	// Common steps
@@ -199,7 +195,9 @@ func TestMepCapabilities(t *testing.T) {
 		capabilityController.QueryMepCapabilities()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		_ = capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
+		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, capabilityOutput, response.Body.String(), "Get Capability data failed")
 	})
 }
 
@@ -219,18 +217,14 @@ func TestMepCapabilitiesId(t *testing.T) {
 	})
 	defer patch3.Reset()
 
-	// Create server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(capabilityIdOutput))
-	}))
-	defer ts.Close()
+	patch4 := gomonkey.ApplyFunc(util.GetHostInfo, func(_ string) (string, error) {
+		// do nothing
+		return capabilityIdOutput, nil
+	})
+	defer patch4.Reset()
 
-	// Get base HOST IP and PORT of running server
-	u, _ := url.Parse(ts.URL)
-	parts := strings.Split(u.Host, ":")
-	localIp := parts[0]
-	port := parts[1]
+	localIp := "127.0.0.1"
+	port := "80"
 	_ = os.Setenv("MEP_PORT", port)
 
 	// Common steps
@@ -264,7 +258,9 @@ func TestMepCapabilitiesId(t *testing.T) {
 		capabilityController.QueryMepCapabilities()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		_ = capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
+		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, capabilityIdOutput, response.Body.String(), "Get Capability data failed")
 	})
 }
 
