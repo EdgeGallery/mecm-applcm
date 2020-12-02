@@ -19,6 +19,8 @@ package config
 import (
 	"archive/tar"
 	"compress/gzip"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -149,6 +151,9 @@ func (appAuthCfg *AppAuthConfigBuilder) addAppAuthCfgInValuesFile(configPath str
 		log.Error("Failed to unmarshal appAuthConfig")
 		return err
 	}
+	buff := make([]byte, 15)
+	rand.Read(buff)
+	secret_name := base64.StdEncoding.EncodeToString(buff)
 	appConfig := appAuthConfig["appconfig"]
 	appConfig1 := appConfig.(map[string]interface{})
 	appConfig1["appnamespace"] = util.Default
@@ -157,7 +162,7 @@ func (appAuthCfg *AppAuthConfigBuilder) addAppAuthCfgInValuesFile(configPath str
 	akskConfig["appInsId"] = appAuthCfg.AppInsId
 	akskConfig["accesskey"] = appAuthCfg.Ak
 	akskConfig["secretkey"] = appAuthCfg.Sk
-	akskConfig["secretname"] = appAuthCfg.AppInsId
+	akskConfig["secretname"] = secret_name
 	appAuthInfo, err := yaml.Marshal(&appAuthConfig)
 	if err != nil {
 		log.Error("Failed to marshal appAuthConfig")
