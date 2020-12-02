@@ -77,7 +77,7 @@ func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 	}
 	ak := base64.StdEncoding.EncodeToString(akBuff)
 
-	skBuff := make([]byte, 44)
+	skBuff := make([]byte, 48)
 	_, err = rand.Read(skBuff)
 	if err != nil {
 		return err
