@@ -154,7 +154,7 @@ func TestValidateAkMaxLen(t *testing.T) {
 }
 
 func TestValidateSkMaxLen(t *testing.T) {
-	sk := "423124565262352eeetgggggggfstrewqyzx8756432"
+	sk := "423124565262352eeetgggggggfstrewqyzx875643276543abcghihe32abcdede"
 	err := util.ValidateSk(sk)
 	assert.Equal(t, "sk validation failed", err.Error(), "TestValidateSk_maxLen execution result")
 }
