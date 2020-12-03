@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"k8splugin/conf"
+	"math/rand"
 	"os"
 	"reflect"
 	"regexp"
@@ -466,4 +467,15 @@ func ValidateSk(sk string) error {
 		return errors.New("sk validation failed")
 	}
 	return nil
+}
+
+// get random secret name
+func RandomSecretName(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
+
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
 }
