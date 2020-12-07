@@ -49,8 +49,8 @@ var (
 
 // Helm client
 type HelmClient struct {
-	hostIP     string
-	kubeconfig string
+	HostIP     string
+	Kubeconfig string
 }
 
 // Manifest file
@@ -87,7 +87,7 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 	// Kubeconfig file will be picked based on host IP and will be check for existence
 	exists, err := fileExists(kubeconfigPath + hostIP)
 	if exists {
-		return &HelmClient{hostIP: hostIP, kubeconfig: kubeconfigPath + hostIP}, nil
+		return &HelmClient{HostIP: hostIP, Kubeconfig: kubeconfigPath + hostIP}, nil
 	} else {
 		log.Error("No file exist with name")
 		return nil, err
@@ -148,7 +148,7 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 
 	// Initialize action config
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
+	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
 		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
@@ -180,7 +180,7 @@ func (hc *HelmClient) UnDeploy(relName string) error {
 	}
 	// Prepare action config and uninstall chart
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
+	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
 		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
@@ -210,7 +210,7 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 		return "", err
 	}
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(kube.GetConfig(hc.kubeconfig, "", releaseNamespace), releaseNamespace,
+	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
 		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
@@ -231,7 +231,7 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	}
 
 	// uses the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", hc.kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
 	if err != nil {
 		return "", err
 	}
