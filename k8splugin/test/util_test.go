@@ -186,3 +186,23 @@ func TestAddValues(t *testing.T)  {
 	assert.Equal(t, "7e9b913f-748a-42b7-a088-abe3f750f04c", dirName,
 		"TestAddValues execution result")
 }
+
+func TestGetTLSConfigSuccess(t *testing.T) {
+	dir, _ := os.Getwd()
+	config, err := util.GetConfiguration(dir)
+
+	_, err = util.GetTLSConfig(&config.Server, "./server.crt", "./server.key")
+	assert.Nil(t, err, "TestGetTLSConfigSuccess execution result")
+}
+
+func TestValidateNameSpaceSuccess(t *testing.T) {
+	_, err := util.ValidateNameSpace("default")
+	assert.Nil(t, err, "TestValidateNameSpaceSuccess execution result")
+	_, err = util.ValidateNameSpace("defaultajbcdefghijklmnopqrs")
+	assert.Nil(t, err, "TestValidateNameSpaceSuccess execution result")
+}
+
+func TestGetReleaseNamespaceSuccess(t *testing.T) {
+	result := util.GetReleaseNamespace()
+	assert.Equal(t, "default", result, "TestGetReleaseNamespaceSuccess execution result")
+}
