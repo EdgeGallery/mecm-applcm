@@ -30,7 +30,7 @@ import (
 )
 
 func TestGetDbAdapterSuccess(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(orm.RegisterDataBase, func(_, _, _ string, params ...int) (error) {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDataBase, func(_, _, _ string, _ ...int) (error) {
 		// do nothing
 		return nil
 	})
