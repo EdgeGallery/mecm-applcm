@@ -268,3 +268,43 @@ func setRessourceParam(ctx *context.BeegoInput, localIp string) {
 	ctx.SetParam(":tenantId", tenantIdentifier)
 	ctx.SetParam(":hostIp", localIp)
 }
+
+func TestAppDeploymentStatus(t *testing.T) {
+	localIp := "127.0.0.1"
+
+	// Common steps
+	path, _ := os.Getwd()
+	path += csar
+	extraParams := map[string]string{
+		hostIp: localIp,
+	}
+	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
+		tenantRecords: make(map[string]models.TenantInfoRecord)}
+
+	t.Run("TestAppDeploymentStatus", func(t *testing.T) {
+
+		// Get Request
+		appDeployStatusRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/"+
+			"hosts/127.0.0.1/packages/e921ce5482c84532b5c68516cf75f7a4/status",
+			extraParams, "file", path, "GET")
+
+		// Prepare Input
+		appDeployStatusInput := &context.BeegoInput{Context: &context.Context{Request: appDeployStatusRequest}}
+		setRessourceParam(appDeployStatusInput, localIp)
+
+		// Prepare beego controller
+		appDeployStatusBeegoController := beego.Controller{Ctx: &context.Context{Input: appDeployStatusInput,
+			Request: appDeployStatusRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		appDeployStatusController := &controllers.LcmController{Db: testDb, Controller: appDeployStatusBeegoController}
+
+		// Test Capability
+		appDeployStatusController.AppDeploymentStatus()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 0, appDeployStatusController.Ctx.ResponseWriter.Status,
+			"Get application deployment status failed")
+	})
+}
