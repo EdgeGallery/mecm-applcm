@@ -58,6 +58,7 @@ var (
 	serveJson = "ServeJSON"
 	csar      = "/positioning_with_mepagent_new.csar"
 	hostIp    = "hostIp"
+	ipAddress = "127.0.0.1"
 )
 
 func TestKpi(t *testing.T) {
@@ -160,7 +161,7 @@ func TestMepCapabilities(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	localIp := "127.0.0.1"
+	localIp := ipAddress
 	port := "80"
 	_ = os.Setenv("MEP_PORT", port)
 
@@ -223,7 +224,7 @@ func TestMepCapabilitiesId(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	localIp := "127.0.0.1"
+	localIp := ipAddress
 	port := "80"
 	_ = os.Setenv("MEP_PORT", port)
 
@@ -270,7 +271,7 @@ func setRessourceParam(ctx *context.BeegoInput, localIp string) {
 }
 
 func TestAppDeploymentStatus(t *testing.T) {
-	localIp := "127.0.0.1"
+	localIp := ipAddress
 
 	// Common steps
 	path, _ := os.Getwd()
