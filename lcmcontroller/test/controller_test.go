@@ -77,9 +77,10 @@ func TestLcmOperation(t *testing.T) {
 	baseDir, _ := os.Getwd()
 	path := baseDir + "/positioning_with_mepagent_new.csar"
 	controllers.PackageFolderPath = baseDir + directory
-	_ = os.Mkdir(baseDir + directory, filePermission)
+	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{
-		"hostIp": hostIpAddress,
+		"hostIp":    hostIpAddress,
+		"packageId": "51e5fe1053254a32bce87ebe9708c453",
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),

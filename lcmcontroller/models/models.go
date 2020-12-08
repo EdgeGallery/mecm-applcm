@@ -32,6 +32,7 @@ type AppInfoRecord struct {
 	HostIp     string
 	DeployType string
 	TenantId   string
+	PackageId  string
 }
 
 // Tenant info record
