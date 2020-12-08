@@ -59,6 +59,7 @@ var (
 	csar      = "/positioning_with_mepagent_new.csar"
 	hostIp    = "hostIp"
 	ipAddress = "127.0.0.1"
+	hosts     = "/hosts/"
 )
 
 func TestKpi(t *testing.T) {
@@ -114,7 +115,7 @@ func TestKpi(t *testing.T) {
 
 		// Get Request
 		kpiRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/"+tenantIdentifier+
-			"/hosts/"+localIp+"/kpi", extraParams, "file", path, "GET")
+			hosts+localIp+"/kpi", extraParams, "file", path, "GET")
 
 		// Prepare Input
 		kpiInput := &context.BeegoInput{Context: &context.Context{Request: kpiRequest}}
@@ -178,7 +179,7 @@ func TestMepCapabilities(t *testing.T) {
 
 		// Get Request
 		capabilityRequest, _ := getHttpRequest(queryUrl+tenantIdentifier+
-			"/hosts/"+localIp+"/mep_capabilities", extraParams, "file", path, "GET")
+			hosts+localIp+"/mep_capabilities", extraParams, "file", path, "GET")
 
 		// Prepare Input
 		capabilityInput := &context.BeegoInput{Context: &context.Context{Request: capabilityRequest}}
@@ -241,7 +242,7 @@ func TestMepCapabilitiesId(t *testing.T) {
 
 		// Get Request
 		capabilityRequest, _ := getHttpRequest(queryUrl+tenantIdentifier+
-			"/hosts/"+localIp+"/mep_capabilities"+"/1", extraParams, "file", path, "GET")
+			hosts+localIp+"/mep_capabilities"+"/1", extraParams, "file", path, "GET")
 
 		// Prepare Input
 		capabilityInput := &context.BeegoInput{Context: &context.Context{Request: capabilityRequest}}
