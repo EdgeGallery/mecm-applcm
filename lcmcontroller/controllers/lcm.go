@@ -227,7 +227,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	hostIp, appInsId, file, header, tenantId, err := c.getInputParameters(clientIp)
+	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -301,7 +301,7 @@ func (c *LcmController) Instantiate() {
 	if err != nil {
 		return
 	}
-	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId)
+	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId)
 	if err != nil {
 		return
 	}
@@ -425,6 +425,58 @@ func (c *LcmController) Terminate() {
 	}
 
 	c.ServeJSON()
+}
+
+// Application deployment status
+func (c *LcmController) AppDeploymentStatus() {
+	log.Info("Application deployment status request received.")
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateIpv4Address(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	util.ClearByteArray(bKey)
+	hostIp, err := c.getUrlHostIP(clientIp)
+	if err != nil {
+		return
+	}
+
+	packageId, err := c.getUrlPackageId(clientIp)
+	if err != nil {
+		return
+	}
+
+	appInfoRecord := &models.AppInfoRecord{
+		HostIp:    hostIp,
+		PackageId: packageId,
+	}
+
+	response := map[string]bool{"package_deployed": true}
+	readErr := c.Db.ReadData(appInfoRecord, "package_id", "host_ip")
+	if readErr != nil {
+		response["package_deployed"] = false
+	}
+
+	responseBody, err := json.Marshal(response)
+	if err != nil {
+		log.Error("Failed to marshal the request body information")
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write(responseBody)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+	}
 }
 
 // Heath Check
@@ -818,6 +870,36 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	return hostIp, nil
 }
 
+// Get Package Id
+func (c *LcmController) getPackageId(clientIp string) (string, error) {
+	packageId := c.GetString("packageId")
+	if packageId != "" {
+		uuid, err := util.IsValidUUID(packageId)
+		if err != nil || !uuid {
+			c.handleLoggingForError(clientIp, util.BadRequest, "package id is invalid")
+			return "", err
+		}
+		return packageId, nil
+	} else {
+		return "", nil
+	}
+}
+
+// Get Package Id from url
+func (c *LcmController) getUrlPackageId(clientIp string) (string, error) {
+	packageId := c.GetString(":packageId")
+	if packageId != "" {
+		uuid, err := util.IsValidUUID(packageId)
+		if err != nil || !uuid {
+			c.handleLoggingForError(clientIp, util.BadRequest, "package id is invalid")
+			return "", errors.New("invalid package id")
+		}
+		return packageId, nil
+	} else {
+		return "", nil
+	}
+}
+
 // Get host IP from url
 func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
 	hostIp := c.Ctx.Input.Param(":hostIp")
@@ -917,12 +999,13 @@ func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg 
 }
 
 // Insert or update application info record
-func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId string) error {
+func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId:   appInsId,
 		HostIp:     hostIp,
 		DeployType: deployType,
 		TenantId:   tenantId,
+		PackageId:  packageId,
 	}
 
 	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
@@ -1003,27 +1086,32 @@ func (c *LcmController) deleteTenantRecord(tenantId string) error {
 
 // Get input parameters
 func (c *LcmController) getInputParameters(clientIp string) (string, string, multipart.File,
-	*multipart.FileHeader, string, error) {
+	*multipart.FileHeader, string, string, error) {
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
-		return "", "", nil, nil, "", err
+		return "", "", nil, nil, "", "", err
 	}
 
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
-		return "", "", nil, nil, "", err
+		return "", "", nil, nil, "", "", err
 	}
 
 	file, header, err := c.getFile(clientIp)
 	if err != nil {
-		return "", "", nil, nil, "", err
+		return "", "", nil, nil, "", "", err
 	}
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
-		return "", "", nil, nil, "", err
+		return "", "", nil, nil, "", "", err
 	}
 
-	return hostIp, appInsId, file, header, tenantId, nil
+	packageId, err := c.getPackageId(clientIp)
+	if err != nil {
+		return "", "", nil, nil, "", "", err
+	}
+
+	return hostIp, appInsId, file, header, tenantId, packageId, nil
 }
 
 // To display log for received message
