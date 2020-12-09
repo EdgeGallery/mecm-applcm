@@ -56,7 +56,7 @@ type AuthInfo struct {
 
 // Auth
 type Auth struct {
-	AuthInfo AuthInfo `json:"authinfo"`
+	AuthInfo AuthInfo `json:"authInfo"`
 }
 
 // Constructor to Application configuration
