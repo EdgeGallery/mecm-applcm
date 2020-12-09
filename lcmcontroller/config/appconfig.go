@@ -34,6 +34,7 @@ type AppAuthConfig struct {
 	AppInsId string
 	Ak       string
 	Sk       string
+	AppName  string
 }
 
 // App config adapter
@@ -45,6 +46,7 @@ type AppConfigAdapter struct {
 type Credentials struct {
 	AccessKeyId string `json:"accessKeyId"`
 	SecretKey   string `json:"secretKey"`
+	AppName     string `json:"appName"`
 }
 
 // AuthInfo
@@ -52,9 +54,15 @@ type AuthInfo struct {
 	Credentials Credentials `json:"credentials"`
 }
 
+// Auth
+type Auth struct {
+	AuthInfo AuthInfo `json:"authinfo"`
+}
+
 // Constructor to Application configuration
-func NewAppConfigMgr(appInsId string, appAuthCfg AppAuthConfig) (acm AppConfigAdapter) {
+func NewAppConfigMgr(appInsId, appName string, appAuthCfg AppAuthConfig) (acm AppConfigAdapter) {
 	acm.AppAuthCfg.AppInsId = appInsId
+	acm.AppAuthCfg.AppName = appName
 	if (appAuthCfg != AppAuthConfig{}) {
 		acm.AppAuthCfg.Ak = appAuthCfg.Ak
 		acm.AppAuthCfg.Sk = appAuthCfg.Sk
@@ -90,10 +98,13 @@ func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 
 // Send app auth configuration request
 func (acm *AppConfigAdapter) PostAppAuthConfig() error {
-	authInfo := AuthInfo{
-		Credentials{
-			AccessKeyId: acm.AppAuthCfg.Ak,
-			SecretKey:   acm.AppAuthCfg.Sk,
+	authInfo := Auth{
+		AuthInfo{
+			Credentials{
+				AccessKeyId: acm.AppAuthCfg.Ak,
+				SecretKey:   acm.AppAuthCfg.Sk,
+				AppName:     acm.AppAuthCfg.AppName,
+			},
 		},
 	}
 
