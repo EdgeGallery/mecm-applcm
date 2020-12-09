@@ -41,6 +41,7 @@ var (
 	hostIpAddress         string      = "1.1.1.1"
 	tenantIdentifier      string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
 	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	appName               string      = "postioning-service"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -81,6 +82,7 @@ func TestLcmOperation(t *testing.T) {
 	extraParams := map[string]string{
 		"hostIp":    hostIpAddress,
 		"packageId": "51e5fe1053254a32bce87ebe9708c453",
+		"appName":   appName,
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
@@ -108,7 +110,8 @@ func TestConfigOperation(t *testing.T) {
 	path += "/config"
 	// Setting extra parameters
 	extraParams := map[string]string{
-		"hostIp": hostIpAddress,
+		"hostIp":  hostIpAddress,
+		"appName": appName,
 	}
 
 	// Mock the client

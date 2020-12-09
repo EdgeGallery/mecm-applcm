@@ -88,9 +88,10 @@ func doTest(t *testing.T) {
 	baseDir, _ := os.Getwd()
 	path := baseDir + "/positioning_with_mepagent_new.csar"
 	controllers.PackageFolderPath = baseDir + directory
-	_ = os.Mkdir(baseDir + directory, filePermission)
+	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{
-		"hostIp": hostIpAddress,
+		"hostIp":  hostIpAddress,
+		"appName": "postioning-service",
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),

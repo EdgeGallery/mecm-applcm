@@ -233,6 +233,12 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
+	appName, err := c.getAppName(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	err = util.ValidateFileExtensionCsar(header.Filename)
 	if err != nil || len(header.Filename) > util.MaxFileNameSize {
 		util.ClearByteArray(bKey)
@@ -276,7 +282,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err, appAuthConfig, acm := processAkSkConfig(appInsId)
+	err, appAuthConfig, acm := processAkSkConfig(appInsId, appName)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to process Ak Sk configuration")
@@ -309,14 +315,14 @@ func (c *LcmController) Instantiate() {
 }
 
 // Process Ak Sk configuration
-func processAkSkConfig(appInsId string) (error, config.AppAuthConfig, config.AppConfigAdapter) {
+func processAkSkConfig(appInsId, appName string) (error, config.AppAuthConfig, config.AppConfigAdapter) {
 	appAuthConfig := config.NewAppAuthCfg(appInsId)
 	err := appAuthConfig.GenerateAkSK()
 	if err != nil {
 		return err, config.AppAuthConfig{}, config.AppConfigAdapter{}
 	}
 
-	acm := config.NewAppConfigMgr(appInsId, appAuthConfig)
+	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig)
 	err = acm.PostAppAuthConfig()
 	if err != nil {
 		return err, config.AppAuthConfig{}, config.AppConfigAdapter{}
@@ -416,7 +422,7 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	acm := config.NewAppConfigMgr(appInsId, config.AppAuthConfig{})
+	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{})
 	err = acm.DeleteAppAuthConfig()
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
@@ -857,6 +863,17 @@ func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*mod
 	}
 	return appInfoRecord, nil
 
+}
+
+// Get app name
+func (c *LcmController) getAppName(clientIp string) (string, error) {
+	appName := c.GetString("appName")
+	name, err := util.ValidateAppName(appName)
+	if err != nil || !name {
+		c.handleLoggingForError(clientIp, util.BadRequest, "AppName is invalid")
+		return "", errors.New("AppName is invalid")
+	}
+	return appName, nil
 }
 
 // Get host IP
