@@ -373,12 +373,6 @@ func (c *LcmController) Terminate() {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
-
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
-
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
