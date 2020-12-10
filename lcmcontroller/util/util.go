@@ -111,6 +111,7 @@ const apigwAddr = "edgegallery"
 const apigwPort = "8444"
 const MecmTenantRole = "ROLE_MECM_TENANT"
 const MecmGuestRole = "ROLE_MECM_GUEST"
+const UserId = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
@@ -358,7 +359,6 @@ func ValidateUserIdFromRequest(claims jwt.MapClaims, userIdFromRequest string) e
 		    if userId != userIdFromRequest {
 				log.Info("Illegal TenantId")
 				return errors.New(IllegalTenantId)
-				break
 			}
 		}
 	}
