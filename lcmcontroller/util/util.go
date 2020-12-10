@@ -114,13 +114,14 @@ const MecmGuestRole = "ROLE_MECM_GUEST"
 const UserId = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 const MaxIPVal = 255
 const IpAddFormatter = "%d.%d.%d.%d"
+const PromethuesServerName = "mep-prometheus-server"
 
 // Default environment variables
 const dbuser = "lcmcontroller"
 const dbname = "lcmcontrollerdb"
 const dbhost = "mepm-postgres"
 const dbport = "5432"
-const prometheusport = "30009"
+const prometheusport = "80"
 const mepport = "80"
 const k8splugin = "mecm-mepm-k8splugin"
 const k8spluginport = "8095"
@@ -588,7 +589,14 @@ func GetHostInfo(url string) (string, error) {
 	var resp *http.Response
 	var err error
 
-	if GetAppConfig("query_ssl_enable") == "true" {
+	var queryString string
+	if strings.Contains(url, "capabilities") {
+		queryString = "query_ssl_enable"
+	} else {
+		queryString = "query_kpi_ssl_enable"
+	}
+
+	if GetAppConfig(queryString) == "true" {
 		url = HttpsUrl + url
 		req, errNewRequest := http.NewRequest("", url, nil)
 		if errNewRequest != nil {
@@ -616,6 +624,14 @@ func GetHostInfo(url string) (string, error) {
 		return string(body), nil
 	}
 	return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
+}
+
+func GetPromethuesServiceName() string {
+	promethuesServerName := os.Getenv(PromethuesServerName)
+	if promethuesServerName == "" {
+		promethuesServerName = PromethuesServerName
+	}
+	return promethuesServerName
 }
 
 // Validate app name

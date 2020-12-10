@@ -597,22 +597,22 @@ func (c *LcmController) QueryKPI() {
 	}
 	util.ClearByteArray(bKey)
 
-	hostIp, prometheusPort, err := c.getInputParametersQueryKpi(clientIp)
+	prometheusServiceName, prometheusPort, err := c.getInputParametersQueryKpi(clientIp)
 	if err != nil {
 		return
 	}
 
-	cpuUtilization, err := c.getCpuUsage(hostIp, prometheusPort, clientIp)
+	cpuUtilization, err := c.getCpuUsage(prometheusServiceName, prometheusPort, clientIp)
 	if err != nil {
 		return
 	}
 
-	memUsage, err := c.getMemoryUsage(hostIp, prometheusPort, clientIp)
+	memUsage, err := c.getMemoryUsage(prometheusServiceName, prometheusPort, clientIp)
 	if err != nil {
 		return
 	}
 
-	diskUtilization, err := c.diskUsage(hostIp, prometheusPort, clientIp)
+	diskUtilization, err := c.diskUsage(prometheusServiceName, prometheusPort, clientIp)
 	if err != nil {
 		return
 	}
@@ -1186,23 +1186,20 @@ func (c *LcmController) getInputParametersQueryKpi(clientIp string) (string, str
 	if err != nil {
 		return "", "", err
 	}
-	hostIp, err := c.getUrlHostIP(clientIp)
-	if err != nil {
-		return "", "", err
-	}
+	prometheusServiceName := util.GetPromethuesServiceName()
 	prometheusPort := util.GetPrometheusPort()
 	port, err := util.ValidatePort(prometheusPort)
 	if err != nil || !port {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
 		return "", "", err
 	}
-	return hostIp, prometheusPort, nil
+	return prometheusServiceName, prometheusPort, nil
 }
 
-func (c *LcmController) getCpuUsage(hostIp, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
+func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	cpu, errCpu := util.GetHostInfo(hostIp + ":" + prometheusPort + util.CpuQuery)
+	cpu, errCpu := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.CpuQuery)
 	if errCpu != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
 		return cpuUtilization, nil
@@ -1219,10 +1216,10 @@ func (c *LcmController) getCpuUsage(hostIp, prometheusPort, clientIp string) (cp
 	return cpuUtilization, nil
 }
 
-func (c *LcmController) getMemoryUsage(hostIp, prometheusPort, clientIp string) (memUsage map[string]interface{}, err error) {
+func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort, clientIp string) (memUsage map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	mem, err := util.GetHostInfo(hostIp + ":" + prometheusPort + util.MemQuery)
+	mem, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.MemQuery)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
 		return memUsage, err
@@ -1239,10 +1236,10 @@ func (c *LcmController) getMemoryUsage(hostIp, prometheusPort, clientIp string) 
 	return memUsage, nil
 }
 
-func (c *LcmController) diskUsage(hostIp string, prometheusPort, clientIp string) (diskUtilization map[string]interface{}, err error) {
+func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort, clientIp string) (diskUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	disk, err := util.GetHostInfo(hostIp + ":" + prometheusPort + util.DiskQuery)
+	disk, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.DiskQuery)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
 		return diskUtilization, err
