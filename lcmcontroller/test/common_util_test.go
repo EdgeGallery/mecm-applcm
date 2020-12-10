@@ -18,8 +18,11 @@ package test
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io"
+	"lcmcontroller/util"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -27,8 +30,10 @@ import (
 	"time"
 )
 
+// Generate test IP, instead of hard coding them
 var (
-	fwdIp = "1.1.1.1:10000"
+  fwdIp = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+	rand.Intn(util.MaxIPVal))
 )
 
 // Creates a new file upload http request with optional extra params

@@ -18,13 +18,16 @@ package test
 
 import (
 	_ "crypto/tls"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"lcmcontroller/util"
+	"math/rand"
 	"testing"
 )
 
 func TestValidateIpv4AddressSuccess(t *testing.T) {
-	ip := "1.2.3.4"
+	ip := fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+		rand.Intn(util.MaxIPVal))
 	err := util.ValidateIpv4Address(ip)
 	assert.NoError(t, err, "TestValidateIpv4AddressSuccess execution result")
 }
