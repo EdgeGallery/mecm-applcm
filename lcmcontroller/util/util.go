@@ -51,6 +51,7 @@ const FailedToSendMetadataInfo string = "failed to send metadata information"
 const FailedToCreateClient string = "failed to create client: %v"
 const DeployTypeIsNotHelmBased = "Deployment type is not helm based"
 const InvalidToken string = "invalid token"
+const IllegalTenantId string = "Illegal TenantId"
 const AppInsId = "app_ins_id"
 const TenantId = "tenant_id"
 const FailedToGetClient = "Failed to get client"
@@ -275,7 +276,7 @@ func ValidateDbParams(dbUser string, dbPwd string, dbName string, dbHost string,
 }
 
 // Validate access token
-func ValidateAccessToken(accessToken string, allowedRoles []string) error {
+func ValidateAccessToken(accessToken string, allowedRoles []string, tenantId string) error {
 	if accessToken == "" {
 		return errors.New("require token")
 	}
@@ -286,7 +287,7 @@ func ValidateAccessToken(accessToken string, allowedRoles []string) error {
 	})
 
 	if token != nil && !token.Valid {
-		err := validateTokenClaims(claims, allowedRoles)
+		err := validateTokenClaims(claims, allowedRoles,tenantId)
 		if err != nil {
 			return err
 		}
@@ -311,7 +312,7 @@ func ValidateAccessToken(accessToken string, allowedRoles []string) error {
 }
 
 // Validate token claims
-func validateTokenClaims(claims jwt.MapClaims, allowedRoles []string) error {
+func validateTokenClaims(claims jwt.MapClaims, allowedRoles []string, userRequestTenantId string) error {
 	if claims["authorities"] == nil {
 		log.Info("Invalid token A")
 		return errors.New(InvalidToken)
@@ -321,6 +322,7 @@ func validateTokenClaims(claims jwt.MapClaims, allowedRoles []string) error {
 	if err != nil {
 		return err
 	}
+
 
 	if claims["userId"] == nil {
 		log.Info("Invalid token UI")
@@ -334,6 +336,31 @@ func validateTokenClaims(claims jwt.MapClaims, allowedRoles []string) error {
 	if err != nil {
 		log.Info("token expired")
 		return errors.New(InvalidToken)
+	}
+
+	if userRequestTenantId != "" {
+		err = ValidateUserIdFromRequest(claims, userRequestTenantId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ValidateUserIdFromRequest(claims jwt.MapClaims, userIdFromRequest string) error {
+
+	userIdFromToken := ""
+	log.Info(userIdFromToken)
+
+	for key, value := range claims {
+		if key == "userId" {
+			userId := value.(interface{})
+		    if userId != userIdFromRequest {
+				log.Info("Illegal TenantId")
+				return errors.New(IllegalTenantId)
+				break
+			}
+		}
 	}
 	return nil
 }

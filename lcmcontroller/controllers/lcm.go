@@ -63,7 +63,7 @@ func (c *LcmController) UploadConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -174,7 +174,7 @@ func (c *LcmController) RemoveConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -221,17 +221,20 @@ func (c *LcmController) Instantiate() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
+
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
+
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
 
 	appName, err := c.getAppName(clientIp)
 	if err != nil {
@@ -359,18 +362,23 @@ func (c *LcmController) Terminate() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
-
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -445,7 +453,7 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -503,13 +511,18 @@ func (c *LcmController) Query() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole},tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
 
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	_, err = c.getTenantId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -577,12 +590,17 @@ func (c *LcmController) QueryKPI() {
 	c.displayReceivedMsg(clientIp)
 
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole},tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	util.ClearByteArray(bKey)
 
 	hostIp, prometheusPort, err := c.getInputParametersQueryKpi(clientIp)
@@ -631,13 +649,18 @@ func (c *LcmController) QueryMepCapabilities() {
 	c.displayReceivedMsg(clientIp)
 
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole},tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
 	}
 
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	util.ClearByteArray(bKey)
 	_, err = c.getTenantId(clientIp)
 	if err != nil {

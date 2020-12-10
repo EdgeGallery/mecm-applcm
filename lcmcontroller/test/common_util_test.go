@@ -76,7 +76,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	accessToken := createToken(1)
+	accessToken := createToken("e921ce54-82c8-4532-b5c6-8516cf75f7a6")
 	// Add additional headers
 	req.Header.Set("access_token", accessToken)
 	req.Header.Set("X-Forwarded-For", fwdIp)
@@ -87,7 +87,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 	return req, err
 }
 
-func createToken(userid uint64) string {
+func createToken(userid string) string {
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
 	roleName := make([]string, 3)
