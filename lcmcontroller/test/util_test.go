@@ -18,13 +18,16 @@ package test
 
 import (
 	_ "crypto/tls"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"lcmcontroller/util"
+	"math/rand"
 	"testing"
 )
 
 func TestValidateIpv4AddressSuccess(t *testing.T) {
-	ip := "1.2.3.4"
+	ip := fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+		rand.Intn(util.MaxIPVal))
 	err := util.ValidateIpv4Address(ip)
 	assert.NoError(t, err, "TestValidateIpv4AddressSuccess execution result")
 }
@@ -72,20 +75,20 @@ func TestValidatePasswordInvalid(t *testing.T) {
 }
 
 func TestValidateAccessTokenSuccess(t *testing.T) {
-	accessToken := createToken(1)
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	accessToken := createToken("e921ce54-82c8-4532-b5c6-8516cf75f7a6")
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"e921ce54-82c8-4532-b5c6-8516cf75f7a6")
 	assert.Nil(t, err, "TestValidateAccessTokenSuccess execution result")
 }
 
 func TestValidateAccessTokenFailure(t *testing.T) {
 	accessToken := ""
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},util.UserId)
 	assert.Error(t, err, "TestValidateAccessTokenFailure execution result")
 }
 
 func TestValidateAccessTokenInvalid(t *testing.T) {
 	accessToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9"
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},util.UserId)
 	assert.Error(t, err, "TestValidateAccessTokenInvalid execution result")
 }
 
@@ -95,7 +98,7 @@ func TestValidateAccessTokenInvalid1(t *testing.T) {
 		"2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdiNjliIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BU" +
 		"FBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEVOQU5UIl0sImp0aSI6IjQ5ZTBhMGMwLTIxZ" +
 		"mItNDAwZC04M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFibGVTbXMiOiJ0cnVlIn0."
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},util.UserId)
 	assert.Error(t, err, "TestValidateAccessTokenInvalid1 execution result")
 }
 

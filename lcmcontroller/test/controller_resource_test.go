@@ -17,9 +17,11 @@
 package test
 
 import (
+	"fmt"
 	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -58,7 +60,8 @@ var (
 	serveJson = "ServeJSON"
 	csar      = "/positioning_with_mepagent_new.csar"
 	hostIp    = "hostIp"
-	ipAddress = "127.0.0.1"
+	ipAddress = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+		        rand.Intn(util.MaxIPVal))
 	hosts     = "/hosts/"
 )
 
@@ -98,12 +101,13 @@ func TestKpi(t *testing.T) {
 	// Get base HOST IP and PORT of running server
 	u, _ := url.Parse(ts.URL)
 	parts := strings.Split(u.Host, ":")
-	localIp := parts[0]
+	localIp := util.GetPromethuesServiceName() //parts[0]
 	port := parts[1]
 	_ = os.Setenv("PROMETHEUS_PORT", port)
 
 	//// Common steps
 	path, _ := os.Getwd()
+	os.Setenv(util.PromethuesServerName,"127.0.0.1")
 	path += csar
 	extraParams := map[string]string{
 		hostIp: localIp,

@@ -18,8 +18,11 @@ package test
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io"
+	"lcmcontroller/util"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -27,8 +30,10 @@ import (
 	"time"
 )
 
+// Generate test IP, instead of hard coding them
 var (
-	fwdIp = "1.1.1.1:10000"
+  fwdIp = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+	rand.Intn(util.MaxIPVal))
 )
 
 // Creates a new file upload http request with optional extra params
@@ -76,7 +81,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	accessToken := createToken(1)
+	accessToken := createToken("e921ce54-82c8-4532-b5c6-8516cf75f7a6")
 	// Add additional headers
 	req.Header.Set("access_token", accessToken)
 	req.Header.Set("X-Forwarded-For", fwdIp)
@@ -87,7 +92,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 	return req, err
 }
 
-func createToken(userid uint64) string {
+func createToken(userid string) string {
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
 	roleName := make([]string, 3)
