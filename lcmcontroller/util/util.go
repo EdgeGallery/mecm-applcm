@@ -360,7 +360,7 @@ func ValidateUserIdFromRequest(claims jwt.MapClaims, userIdFromRequest string) e
 		if key == "userId" {
 			userId := value.(interface{})
 		    if userId != userIdFromRequest {
-				log.Info("Illegal TenantId")
+				log.Error("Illegal TenantId")
 				return errors.New(IllegalTenantId)
 			}
 		}

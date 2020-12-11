@@ -223,19 +223,11 @@ func (c *LcmController) Instantiate() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
+	hostIp, appInsId, file, header, tenantId, packageId, err := c.validateToken(accessToken, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},tenantId)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
-
-
 	appName, err := c.getAppName(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -315,6 +307,21 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 	c.ServeJSON()
+}
+
+func (c *LcmController) validateToken(accessToken string,clientIp string) (string, string, multipart.File,
+*multipart.FileHeader, string, string, error)  {
+
+	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
+	if err != nil {
+		return  "", "", nil, nil, "", " ", err
+	}
+	err = util.ValidateAccessToken(accessToken , []string{util.MecmTenantRole},tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return "", "", nil, nil, "", " ", err
+	}
+	return  hostIp, appInsId, file, header, tenantId, packageId, nil
 }
 
 // Process Ak Sk configuration
