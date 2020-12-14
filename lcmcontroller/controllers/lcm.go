@@ -668,6 +668,11 @@ func (c *LcmController) QueryMepCapabilities() {
 		return
 	}
 
+	_, err = c.getUrlHostIP(clientIp)
+	if err != nil {
+		return
+	}
+
 	mepPort := util.GetMepPort()
 	port, err := util.ValidatePort(mepPort)
 	if err != nil || !port {
