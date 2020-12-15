@@ -29,26 +29,20 @@ import (
 	_ "lcmcontroller/models"
 	_ "lcmcontroller/routers"
 	"lcmcontroller/util"
-	"net"
 	"net/http"
-	"strconv"
 )
-
-type rateLimiter struct {
-	generalLimiter *limiter.Limiter
-}
 
 // Start lcmcontroller application
 func main() {
-	r := &rateLimiter{}
+	r := &util.RateLimiter{}
 	rate, err := limiter.NewRateFromFormatted("200-S")
-	r.generalLimiter = limiter.New(memory.NewStore(), rate)
+	r.GeneralLimiter = limiter.New(memory.NewStore(), rate)
 
 	beego.InsertFilter("/*", beego.BeforeRouter, func(c *context.Context) {
-		rateLimit(r, c)
+		util.RateLimit(r, c)
 	}, true)
 
-	beego.ErrorHandler("429", func(w http.ResponseWriter, r *http.Request) {
+	beego.ErrorHandler("429", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("Too Many Requests"))
 		return
@@ -63,31 +57,4 @@ func main() {
 	beego.BeeApp.Server.TLSConfig = tlsConf
 	beego.ErrorController(&controllers.ErrorController{})
 	beego.Run()
-}
-
-func rateLimit(r *rateLimiter, ctx *context.Context) {
-	var (
-		limiterCtx limiter.Context
-		ip         net.IP
-		err        error
-		req        = ctx.Request
-	)
-
-	ip = r.generalLimiter.GetIP(req)
-	limiterCtx, err = r.generalLimiter.Get(req.Context(), ip.String())
-	if err != nil {
-		ctx.Abort(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	h := ctx.ResponseWriter.Header()
-	h.Add("X-RateLimit-Limit", strconv.FormatInt(limiterCtx.Limit, 10))
-	h.Add("X-RateLimit-Remaining", strconv.FormatInt(limiterCtx.Remaining, 10))
-	h.Add("X-RateLimit-Reset", strconv.FormatInt(limiterCtx.Reset, 10))
-
-	if limiterCtx.Reached {
-		log.Info("Too Many Requests from %s on %s", ip, ctx.Input.URL())
-		ctx.Abort(http.StatusTooManyRequests, "429")
-		return
-	}
 }
