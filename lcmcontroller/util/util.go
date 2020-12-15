@@ -27,7 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/ulule/limiter/v3"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -609,13 +608,11 @@ func ValidateAppName(appName string) (bool, error) {
 func RateLimit(r *RateLimiter, ctx *context.Context) {
 	var (
 		limiterCtx limiter.Context
-		ip         net.IP
 		err        error
 		req        = ctx.Request
 	)
 
-	ip = r.GeneralLimiter.GetIP(req)
-	limiterCtx, err = r.GeneralLimiter.Get(req.Context(), ip.String())
+	limiterCtx, err = r.GeneralLimiter.Get(req.Context(), "")
 	if err != nil {
 		ctx.Abort(http.StatusInternalServerError, err.Error())
 		return
@@ -627,7 +624,7 @@ func RateLimit(r *RateLimiter, ctx *context.Context) {
 	h.Add("X-RateLimit-Reset", strconv.FormatInt(limiterCtx.Reset, 10))
 
 	if limiterCtx.Reached {
-		log.Infof("Too Many Requests from %s on %s", ip, ctx.Input.URL())
+		log.Infof("Too Many Requests on %s", ctx.Input.URL())
 		ctx.Abort(http.StatusTooManyRequests, "429")
 		return
 	}
