@@ -18,18 +18,36 @@ package main
 
 import (
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/context"
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
+	"github.com/ulule/limiter/v3"
+	"github.com/ulule/limiter/v3/drivers/store/memory"
 	_ "lcmcontroller/config"
 	"lcmcontroller/controllers"
 	_ "lcmcontroller/controllers"
 	_ "lcmcontroller/models"
 	_ "lcmcontroller/routers"
 	"lcmcontroller/util"
+	"net/http"
 )
 
 // Start lcmcontroller application
 func main() {
+	r := &util.RateLimiter{}
+	rate, err := limiter.NewRateFromFormatted("200-S")
+	r.GeneralLimiter = limiter.New(memory.NewStore(), rate)
+
+	beego.InsertFilter("/*", beego.BeforeRouter, func(c *context.Context) {
+		util.RateLimit(r, c)
+	}, true)
+
+	beego.ErrorHandler("429", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Write([]byte("Too Many Requests"))
+		return
+	})
+
 	tlsConf, err := util.TLSConfig("HTTPSCertFile")
 	if err != nil {
 		log.Error("failed to config tls for beego")

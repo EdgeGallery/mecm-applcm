@@ -21,9 +21,11 @@ import (
 	"crypto/x509"
 	"errors"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/context"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
+	"github.com/ulule/limiter/v3"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -129,6 +131,10 @@ const k8spluginport = "8095"
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+}
+
+type RateLimiter struct {
+	GeneralLimiter *limiter.Limiter
 }
 
 // Get app configuration
@@ -641,4 +647,30 @@ func ValidateAppName(appName string) (bool, error) {
 		return appNameIsValid, valAppNameErr
 	}
 	return true, nil
+}
+
+// Handle number of REST requests per second
+func RateLimit(r *RateLimiter, ctx *context.Context) {
+	var (
+		limiterCtx limiter.Context
+		err        error
+		req        = ctx.Request
+	)
+
+	limiterCtx, err = r.GeneralLimiter.Get(req.Context(), "")
+	if err != nil {
+		ctx.Abort(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	h := ctx.ResponseWriter.Header()
+	h.Add("X-RateLimit-Limit", strconv.FormatInt(limiterCtx.Limit, 10))
+	h.Add("X-RateLimit-Remaining", strconv.FormatInt(limiterCtx.Remaining, 10))
+	h.Add("X-RateLimit-Reset", strconv.FormatInt(limiterCtx.Reset, 10))
+
+	if limiterCtx.Reached {
+		log.Infof("Too Many Requests on %s", ctx.Input.URL())
+		ctx.Abort(http.StatusTooManyRequests, "429")
+		return
+	}
 }
