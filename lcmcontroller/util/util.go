@@ -81,7 +81,7 @@ const SericeNameRegex = DbRegex
 const HostRegex string = `^[\w-.]{4,16}$`
 const PortRegex string = `^[0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]$`
 const UuidRegex string = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
-const AppNameRegex = DbRegex
+const AppNameRegex = `^[\w-]{4,128}$`
 
 const minPasswordSize = 8
 const maxPasswordSize = 16

@@ -32,7 +32,7 @@ import (
 )
 
 func TestValidateIpv4AddressSuccess(t *testing.T) {
-	ip := "1.2.3.4"
+	ip := ipAddress
 	err := util.ValidateIpv4Address(ip)
 	assert.NoError(t, err, "TestValidateIpv4AddressSuccess execution result")
 }

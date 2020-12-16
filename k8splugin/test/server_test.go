@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	hostIpAddress         string      = "1.1.1.1"
+	hostIpAddress         string      = ipAddress
 	filePermission        os.FileMode = 0750
 	directory             string      = "/config/"
 	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"

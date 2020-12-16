@@ -18,6 +18,7 @@ package test
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/agiledragon/gomonkey"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
@@ -28,6 +29,7 @@ import (
 	"lcmcontroller/pkg/dbAdapter"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -36,12 +38,13 @@ import (
 )
 
 var (
-	filePermission        os.FileMode = 0750
-	directory             string      = "/packages/"
-	hostIpAddress         string      = "1.1.1.1"
-	tenantIdentifier      string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
-	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
-	appName               string      = "postioning-service"
+	filePermission os.FileMode = 0750
+	directory      string      = "/packages/"
+	hostIpAddress  string      = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+		rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal))
+	tenantIdentifier      string = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	appInstanceIdentifier string = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	appName               string = "postioning-service"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -52,27 +55,22 @@ func TestLcmOperation(t *testing.T) {
 	})
 	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyFunc(util.ClearByteArray, func(_ []byte) {
-		// do nothing
-	})
-	defer patch2.Reset()
-
 	var c *beego.Controller
-	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
 		go func() {
 			// do nothing
 		}()
 	})
-	defer patch3.Reset()
+	defer patch2.Reset()
 
-	patch4 := gomonkey.ApplyFunc(util.DoRequest, func(_ *http.Request) (*http.Response, error) {
+	patch3 := gomonkey.ApplyFunc(util.DoRequest, func(_ *http.Request) (*http.Response, error) {
 		// do nothing
 		return &http.Response{
 			Body:       ioutil.NopCloser(bytes.NewBufferString("lcmcontroller")),
 			StatusCode: 200,
 		}, nil
 	})
-	defer patch4.Reset()
+	defer patch3.Reset()
 
 	// Common steps
 	baseDir, _ := os.Getwd()
@@ -114,24 +112,13 @@ func TestConfigOperation(t *testing.T) {
 		"appName": appName,
 	}
 
-	// Mock the client
-	patch1 := gomonkey.ApplyFunc(pluginAdapter.GetClient, func(_ string) (pluginAdapter.ClientIntf, error) {
-		return &mockClient{}, nil
-	})
-	defer patch1.Reset()
-
-	patch2 := gomonkey.ApplyFunc(util.ClearByteArray, func(_ []byte) {
-		// do nothing
-	})
-	defer patch2.Reset()
-
 	var c *beego.Controller
-	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
+	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
 		go func() {
 			// do nothing
 		}()
 	})
-	defer patch3.Reset()
+	defer patch1.Reset()
 
 	// Test upload
 	testUpload(t, extraParams, path)
