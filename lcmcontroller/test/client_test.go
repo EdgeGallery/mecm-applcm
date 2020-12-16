@@ -58,27 +58,22 @@ func doTest(t *testing.T) {
 	})
 	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyFunc(util.ClearByteArray, func(_ []byte) {
-		// do nothing
-	})
-	defer patch2.Reset()
-
 	var c *beego.Controller
-	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
 		go func() {
 			// do nothing
 		}()
 	})
-	defer patch3.Reset()
+	defer patch2.Reset()
 
-	patch4 := gomonkey.ApplyFunc(util.DoRequest, func(_ *http.Request) (*http.Response, error) {
+	patch3 := gomonkey.ApplyFunc(util.DoRequest, func(_ *http.Request) (*http.Response, error) {
 		// do nothing
 		return &http.Response{
 			Body:       ioutil.NopCloser(bytes.NewBufferString("lcmcontroller")),
 			StatusCode: 200,
 		}, nil
 	})
-	defer patch4.Reset()
+	defer patch3.Reset()
 
 	// Set environment variables for lcmcontroller for k8spluging
 	_ = os.Setenv("K8S_PLUGIN", k8sPluginAddr)

@@ -106,14 +106,8 @@ func TestKpi(t *testing.T) {
 	_ = os.Setenv("PROMETHEUS_PORT", port)
 
 	//// Common steps
-	path, _ := os.Getwd()
 	os.Setenv(util.PromethuesServerName,"127.0.0.1")
-	path += csar
-	extraParams := map[string]string{
-		hostIp: localIp,
-	}
-	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
-		tenantRecords: make(map[string]models.TenantInfoRecord)}
+	path, extraParams, testDb := getCommonParameters(localIp)
 
 	t.Run("TestGetKpi", func(t *testing.T) {
 
@@ -166,18 +160,10 @@ func TestMepCapabilities(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	localIp := ipAddress
-	port := "80"
-	_ = os.Setenv("MEP_PORT", port)
+	localIp := getLocalIPAndSetEnv()
 
 	// Common steps
-	path, _ := os.Getwd()
-	path += csar
-	extraParams := map[string]string{
-		hostIp: localIp,
-	}
-	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
-		tenantRecords: make(map[string]models.TenantInfoRecord)}
+	path, extraParams, testDb := getCommonParameters(localIp)
 
 	t.Run("TestGetCapability", func(t *testing.T) {
 
@@ -229,18 +215,10 @@ func TestMepCapabilitiesId(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	localIp := ipAddress
-	port := "80"
-	_ = os.Setenv("MEP_PORT", port)
+	localIp := getLocalIPAndSetEnv()
 
 	// Common steps
-	path, _ := os.Getwd()
-	path += csar
-	extraParams := map[string]string{
-		hostIp: localIp,
-	}
-	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
-		tenantRecords: make(map[string]models.TenantInfoRecord)}
+	path, extraParams, testDb := getCommonParameters(localIp)
 
 	t.Run("TestGetCapabilityId", func(t *testing.T) {
 
@@ -275,10 +253,14 @@ func setRessourceParam(ctx *context.BeegoInput, localIp string) {
 	ctx.SetParam(":hostIp", localIp)
 }
 
-func TestAppDeploymentStatus(t *testing.T) {
+func getLocalIPAndSetEnv() string {
 	localIp := ipAddress
+	port := "80"
+	_ = os.Setenv("MEP_PORT", port)
+	return localIp
+}
 
-	// Common steps
+func getCommonParameters(localIp string) (string, map[string]string, *mockDb) {
 	path, _ := os.Getwd()
 	path += csar
 	extraParams := map[string]string{
@@ -286,6 +268,14 @@ func TestAppDeploymentStatus(t *testing.T) {
 	}
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
 		tenantRecords: make(map[string]models.TenantInfoRecord)}
+	return path, extraParams, testDb
+}
+
+func TestAppDeploymentStatus(t *testing.T) {
+	localIp := ipAddress
+
+	// Common steps
+	path, extraParams, testDb := getCommonParameters(localIp)
 
 	t.Run("TestAppDeploymentStatus", func(t *testing.T) {
 
