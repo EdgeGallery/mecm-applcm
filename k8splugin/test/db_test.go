@@ -17,6 +17,7 @@
 package test
 
 import (
+	"fmt"
 	"github.com/agiledragon/gomonkey"
 	"github.com/astaxie/beego/orm"
 	"github.com/stretchr/testify/assert"
@@ -24,9 +25,15 @@ import (
 	"k8splugin/pkg/adapter"
 	"k8splugin/pkg/server"
 	"k8splugin/util"
+	"math/rand"
 	"os"
 	"reflect"
 	"testing"
+)
+
+var (
+	ipAddress = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+		rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal))
 )
 
 func TestGetDbAdapterSuccess(t *testing.T) {
@@ -70,9 +77,9 @@ func TestGetDbAdapterSuccess(t *testing.T) {
 }
 
 func TestGetGetClientSuccess(t *testing.T) {
-	_, err := adapter.GetClient("helm", "192.168.1.1")
+	_, err := adapter.GetClient("helm", ipAddress)
 	assert.Error(t, err, "TestGetGetClientSuccess execution result")
-	_, err = adapter.GetClient("default", "192.168.1.1")
+	_, err = adapter.GetClient("default", ipAddress)
 	assert.Error(t, err, "TestGetGetClientSuccess execution result")
 }
 

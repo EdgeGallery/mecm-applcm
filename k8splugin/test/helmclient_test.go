@@ -34,7 +34,7 @@ import (
 func TestDeploySuccess(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: "192.168.1.1", Kubeconfig: "/usr/app/config/192.168.1.1"}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: "/usr/app/config/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -67,7 +67,7 @@ func TestDeploySuccess(t *testing.T) {
 	defer patch4.Reset()
 
 	// Get client
-	client, err := adapter.GetClient("helm", "192.168.1.1")
+	client, err := adapter.GetClient("helm", ipAddress)
 	if err != nil {
 		return
 	}

@@ -68,6 +68,8 @@ const AppInsId = "app_ins_id"
 const maxHostNameLen = 253
 const maxAkLen = 20
 const maxSkLen = 64
+const MaxIPVal = 255
+const IpAddFormatter = "%d.%d.%d.%d"
 const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
 
 const FailedToDispRecvMsg    = "failed to display receive msg"
