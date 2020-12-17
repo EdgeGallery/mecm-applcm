@@ -61,8 +61,8 @@ var (
 	csar      = "/positioning_with_mepagent_new.csar"
 	hostIp    = "hostIp"
 	ipAddress = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
-		        rand.Intn(util.MaxIPVal))
-	hosts     = "/hosts/"
+		rand.Intn(util.MaxIPVal))
+	hosts = "/hosts/"
 )
 
 func TestKpi(t *testing.T) {
@@ -101,12 +101,12 @@ func TestKpi(t *testing.T) {
 	// Get base HOST IP and PORT of running server
 	u, _ := url.Parse(ts.URL)
 	parts := strings.Split(u.Host, ":")
-	localIp := util.GetPromethuesServiceName() //parts[0]
+	localIp := util.GetPrometheusServiceName() //parts[0]
 	port := parts[1]
 	_ = os.Setenv("PROMETHEUS_PORT", port)
 
 	//// Common steps
-	os.Setenv(util.PromethuesServerName,"127.0.0.1")
+	os.Setenv(util.PrometheusServerName, "127.0.0.1")
 	path, extraParams, testDb := getCommonParameters(localIp)
 
 	t.Run("TestGetKpi", func(t *testing.T) {
@@ -281,7 +281,7 @@ func TestAppDeploymentStatus(t *testing.T) {
 
 		// Get Request
 		appDeployStatusRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/"+
-			"hosts/127.0.0.1/packages/e921ce5482c84532b5c68516cf75f7a4/status",
+			"hosts/"+ipAddress+"/packages/e921ce5482c84532b5c68516cf75f7a4/status",
 			extraParams, "file", path, "GET")
 
 		// Prepare Input

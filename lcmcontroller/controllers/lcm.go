@@ -63,7 +63,7 @@ func (c *LcmController) UploadConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"")
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -149,16 +149,7 @@ func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) e
 // Get plugin info
 func getPluginInfo() (string, error) {
 	k8sPlugin := util.GetK8sPlugin()
-	name, err := util.ValidateServiceName(k8sPlugin)
-	if err != nil || !name {
-		return "", errors.New("service name is not valid")
-	}
-
 	k8sPluginPort := util.GetK8sPluginPort()
-	port, err := util.ValidatePort(k8sPluginPort)
-	if err != nil || !port {
-		return "", errors.New(util.PortIsNotValid)
-	}
 	pluginInfo := k8sPlugin + ":" + k8sPluginPort
 	return pluginInfo, nil
 }
@@ -174,7 +165,7 @@ func (c *LcmController) RemoveConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"")
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -309,19 +300,19 @@ func (c *LcmController) Instantiate() {
 	c.ServeJSON()
 }
 
-func (c *LcmController) validateToken(accessToken string,clientIp string) (string, string, multipart.File,
-*multipart.FileHeader, string, string, error)  {
+func (c *LcmController) validateToken(accessToken string, clientIp string) (string, string, multipart.File,
+	*multipart.FileHeader, string, string, error) {
 
 	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
 	if err != nil {
-		return  "", "", nil, nil, "", " ", err
+		return "", "", nil, nil, "", " ", err
 	}
-	err = util.ValidateAccessToken(accessToken , []string{util.MecmTenantRole},tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return "", "", nil, nil, "", " ", err
 	}
-	return  hostIp, appInsId, file, header, tenantId, packageId, nil
+	return hostIp, appInsId, file, header, tenantId, packageId, nil
 }
 
 // Process Ak Sk configuration
@@ -375,7 +366,7 @@ func (c *LcmController) Terminate() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -454,7 +445,7 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"")
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -518,7 +509,7 @@ func (c *LcmController) Query() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole},tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -597,7 +588,7 @@ func (c *LcmController) QueryKPI() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole},tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -656,7 +647,7 @@ func (c *LcmController) QueryMepCapabilities() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole},tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -674,11 +665,6 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 
 	mepPort := util.GetMepPort()
-	port, err := util.ValidatePort(mepPort)
-	if err != nil || !port {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
-		return
-	}
 
 	capabilityId, err := c.getUrlCapabilityId(clientIp)
 	if err != nil {
@@ -1198,13 +1184,8 @@ func (c *LcmController) getInputParametersQueryKpi(clientIp string) (string, str
 	if err != nil {
 		return "", "", err
 	}
-	prometheusServiceName := util.GetPromethuesServiceName()
+	prometheusServiceName := util.GetPrometheusServiceName()
 	prometheusPort := util.GetPrometheusPort()
-	port, err := util.ValidatePort(prometheusPort)
-	if err != nil || !port {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.PortIsNotValid)
-		return "", "", err
-	}
 	return prometheusServiceName, prometheusPort, nil
 }
 
