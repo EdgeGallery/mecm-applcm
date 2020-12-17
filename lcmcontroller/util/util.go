@@ -105,7 +105,7 @@ const MecmGuestRole = "ROLE_MECM_GUEST"
 const UserId = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 const MaxIPVal = 255
 const IpAddFormatter = "%d.%d.%d.%d"
-const PromethuesServerName = "PROMETHEUS_SERVER_NAME"
+const PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -489,7 +489,7 @@ func GetAPIGwPort() string {
 
 // Get prometheus service name
 func GetPrometheusServiceName() string {
-	prometheusServerName := os.Getenv(PromethuesServerName)
+	prometheusServerName := os.Getenv(PrometheusServerName)
 	return prometheusServerName
 }
 
