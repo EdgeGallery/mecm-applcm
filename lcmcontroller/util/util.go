@@ -44,7 +44,6 @@ const AccessToken string = "access_token"
 const K8sPlugin string = "K8S_PLUGIN"
 const K8sPluginPort string = "K8S_PLUGIN_PORT"
 const AuthorizationFailed string = "Authorization failed"
-const InstantiationFailed string = "Instantiation failed"
 const Default string = "default"
 const DriverName string = "postgres"
 const Failure string = "Failure"
@@ -58,14 +57,12 @@ const AppInsId = "app_ins_id"
 const TenantId = "tenant_id"
 const FailedToGetClient = "Failed to get client"
 const FailedToGetPluginInfo = "Failed to get plugin info"
-const PortIsNotValid = "port is not valid"
 const MepCapabilityIsNotValid = "MEP capability id is not valid"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
 const MaxConfigFile int64 = 5242880
 const Timeout = 180
-const NonManoArtifactSets = "non_mano_artifact_sets"
 const MaxNumberOfRecords = 50
 const MaxFileNameSize = 64
 
@@ -74,12 +71,6 @@ const StatusUnauthorized int = 401
 const StatusInternalServerError int = 500
 const StatusNotFound int = 404
 
-const DbRegex string = `^[\w-]{4,32}$`
-const DbUserRegex = DbRegex
-const DbNameRegex = DbRegex
-const SericeNameRegex = DbRegex
-const HostRegex string = `^[\w-.]{4,16}$`
-const PortRegex string = `^[0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]$`
 const UuidRegex string = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 const AppNameRegex = `^[\w-]{4,128}$`
 
@@ -105,28 +96,16 @@ const UnexpectedValue = "unexpected value found"
 const MarshalError = "Failed to marshal json"
 const UnMarshalError = "Failed to unmarshal json"
 const FailedToWriteRes = "Failed to write response into context"
-const BaseUriMec = "/mec/v1/mgmt/tenant/"
 const CapabilityUri = "/mepcfg/mec_platform_config/v1/capabilities"
 const ApiGwAddr = "API_GW_ADDR"
 const ApiGwPort = "API_GW_PORT"
-const apigwAddr = "edgegallery"
-const apigwPort = "8444"
+
 const MecmTenantRole = "ROLE_MECM_TENANT"
 const MecmGuestRole = "ROLE_MECM_GUEST"
 const UserId = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 const MaxIPVal = 255
 const IpAddFormatter = "%d.%d.%d.%d"
-const PromethuesServerName = "mep-prometheus-server"
-
-// Default environment variables
-const dbuser = "lcmcontroller"
-const dbname = "lcmcontrollerdb"
-const dbhost = "mepm-postgres"
-const dbport = "5432"
-const prometheusport = "80"
-const mepport = "80"
-const k8splugin = "mecm-mepm-k8splugin"
-const k8spluginport = "8095"
+const PromethuesServerName = "PROMETHEUS_SERVER_NAME"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -260,27 +239,11 @@ func GetPasswordValidCount(password *[]byte) int {
 }
 
 // Validate db parameters
-func ValidateDbParams(dbUser string, dbPwd string, dbName string, dbHost string, dbPort string) (bool, error) {
-	dbUserIsValid, validateDbUserErr := regexp.MatchString(DbUserRegex, dbUser)
-	if validateDbUserErr != nil || !dbUserIsValid {
-		return dbUserIsValid, validateDbUserErr
-	}
+func ValidateDbParams(dbPwd string) (bool, error) {
 	dbPwdBytes := []byte(dbPwd)
 	dbPwdIsValid, validateDbPwdErr := ValidatePassword(&dbPwdBytes)
 	if validateDbPwdErr != nil || !dbPwdIsValid {
 		return dbPwdIsValid, validateDbPwdErr
-	}
-	dbNameIsValid, validateDbNameErr := regexp.MatchString(DbNameRegex, dbName)
-	if validateDbNameErr != nil || !dbNameIsValid {
-		return dbNameIsValid, validateDbNameErr
-	}
-	dbHostIsValid, validateDbHostErr := regexp.MatchString(HostRegex, dbHost)
-	if validateDbHostErr != nil || !dbHostIsValid {
-		return dbHostIsValid, validateDbHostErr
-	}
-	dbPortIsValid, validateDbPortErr := regexp.MatchString(PortRegex, dbPort)
-	if validateDbPortErr != nil || !dbPortIsValid {
-		return dbPortIsValid, validateDbPortErr
 	}
 	return true, nil
 }
@@ -297,7 +260,7 @@ func ValidateAccessToken(accessToken string, allowedRoles []string, tenantId str
 	})
 
 	if token != nil && !token.Valid {
-		err := validateTokenClaims(claims, allowedRoles,tenantId)
+		err := validateTokenClaims(claims, allowedRoles, tenantId)
 		if err != nil {
 			return err
 		}
@@ -333,7 +296,6 @@ func validateTokenClaims(claims jwt.MapClaims, allowedRoles []string, userReques
 		return err
 	}
 
-
 	if claims["userId"] == nil {
 		log.Info("Invalid token UI")
 		return errors.New(InvalidToken)
@@ -365,7 +327,7 @@ func ValidateUserIdFromRequest(claims jwt.MapClaims, userIdFromRequest string) e
 	for key, value := range claims {
 		if key == "userId" {
 			userId := value.(interface{})
-		    if userId != userIdFromRequest {
+			if userId != userIdFromRequest {
 				log.Error("Illegal TenantId")
 				return errors.New(IllegalTenantId)
 			}
@@ -374,7 +336,7 @@ func ValidateUserIdFromRequest(claims jwt.MapClaims, userIdFromRequest string) e
 	return nil
 }
 
-func ValidateRole(claims  jwt.MapClaims, allowedRoles []string) error {
+func ValidateRole(claims jwt.MapClaims, allowedRoles []string) error {
 	roleName := "defaultRole"
 	log.Info(roleName)
 
@@ -397,7 +359,7 @@ func ValidateRole(claims  jwt.MapClaims, allowedRoles []string) error {
 			}
 		}
 	}
-	return  nil
+	return nil
 }
 
 func isRoleAllowed(actual string, allowed []string) bool {
@@ -435,10 +397,10 @@ func TLSConfig(crtName string) (*tls.Config, error) {
 		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
 	}
 	return &tls.Config{
-		RootCAs:      rootCAs,
-		MinVersion:   tls.VersionTLS12,
-		CipherSuites: cipherSuites,
-		ServerName:   GetAppConfig("serverName"),
+		RootCAs:            rootCAs,
+		MinVersion:         tls.VersionTLS12,
+		CipherSuites:       cipherSuites,
+		ServerName:         GetAppConfig("serverName"),
 		InsecureSkipVerify: true,
 	}, nil
 }
@@ -465,95 +427,70 @@ func GetCipherSuites(sslCiphers string) []uint16 {
 	return nil
 }
 
-// Validate port
-func ValidatePort(port string) (bool, error) {
-	portIsValid, validatePortErr := regexp.MatchString(PortRegex, port)
-	if validatePortErr != nil || !portIsValid {
-		return portIsValid, validatePortErr
-	}
-	return true, nil
-}
-
-// Validate service name
-func ValidateServiceName(serviceName string) (bool, error) {
-	serviceNameIsValid, valServiceNameErr := regexp.MatchString(SericeNameRegex, serviceName)
-	hostIpIsValid, hostIpNameErr := regexp.MatchString(HostRegex, serviceName)
-	if (valServiceNameErr != nil || !serviceNameIsValid) && (hostIpNameErr != nil || !hostIpIsValid) {
-		return serviceNameIsValid, valServiceNameErr
-	}
-	return true, nil
-}
-
 // Get db user
 func GetDbUser() string {
 	dbUser := os.Getenv("LCM_CNTLR_USER")
-	if dbUser == "" {
-		dbUser = dbuser
-	}
 	return dbUser
 }
 
 // Get database name
 func GetDbName() string {
 	dbName := os.Getenv("LCM_CNTLR_DB")
-	if dbName == "" {
-		dbName = dbname
-	}
 	return dbName
 }
 
 // Get database host
 func GetDbHost() string {
 	dbHost := os.Getenv("LCM_CNTLR_DB_HOST")
-	if dbHost == "" {
-		dbHost = dbhost
-	}
 	return dbHost
 }
 
 // Get database port
 func GetDbPort() string {
 	dbPort := os.Getenv("LCM_CNTLR_DB_PORT")
-	if dbPort == "" {
-		dbPort = dbport
-	}
 	return dbPort
 }
 
 // Get prometheus port
 func GetPrometheusPort() string {
 	prometheusPort := os.Getenv("PROMETHEUS_PORT")
-	if prometheusPort == "" {
-		prometheusPort = prometheusport
-	}
 	return prometheusPort
 }
 
 // Get mep port
 func GetMepPort() string {
 	mepPort := os.Getenv("MEP_PORT")
-	if mepPort == "" {
-		mepPort = mepport
-	}
 	return mepPort
 }
 
 // Get k8splugin address
 func GetK8sPlugin() string {
 	k8sPlugin := os.Getenv(K8sPlugin)
-	if k8sPlugin == "" {
-		k8sPlugin = k8splugin
-	}
 	return k8sPlugin
 }
 
 // Get k8splugin port
 func GetK8sPluginPort() string {
 	k8sPluginPort := os.Getenv(K8sPluginPort)
-	if k8sPluginPort == "" {
-		k8sPluginPort = k8spluginport
-	}
 	return k8sPluginPort
+}
+
+// Get API Gateway address
+func GetAPIGwAddr() string {
+	apiGwAddr := os.Getenv(ApiGwAddr)
+	return apiGwAddr
+}
+
+// Get API Gateway port
+func GetAPIGwPort() string {
+	apiGwPort := os.Getenv(ApiGwPort)
+	return apiGwPort
+}
+
+// Get prometheus service name
+func GetPrometheusServiceName() string {
+	prometheusServerName := os.Getenv(PromethuesServerName)
+	return prometheusServerName
 }
 
 // Does https request
@@ -570,24 +507,6 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 	client := &http.Client{Transport: tr}
 
 	return client.Do(req)
-}
-
-// Get API Gateway address
-func GetAPIGwAddr() string {
-	apiGwAddr := os.Getenv(ApiGwAddr)
-	if apiGwAddr == "" {
-		apiGwAddr = apigwAddr
-	}
-	return apiGwAddr
-}
-
-// Get API Gateway port
-func GetAPIGwPort() string {
-	apiGwPort := os.Getenv(ApiGwPort)
-	if apiGwPort == "" {
-		apiGwPort = apigwPort
-	}
-	return apiGwPort
 }
 
 // Get hostinfo
@@ -630,14 +549,6 @@ func GetHostInfo(url string) (string, error) {
 		return string(body), nil
 	}
 	return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
-}
-
-func GetPromethuesServiceName() string {
-	promethuesServerName := os.Getenv(PromethuesServerName)
-	if promethuesServerName == "" {
-		promethuesServerName = PromethuesServerName
-	}
-	return promethuesServerName
 }
 
 // Validate app name

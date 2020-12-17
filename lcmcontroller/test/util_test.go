@@ -76,19 +76,19 @@ func TestValidatePasswordInvalid(t *testing.T) {
 
 func TestValidateAccessTokenSuccess(t *testing.T) {
 	accessToken := createToken("e921ce54-82c8-4532-b5c6-8516cf75f7a6")
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},"e921ce54-82c8-4532-b5c6-8516cf75f7a6")
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "e921ce54-82c8-4532-b5c6-8516cf75f7a6")
 	assert.Nil(t, err, "TestValidateAccessTokenSuccess execution result")
 }
 
 func TestValidateAccessTokenFailure(t *testing.T) {
 	accessToken := ""
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},util.UserId)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, util.UserId)
 	assert.Error(t, err, "TestValidateAccessTokenFailure execution result")
 }
 
 func TestValidateAccessTokenInvalid(t *testing.T) {
 	accessToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9"
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},util.UserId)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, util.UserId)
 	assert.Error(t, err, "TestValidateAccessTokenInvalid execution result")
 }
 
@@ -98,28 +98,28 @@ func TestValidateAccessTokenInvalid1(t *testing.T) {
 		"2Vuc29uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdiNjliIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BU" +
 		"FBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEVOQU5UIl0sImp0aSI6IjQ5ZTBhMGMwLTIxZ" +
 		"mItNDAwZC04M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFibGVTbXMiOiJ0cnVlIn0."
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole},util.UserId)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, util.UserId)
 	assert.Error(t, err, "TestValidateAccessTokenInvalid1 execution result")
 }
 
 func TestGetDbUser(t *testing.T) {
 	err := util.GetDbUser()
-	assert.Equal(t, "lcmcontroller", err, "TestGetDbUser execution result")
+	assert.Equal(t, "", err, "TestGetDbUser execution result")
 }
 
 func TestGetDbName(t *testing.T) {
 	err := util.GetDbName()
-	assert.Equal(t, "lcmcontrollerdb", err, "TestGetDbName execution result")
+	assert.Equal(t, "", err, "TestGetDbName execution result")
 }
 
 func TestGetDbHost(t *testing.T) {
 	err := util.GetDbHost()
-	assert.Equal(t, "mepm-postgres", err, "TestGetDbHost execution result")
+	assert.Equal(t, "", err, "TestGetDbHost execution result")
 }
 
 func TestGetDbPort(t *testing.T) {
 	err := util.GetDbPort()
-	assert.Equal(t, "5432", err, "TestGetDbPort execution result")
+	assert.Equal(t, "", err, "TestGetDbPort execution result")
 }
 
 func TestTLSConfig(t *testing.T) {

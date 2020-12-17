@@ -84,7 +84,6 @@ func (db *PgDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (i
 
 // Init database
 func (db *PgDb) InitDatabase() error {
-
 	dbUser := util.GetDbUser()
 	dbPwd := []byte(os.Getenv("LCM_CNTLR_DB_PASSWORD"))
 	dbName := util.GetDbName()
@@ -95,7 +94,7 @@ func (db *PgDb) InitDatabase() error {
 
 	dbPwdStr := string(dbPwd)
 	util.ClearByteArray(dbPwd)
-	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwdStr, dbName, dbHost, dbPort)
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbPwdStr)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
 		return errors.New("failed to validate db parameters")
 	}
@@ -122,15 +121,18 @@ func (db *PgDb) InitDatabase() error {
 		log.Error("Failed to register database")
 		return registerDataBaseErr
 	}
+
 	errRunSyncdb := orm.RunSyncdb(util.Default, false, false)
 	if errRunSyncdb != nil {
 		log.Error("Failed to sync database.")
 		return errRunSyncdb
 	}
+
 	err := db.initOrmer()
 	if err != nil {
 		log.Error("Failed to init ormer")
 		return err
 	}
+
 	return nil
 }
