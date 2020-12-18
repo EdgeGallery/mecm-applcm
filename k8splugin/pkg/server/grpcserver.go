@@ -482,7 +482,7 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
-			return "","", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+			return "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
 		} else {
 			return "", "", s.logError(status.Error(codes.InvalidArgument,
 				util.AccssTokenIsInvalid))
