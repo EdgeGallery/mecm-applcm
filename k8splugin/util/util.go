@@ -254,16 +254,25 @@ func ValidateRole(claims  jwt.MapClaims, allowedRoles []string) error {
 					break
 				}
 			}
-			if !isRoleAllowed(roleName, allowedRoles) {
-				log.Info("Invalid token Authorities")
-				if roleName == MecmGuestRole {
-					return errors.New(Forbidden)
-				}
-				return errors.New(InvalidToken)
+			err := isValidUser(roleName,allowedRoles)
+			if err != nil {
+				log.Info("not authorised user")
+				return err
 			}
 		}
 	}
 	return  nil
+}
+
+func isValidUser(roleName string, allowedRoles []string) error {
+	if !isRoleAllowed(roleName, allowedRoles) {
+		log.Info("Invalid token Authorities")
+		if roleName == MecmGuestRole {
+			return errors.New(Forbidden)
+		}
+		return errors.New(InvalidToken)
+	}
+	return nil
 }
 
 func isRoleAllowed(actual string, allowed []string) bool {
