@@ -52,6 +52,7 @@ const FailedToSendMetadataInfo string = "failed to send metadata information"
 const FailedToCreateClient string = "failed to create client: %v"
 const DeployTypeIsNotHelmBased = "Deployment type is not helm based"
 const InvalidToken string = "invalid token"
+const Forbidden string = "forbidden"
 const IllegalTenantId string = "Illegal TenantId"
 const AppInsId = "app_ins_id"
 const TenantId = "tenant_id"
@@ -70,6 +71,7 @@ const BadRequest int = 400
 const StatusUnauthorized int = 401
 const StatusInternalServerError int = 500
 const StatusNotFound int = 404
+const StatusForbidden int = 403
 
 const UuidRegex string = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 const AppNameRegex = `^[\w-]{4,128}$`
@@ -353,11 +355,23 @@ func ValidateRole(claims jwt.MapClaims, allowedRoles []string) error {
 					break
 				}
 			}
-			if !isRoleAllowed(roleName, allowedRoles) {
-				log.Info("Invalid token A")
-				return errors.New(InvalidToken)
+			err := isValidUser(roleName,allowedRoles)
+			if err != nil {
+				log.Info("not authorised user")
+				return err
 			}
 		}
+	}
+	return nil
+}
+
+func isValidUser(roleName string, allowedRoles []string) error {
+	if !isRoleAllowed(roleName, allowedRoles) {
+		log.Info("Invalid token Authorities")
+		if roleName == MecmGuestRole {
+			return errors.New(Forbidden)
+		}
+		return errors.New(InvalidToken)
 	}
 	return nil
 }
