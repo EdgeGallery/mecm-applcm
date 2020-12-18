@@ -71,6 +71,7 @@ const maxSkLen = 64
 const MaxIPVal = 255
 const IpAddFormatter = "%d.%d.%d.%d"
 const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+const Forbidden string = "forbidden"
 
 const FailedToDispRecvMsg    = "failed to display receive msg"
 const FailedToValInputParams = "failed to validate input parameters"
@@ -254,7 +255,10 @@ func ValidateRole(claims  jwt.MapClaims, allowedRoles []string) error {
 				}
 			}
 			if !isRoleAllowed(roleName, allowedRoles) {
-				log.Info("Invalid token A")
+				log.Info("Invalid token Authorities")
+				if roleName == MecmGuestRole {
+					return errors.New(Forbidden)
+				}
 				return errors.New(InvalidToken)
 			}
 		}

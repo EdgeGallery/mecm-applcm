@@ -64,8 +64,12 @@ func (c *LcmController) UploadConfig() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+    if err != nil {
+		if err.Error() == util.Forbidden {
+		 c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+		 c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return
 	}
 
@@ -122,10 +126,14 @@ func (c *LcmController) UploadConfig() {
 	_, err = adapter.UploadConfig(file, hostIp, accessToken)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		errorString := err.Error()
+		if strings.Contains(errorString, util.Forbidden) {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return
 	}
-
 	c.ServeJSON()
 }
 
@@ -167,7 +175,11 @@ func (c *LcmController) RemoveConfig() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		if err.Error() == util.Forbidden {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
@@ -194,7 +206,12 @@ func (c *LcmController) RemoveConfig() {
 	_, err = adapter.RemoveConfig(hostIp, accessToken)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		errorString := err.Error()
+		if strings.Contains(errorString, util.Forbidden) {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return
 	}
 	c.ServeJSON()
@@ -309,7 +326,11 @@ func (c *LcmController) validateToken(accessToken string, clientIp string) (stri
 	}
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		if err.Error() == util.Forbidden {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return "", "", nil, nil, "", " ", err
 	}
 	return hostIp, appInsId, file, header, tenantId, packageId, nil
@@ -368,7 +389,11 @@ func (c *LcmController) Terminate() {
 	}
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		if err.Error() == util.Forbidden {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return
 	}
 	appInsId, err := c.getAppInstId(clientIp)
@@ -407,7 +432,12 @@ func (c *LcmController) Terminate() {
 	_, err = adapter.Terminate(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		errorString := err.Error()
+		if strings.Contains(errorString, util.Forbidden) {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return
 	}
 	err = c.deleteAppInfoRecord(appInsId)
@@ -445,7 +475,7 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, "")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -858,7 +888,12 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	err, _ = adapter.Instantiate(hostIp, artifact, accessToken, akSkAppInfo)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		errorString := err.Error()
+		if strings.Contains(errorString, util.Forbidden) {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
 		return err
 	}
 	return nil

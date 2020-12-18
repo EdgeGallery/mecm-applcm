@@ -376,9 +376,12 @@ func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *lcmservice.RemoveC
 	accessToken := request.GetAccessToken()
 	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
-		return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		if err.Error() == util.Forbidden {
+			return "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+		} else {
+			return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		}
 	}
-
 	hostIp := request.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
@@ -418,7 +421,11 @@ func (s *ServerGRPC) validateInputForInstantiation(stream lcmservice.AppLCM_Inst
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		if err.Error() == util.Forbidden {
+			return "", "", "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+		} else {
+			return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		}
 	}
 
 	// Receive metadata which is ak
@@ -474,8 +481,12 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument,
-			util.AccssTokenIsInvalid))
+		if err.Error() == util.Forbidden {
+			return "","", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+		} else {
+			return "", "", s.logError(status.Error(codes.InvalidArgument,
+				util.AccssTokenIsInvalid))
+		}
 	}
 
 	hostIp = req.GetHostIp()
@@ -507,7 +518,11 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
 	if err != nil {
-		return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		if err.Error() == util.Forbidden {
+			return "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+		} else {
+			return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		}
 	}
 
 	// Receive metadata which is host ip
