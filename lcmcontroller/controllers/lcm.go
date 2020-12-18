@@ -63,17 +63,12 @@ func (c *LcmController) UploadConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
-    if err != nil {
-		if err.Error() == util.Forbidden {
-		 c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
-		 c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		}
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
-
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	hostIp, err := c.getHostIP(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -317,6 +312,23 @@ func (c *LcmController) Instantiate() {
 	c.ServeJSON()
 }
 
+func (c *LcmController) isPermitted(accessToken, clientIp string) (string,error) {
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", err
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
+	if err != nil {
+		if err.Error() == util.Forbidden {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
+		return "" ,err
+	}
+	return tenantId, nil
+}
+
 func (c *LcmController) validateToken(accessToken string, clientIp string) (string, string, multipart.File,
 	*multipart.FileHeader, string, string, error) {
 
@@ -382,20 +394,13 @@ func (c *LcmController) Terminate() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.getTenantId(clientIp)
+
+	tenantId, err := c.isPermitted(accessToken, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
-	if err != nil {
-		if err.Error() == util.Forbidden {
-			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
-			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		}
-		return
-	}
+
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
