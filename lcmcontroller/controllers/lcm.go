@@ -313,9 +313,13 @@ func (c *LcmController) Instantiate() {
 }
 
 func (c *LcmController) isPermitted(accessToken, clientIp string) (string,error) {
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		return "", err
+	var tenantId = ""
+	var err error
+	if c.isTenantAvailable(clientIp) {
+		tenantId, err = c.getTenantId(clientIp)
+		if err != nil {
+			return tenantId, err
+		}
 	}
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
 	if err != nil {
@@ -324,7 +328,7 @@ func (c *LcmController) isPermitted(accessToken, clientIp string) (string,error)
 		} else {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		}
-		return "" ,err
+		return tenantId, err
 	}
 	return tenantId, nil
 }
@@ -1014,6 +1018,15 @@ func (c *LcmController) getTenantId(clientIp string) (string, error) {
 		return "", err
 	}
 	return tenantId, nil
+}
+
+// Get app Instance Id
+func (c *LcmController) isTenantAvailable(clientIp string) (bool) {
+	tenantId := c.Ctx.Input.Param(":tenantId")
+	if tenantId != "" {
+		return true
+	}
+	return false
 }
 
 // Create package path
