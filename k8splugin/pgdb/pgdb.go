@@ -86,7 +86,7 @@ func (db *PgDb) InitDatabase(dbSslMode string) error {
 
 	dbPwdStr := string(dbPwd)
 	util.ClearByteArray(dbPwd)
-	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbUser, dbPwdStr, dbName, dbHost, dbPort)
+	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbPwdStr)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
 		return errors.New("failed to validate db parameters")
 	}

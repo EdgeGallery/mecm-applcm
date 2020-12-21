@@ -140,11 +140,6 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 
 	// Get release namespace
 	releaseNamespace := util.GetReleaseNamespace()
-	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
-	if err != nil || !nameSpace {
-		log.Error(util.InvalidNamespace)
-		return "", err
-	}
 
 	// Initialize action config
 	actionConfig := new(action.Configuration)
@@ -173,11 +168,7 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 func (hc *HelmClient) UnDeploy(relName string) error {
 	// Get release namespace
 	releaseNamespace := util.GetReleaseNamespace()
-	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
-	if err != nil || !nameSpace {
-		log.Error(util.InvalidNamespace)
-		return err
-	}
+
 	// Prepare action config and uninstall chart
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
@@ -204,11 +195,6 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 
 	// Get release namespace
 	releaseNamespace := util.GetReleaseNamespace()
-	nameSpace, err := util.ValidateNameSpace(releaseNamespace)
-	if err != nil || !nameSpace {
-		log.Error(util.InvalidNamespace)
-		return "", err
-	}
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
 		util.HelmDriver, func(format string, v ...interface{}) {

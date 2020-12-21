@@ -109,22 +109,22 @@ func TestValidateAccessTokenInvalid1(t *testing.T) {
 
 func TestGetDbUser(t *testing.T) {
 	err := util.GetDbUser()
-	assert.Equal(t, "k8splugin", err, "TestGetDbUser execution result")
+	assert.Equal(t, "", err, "TestGetDbUser execution result")
 }
 
 func TestGetDbName(t *testing.T) {
 	err := util.GetDbName()
-	assert.Equal(t, "k8splugindb", err, "TestGetDbName execution result")
+	assert.Equal(t, "", err, "TestGetDbName execution result")
 }
 
 func TestGetDbHost(t *testing.T) {
 	err := util.GetDbHost()
-	assert.Equal(t, "mepm-postgres", err, "TestGetDbHost execution result")
+	assert.Equal(t, "", err, "TestGetDbHost execution result")
 }
 
 func TestGetDbPort(t *testing.T) {
 	err := util.GetDbPort()
-	assert.Equal(t, "5432", err, "TestGetDbPort execution result")
+	assert.Equal(t, "", err, "TestGetDbPort execution result")
 }
 
 func TestValidateServerNameSuccess(t *testing.T) {
@@ -204,5 +204,5 @@ func TestValidateNameSpaceSuccess(t *testing.T) {
 
 func TestGetReleaseNamespaceSuccess(t *testing.T) {
 	result := util.GetReleaseNamespace()
-	assert.Equal(t, "default", result, "TestGetReleaseNamespaceSuccess execution result")
+	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }
