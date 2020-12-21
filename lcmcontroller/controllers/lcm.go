@@ -328,7 +328,7 @@ func (c *LcmController) isPermitted(accessToken, clientIp string) (string,error)
 		} else {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		}
-		return tenantId ,err
+		return tenantId, err
 	}
 	return tenantId, nil
 }
