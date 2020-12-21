@@ -18,7 +18,9 @@ package server
 import (
 	"bytes"
 	"context"
+	"golang.org/x/time/rate"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/tap"
 	"io"
 	"k8splugin/conf"
 	"k8splugin/internal/lcmservice"
@@ -58,6 +60,16 @@ type ServerGRPCConfig struct {
 	Port         string
 	Address      string
 	ServerConfig *conf.ServerConfigurations
+}
+
+// Rate Limit
+type RateLimit struct {
+	lim *rate.Limiter
+}
+
+// New Rate Limit constructor
+func NewRateLimit() *RateLimit {
+	return &RateLimit{rate.NewLimiter(1, 200)}
 }
 
 // Constructor to GRPC server
@@ -102,10 +114,10 @@ func (s *ServerGRPC) Listen() (err error) {
 		creds := credentials.NewTLS(tlsConfig)
 
 		// Create server with TLS credentials
-		s.server = grpc.NewServer(grpc.Creds(creds))
+		s.server = grpc.NewServer(grpc.Creds(creds), grpc.InTapHandle(NewRateLimit().Handler))
 	} else {
 		// Create server without TLS credentials
-		s.server = grpc.NewServer()
+		s.server = grpc.NewServer(grpc.InTapHandle(NewRateLimit().Handler))
 	}
 
 	lcmservice.RegisterAppLCMServer(s.server, s)
@@ -118,6 +130,14 @@ func (s *ServerGRPC) Listen() (err error) {
 		return err
 	}
 	return
+}
+
+// Handler to check service is over rate limit or not
+func (t *RateLimit) Handler(ctx context.Context, info *tap.Info) (context.Context, error) {
+	if !t.lim.Allow() {
+		return nil, status.Errorf(codes.ResourceExhausted, "service is over rate limit")
+	}
+	return ctx, nil
 }
 
 // Query application
