@@ -124,8 +124,10 @@ func (c *LcmController) UploadConfig() {
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
 		return
 	}
@@ -204,8 +206,10 @@ func (c *LcmController) RemoveConfig() {
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
 		return
 	}
@@ -453,11 +457,7 @@ func (c *LcmController) Terminate() {
 	util.ClearByteArray(bKey)
 	if err != nil {
 		errorString := err.Error()
-		if strings.Contains(errorString, util.Forbidden) {
-			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
-			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		}
+		c.handleLoggingK8s(clientIp, errorString)
 		return
 	}
 	err = c.deleteAppInfoRecord(appInsId)
@@ -911,8 +911,10 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid)  {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
 		return err
 	}
@@ -1308,4 +1310,14 @@ func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort, 
 		return diskUtilization, err
 	}
 	return diskUtilization, nil
+}
+
+func (c *LcmController) handleLoggingK8s(clientIp string, errorString string) {
+	if strings.Contains(errorString, util.Forbidden) {
+		c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+	} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+	} else {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
+	}
 }

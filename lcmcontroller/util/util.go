@@ -110,6 +110,7 @@ const UserId = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 const MaxIPVal = 255
 const IpAddFormatter = "%d.%d.%d.%d"
 const PrometheusServerName = "PROMETHEUS_SERVER_NAME"
+const AccessTokenIsInvalid = "accessToken is invalid"
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
