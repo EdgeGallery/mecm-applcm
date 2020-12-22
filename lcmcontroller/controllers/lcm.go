@@ -460,6 +460,15 @@ func (c *LcmController) Terminate() {
 		c.handleLoggingK8s(clientIp, errorString)
 		return
 	}
+
+	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{})
+	err = acm.DeleteAppAuthConfig()
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to delete app auth config request to mep")
+		return
+	}
+
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete app info record")
@@ -469,14 +478,6 @@ func (c *LcmController) Terminate() {
 	err = c.deleteTenantRecord(tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete tenant record")
-		return
-	}
-
-	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{})
-	err = acm.DeleteAppAuthConfig()
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to delete app auth config request to mep")
 		return
 	}
 
