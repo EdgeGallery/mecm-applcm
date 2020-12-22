@@ -320,10 +320,10 @@ func (c *LcmController) Instantiate() {
 	c.ServeJSON()
 }
 
-func (c *LcmController) isPermitted(accessToken, clientIp string) (string,error) {
+func (c *LcmController) isPermitted(accessToken, clientIp string) (string, error) {
 	var tenantId = ""
 	var err error
-	if c.isTenantAvailable(clientIp) {
+	if c.isTenantAvailable() {
 		tenantId, err = c.getTenantId(clientIp)
 		if err != nil {
 			return tenantId, err
@@ -1033,12 +1033,9 @@ func (c *LcmController) getTenantId(clientIp string) (string, error) {
 }
 
 // Get app Instance Id
-func (c *LcmController) isTenantAvailable(clientIp string) (bool) {
+func (c *LcmController) isTenantAvailable() bool {
 	tenantId := c.Ctx.Input.Param(":tenantId")
-	if tenantId != "" {
-		return true
-	}
-	return false
+	return tenantId != ""
 }
 
 // Create package path
