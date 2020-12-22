@@ -124,8 +124,10 @@ func (c *LcmController) UploadConfig() {
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
 		return
 	}
@@ -204,8 +206,10 @@ func (c *LcmController) RemoveConfig() {
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
 		return
 	}
@@ -455,8 +459,10 @@ func (c *LcmController) Terminate() {
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
+		}  else if strings.Contains(errorString, util.AccessTokenIsInvalid)  {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
 		return
 	}
@@ -911,8 +917,10 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid)  {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
 		return err
 	}
