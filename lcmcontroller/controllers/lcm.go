@@ -62,6 +62,10 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		return
+	}
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	_, err = c.isPermitted(accessToken, clientIp)
@@ -223,6 +227,10 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		return
+	}
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
@@ -396,6 +404,10 @@ func (c *LcmController) Terminate() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		return
+	}
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 

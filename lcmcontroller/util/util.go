@@ -59,6 +59,7 @@ const TenantId = "tenant_id"
 const FailedToGetClient = "Failed to get client"
 const FailedToGetPluginInfo = "Failed to get plugin info"
 const MepCapabilityIsNotValid = "MEP capability id is not valid"
+const RequestBodyTooLarge = "request body too large"
 const MaxSize int = 20
 const MaxBackups int = 50
 const MaxAge = 30
@@ -72,6 +73,7 @@ const StatusUnauthorized int = 401
 const StatusInternalServerError int = 500
 const StatusNotFound int = 404
 const StatusForbidden int = 403
+const RequestBodyLength = 4096
 
 const UuidRegex string = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 const AppNameRegex = `^[\w-]{4,128}$`
@@ -355,7 +357,7 @@ func ValidateRole(claims jwt.MapClaims, allowedRoles []string) error {
 					break
 				}
 			}
-			err := isValidUser(roleName,allowedRoles)
+			err := isValidUser(roleName, allowedRoles)
 			if err != nil {
 				log.Info("not authorised user")
 				return err
