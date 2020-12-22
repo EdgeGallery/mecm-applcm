@@ -85,13 +85,6 @@ const RemoveConfig = "RemoveConfig"
 const MecmTenantRole = "ROLE_MECM_TENANT"
 const MecmGuestRole = "ROLE_MECM_GUEST"
 
-// Default environment variables
-const dbuser    = "k8splugin"
-const dbname    = "k8splugindb"
-const dbhost    = "mepm-postgres"
-const dbport    = "5432"
-const namespace = "default"
-
 const TooManyFile int = 1024
 const TooBig = 0x6400000
 const SingleFileTooBig = 0x6400000
@@ -141,27 +134,11 @@ func getPasswordValidCount(password *[]byte) int {
 }
 
 // Validate db parameters
-func ValidateDbParams(dbUser string, dbPwd string, dbName string, dbHost string, dbPort string) (bool, error) {
-	dbUserIsValid, validateDbUserErr := regexp.MatchString(DB_USER_REGEX, dbUser)
-	if validateDbUserErr != nil || !dbUserIsValid {
-		return dbUserIsValid, validateDbUserErr
-	}
+func ValidateDbParams(dbPwd string) (bool, error) {
 	dbPwdBytes := []byte(dbPwd)
 	dbPwdIsValid, validateDbPwdErr := ValidatePassword(&dbPwdBytes)
 	if validateDbPwdErr != nil || !dbPwdIsValid {
 		return dbPwdIsValid, validateDbPwdErr
-	}
-	dbNameIsValid, validateDbNameErr := regexp.MatchString(DB_NAME_REGEX, dbName)
-	if validateDbNameErr != nil || !dbNameIsValid {
-		return dbNameIsValid, validateDbNameErr
-	}
-	dbHostIsValid, validateDbHostErr := regexp.MatchString(HOST_REGEX, dbHost)
-	if validateDbHostErr != nil || !dbHostIsValid {
-		return dbHostIsValid, validateDbHostErr
-	}
-	dbPortIsValid, validateDbPortErr := regexp.MatchString(PORT_REGEX, dbPort)
-	if validateDbPortErr != nil || !dbPortIsValid {
-		return dbPortIsValid, validateDbPortErr
 	}
 	return true, nil
 }
@@ -417,45 +394,30 @@ func GetConfiguration(configPath string) (config *conf.Configurations, err error
 // Get db user
 func GetDbUser() string {
 	dbUser := os.Getenv("K8S_PLUGIN_USER")
-	if dbUser == "" {
-		dbUser = dbuser
-	}
 	return dbUser
 }
 
 // Get database name
 func GetDbName() string {
 	dbName := os.Getenv("K8S_PLUGIN_DB")
-	if dbName == "" {
-		dbName = dbname
-	}
 	return dbName
 }
 
 // Get database host
 func GetDbHost() string {
 	dbHost := os.Getenv("K8S_PLUGIN_DB_HOST")
-	if dbHost == "" {
-		dbHost = dbhost
-	}
 	return dbHost
 }
 
 // Get database port
 func GetDbPort() string {
 	dbPort := os.Getenv("K8S_PLUGIN_DB_PORT")
-	if dbPort == "" {
-		dbPort = dbport
-	}
 	return dbPort
 }
 
 // Get release namespace
 func GetReleaseNamespace() string {
 	releaseNamespace := os.Getenv("RELEASE_NAMESPACE")
-	if releaseNamespace == "" {
-		releaseNamespace = namespace
-	}
 	return releaseNamespace
 }
 

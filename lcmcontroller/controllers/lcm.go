@@ -312,10 +312,16 @@ func (c *LcmController) Instantiate() {
 	c.ServeJSON()
 }
 
-func (c *LcmController) isPermitted(accessToken, clientIp string) (string,error) {
+func (c *LcmController) isPermitted(accessToken, clientIp string) (string, error) {
 	var tenantId = ""
 	var err error
-	if c.isTenantAvailable(clientIp) {
+
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		return "", errors.New(util.RequestBodyTooLarge)
+	}
+
+	if c.isTenantAvailable() {
 		tenantId, err = c.getTenantId(clientIp)
 		if err != nil {
 			return tenantId, err
@@ -335,6 +341,11 @@ func (c *LcmController) isPermitted(accessToken, clientIp string) (string,error)
 
 func (c *LcmController) validateToken(accessToken string, clientIp string) (string, string, multipart.File,
 	*multipart.FileHeader, string, string, error) {
+
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		return "", "", nil, nil, "", " ", errors.New(util.RequestBodyTooLarge)
+	}
 
 	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
 	if err != nil {
@@ -1021,12 +1032,9 @@ func (c *LcmController) getTenantId(clientIp string) (string, error) {
 }
 
 // Get app Instance Id
-func (c *LcmController) isTenantAvailable(clientIp string) (bool) {
+func (c *LcmController) isTenantAvailable() bool {
 	tenantId := c.Ctx.Input.Param(":tenantId")
-	if tenantId != "" {
-		return true
-	}
-	return false
+	return tenantId != ""
 }
 
 // Create package path
