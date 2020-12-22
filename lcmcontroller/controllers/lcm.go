@@ -62,10 +62,6 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
-	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
-		return
-	}
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	_, err = c.isPermitted(accessToken, clientIp)
@@ -227,10 +223,6 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
-	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
-		return
-	}
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
@@ -323,6 +315,12 @@ func (c *LcmController) Instantiate() {
 func (c *LcmController) isPermitted(accessToken, clientIp string) (string, error) {
 	var tenantId = ""
 	var err error
+
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		return "", errors.New(util.RequestBodyTooLarge)
+	}
+
 	if c.isTenantAvailable() {
 		tenantId, err = c.getTenantId(clientIp)
 		if err != nil {
@@ -343,6 +341,11 @@ func (c *LcmController) isPermitted(accessToken, clientIp string) (string, error
 
 func (c *LcmController) validateToken(accessToken string, clientIp string) (string, string, multipart.File,
 	*multipart.FileHeader, string, string, error) {
+
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		return "", "", nil, nil, "", " ", errors.New(util.RequestBodyTooLarge)
+	}
 
 	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
 	if err != nil {
@@ -404,10 +407,6 @@ func (c *LcmController) Terminate() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
-	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
-		return
-	}
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
