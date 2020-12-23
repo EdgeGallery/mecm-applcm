@@ -103,13 +103,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo, err := getPluginInfo()
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
-		return
-	}
-
+	pluginInfo := getPluginInfo()
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -152,11 +146,11 @@ func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) e
 }
 
 // Get plugin info
-func getPluginInfo() (string, error) {
+func getPluginInfo() string {
 	k8sPlugin := util.GetK8sPlugin()
 	k8sPluginPort := util.GetK8sPluginPort()
 	pluginInfo := k8sPlugin + ":" + k8sPluginPort
-	return pluginInfo, nil
+	return pluginInfo
 }
 
 // Remove Config
@@ -186,13 +180,7 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo, err := getPluginInfo()
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
-		return
-	}
-
+	pluginInfo := getPluginInfo()
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -434,12 +422,7 @@ func (c *LcmController) Terminate() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo, err = getPluginInfo()
-		if err != nil {
-			util.ClearByteArray(bKey)
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
-			return
-		}
+		pluginInfo = getPluginInfo()
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -585,12 +568,7 @@ func (c *LcmController) Query() {
 
 	switch appInfoRecord.DeployType {
 	case "helm":
-		pluginInfo, err = getPluginInfo()
-		if err != nil {
-			util.ClearByteArray(bKey)
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
-			return
-		}
+		pluginInfo = getPluginInfo()
 	default:
 		util.ClearByteArray(bKey)
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -912,7 +890,7 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 		errorString := err.Error()
 		if strings.Contains(errorString, util.Forbidden) {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else if strings.Contains(errorString, util.AccessTokenIsInvalid)  {
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		} else {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -1075,11 +1053,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 			return "", "", err
 		}
 
-		pluginInfo, err := getPluginInfo()
-		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetPluginInfo)
-			return "", "", err
-		}
+		pluginInfo := getPluginInfo()
 		return artifact, pluginInfo, nil
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
