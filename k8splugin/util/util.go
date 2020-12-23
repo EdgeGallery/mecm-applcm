@@ -37,57 +37,54 @@ var (
 	jwtPublicKey = os.Getenv("JWT_PUBLIC_KEY")
 )
 
-const DB_REGEX string = `^[\w-]{4,16}$`
-const DB_USER_REGEX = DB_REGEX
-const DB_NAME_REGEX = DB_REGEX
-const NAMESPACE_REGEX = DB_REGEX
-const HOST_REGEX string = `^[\w-.]{4,16}$`
-const PORT_REGEX string = `^([1-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`
-const minPasswordSize = 8
-const maxPasswordSize = 16
-const specialCharRegex string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
-const singleDigitRegex string = `\d`
-const lowerCaseRegex string = `[a-z]`
-const upperCaseRegex string = `[A-Z]`
-const maxPasswordCount = 2
-const Default string = "default"
-const DriverName string = "postgres"
-const InvalidToken string = "invalid token"
-const CannotReceivePackage = "Cannot receive package metadata."
-const FilePerm = 0750
-const TempFile = "temp.tar.gz"
-const HostIpIsInvalid = "hostIp is invalid"
-const AccssTokenIsInvalid = "accessToken is invalid"
-const Success = "Success"
-const Failure = "Failure"
-const ActionConfig = "Unable to initialize action config"
-const InvalidNamespace = "Invalid namespace"
-const HelmDriver = ""
-const DeployType = "helm"
-const AppInsId = "app_ins_id"
-const maxHostNameLen = 253
-const maxAkLen = 20
-const maxSkLen = 64
-const MaxIPVal = 255
-const IpAddFormatter = "%d.%d.%d.%d"
-const ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
-const Forbidden string = "forbidden"
+const (
+	DB_REGEX string = `^[\w-]{4,16}$`
+	NAMESPACE_REGEX = DB_REGEX
+	minPasswordSize = 8
+	maxPasswordSize = 16
+	specialCharRegex string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
+	singleDigitRegex string = `\d`
+	lowerCaseRegex string = `[a-z]`
+	upperCaseRegex string = `[A-Z]`
+	maxPasswordCount = 2
+	Default string = "default"
+	DriverName string = "postgres"
+	InvalidToken string = "invalid token"
+	CannotReceivePackage = "Cannot receive package metadata."
+	FilePerm = 0750
+	TempFile = "temp.tar.gz"
+	HostIpIsInvalid = "hostIp is invalid"
+	AccssTokenIsInvalid = "accessToken is invalid"
+	Success = "Success"
+	Failure = "Failure"
+	ActionConfig = "Unable to initialize action config"
+	HelmDriver = ""
+	DeployType = "helm"
+	AppInsId = "app_ins_id"
+	maxHostNameLen = 253
+	maxAkLen = 20
+	maxSkLen = 64
+	MaxIPVal = 255
+	IpAddFormatter = "%d.%d.%d.%d"
+	ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+	Forbidden string = "forbidden"
 
-const FailedToDispRecvMsg    = "failed to display receive msg"
-const FailedToValInputParams = "failed to validate input parameters"
-const FailedToGetClient      = "failed to get client"
-const AppRecordDoesNotExit   = "app info record does not exist in database\""
-const Query        = "Query"
-const Instantiate  = "Instantiate"
-const Terminate    = "Terminate"
-const UploadConfig = "UploadConfig"
-const RemoveConfig = "RemoveConfig"
-const MecmTenantRole = "ROLE_MECM_TENANT"
-const MecmGuestRole = "ROLE_MECM_GUEST"
+	FailedToDispRecvMsg    = "failed to display receive msg"
+	FailedToValInputParams = "failed to validate input parameters"
+	FailedToGetClient      = "failed to get client"
+	AppRecordDoesNotExit   = "app info record does not exist in database"
+	Query        = "Query"
+	Instantiate  = "Instantiate"
+	Terminate    = "Terminate"
+	UploadConfig = "UploadConfig"
+	RemoveConfig = "RemoveConfig"
+	MecmTenantRole = "ROLE_MECM_TENANT"
+	MecmGuestRole = "ROLE_MECM_GUEST"
 
-const TooManyFile int = 1024
-const TooBig = 0x6400000
-const SingleFileTooBig = 0x6400000
+	TooManyFile int = 1024
+	TooBig = 0x6400000
+	SingleFileTooBig = 0x6400000
+)
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,

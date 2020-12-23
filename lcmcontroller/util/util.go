@@ -40,77 +40,79 @@ var (
 	jwtPublicKey = os.Getenv("JWT_PUBLIC_KEY")
 )
 
-const AccessToken string = "access_token"
-const K8sPlugin string = "K8S_PLUGIN"
-const K8sPluginPort string = "K8S_PLUGIN_PORT"
-const AuthorizationFailed string = "Authorization failed"
-const Default string = "default"
-const DriverName string = "postgres"
-const Failure string = "Failure"
-const ClientIpaddressInvalid = "cientIp address is invalid"
-const FailedToSendMetadataInfo string = "failed to send metadata information"
-const FailedToCreateClient string = "failed to create client: %v"
-const DeployTypeIsNotHelmBased = "Deployment type is not helm based"
-const InvalidToken string = "invalid token"
-const Forbidden string = "forbidden"
-const IllegalTenantId string = "Illegal TenantId"
-const AppInsId = "app_ins_id"
-const TenantId = "tenant_id"
-const FailedToGetClient = "Failed to get client"
-const FailedToGetPluginInfo = "Failed to get plugin info"
-const MepCapabilityIsNotValid = "MEP capability id is not valid"
-const RequestBodyTooLarge = "request body too large"
-const MaxSize int = 20
-const MaxBackups int = 50
-const MaxAge = 30
-const MaxConfigFile int64 = 5242880
-const Timeout = 180
-const MaxNumberOfRecords = 50
-const MaxFileNameSize = 64
+const (
+	AccessToken              string = "access_token"
+	K8sPlugin                string = "K8S_PLUGIN"
+	K8sPluginPort            string = "K8S_PLUGIN_PORT"
+	AuthorizationFailed      string = "Authorization failed"
+	Default                  string = "default"
+	DriverName               string = "postgres"
+	Failure                  string = "Failure"
+	ClientIpaddressInvalid          = "cientIp address is invalid"
+	FailedToSendMetadataInfo string = "failed to send metadata information"
+	FailedToCreateClient     string = "failed to create client: %v"
+	DeployTypeIsNotHelmBased        = "Deployment type is not helm based"
+	InvalidToken             string = "invalid token"
+	Forbidden                string = "forbidden"
+	IllegalTenantId          string = "Illegal TenantId"
+	AppInsId                        = "app_ins_id"
+	TenantId                        = "tenant_id"
+	FailedToGetClient               = "Failed to get client"
+	FailedToGetPluginInfo           = "Failed to get plugin info"
+	MepCapabilityIsNotValid         = "MEP capability id is not valid"
+	RequestBodyTooLarge             = "request body too large"
+	MaxSize                  int    = 20
+	MaxBackups               int    = 50
+	MaxAge                          = 30
+	MaxConfigFile            int64  = 5242880
+	Timeout                         = 180
+	MaxNumberOfRecords              = 50
+	MaxFileNameSize                 = 64
 
-const BadRequest int = 400
-const StatusUnauthorized int = 401
-const StatusInternalServerError int = 500
-const StatusNotFound int = 404
-const StatusForbidden int = 403
-const RequestBodyLength = 4096
+	BadRequest                int = 400
+	StatusUnauthorized        int = 401
+	StatusInternalServerError int = 500
+	StatusNotFound            int = 404
+	StatusForbidden           int = 403
+	RequestBodyLength             = 4096
 
-const UuidRegex string = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
-const AppNameRegex = `^[\w-]{4,128}$`
+	UuidRegex    = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
+	AppNameRegex = `^[\w-]{4,128}$`
 
-const minPasswordSize = 8
-const maxPasswordSize = 16
-const specialCharRegex string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
-const singleDigitRegex string = `\d`
-const lowerCaseRegex string = `[a-z]`
-const upperCaseRegex string = `[A-Z]`
-const maxPasswordCount = 2
-const maxMepCapabilityIdLen = 32
+	minPasswordSize              = 8
+	maxPasswordSize              = 16
+	specialCharRegex      string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
+	singleDigitRegex      string = `\d`
+	lowerCaseRegex        string = `[a-z]`
+	upperCaseRegex        string = `[A-Z]`
+	maxPasswordCount             = 2
+	maxMepCapabilityIdLen        = 32
 
-const TooManyFile int = 1024
-const TooBig = 0x6400000
-const SingleFileTooBig = 0x6400000
+	TooManyFile      = 1024
+	TooBig           = 0x6400000
+	SingleFileTooBig = 0x6400000
 
-const HttpUrl string = "http://"
-const HttpsUrl string = "https://"
-const CpuQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
-const MemQuery string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
-const DiskQuery string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)"
-const UnexpectedValue = "unexpected value found"
-const MarshalError = "Failed to marshal json"
-const UnMarshalError = "Failed to unmarshal json"
-const FailedToWriteRes = "Failed to write response into context"
-const CapabilityUri = "/mepcfg/mec_platform_config/v1/capabilities"
-const ApiGwAddr = "API_GW_ADDR"
-const ApiGwPort = "API_GW_PORT"
+	HttpUrl          string = "http://"
+	HttpsUrl         string = "https://"
+	CpuQuery         string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_cpu_cores)/sum(kube_node_status_allocatable_cpu_cores)"
+	MemQuery         string = "/api/v1/query?query=sum(kube_pod_container_resource_requests_memory_bytes)/sum(kube_node_status_allocatable_memory_bytes)"
+	DiskQuery        string = "/api/v1/query?query=(sum(node_filesystem_size_bytes)-sum(node_filesystem_free_bytes))/sum(node_filesystem_size_bytes)"
+	UnexpectedValue         = "unexpected value found"
+	MarshalError            = "Failed to marshal json"
+	UnMarshalError          = "Failed to unmarshal json"
+	FailedToWriteRes        = "Failed to write response into context"
+	CapabilityUri           = "/mepcfg/mec_platform_config/v1/capabilities"
+	ApiGwAddr               = "API_GW_ADDR"
+	ApiGwPort               = "API_GW_PORT"
 
-const MecmTenantRole = "ROLE_MECM_TENANT"
-const MecmGuestRole = "ROLE_MECM_GUEST"
-const UserId = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
-const MaxIPVal = 255
-const IpAddFormatter = "%d.%d.%d.%d"
-const PrometheusServerName = "PROMETHEUS_SERVER_NAME"
-const AccessTokenIsInvalid = "accessToken is invalid"
+	MecmTenantRole       = "ROLE_MECM_TENANT"
+	MecmGuestRole        = "ROLE_MECM_GUEST"
+	UserId               = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
+	MaxIPVal             = 255
+	IpAddFormatter       = "%d.%d.%d.%d"
+	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
+	AccessTokenIsInvalid = "accessToken is invalid"
+)
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
