@@ -282,7 +282,7 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) err
 		return err
 	}
 
-	releaseName, err := client.Deploy(pkg, appInsId, ak, sk)
+	releaseName, err := client.Deploy(pkg, appInsId, ak, sk, s.db)
 	if err != nil {
 		log.Info("instantiation failed")
 		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")

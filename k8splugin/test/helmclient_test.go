@@ -25,6 +25,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
 	"k8splugin/config"
+	"k8splugin/models"
 	"k8splugin/pkg/adapter"
 	"os"
 	"reflect"
@@ -73,6 +74,7 @@ func TestDeploySuccess(t *testing.T) {
 	}
 	pkg := bytes.Buffer{}
 	result, err := client.Deploy(pkg, "69d01999-dc53-4f59-a7f4-229b254340c2",
-	"OzXpsJXuuNuyz301Hfc=", "DyaLraRyrNvSIIMaoQngvzHvQLkps8TXTCDq29FF1tW3hWtW+S1QDjVHAvlE70h/")
+	"OzXpsJXuuNuyz301Hfc=", "DyaLraRyrNvSIIMaoQngvzHvQLkps8TXTCDq29FF1tW3hWtW+S1QDjVHAvlE70h/",
+	&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }

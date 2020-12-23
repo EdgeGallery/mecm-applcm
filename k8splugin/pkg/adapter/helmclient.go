@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/ghodss/yaml"
 	v1 "k8s.io/api/core/v1"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8splugin/config"
 	"k8splugin/models"
+	"k8splugin/pgdb"
 	"k8splugin/util"
 	"os"
 	"strconv"
@@ -95,7 +97,7 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 }
 
 // Install a given helm chart
-func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error) {
+func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
 	log.Info("Inside helm client")
 
 	// Create temporary file to hold helm chart
@@ -138,6 +140,15 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 	// Release name will be taken from the name in chart's metadata
 	relName := chart.Metadata.Name
 
+	appInstanceRecord := &models.AppInstanceInfo{
+		WorkloadId: relName,
+	}
+
+	readErr := db.ReadData(appInstanceRecord, "workload_id")
+	if readErr == nil {
+		return "", errors.New("application is already deployed with this release name")
+	}
+
 	// Get release namespace
 	releaseNamespace := util.GetReleaseNamespace()
 
@@ -157,6 +168,11 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 	installer.ReleaseName = relName
 	rel, err := installer.Run(chart, nil)
 	if err != nil {
+		ui := action.NewUninstall(actionConfig)
+		_, uninstallErr := ui.Run(relName)
+		if uninstallErr != nil {
+			log.Infof("Unable to uninstall chart. Err: %s", uninstallErr)
+		}
 		log.Errorf("Unable to install chart. Err: %s", err)
 		return "", err
 	}
