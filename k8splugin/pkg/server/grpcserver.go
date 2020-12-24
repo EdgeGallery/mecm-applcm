@@ -233,18 +233,17 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 		log.Errorf("Chart not found for workloadId: %s. Err: %s", appInstanceRecord.WorkloadId, err)
 		s.displayResponseMsg(ctx, util.Terminate, "chart not found for workloadId")
 		return resp, err
-	} else {
-		err := s.deleteAppInfoRecord(appInsId)
-		if err != nil {
-			s.displayResponseMsg(ctx, util.Terminate, "failed to delete app info record from database")
-			return resp, err
-		}
-		resp = &lcmservice.TerminateResponse{
-			Status: util.Success,
-		}
-		log.Info("terminate is success")
-		return resp, nil
 	}
+	err = s.deleteAppInfoRecord(appInsId)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.Terminate, "failed to delete app info record from database")
+		return resp, err
+	}
+	resp = &lcmservice.TerminateResponse{
+		Status: util.Success,
+	}
+	log.Info("terminate is success")
+	return resp, nil
 }
 
 // Instantiate application
@@ -288,17 +287,16 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) err
 		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")
 		sendInstantiateResponse(stream, &res)
 		return err
-	} else {
-		err = s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName)
-		if err != nil {
-			s.displayResponseMsg(ctx, util.Instantiate, "failed to insert or update app record")
-			sendInstantiateResponse(stream, &res)
-			return err
-		}
-		log.Info("successful instantiation")
-		res.Status = util.Success
-		sendInstantiateResponse(stream, &res)
 	}
+	err = s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.Instantiate, "failed to insert or update app record")
+		sendInstantiateResponse(stream, &res)
+		return err
+	}
+	log.Info("successful instantiation")
+	res.Status = util.Success
+	sendInstantiateResponse(stream, &res)
 	return nil
 }
 
@@ -343,17 +341,23 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 		return err
 	}
 
+	if len(file.Bytes()) > util.MaxConfigFile {
+		s.displayResponseMsg(ctx, util.UploadConfig, "file size is larger than max size")
+		sendUploadCfgResponse(stream, &res)
+		return err
+	}
+
 	defer newFile.Close()
 	_, err = newFile.Write(file.Bytes())
 	if err != nil {
 		s.displayResponseMsg(ctx, util.UploadConfig, "config IO operation error")
 		sendUploadCfgResponse(stream, &res)
 		return err
-	} else {
-		log.Info("successfully uploaded config file")
-		res.Status = util.Success
-		sendUploadCfgResponse(stream, &res)
 	}
+
+	log.Info("successfully uploaded config file")
+	res.Status = util.Success
+	sendUploadCfgResponse(stream, &res)
 	return nil
 }
 

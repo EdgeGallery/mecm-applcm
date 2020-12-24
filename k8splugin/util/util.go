@@ -19,7 +19,6 @@ package util
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"k8splugin/conf"
 	"math/rand"
 	"os"
@@ -38,8 +37,6 @@ var (
 )
 
 const (
-	DB_REGEX string = `^[\w-]{4,16}$`
-	NAMESPACE_REGEX = DB_REGEX
 	minPasswordSize = 8
 	maxPasswordSize = 16
 	specialCharRegex string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
@@ -65,9 +62,9 @@ const (
 	maxAkLen = 20
 	maxSkLen = 64
 	MaxIPVal = 255
-	IpAddFormatter = "%d.%d.%d.%d"
 	ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
 	Forbidden string = "forbidden"
+	MaxConfigFile              = 5242880
 
 	FailedToDispRecvMsg    = "failed to display receive msg"
 	FailedToValInputParams = "failed to validate input parameters"
@@ -261,7 +258,7 @@ func isRoleAllowed(actual string, allowed []string) bool {
 // Validate UUID
 func ValidateUUID(id string) error {
 	if id == "" {
-		return errors.New("require id")
+		return errors.New("invalid uuid, uuid is empty")
 	}
 
 	if len(id) != 0 {
@@ -307,7 +304,7 @@ func GetTLSConfig(config *conf.ServerConfigurations, certificate string, key str
 	// Load the certificates from disk
 	loadedCert, err := tls.LoadX509KeyPair(certificate, key)
 	if err != nil {
-		return nil, fmt.Errorf("could not load server key pair: %s", err)
+		return nil, errors.New("could not load server key pair")
 	}
 
 	// Get valid server name
@@ -416,15 +413,6 @@ func GetDbPort() string {
 func GetReleaseNamespace() string {
 	releaseNamespace := os.Getenv("RELEASE_NAMESPACE")
 	return releaseNamespace
-}
-
-// Validate namespace
-func ValidateNameSpace(nameSpace string) (bool, error) {
-	nameSpaceIsValid, validateNameSpaceErr := regexp.MatchString(NAMESPACE_REGEX, nameSpace)
-	if validateNameSpaceErr != nil || !nameSpaceIsValid {
-		return nameSpaceIsValid, validateNameSpaceErr
-	}
-	return true, nil
 }
 
 // Validate ak

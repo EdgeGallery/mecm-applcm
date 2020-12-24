@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	ipAddress = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+	ipAddress = fmt.Sprintf("%d.%d.%d.%d", rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
 		rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal))
 )
 

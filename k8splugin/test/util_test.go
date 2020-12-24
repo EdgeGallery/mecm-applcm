@@ -195,13 +195,6 @@ func TestGetTLSConfigSuccess(t *testing.T) {
 	assert.Nil(t, err, "TestGetTLSConfigSuccess execution result")
 }
 
-func TestValidateNameSpaceSuccess(t *testing.T) {
-	_, err := util.ValidateNameSpace("default")
-	assert.Nil(t, err, "TestValidateNameSpaceSuccess execution result")
-	_, err = util.ValidateNameSpace("defaultajbcdefghijklmnopqrs")
-	assert.Nil(t, err, "TestValidateNameSpaceSuccess execution result")
-}
-
 func TestGetReleaseNamespaceSuccess(t *testing.T) {
 	result := util.GetReleaseNamespace()
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")

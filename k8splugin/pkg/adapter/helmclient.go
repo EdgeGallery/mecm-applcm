@@ -429,12 +429,10 @@ func splitManifestYaml(data []byte) (manifest []Manifest, err error) {
 	yamlString := string(data)
 
 	yamls := strings.Split(yamlString, yamlSeparator)
-	//fmt.Println("yamls:  ", yamls)
 	for k := 0; k < len(yamls); k++ {
 		var manifest Manifest
 		err := yaml.Unmarshal([]byte(yamls[k]), &manifest)
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			return nil, err
 		}
 		manifestBuf = append(manifestBuf, manifest)
