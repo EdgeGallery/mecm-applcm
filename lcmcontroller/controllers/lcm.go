@@ -549,11 +549,6 @@ func (c *LcmController) Query() {
 		return
 	}
 
-	_, err = c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -624,11 +619,7 @@ func (c *LcmController) QueryKPI() {
 	}
 	util.ClearByteArray(bKey)
 
-	prometheusServiceName, prometheusPort, err := c.getInputParametersQueryKpi(clientIp)
-	if err != nil {
-		return
-	}
-
+	prometheusServiceName, prometheusPort := util.GetPrometheusServiceNameAndPort()
 	cpuUtilization, err := c.getCpuUsage(prometheusServiceName, prometheusPort, clientIp)
 	if err != nil {
 		return
@@ -683,10 +674,6 @@ func (c *LcmController) QueryMepCapabilities() {
 	}
 
 	util.ClearByteArray(bKey)
-	_, err = c.getTenantId(clientIp)
-	if err != nil {
-		return
-	}
 
 	_, err = c.getUrlHostIP(clientIp)
 	if err != nil {
@@ -948,9 +935,8 @@ func (c *LcmController) getPackageId(clientIp string) (string, error) {
 			return "", err
 		}
 		return packageId, nil
-	} else {
-		return "", nil
 	}
+	return "", nil
 }
 
 // Get Package Id from url
@@ -963,9 +949,8 @@ func (c *LcmController) getUrlPackageId(clientIp string) (string, error) {
 			return "", errors.New("invalid package id")
 		}
 		return packageId, nil
-	} else {
-		return "", nil
 	}
+	return "", nil
 }
 
 // Get host IP from url
@@ -1217,32 +1202,22 @@ func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse ma
 	return metricResponse, nil
 }
 
-func (c *LcmController) getInputParametersQueryKpi(clientIp string) (string, string, error) {
-	_, err := c.getTenantId(clientIp)
-	if err != nil {
-		return "", "", err
-	}
-	prometheusServiceName := util.GetPrometheusServiceName()
-	prometheusPort := util.GetPrometheusPort()
-	return prometheusServiceName, prometheusPort, nil
-}
-
 func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
 	cpu, errCpu := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.CpuQuery)
 	if errCpu != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
-		return cpuUtilization, nil
+		return cpuUtilization, errCpu
 	}
 	err = json.Unmarshal([]byte(cpu), &statInfo)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
-		return cpuUtilization, nil
+		return cpuUtilization, err
 	}
 	cpuUtilization, err = c.metricValue(statInfo)
 	if err != nil {
-		return cpuUtilization, nil
+		return cpuUtilization, err
 	}
 	return cpuUtilization, nil
 }

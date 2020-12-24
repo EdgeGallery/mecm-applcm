@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	chunkSize = 1024
+	chunkSize      = 1024
 	clientProtocol = "grpc"
 )
 

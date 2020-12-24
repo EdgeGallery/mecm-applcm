@@ -604,3 +604,10 @@ func RateLimit(r *RateLimiter, ctx *context.Context) {
 		return
 	}
 }
+
+// Get Prometheus service name and port
+func GetPrometheusServiceNameAndPort() (string, string) {
+	prometheusServiceName := GetPrometheusServiceName()
+	prometheusPort := GetPrometheusPort()
+	return prometheusServiceName, prometheusPort
+}
