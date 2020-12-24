@@ -78,14 +78,14 @@ func (c *LcmController) UploadConfig() {
 	file, header, err := c.GetFile("configFile")
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Upload config file error")
+		c.handleLoggingForError(clientIp, util.BadRequest, "Upload config file error")
 		return
 	}
 
 	err = util.ValidateFileExtensionEmpty(header.Filename)
 	if err != nil || len(header.Filename) > util.MaxFileNameSize {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+		c.handleLoggingForError(clientIp, util.BadRequest,
 			"File shouldn't contains any extension or filename is larger than max size")
 		return
 	}
@@ -93,7 +93,7 @@ func (c *LcmController) UploadConfig() {
 	err = util.ValidateFileSize(header.Size, util.MaxConfigFile)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "File size is larger than max size")
+		c.handleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
 		return
 	}
 
@@ -133,13 +133,13 @@ func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) e
 
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to copy file into buffer")
+		c.handleLoggingForError(clientIp, util.BadRequest, "Failed to copy file into buffer")
 		return err
 	}
 
 	_, err := yaml.YAMLToJSON(buf.Bytes())
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "KubeConfig file validation is failed")
+		c.handleLoggingForError(clientIp, util.BadRequest, "KubeConfig file validation is failed")
 		return err
 	}
 	return nil
@@ -232,7 +232,7 @@ func (c *LcmController) Instantiate() {
 	err = util.ValidateFileExtensionCsar(header.Filename)
 	if err != nil || len(header.Filename) > util.MaxFileNameSize {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+		c.handleLoggingForError(clientIp, util.BadRequest,
 			"File doesn't contain csar extension or filename is larger than max size")
 		return
 	}
@@ -761,13 +761,13 @@ func (c *LcmController) getApplicationDeploymentType(mainServiceTemplateMf strin
 
 	templateMf, err := ioutil.ReadFile(mainServiceTemplateMf)
 	if err != nil {
-		c.writeErrorResponse("Failed to read file", util.StatusInternalServerError)
+		c.writeErrorResponse("Failed to read file", util.BadRequest)
 		return "", err
 	}
 
 	jsondata, err := yaml.YAMLToJSON(templateMf)
 	if err != nil {
-		c.writeErrorResponse("failed to convert from YAML to JSON", util.StatusInternalServerError)
+		c.writeErrorResponse("failed to convert from YAML to JSON", util.BadRequest)
 		return "", err
 	}
 
@@ -895,7 +895,7 @@ func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*mod
 
 	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
 			"App info record does not exist in database")
 		return nil, readErr
 	}
@@ -1065,10 +1065,12 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 
 	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
 	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to query the count for app info record")
 		return err
 	}
 
-	if count > util.MaxNumberOfRecords {
+	if count >= util.MaxNumberOfRecords {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Maximum number of app info records are exceeded for given tenant")
 		return errors.New("maximum number of app info records are exceeded for given tenant")
@@ -1090,10 +1092,12 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 
 	count, err := c.Db.QueryCount("tenant_info_record")
 	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Failed to query tenant record count")
 		return err
 	}
 
-	if count > util.MaxNumberOfRecords {
+	if count >= util.MaxNumberOfTenantRecords {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Maximum number of tenant records are exceeded")
 		return errors.New("maximum number of tenant records are exceeded")
