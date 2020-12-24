@@ -233,19 +233,19 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	}
 
 	// uses the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
 	if err != nil {
 		return "", err
 	}
 	// creates the clientset
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return "", err
 	}
 	
 	labelSelector := getLabelSelector(manifest)
 
-	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, config)
+	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig)
 	if err != nil {
 		log.Error("Failed to get pod statistics")
 		return "", err
@@ -414,11 +414,9 @@ func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 			disk, _ := diskQuantity.AsInt64()
 			totalDiskUsage = strconv.FormatInt(disk, 10)
 		}
-	} else {
-		return "", "", "", err
+		return totalCpuUsage, totalMemUsage, totalDiskUsage, err
 	}
-	return totalCpuUsage, totalMemUsage, totalDiskUsage, err
-
+	return "", "", "", err
 }
 
 // Split manifest yaml file
