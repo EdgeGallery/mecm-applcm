@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/ghodss/yaml"
 	v1 "k8s.io/api/core/v1"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8splugin/config"
 	"k8splugin/models"
+	"k8splugin/pgdb"
 	"k8splugin/util"
 	"os"
 	"strconv"
@@ -95,7 +97,7 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 }
 
 // Install a given helm chart
-func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error) {
+func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
 	log.Info("Inside helm client")
 
 	// Create temporary file to hold helm chart
@@ -138,6 +140,15 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 	// Release name will be taken from the name in chart's metadata
 	relName := chart.Metadata.Name
 
+	appInstanceRecord := &models.AppInstanceInfo{
+		WorkloadId: relName,
+	}
+
+	readErr := db.ReadData(appInstanceRecord, "workload_id")
+	if readErr == nil {
+		return "", errors.New("application is already deployed with this release name")
+	}
+
 	// Get release namespace
 	releaseNamespace := util.GetReleaseNamespace()
 
@@ -157,6 +168,11 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 	installer.ReleaseName = relName
 	rel, err := installer.Run(chart, nil)
 	if err != nil {
+		ui := action.NewUninstall(actionConfig)
+		_, uninstallErr := ui.Run(relName)
+		if uninstallErr != nil {
+			log.Infof("Unable to uninstall chart. Err: %s", uninstallErr)
+		}
 		log.Errorf("Unable to install chart. Err: %s", err)
 		return "", err
 	}
@@ -217,19 +233,19 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	}
 
 	// uses the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
 	if err != nil {
 		return "", err
 	}
 	// creates the clientset
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return "", err
 	}
 	
 	labelSelector := getLabelSelector(manifest)
 
-	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, config)
+	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig)
 	if err != nil {
 		log.Error("Failed to get pod statistics")
 		return "", err
@@ -398,11 +414,9 @@ func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 			disk, _ := diskQuantity.AsInt64()
 			totalDiskUsage = strconv.FormatInt(disk, 10)
 		}
-	} else {
-		return "", "", "", err
+		return totalCpuUsage, totalMemUsage, totalDiskUsage, err
 	}
-	return totalCpuUsage, totalMemUsage, totalDiskUsage, err
-
+	return "", "", "", err
 }
 
 // Split manifest yaml file
@@ -413,12 +427,10 @@ func splitManifestYaml(data []byte) (manifest []Manifest, err error) {
 	yamlString := string(data)
 
 	yamls := strings.Split(yamlString, yamlSeparator)
-	//fmt.Println("yamls:  ", yamls)
 	for k := 0; k < len(yamls); k++ {
 		var manifest Manifest
 		err := yaml.Unmarshal([]byte(yamls[k]), &manifest)
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			return nil, err
 		}
 		manifestBuf = append(manifestBuf, manifest)

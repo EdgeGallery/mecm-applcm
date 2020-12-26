@@ -16,11 +16,14 @@
 
 package adapter
 
-import "bytes"
+import (
+	"bytes"
+	"k8splugin/pgdb"
+)
 
 // Client APIs
 type ClientIntf interface {
-	Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error)
+	Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error)
 	UnDeploy(relName string) error
 	Query(relName string) (string, error)
 }

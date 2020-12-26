@@ -52,6 +52,9 @@ func (db *mockK8sPluginDb) ReadData(data interface{}, cols ...string) (err error
 			appInstance.HostIp = readAppInstance.HostIp
 		}
 	}
+	if cols[0] == "workload_id" {
+		return errors.New("App Instance record not found")
+	}
 	return nil
 }
 

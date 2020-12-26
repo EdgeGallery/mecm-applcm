@@ -44,7 +44,7 @@ func (db *PgDb) InitOrmer() (err1 error) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error("panic handled:", err)
-			err1 = fmt.Errorf("recover panic as %s", err)
+			err1 = errors.New("panic recovered")
 		}
 	}()
 	o := orm.NewOrm()

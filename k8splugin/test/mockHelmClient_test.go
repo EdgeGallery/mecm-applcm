@@ -16,13 +16,16 @@
 
 package test
 
-import "bytes"
+import (
+	"bytes"
+	"k8splugin/pgdb"
+)
 
 // Helm client
 type mockedHelmClient struct {
 }
 
-func (hc *mockedHelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string) (string, error) {
+func (hc *mockedHelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
 	return "testRelease", nil
 }
 

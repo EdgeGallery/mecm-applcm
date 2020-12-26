@@ -67,6 +67,7 @@ const (
 	MaxConfigFile            int64  = 5242880
 	Timeout                         = 180
 	MaxNumberOfRecords              = 50
+	MaxNumberOfTenantRecords        = 20
 	MaxFileNameSize                 = 64
 
 	BadRequest                int = 400
@@ -146,11 +147,7 @@ func ValidateUUID(id string) error {
 }
 
 func IsValidUUID(uuid string) (bool, error) {
-	uuidIsValid, valUuidErr := regexp.MatchString(UuidRegex, uuid)
-	if valUuidErr != nil || !uuidIsValid {
-		return uuidIsValid, valUuidErr
-	}
-	return true, nil
+	return regexp.MatchString(UuidRegex, uuid)
 }
 
 // Validate IPv4 address
@@ -572,11 +569,7 @@ func GetHostInfo(url string) (string, error) {
 
 // Validate app name
 func ValidateAppName(appName string) (bool, error) {
-	appNameIsValid, valAppNameErr := regexp.MatchString(AppNameRegex, appName)
-	if valAppNameErr != nil || !appNameIsValid {
-		return appNameIsValid, valAppNameErr
-	}
-	return true, nil
+	return regexp.MatchString(AppNameRegex, appName)
 }
 
 // Handle number of REST requests per second
@@ -603,4 +596,11 @@ func RateLimit(r *RateLimiter, ctx *context.Context) {
 		ctx.Abort(http.StatusTooManyRequests, "429")
 		return
 	}
+}
+
+// Get Prometheus service name and port
+func GetPrometheusServiceNameAndPort() (string, string) {
+	prometheusServiceName := GetPrometheusServiceName()
+	prometheusPort := GetPrometheusPort()
+	return prometheusServiceName, prometheusPort
 }
