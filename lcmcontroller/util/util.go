@@ -110,7 +110,6 @@ const (
 	MecmGuestRole        = "ROLE_MECM_GUEST"
 	UserId               = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 	MaxIPVal             = 255
-	IpAddFormatter       = "%d.%d.%d.%d"
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
 )
