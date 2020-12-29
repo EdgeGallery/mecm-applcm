@@ -154,9 +154,9 @@ func TestMepCapabilities(t *testing.T) {
 	})
 	defer patch3.Reset()
 
-	patch4 := gomonkey.ApplyFunc(util.GetHostInfo, func(_ string) (string, error) {
+	patch4 := gomonkey.ApplyFunc(util.GetHostInfo, func(_ string) (string, int, error) {
 		// do nothing
-		return capabilityOutput, nil
+		return capabilityOutput, 200, nil
 	})
 	defer patch4.Reset()
 
@@ -209,9 +209,9 @@ func TestMepCapabilitiesId(t *testing.T) {
 	})
 	defer patch3.Reset()
 
-	patch4 := gomonkey.ApplyFunc(util.GetHostInfo, func(_ string) (string, error) {
+	patch4 := gomonkey.ApplyFunc(util.GetHostInfo, func(_ string) (string, int, error) {
 		// do nothing
-		return capabilityIdOutput, nil
+		return capabilityIdOutput, 200, nil
 	})
 	defer patch4.Reset()
 

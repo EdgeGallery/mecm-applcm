@@ -51,7 +51,7 @@ const (
 	ClientIpaddressInvalid          = "cientIp address is invalid"
 	FailedToSendMetadataInfo string = "failed to send metadata information"
 	FailedToCreateClient     string = "failed to create client: %v"
-	DeployTypeIsNotHelmBased        = "Deployment type is not helm based"
+	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
 	InvalidToken             string = "invalid token"
 	Forbidden                string = "forbidden"
 	IllegalTenantId          string = "Illegal TenantId"
@@ -526,7 +526,7 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 }
 
 // Get hostinfo
-func GetHostInfo(url string) (string, error) {
+func GetHostInfo(url string) (string, int, error) {
 	var resp *http.Response
 	var err error
 
@@ -541,30 +541,30 @@ func GetHostInfo(url string) (string, error) {
 		url = HttpsUrl + url
 		req, errNewRequest := http.NewRequest("", url, nil)
 		if errNewRequest != nil {
-			return "", errNewRequest
+			return "", StatusInternalServerError, errNewRequest
 		}
 		resp, err = DoRequest(req)
 		if err != nil {
-			return "", err
+			return "", StatusInternalServerError, err
 		}
 	} else {
 		url = HttpUrl + url
 		resp, err = http.Get(url)
 		if err != nil {
-			return "", err
+			return "", StatusInternalServerError, err
 		}
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", resp.StatusCode, err
 	}
 	log.Info("response is received")
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		return string(body), nil
+		return string(body), resp.StatusCode, nil
 	}
-	return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
+	return "", resp.StatusCode, errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
 
 // Validate app name
@@ -603,4 +603,12 @@ func GetPrometheusServiceNameAndPort() (string, string) {
 	prometheusServiceName := GetPrometheusServiceName()
 	prometheusPort := GetPrometheusPort()
 	return prometheusServiceName, prometheusPort
+}
+
+// Get plugin info
+func GetPluginInfo() string {
+	k8sPlugin := GetK8sPlugin()
+	k8sPluginPort := GetK8sPluginPort()
+	pluginInfo := k8sPlugin + ":" + k8sPluginPort
+	return pluginInfo
 }
