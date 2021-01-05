@@ -112,6 +112,7 @@ const (
 	MaxIPVal             = 255
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
+	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 )
 
 var cipherSuiteMap = map[string]uint16{

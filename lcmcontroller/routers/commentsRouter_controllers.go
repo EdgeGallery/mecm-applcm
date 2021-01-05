@@ -19,10 +19,11 @@ package routers
 import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context/param"
+	"lcmcontroller/util"
 )
 
 func init() {
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "AppDeploymentStatus",
 			Router:           "/hosts/:hostIp/packages/:packageId/status",
@@ -30,7 +31,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "HealthCheck",
 			Router:           "/health",
@@ -38,7 +39,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "UploadConfig",
 			Router:           "/configuration",
@@ -46,7 +47,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "RemoveConfig",
 			Router:           "/configuration",
@@ -54,7 +55,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "Instantiate",
 			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/instantiate",
@@ -62,7 +63,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "Terminate",
 			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/terminate",
@@ -70,7 +71,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "Query",
 			Router:           "/tenants/:tenantId/app_instances/:appInstanceId",
@@ -78,7 +79,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "QueryKPI",
 			Router:           "/tenants/:tenantId/hosts/:hostIp/kpi",
@@ -86,7 +87,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "QueryMepCapabilities",
 			Router:           "/tenants/:tenantId/hosts/:hostIp/mep_capabilities",
@@ -94,7 +95,7 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"] = append(beego.GlobalControllerRouter["lcmcontroller/controllers:LcmController"],
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "QueryMepCapabilities",
 			Router:           "/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId",
