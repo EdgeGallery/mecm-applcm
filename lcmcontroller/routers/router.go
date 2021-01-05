@@ -15,6 +15,10 @@
  */
 
 // LCM broker APIs
+// @APIVersion 1.0.0
+// @Title Lcm Controller API
+// @Description beego has a very cool tools to autogenerate documents for your API
+// @TermsOfServiceUrl http://beego.me/
 package routers
 
 import (
@@ -29,23 +33,16 @@ const RootPath string = "/lcmcontroller/v1"
 // Init lcmcontroller APIs
 func init() {
 	adapter := initDbAdapter()
-	beego.Router(RootPath+"/hosts/:hostIp/packages/:packageId/status",
-		&controllers.LcmController{Db: adapter}, "get:AppDeploymentStatus")
-	beego.Router(RootPath+"/health", &controllers.LcmController{}, "get:HealthCheck")
-	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "post:UploadConfig")
-	beego.Router(RootPath+"/configuration", &controllers.LcmController{}, "delete:RemoveConfig")
-	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/instantiate",
-		&controllers.LcmController{Db: adapter}, "post:Instantiate")
-	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId/terminate",
-		&controllers.LcmController{Db: adapter}, "post:Terminate")
-	beego.Router(RootPath+"/tenants/:tenantId/app_instances/:appInstanceId", &controllers.LcmController{Db: adapter},
-		"get:Query")
-	beego.Router(RootPath+"/tenants/:tenantId/hosts/:hostIp/kpi", &controllers.LcmController{},
-		"get:QueryKPI")
-	beego.Router(RootPath+"/tenants/:tenantId/hosts/:hostIp/mep_capabilities", &controllers.LcmController{},
-		"get:QueryMepCapabilities")
-	beego.Router(RootPath+"/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId", &controllers.LcmController{},
-		"get:QueryMepCapabilities")
+
+
+	ns := beego.NewNamespace("/lcmcontroller/v1/",
+
+		beego.NSInclude(
+			&controllers.LcmController{Db: adapter},
+		),
+	)
+	beego.AddNamespace(ns)
+
 }
 
 // Init Db adapter

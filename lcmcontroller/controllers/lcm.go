@@ -52,11 +52,18 @@ type LcmController struct {
 	Db dbAdapter.Database
 }
 
-// Upload Config
+// @Title Upload Config
+// @Description Upload Config
+// @Param	hostIp		 formData 	string	true   "hostIp"
+// @Param   configFile   formData   file    true   "config file"
+// @Param   access_token header     string  true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /configuration [post]
 func (c *LcmController) UploadConfig() {
 	log.Info("Add configuration request received.")
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -145,11 +152,17 @@ func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) e
 	return nil
 }
 
-// Remove Config
+// @Title Remove Config
+// @Description Remove Config
+// @Param   access_token header     string  true   "access token"
+// @Param	hostIp		 formData 	string	true   "hostIp"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /configuration [delete]
 func (c *LcmController) RemoveConfig() {
 	log.Info("Delete configuration request received.")
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -196,12 +209,23 @@ func (c *LcmController) RemoveConfig() {
 	c.ServeJSON()
 }
 
-// Instantiate application
+// @Title Instantiate application
+// @Description Instantiate application
+// @Param   hostIp          formData 	string	true   "hostIp"
+// @Param   file            formData    file    true   "file"
+// @Param   appName         formData 	string	true   "appName"
+// @Param   packageId       formData 	string	false  "packageId"
+// @Param   tenantId        path 	string	true   "tenantId"
+// @Param   appInstanceId   path 	string	true   "appInstanceId"
+// @Param   access_token    header      string  true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId/instantiate [post]
 func (c *LcmController) Instantiate() {
 	log.Info("Application instantiation request received.")
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -375,12 +399,19 @@ func (c *LcmController) removeCsarFiles(packageName string, header *multipart.Fi
 	}
 }
 
-// Terminate application
+// @Title Terminate application
+// @Description Terminate application
+// @Param	tenantId	path 	string	true   "tenantId"
+// @Param	appInstanceId   path 	string	true   "appInstanceId"
+// @Param       access_token    header  string  true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId/terminate [post]
 func (c *LcmController) Terminate() {
 	log.Info("Application termination request received.")
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -442,12 +473,19 @@ func (c *LcmController) Terminate() {
 	c.ServeJSON()
 }
 
-// Application deployment status
+// @Title App Deployment status
+// @Description application deployment status
+// @Param	hostIp	     path 	string	true    "hostIp"
+// @Param	packageId    path 	string	true    "packageId"
+// @Param       access_token header     string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts/:hostIp/packages/:packageId/status [get]
 func (c *LcmController) AppDeploymentStatus() {
 	log.Info("Application deployment status request received.")
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -494,17 +532,28 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 }
 
-// Heath Check
+// @Title Health Check
+// @Description perform health check
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /health [get]
 func (c *LcmController) HealthCheck() {
 	_, _ = c.Ctx.ResponseWriter.Write([]byte("ok"))
 }
 
-// Query
+// @Title Query
+// @Description perform query operation
+// @Param	tenantId	path 	string	true	"tenantId"
+// @Param	appInstanceId   path 	string	true	"appInstanceId"
+// @Param       access_token    header  string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId [get]
 func (c *LcmController) Query() {
 	log.Info("Application query request received.")
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -558,11 +607,18 @@ func (c *LcmController) Query() {
 	}
 }
 
-// Query KPI
+// @Title Query kpi
+// @Description perform query kpi operation
+// @Param	hostIp          path 	string	true	    "hostIp"
+// @Param	tenantId	path 	string	true	    "tenantId"
+// @Param       access_token    header  string  true        "access token"
+// @Success 200 ok
+// @Failure 403 bad request
+// @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmController) QueryKPI() {
 	var metricInfo models.MetricInfo
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -614,10 +670,18 @@ func (c *LcmController) QueryKPI() {
 	}
 }
 
-// Query Mep capabilities
+// @Title Query mep capabilities
+// @Description perform query mep capabilities
+// @Param	tenantId	path 	string	true	"tenantId"
+// @Param	hostIp          path 	string	true	"hostIp"
+// @Param	capabilityId    path 	string	false	"capabilityId"
+// @Param       access_token    header  string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmController) QueryMepCapabilities() {
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -1146,7 +1210,7 @@ func (c *LcmController) displayReceivedMsg(clientIp string) {
 // Returns the utilization details
 func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse map[string]interface{}, err error) {
 	clientIp := c.Ctx.Input.IP()
-	err = util.ValidateIpv4Address(clientIp)
+	err = util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return metricResponse, err

@@ -154,9 +154,21 @@ func ValidateIpv4Address(id string) error {
 	if id == "" {
 		return errors.New("require ip address")
 	}
-	if len(id) != 0 {
-		validate := validator.New()
-		return validate.Var(id, "required,ipv4")
+
+	validate := validator.New()
+	return validate.Var(id, "required,ipv4")
+}
+
+// Validate source address
+func ValidateSrcAddress(id string) error {
+	if id == "" {
+		return errors.New("require ip address")
+	}
+
+	validate := validator.New()
+	err := validate.Var(id, "required,ipv4")
+	if err != nil {
+		return validate.Var(id, "required,ipv6")
 	}
 	return nil
 }
