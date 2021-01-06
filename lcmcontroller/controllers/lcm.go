@@ -52,11 +52,18 @@ type LcmController struct {
 	Db dbAdapter.Database
 }
 
-// Upload Config
+// @Title Upload Config
+// @Description Upload Config
+// @Param	hostIp		 formData 	string	true   "hostIp"
+// @Param   configFile   formData   file    true   "config file"
+// @Param   access_token header     string  true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /configuration [post]
 func (c *LcmController) UploadConfig() {
 	log.Info("Add configuration request received.")
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -103,7 +110,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo := getPluginInfo()
+	pluginInfo := util.GetPluginInfo()
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -145,19 +152,17 @@ func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) e
 	return nil
 }
 
-// Get plugin info
-func getPluginInfo() string {
-	k8sPlugin := util.GetK8sPlugin()
-	k8sPluginPort := util.GetK8sPluginPort()
-	pluginInfo := k8sPlugin + ":" + k8sPluginPort
-	return pluginInfo
-}
-
-// Remove Config
+// @Title Remove Config
+// @Description Remove Config
+// @Param   access_token header     string  true   "access token"
+// @Param	hostIp		 formData 	string	true   "hostIp"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /configuration [delete]
 func (c *LcmController) RemoveConfig() {
 	log.Info("Delete configuration request received.")
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -180,7 +185,7 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo := getPluginInfo()
+	pluginInfo := util.GetPluginInfo()
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -204,12 +209,23 @@ func (c *LcmController) RemoveConfig() {
 	c.ServeJSON()
 }
 
-// Instantiate application
+// @Title Instantiate application
+// @Description Instantiate application
+// @Param   hostIp          formData 	string	true   "hostIp"
+// @Param   file            formData    file    true   "file"
+// @Param   appName         formData 	string	true   "appName"
+// @Param   packageId       formData 	string	false  "packageId"
+// @Param   tenantId        path 	string	true   "tenantId"
+// @Param   appInstanceId   path 	string	true   "appInstanceId"
+// @Param   access_token    header      string  true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId/instantiate [post]
 func (c *LcmController) Instantiate() {
 	log.Info("Application instantiation request received.")
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -274,22 +290,9 @@ func (c *LcmController) Instantiate() {
 
 	err, appAuthConfig, acm := processAkSkConfig(appInsId, appName)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to process Ak Sk configuration")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
 		c.removeCsarFiles(packageName, header, clientIp)
-		return
-	}
-
-	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appAuthConfig)
-	util.ClearByteArray(bKey)
-	c.removeCsarFiles(packageName, header, clientIp)
-	if err != nil {
-		err := acm.DeleteAppAuthConfig()
-		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-				"Failed to delete app auth config request to mep")
-		}
 		return
 	}
 
@@ -301,6 +304,15 @@ func (c *LcmController) Instantiate() {
 	if err != nil {
 		return
 	}
+
+	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appAuthConfig)
+	util.ClearByteArray(bKey)
+	c.removeCsarFiles(packageName, header, clientIp)
+	if err != nil {
+		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
+		return
+	}
+
 	c.ServeJSON()
 }
 
@@ -387,13 +399,19 @@ func (c *LcmController) removeCsarFiles(packageName string, header *multipart.Fi
 	}
 }
 
-// Terminate application
+// @Title Terminate application
+// @Description Terminate application
+// @Param	tenantId	path 	string	true   "tenantId"
+// @Param	appInstanceId   path 	string	true   "appInstanceId"
+// @Param       access_token    header  string  true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId/terminate [post]
 func (c *LcmController) Terminate() {
 	log.Info("Application termination request received.")
-	var pluginInfo string
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -420,22 +438,12 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	switch appInfoRecord.DeployType {
-	case "helm":
-		pluginInfo = getPluginInfo()
-	default:
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp)
+	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return
 	}
 
-	client, err := pluginAdapter.GetClient(pluginInfo)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-		return
-	}
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	_, err = adapter.Terminate(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
@@ -447,32 +455,37 @@ func (c *LcmController) Terminate() {
 	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{})
 	err = acm.DeleteAppAuthConfig()
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to delete app auth config request to mep")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete app info record")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 
-	err = c.deleteTenantRecord(tenantId)
+	err = c.deleteTenantRecord(clientIp, tenantId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to delete tenant record")
 		return
 	}
 
 	c.ServeJSON()
 }
 
-// Application deployment status
+// @Title App Deployment status
+// @Description application deployment status
+// @Param	hostIp	     path 	string	true    "hostIp"
+// @Param	packageId    path 	string	true    "packageId"
+// @Param       access_token header     string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts/:hostIp/packages/:packageId/status [get]
 func (c *LcmController) AppDeploymentStatus() {
 	log.Info("Application deployment status request received.")
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -519,18 +532,28 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 }
 
-// Heath Check
+// @Title Health Check
+// @Description perform health check
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /health [get]
 func (c *LcmController) HealthCheck() {
 	_, _ = c.Ctx.ResponseWriter.Write([]byte("ok"))
 }
 
-// Query
+// @Title Query
+// @Description perform query operation
+// @Param	tenantId	path 	string	true	"tenantId"
+// @Param	appInstanceId   path 	string	true	"appInstanceId"
+// @Param       access_token    header  string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId [get]
 func (c *LcmController) Query() {
 	log.Info("Application query request received.")
-	var pluginInfo string
 
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -561,22 +584,12 @@ func (c *LcmController) Query() {
 		return
 	}
 
-	switch appInfoRecord.DeployType {
-	case "helm":
-		pluginInfo = getPluginInfo()
-	default:
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp)
+	if err != nil {
 		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return
 	}
 
-	client, err := pluginAdapter.GetClient(pluginInfo)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-		return
-	}
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.HostIp)
 	util.ClearByteArray(bKey)
 	if err != nil {
@@ -594,11 +607,18 @@ func (c *LcmController) Query() {
 	}
 }
 
-// Query KPI
+// @Title Query kpi
+// @Description perform query kpi operation
+// @Param	hostIp          path 	string	true	    "hostIp"
+// @Param	tenantId	path 	string	true	    "tenantId"
+// @Param       access_token    header  string  true        "access token"
+// @Success 200 ok
+// @Failure 403 bad request
+// @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmController) QueryKPI() {
 	var metricInfo models.MetricInfo
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -650,10 +670,18 @@ func (c *LcmController) QueryKPI() {
 	}
 }
 
-// Query Mep capabilities
+// @Title Query mep capabilities
+// @Description perform query mep capabilities
+// @Param	tenantId	path 	string	true	"tenantId"
+// @Param	hostIp          path 	string	true	"hostIp"
+// @Param	capabilityId    path 	string	false	"capabilityId"
+// @Param       access_token    header  string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmController) QueryMepCapabilities() {
 	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateIpv4Address(clientIp)
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -684,7 +712,6 @@ func (c *LcmController) QueryMepCapabilities() {
 
 	capabilityId, err := c.getUrlCapabilityId(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.MepCapabilityIsNotValid)
 		return
 	}
 
@@ -693,9 +720,9 @@ func (c *LcmController) QueryMepCapabilities() {
 		uri = util.CapabilityUri + "/" + capabilityId
 	}
 
-	mepCapabilities, err := util.GetHostInfo("mep-mm5.mep" + ":" + mepPort + uri)
+	mepCapabilities, statusCode, err := util.GetHostInfo("mep-mm5.mep" + ":" + mepPort + uri)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid mepCapabilities query")
+		c.handleLoggingForError(clientIp, statusCode, "invalid mepCapabilities query")
 		return
 	}
 
@@ -1038,7 +1065,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 			return "", "", err
 		}
 
-		pluginInfo := getPluginInfo()
+		pluginInfo := util.GetPluginInfo()
 		return artifact, pluginInfo, nil
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -1065,8 +1092,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 
 	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to query the count for app info record")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
@@ -1092,8 +1118,7 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 
 	count, err := c.Db.QueryCount("tenant_info_record")
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to query tenant record count")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
@@ -1125,18 +1150,21 @@ func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
 }
 
 // Delete tenant record
-func (c *LcmController) deleteTenantRecord(tenantId string) error {
+func (c *LcmController) deleteTenantRecord(clientIp, tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
 		TenantId: tenantId,
 	}
 
 	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
 	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
+
 	if count == 0 {
 		err = c.Db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
 		}
 	}
@@ -1182,7 +1210,7 @@ func (c *LcmController) displayReceivedMsg(clientIp string) {
 // Returns the utilization details
 func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse map[string]interface{}, err error) {
 	clientIp := c.Ctx.Input.IP()
-	err = util.ValidateIpv4Address(clientIp)
+	err = util.ValidateSrcAddress(clientIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return metricResponse, err
@@ -1209,9 +1237,9 @@ func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse ma
 func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	cpu, errCpu := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.CpuQuery)
+	cpu, statusCode, errCpu := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.CpuQuery)
 	if errCpu != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid cpu query")
+		c.handleLoggingForError(clientIp, statusCode, "invalid cpu query")
 		return cpuUtilization, errCpu
 	}
 	err = json.Unmarshal([]byte(cpu), &statInfo)
@@ -1229,9 +1257,9 @@ func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clien
 func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort, clientIp string) (memUsage map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	mem, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.MemQuery)
+	mem, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.MemQuery)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid memory query")
+		c.handleLoggingForError(clientIp, statusCode, "invalid memory query")
 		return memUsage, err
 	}
 	err = json.Unmarshal([]byte(mem), &statInfo)
@@ -1249,9 +1277,9 @@ func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort, cl
 func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort, clientIp string) (diskUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
-	disk, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.DiskQuery)
+	disk, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.DiskQuery)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, "invalid disk query")
+		c.handleLoggingForError(clientIp, statusCode, "invalid disk query")
 		return diskUtilization, err
 	}
 	err = json.Unmarshal([]byte(disk), &statInfo)
@@ -1273,5 +1301,44 @@ func (c *LcmController) handleLoggingK8s(clientIp string, errorString string) {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 	} else {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
+	}
+}
+
+func (c *LcmController) getPluginAdapter(deployType, clientIp string) (*pluginAdapter.PluginAdapter, error) {
+	var pluginInfo string
+
+	switch deployType {
+	case "helm":
+		pluginInfo = util.GetPluginInfo()
+	default:
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
+		return nil, errors.New(util.DeployTypeIsNotHelmBased)
+	}
+
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		return nil, err
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	return adapter, nil
+}
+
+func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter,
+	clientIp, appInsId, tenantId string) {
+	err := acm.DeleteAppAuthConfig()
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	err = c.deleteAppInfoRecord(appInsId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = c.deleteTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return
 	}
 }

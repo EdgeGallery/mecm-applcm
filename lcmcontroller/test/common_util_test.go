@@ -32,8 +32,9 @@ import (
 
 // Generate test IP, instead of hard coding them
 var (
-  fwdIp = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
-	rand.Intn(util.MaxIPVal))
+	ipAddFormatter = "%d.%d.%d.%d"
+	fwdIp          = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+		rand.Intn(util.MaxIPVal))
 )
 
 // Creates a new file upload http request with optional extra params

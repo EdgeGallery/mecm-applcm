@@ -51,7 +51,7 @@ const (
 	ClientIpaddressInvalid          = "cientIp address is invalid"
 	FailedToSendMetadataInfo string = "failed to send metadata information"
 	FailedToCreateClient     string = "failed to create client: %v"
-	DeployTypeIsNotHelmBased        = "Deployment type is not helm based"
+	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
 	InvalidToken             string = "invalid token"
 	Forbidden                string = "forbidden"
 	IllegalTenantId          string = "Illegal TenantId"
@@ -110,9 +110,9 @@ const (
 	MecmGuestRole        = "ROLE_MECM_GUEST"
 	UserId               = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 	MaxIPVal             = 255
-	IpAddFormatter       = "%d.%d.%d.%d"
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
+	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 )
 
 var cipherSuiteMap = map[string]uint16{
@@ -155,9 +155,21 @@ func ValidateIpv4Address(id string) error {
 	if id == "" {
 		return errors.New("require ip address")
 	}
-	if len(id) != 0 {
-		validate := validator.New()
-		return validate.Var(id, "required,ipv4")
+
+	validate := validator.New()
+	return validate.Var(id, "required,ipv4")
+}
+
+// Validate source address
+func ValidateSrcAddress(id string) error {
+	if id == "" {
+		return errors.New("require ip address")
+	}
+
+	validate := validator.New()
+	err := validate.Var(id, "required,ipv4")
+	if err != nil {
+		return validate.Var(id, "required,ipv6")
 	}
 	return nil
 }
@@ -526,7 +538,7 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 }
 
 // Get hostinfo
-func GetHostInfo(url string) (string, error) {
+func GetHostInfo(url string) (string, int, error) {
 	var resp *http.Response
 	var err error
 
@@ -541,30 +553,30 @@ func GetHostInfo(url string) (string, error) {
 		url = HttpsUrl + url
 		req, errNewRequest := http.NewRequest("", url, nil)
 		if errNewRequest != nil {
-			return "", errNewRequest
+			return "", StatusInternalServerError, errNewRequest
 		}
 		resp, err = DoRequest(req)
 		if err != nil {
-			return "", err
+			return "", StatusInternalServerError, err
 		}
 	} else {
 		url = HttpUrl + url
 		resp, err = http.Get(url)
 		if err != nil {
-			return "", err
+			return "", StatusInternalServerError, err
 		}
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", resp.StatusCode, err
 	}
 	log.Info("response is received")
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		return string(body), nil
+		return string(body), resp.StatusCode, nil
 	}
-	return "", errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
+	return "", resp.StatusCode, errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
 
 // Validate app name
@@ -603,4 +615,12 @@ func GetPrometheusServiceNameAndPort() (string, string) {
 	prometheusServiceName := GetPrometheusServiceName()
 	prometheusPort := GetPrometheusPort()
 	return prometheusServiceName, prometheusPort
+}
+
+// Get plugin info
+func GetPluginInfo() string {
+	k8sPlugin := GetK8sPlugin()
+	k8sPluginPort := GetK8sPluginPort()
+	pluginInfo := k8sPlugin + ":" + k8sPluginPort
+	return pluginInfo
 }

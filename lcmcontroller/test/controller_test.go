@@ -40,7 +40,7 @@ import (
 var (
 	filePermission os.FileMode = 0750
 	directory      string      = "/packages/"
-	hostIpAddress  string      = fmt.Sprintf(util.IpAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+	hostIpAddress  string      = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
 		rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal))
 	tenantIdentifier      string = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
 	appInstanceIdentifier string = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
