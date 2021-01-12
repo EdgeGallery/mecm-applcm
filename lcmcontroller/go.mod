@@ -21,7 +21,7 @@ require (
 	github.com/astaxie/beego v1.12.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-playground/validator/v10 v10.2.0
+	github.com/go-playground/validator/v10 v10.4.1
 	github.com/golang/protobuf v1.4.2
 	github.com/lib/pq v1.7.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
