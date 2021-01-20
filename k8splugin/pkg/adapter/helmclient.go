@@ -362,8 +362,8 @@ func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.C
 	}
 
 	for _, container := range podMetrics.Containers {
-		cpuUsage := container.Usage.Cpu().String()
-		cpuUsage = strings.TrimSuffix(cpuUsage, "n")
+		cpu := container.Usage.Cpu().MilliValue()
+		cpuUsage := strconv.FormatInt(cpu, 10)
 		memory, _ := container.Usage.Memory().AsInt64()
 		memUsage := strconv.FormatInt(memory, 10)
 		disk, _ := container.Usage.StorageEphemeral().AsInt64()
@@ -404,8 +404,7 @@ func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 		if len(nodeList.Items) > 0 {
 			node := &nodeList.Items[0]
 			cpuquantity := node.Status.Allocatable.Cpu()
-			cpu, _ := cpuquantity.AsInt64()
-			cpu = cpu * 1000000
+			cpu := cpuquantity.MilliValue()
 			totalCpuUsage = strconv.FormatInt(cpu, 10)
 			memQuantity := node.Status.Allocatable.Memory()
 			memory, _ := memQuantity.AsInt64()
