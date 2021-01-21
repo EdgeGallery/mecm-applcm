@@ -298,10 +298,14 @@ func (c *LcmController) Instantiate() {
 
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
+		util.ClearByteArray(bKey)
+		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
 	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId)
 	if err != nil {
+		util.ClearByteArray(bKey)
+		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
 
