@@ -171,7 +171,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hos
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Error("failed to receive upstream status response")
+		log.Error("received upstream status response", err)
 		return util.Failure, err
 	}
 	return res.GetStatus(), err
@@ -348,7 +348,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Error("failed to receive upstream status response")
+		log.Error("received upstream status response")
 		return util.Failure, err
 	}
 	return res.GetStatus(), err
