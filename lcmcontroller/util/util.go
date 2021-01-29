@@ -27,6 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/ulule/limiter/v3"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -48,7 +49,7 @@ const (
 	Default                  string = "default"
 	DriverName               string = "postgres"
 	Failure                  string = "Failure"
-	ClientIpaddressInvalid          = "cientIp address is invalid"
+	ClientIpaddressInvalid          = "clientIp address is invalid"
 	FailedToSendMetadataInfo string = "failed to send metadata information"
 	FailedToCreateClient     string = "failed to create client: %v"
 	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
@@ -623,4 +624,15 @@ func GetPluginInfo() string {
 	k8sPluginPort := GetK8sPluginPort()
 	pluginInfo := k8sPlugin + ":" + k8sPluginPort
 	return pluginInfo
+}
+
+// get random directory name
+func RandomDirectoryName(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
+
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
 }
