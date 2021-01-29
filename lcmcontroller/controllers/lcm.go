@@ -265,15 +265,12 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	pkgPath := PackageFolderPath + header.Filename
-	err = c.createPackagePath(pkgPath, clientIp, file)
+	packageName, path, err := c.getPkgName(clientIp, bKey, header, file)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
-	packageName := c.openPackage(pkgPath)
-	var mainServiceTemplateMf = PackageFolderPath + packageName + "/positioning-service.mf"
+	var mainServiceTemplateMf = PackageFolderPath + path + "/positioning-service.mf"
 	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -281,7 +278,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, packageName, clientIp)
+	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, path, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.removeCsarFiles(packageName, header, clientIp)
@@ -834,8 +831,12 @@ func (c *LcmController) openPackage(packagePath string) string {
 		c.writeErrorResponse("Too many files contains in zip file", util.StatusInternalServerError)
 	}
 	var totalWrote int64
-	filePath := zipReader.Reader.File[0].FileHeader.Name
-	dirPath := strings.Split(filePath, "/")
+	dirName := util.RandomDirectoryName(10)
+	err := os.MkdirAll(PackageFolderPath+dirName, 0750)
+	if err != nil {
+		c.writeErrorResponse("Failed to make directory", util.StatusInternalServerError)
+		return err.Error()
+	}
 	for _, file := range zipReader.Reader.File {
 
 		zippedFile, err := file.Open()
@@ -849,19 +850,19 @@ func (c *LcmController) openPackage(packagePath string) string {
 
 		defer zippedFile.Close()
 
-		isContinue, wrote := c.extractFiles(file, zippedFile, totalWrote)
+		isContinue, wrote := c.extractFiles(file, zippedFile, totalWrote, dirName)
 		if isContinue {
 			continue
 		}
 		totalWrote = wrote
 	}
 
-	return dirPath[0]
+	return dirName
 }
 
 // Extract files
-func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64) (bool, int64) {
-	targetDir := PackageFolderPath + "/"
+func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64, dirName string) (bool, int64) {
+	targetDir := PackageFolderPath + dirName
 	extractedFilePath := filepath.Join(
 		targetDir,
 		file.Name,
@@ -1345,4 +1346,35 @@ func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter
 	if err != nil {
 		return
 	}
+}
+
+func (c *LcmController) getPkgName(clientIp string, bKey []byte,
+	header *multipart.FileHeader, file multipart.File) (string, string, error) {
+	pkgPath := PackageFolderPath + header.Filename
+	err := c.createPackagePath(pkgPath, clientIp, file)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return "", "", err
+	}
+
+	packageName := c.openPackage(pkgPath)
+	f, err := os.Open(PackageFolderPath + packageName)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.removeCsarFiles(packageName, header, clientIp)
+		return "", "", err
+	}
+	files, err := f.Readdir(-1)
+	f.Close()
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.removeCsarFiles(packageName, header, clientIp)
+		return "", "", err
+	}
+	path := packageName
+	if len(files) == 1 {
+		path = packageName + "/" + files[0].Name()
+	}
+
+	return packageName, path, nil
 }
