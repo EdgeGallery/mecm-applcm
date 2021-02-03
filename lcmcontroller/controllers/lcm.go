@@ -132,6 +132,9 @@ func (c *LcmController) UploadConfig() {
 		}
 		return
 	}
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: Upload config is successful.]")
+
 	c.ServeJSON()
 }
 
@@ -206,6 +209,8 @@ func (c *LcmController) RemoveConfig() {
 		}
 		return
 	}
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: Remove config is successful.]")
 	c.ServeJSON()
 }
 
@@ -313,6 +318,9 @@ func (c *LcmController) Instantiate() {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
 		return
 	}
+
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: Instantiation is successful.]")
 
 	c.ServeJSON()
 }
@@ -470,6 +478,8 @@ func (c *LcmController) Terminate() {
 	if err != nil {
 		return
 	}
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: Termination is successful.]")
 
 	c.ServeJSON()
 }
@@ -530,7 +540,10 @@ func (c *LcmController) AppDeploymentStatus() {
 	_, err = c.Ctx.ResponseWriter.Write(responseBody)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: App deployment status is successful.]")
 }
 
 // @Title Health Check
@@ -605,7 +618,10 @@ func (c *LcmController) Query() {
 	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: Query pod statistics is successful.]")
 }
 
 // @Title Query kpi
@@ -668,7 +684,10 @@ func (c *LcmController) QueryKPI() {
 	_, err = c.Ctx.ResponseWriter.Write(metricInfoByteArray)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: Query kpi is successful.]")
 }
 
 // @Title Query mep capabilities
@@ -730,7 +749,10 @@ func (c *LcmController) QueryMepCapabilities() {
 	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
+		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: Query mep capabilities is successful.]")
 }
 
 // Write error response
