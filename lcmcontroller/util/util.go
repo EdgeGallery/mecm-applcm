@@ -114,6 +114,8 @@ const (
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
+	Operation            = "] Operation ["
+	Resource             = " Resource ["
 )
 
 var cipherSuiteMap = map[string]uint16{

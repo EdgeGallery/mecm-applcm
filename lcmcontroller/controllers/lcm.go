@@ -1092,8 +1092,8 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 // Handled logging for error case
 func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg string) {
 	c.writeErrorResponse(errMsg, code)
-	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 }
 
 // Insert or update application info record
@@ -1219,8 +1219,8 @@ func (c *LcmController) getInputParameters(clientIp string) (string, string, mul
 
 // To display log for received message
 func (c *LcmController) displayReceivedMsg(clientIp string) {
-	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "]")
+	log.Info("Received message from ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "]")
 }
 
 // Returns the utilization details
@@ -1392,6 +1392,6 @@ func (c *LcmController) getPkgName(clientIp string, bKey []byte,
 
 // Handled logging for success case
 func (c *LcmController) handleLoggingForSuccess(clientIp string, msg string) {
-	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 }
