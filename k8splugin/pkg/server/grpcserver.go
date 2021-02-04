@@ -693,7 +693,7 @@ func (s *ServerGRPC) handleLoggingForSuccess(ctx context.Context, rpcName string
 	}
 
 	log.Info("Response message for ClientIP [" + clientIp + "]" +
-		" RpcName [" + rpcName + "] Result [Success: " + msg + ".]")
+		util.RpcName + rpcName + "] Result [Success: " + msg + ".]")
 }
 
 // Display received message
@@ -703,7 +703,7 @@ func (s *ServerGRPC) displayReceivedMsg(ctx context.Context, rpcName string) err
 		return err
 	}
 
-	log.Info("Received message from ClientIP [" + clientIp + "]" + " RpcName [" + rpcName + "]")
+	log.Info("Received message from ClientIP [" + clientIp + "]" + util.RpcName + rpcName + "]")
 	return nil
 }
 
@@ -715,7 +715,7 @@ func (s *ServerGRPC) displayResponseMsg(ctx context.Context, rpcName string, err
 	}
 
 	log.Info("Response message for ClientIP [" + clientIp + "]" +
-		" RpcName [" + rpcName + "] Result [Failure: " + errMsg + ".]")
+		util.RpcName + rpcName + "] Result [Failure: " + errMsg + ".]")
 }
 
 // Get client address

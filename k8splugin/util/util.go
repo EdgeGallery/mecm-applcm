@@ -81,6 +81,7 @@ const (
 	TooManyFile int = 1024
 	TooBig = 0x6400000
 	SingleFileTooBig = 0x6400000
+	RpcName = " RpcName ["
 )
 
 var cipherSuiteMap = map[string]uint16{
