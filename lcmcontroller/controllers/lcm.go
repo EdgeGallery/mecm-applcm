@@ -132,6 +132,7 @@ func (c *LcmController) UploadConfig() {
 		}
 		return
 	}
+	c.handleLoggingForSuccess(clientIp, "Upload config is successful")
 	c.ServeJSON()
 }
 
@@ -206,6 +207,7 @@ func (c *LcmController) RemoveConfig() {
 		}
 		return
 	}
+	c.handleLoggingForSuccess(clientIp, "Remove config is successful")
 	c.ServeJSON()
 }
 
@@ -265,12 +267,12 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	packageName, path, err := c.getPkgName(clientIp, bKey, header, file)
+	packageName, path, fileName, err := c.getPkgName(clientIp, bKey, header, file)
 	if err != nil {
 		return
 	}
 
-	var mainServiceTemplateMf = PackageFolderPath + path + "/positioning-service.mf"
+	var mainServiceTemplateMf = PackageFolderPath + path + "/" + fileName
 	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -314,6 +316,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
+	c.handleLoggingForSuccess(clientIp, "Instantiation is successful")
 	c.ServeJSON()
 }
 
@@ -470,7 +473,7 @@ func (c *LcmController) Terminate() {
 	if err != nil {
 		return
 	}
-
+	c.handleLoggingForSuccess(clientIp, "Termination is successful")
 	c.ServeJSON()
 }
 
@@ -530,7 +533,9 @@ func (c *LcmController) AppDeploymentStatus() {
 	_, err = c.Ctx.ResponseWriter.Write(responseBody)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	c.handleLoggingForSuccess(clientIp, "App deployment status is successful")
 }
 
 // @Title Health Check
@@ -605,7 +610,9 @@ func (c *LcmController) Query() {
 	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	c.handleLoggingForSuccess(clientIp, "Query pod statistics is successful")
 }
 
 // @Title Query kpi
@@ -668,7 +675,9 @@ func (c *LcmController) QueryKPI() {
 	_, err = c.Ctx.ResponseWriter.Write(metricInfoByteArray)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	c.handleLoggingForSuccess(clientIp, "Query kpi is successful")
 }
 
 // @Title Query mep capabilities
@@ -730,7 +739,9 @@ func (c *LcmController) QueryMepCapabilities() {
 	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
 	}
+	c.handleLoggingForSuccess(clientIp, "Query mep capabilities is successful")
 }
 
 // Write error response
@@ -1081,8 +1092,8 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 // Handled logging for error case
 func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg string) {
 	c.writeErrorResponse(errMsg, code)
-	log.Info("Response message for ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 }
 
 // Insert or update application info record
@@ -1208,8 +1219,8 @@ func (c *LcmController) getInputParameters(clientIp string) (string, string, mul
 
 // To display log for received message
 func (c *LcmController) displayReceivedMsg(clientIp string) {
-	log.Info("Received message from ClientIP [" + clientIp + "] Operation [" + c.Ctx.Request.Method + "]" +
-		" Resource [" + c.Ctx.Input.URL() + "]")
+	log.Info("Received message from ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "]")
 }
 
 // Returns the utilization details
@@ -1349,32 +1360,69 @@ func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter
 }
 
 func (c *LcmController) getPkgName(clientIp string, bKey []byte,
-	header *multipart.FileHeader, file multipart.File) (string, string, error) {
+	header *multipart.FileHeader, file multipart.File) (string, string, string, error) {
+	var fileName = ""
+
 	pkgPath := PackageFolderPath + header.Filename
 	err := c.createPackagePath(pkgPath, clientIp, file)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		return "", "", err
+		return "", "", "", err
 	}
 
 	packageName := c.openPackage(pkgPath)
-	f, err := os.Open(PackageFolderPath + packageName)
+	files, err := getFilesFromDir(packageName)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.removeCsarFiles(packageName, header, clientIp)
-		return "", "", err
+		return "", "", "", err
 	}
-	files, err := f.Readdir(-1)
-	f.Close()
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.removeCsarFiles(packageName, header, clientIp)
-		return "", "", err
-	}
+
 	path := packageName
 	if len(files) == 1 {
 		path = packageName + "/" + files[0].Name()
+		files, err = getFilesFromDir(packageName + "/" + files[0].Name())
+		if err != nil {
+			util.ClearByteArray(bKey)
+			c.removeCsarFiles(packageName, header, clientIp)
+			return "", "", "", err
+		}
 	}
+	fileName = getManifestFileName(files)
+	return packageName, path, fileName, nil
+}
 
-	return packageName, path, nil
+// Get manifest file name
+func getManifestFileName(files []os.FileInfo) string {
+	var fileName = ""
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		} else {
+			fileName = file.Name()
+			break
+		}
+	}
+	return fileName
+}
+
+// Get files from directory
+func getFilesFromDir(packageName string) (files []os.FileInfo, err error) {
+	f, err := os.Open(PackageFolderPath + packageName)
+	if err != nil {
+		return files, err
+	}
+	files, err = f.Readdir(-1)
+	f.Close()
+	if err != nil {
+		return files, err
+	}
+	return files, nil
+}
+
+// Handled logging for success case
+func (c *LcmController) handleLoggingForSuccess(clientIp string, msg string) {
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 }

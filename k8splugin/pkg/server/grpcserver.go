@@ -187,7 +187,7 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 	resp = &lcmservice.QueryResponse{
 		Response: r,
 	}
-	log.Info("query is success")
+	s.handleLoggingForSuccess(ctx, util.Query, "Query pod statistics is successful")
 	return resp, nil
 }
 
@@ -242,7 +242,8 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 	resp = &lcmservice.TerminateResponse{
 		Status: util.Success,
 	}
-	log.Info("terminate is success")
+
+	s.handleLoggingForSuccess(ctx, util.Terminate, "Termination is successful")
 	return resp, nil
 }
 
@@ -297,6 +298,7 @@ func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) err
 	log.Info("successful instantiation")
 	res.Status = util.Success
 	sendInstantiateResponse(stream, &res)
+	s.handleLoggingForSuccess(ctx, util.Instantiate, "Instantiation is successful")
 	return nil
 }
 
@@ -355,9 +357,9 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 		return err
 	}
 
-	log.Info("successfully uploaded config file")
 	res.Status = util.Success
 	sendUploadCfgResponse(stream, &res)
+	s.handleLoggingForSuccess(ctx, util.UploadConfig, "Upload config is successful")
 	return nil
 }
 
@@ -391,7 +393,7 @@ func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 	resp = &lcmservice.RemoveCfgResponse{
 		Status: util.Success,
 	}
-	log.Info("host configuration file deleted successfully")
+	s.handleLoggingForSuccess(ctx, util.UploadConfig, "Remove config is successful")
 	return resp, nil
 }
 
@@ -683,6 +685,17 @@ func (s *ServerGRPC) deleteAppInfoRecord(appInsId string) error {
 	return nil
 }
 
+// display response message
+func (s *ServerGRPC) handleLoggingForSuccess(ctx context.Context, rpcName string, msg string) {
+	clientIp, err := s.getClientAddress(ctx)
+	if err != nil {
+		return
+	}
+
+	log.Info("Response message for ClientIP [" + clientIp + "]" +
+		util.RpcName + rpcName + "] Result [Success: " + msg + ".]")
+}
+
 // Display received message
 func (s *ServerGRPC) displayReceivedMsg(ctx context.Context, rpcName string) error {
 	clientIp, err := s.getClientAddress(ctx)
@@ -690,7 +703,7 @@ func (s *ServerGRPC) displayReceivedMsg(ctx context.Context, rpcName string) err
 		return err
 	}
 
-	log.Info("Received message from ClientIP [" + clientIp + "]" + " RpcName [" + rpcName + "]")
+	log.Info("Received message from ClientIP [" + clientIp + "]" + util.RpcName + rpcName + "]")
 	return nil
 }
 
@@ -702,7 +715,7 @@ func (s *ServerGRPC) displayResponseMsg(ctx context.Context, rpcName string, err
 	}
 
 	log.Info("Response message for ClientIP [" + clientIp + "]" +
-		" RpcName [" + rpcName + "] Result [Failure: " + errMsg + ".]")
+		util.RpcName + rpcName + "] Result [Failure: " + errMsg + ".]")
 }
 
 // Get client address

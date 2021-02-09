@@ -45,6 +45,7 @@ const (
 	AccessToken              string = "access_token"
 	K8sPlugin                string = "K8S_PLUGIN"
 	K8sPluginPort            string = "K8S_PLUGIN_PORT"
+	MepServer                string = "MEP_SERVER"
 	AuthorizationFailed      string = "Authorization failed"
 	Default                  string = "default"
 	DriverName               string = "postgres"
@@ -114,6 +115,8 @@ const (
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
+	Operation            = "] Operation ["
+	Resource             = " Resource ["
 )
 
 var cipherSuiteMap = map[string]uint16{
@@ -484,6 +487,12 @@ func GetDbPort() string {
 func GetPrometheusPort() string {
 	prometheusPort := os.Getenv("PROMETHEUS_PORT")
 	return prometheusPort
+}
+
+// Get mep server address
+func GetMepServerAddress() string {
+	mepServer := os.Getenv(MepServer)
+	return mepServer
 }
 
 // Get mep port
