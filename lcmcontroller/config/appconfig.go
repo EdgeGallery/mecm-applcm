@@ -113,7 +113,7 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 		log.Error("Failed to marshal the request body information")
 		return err
 	}
-	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/applications/" +
+	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mep/appMng/v1/applications/" +
 		acm.AppAuthCfg.AppInsId + "/confs"
 	req, errNewRequest := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if errNewRequest != nil {
@@ -140,12 +140,14 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 
 // Delete app auth configuration request
 func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
-	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mepauth/v1/applications/" +
-		acm.AppAuthCfg.AppInsId + "/confs"
+
+	url := util.HttpsUrl + util.GetMepServerAddress() + ":" + util.GetMepPort() + "/mep/mec_app_support/v1/applications/" +
+		acm.AppAuthCfg.AppInsId + "/AppInstanceTermination"
 	req, errNewRequest := http.NewRequest("DELETE", url, nil)
 	if errNewRequest != nil {
 		return errNewRequest
 	}
+	req.Header.Set("X-AppinstanceID", acm.AppAuthCfg.AppInsId)
 	response, errDo := util.DoRequest(req)
 	if errDo != nil {
 		return errDo

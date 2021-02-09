@@ -154,6 +154,17 @@ else
   export PROMETHEUS_PORT=80
 fi
 
+if [ ! -z "$MEP_SERVER" ]; then
+  validate_host_name "$MEP_SERVER"
+  valid_mep_server_addr="$?"
+  if [ ! "$valid_mep_server_addr" -eq "0" ]; then
+    echo "invalid mep server addr"
+    exit 1
+  fi
+else
+  export MEP_SERVER=mep-mm5.mep
+fi
+
 if [ ! -z "$MEP_PORT" ]; then
   validate_port_num "$MEP_PORT"
   valid_MEP_db_port="$?"
