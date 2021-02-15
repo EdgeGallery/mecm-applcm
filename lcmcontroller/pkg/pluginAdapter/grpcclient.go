@@ -354,6 +354,22 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 	return res.GetStatus(), err
 }
 
+// Get pod description
+func (c *ClientGRPC) PodDescription(ctx context.Context, accessToken string,
+	appInsId string, hostIP string) (response string, error error) {
+
+	req := &lcmservice.PodDescribeRequest{
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		HostIp:        hostIP,
+	}
+	resp, err := c.client.PodDescribe(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
 // Close connection
 func (c *ClientGRPC) Close() {
 	if c.conn != nil {

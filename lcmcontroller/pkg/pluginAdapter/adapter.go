@@ -117,3 +117,19 @@ func (c *PluginAdapter) RemoveConfig(host string, accessToken string) (status st
 	log.Info("remove configuration is success with status: ", status)
 	return status, nil
 }
+
+// Get pod description
+func (c *PluginAdapter) GetPodDescription(accessToken, host, appInsId string) (response string, error error) {
+	log.Info("Get pod description started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.PodDescription(ctx, accessToken, appInsId, host)
+	if err != nil {
+		log.Errorf("failed to get pod description")
+		return "", err
+	}
+	log.Info("Queried pod description completed with status: Success")
+	return response, nil
+}

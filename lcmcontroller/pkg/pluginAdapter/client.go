@@ -31,4 +31,5 @@ type ClientIntf interface {
 	UploadConfig(ctx context.Context, multipartFile multipart.File,
 		hostIP string, accessToken string) (status string, error error)
 	RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error)
+	PodDescription(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
 }
