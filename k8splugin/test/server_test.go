@@ -74,6 +74,7 @@ func TestServer(t *testing.T) {
 	time.Sleep(1000 * time.Millisecond)
 	testInstantiate(t, dir, config)
 	testQuery(t, config)
+	testPodDescribe(t, config)
 	testTerminate(t, config)
 
 	// Pre steps
@@ -101,6 +102,13 @@ func testQuery(t *testing.T, config *conf.Configurations) {
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.Query(token, appInstanceIdentifier, hostIpAddress)
 	assert.Equal(t, "{\"Output\":\"Success\"}", status, "Query failed")
+}
+
+func testPodDescribe(t *testing.T, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
+	status, _ := client.PodDescribe(token, appInstanceIdentifier, hostIpAddress)
+	assert.Equal(t, "{\"Output\":\"Success\"}", status, "Pod describe failed")
 }
 
 func testTerminate(t *testing.T, config *conf.Configurations) {

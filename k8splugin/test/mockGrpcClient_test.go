@@ -159,6 +159,21 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 	return resp.Response, err
 }
 
+// Get pod description
+func (c *mockGrpcClient) PodDescribe(accessToken string, appInsId string, hostIP string) (response string, error error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
+	defer cancel()
+
+	req := &lcmservice.PodDescribeRequest{
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		HostIp:        hostIP,
+	}
+	resp, err := c.client.PodDescribe(ctx, req)
+	return resp.Response, err
+}
+
 // Terminate application
 func (c *mockGrpcClient) Terminate(hostIP string, accessToken string, appInsId string) (status string, error error) {
 
