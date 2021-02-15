@@ -266,7 +266,6 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 func (hc *HelmClient) PodDescribe(relName string) (string, error) {
 	log.Info("In Pod describe function")
 	var podDesc models.PodDescribeInfo
-	var podDescInfoJson []byte
 
 	clientset, manifest, err := hc.getClientSet(relName)
 	if nil != err {
@@ -277,37 +276,45 @@ func (hc *HelmClient) PodDescribe(relName string) (string, error) {
 
 	for _, label := range labelSelector.Label {
 		if label.Kind == util.Pod || label.Kind == util.Deployment {
-			options := metav1.ListOptions{
-				LabelSelector: label.Selector,
-			}
-
-			pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
+			podDesc, err = updatePodDescInfo(podDesc, clientset, label)
 			if err != nil {
 				return "", err
 			}
-			for _, podItem := range pods.Items {
-				podName := podItem.GetObjectMeta().GetName()
-				pod, err := clientset.CoreV1().Pods(util.Default).Get(context.TODO(), podName, metav1.GetOptions{})
-				if err != nil {
-					return "", err
-				}
-
-				if ref, err := reference.GetReference(scheme.Scheme, pod); err != nil {
-					log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
-					return "", err
-				} else {
-					podDescInfo := getPodDescInfo(ref, pod, clientset, podName)
-					podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
-				}
-			}
 		}
 	}
-	podDescInfoJson, err = json.Marshal(podDesc)
+	podDescInfoJson, err := json.Marshal(podDesc)
 	if err != nil {
 		log.Info(util.FailedToJsonMarshal)
 		return "", err
 	}
 	return string(podDescInfoJson), nil
+}
+
+func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
+	label models.Label) (models.PodDescribeInfo, error) {
+	options := metav1.ListOptions{
+		LabelSelector: label.Selector,
+	}
+	pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
+	if err != nil {
+		return podDesc, err
+	}
+	for _, podItem := range pods.Items {
+		podName := podItem.GetObjectMeta().GetName()
+		pod, err := clientset.CoreV1().Pods(util.Default).Get(context.TODO(), podName, metav1.GetOptions{})
+		if err != nil {
+			return podDesc, err
+		}
+
+		if ref, err := reference.GetReference(scheme.Scheme, pod); err != nil {
+			log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
+			return podDesc, err
+		} else {
+			podDescInfo := getPodDescInfo(ref, pod, clientset, podName)
+			podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
+		}
+	}
+	return podDesc, nil
 }
 
 func (hc *HelmClient) getClientSet(relName string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
