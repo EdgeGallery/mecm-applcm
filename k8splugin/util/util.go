@@ -70,6 +70,7 @@ const (
 	FailedToValInputParams = "failed to validate input parameters"
 	FailedToGetClient      = "failed to get client"
 	AppRecordDoesNotExit   = "app info record does not exist in database"
+	PodDescribe  = "PodDescribe"
 	Query        = "Query"
 	Instantiate  = "Instantiate"
 	Terminate    = "Terminate"
