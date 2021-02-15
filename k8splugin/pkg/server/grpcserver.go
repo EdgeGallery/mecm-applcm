@@ -576,7 +576,7 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument,
-			"appInsId is invalid"))
+			util.AppInsIdValid))
 	}
 
 	return hostIp, appInsId, nil
@@ -636,7 +636,7 @@ func (s *ServerGRPC) validateInputParamsForPodDesc(
 	appInsId := req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, "appInsId is invalid"))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
 	}
 
 	return hostIp, appInsId, nil
@@ -662,7 +662,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, "appInsId is invalid"))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
 	}
 
 	return hostIp, appInsId, nil

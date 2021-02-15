@@ -276,18 +276,18 @@ func (hc *HelmClient) PodDescribe(relName string) (string, error) {
 	labelSelector := getLabelSelector(manifest)
 
 	for _, label := range labelSelector.Label {
-		if label.Kind == "Pod" || label.Kind == "Deployment" {
+		if label.Kind == util.Pod || label.Kind == util.Deployment {
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
 			}
 
-			pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
+			pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
 			if err != nil {
 				return "", err
 			}
 			for _, podItem := range pods.Items {
 				podName := podItem.GetObjectMeta().GetName()
-				pod, err := clientset.CoreV1().Pods("default").Get(context.TODO(), podName, metav1.GetOptions{})
+				pod, err := clientset.CoreV1().Pods(util.Default).Get(context.TODO(), podName, metav1.GetOptions{})
 				if err != nil {
 					return "", err
 				}
@@ -304,7 +304,7 @@ func (hc *HelmClient) PodDescribe(relName string) (string, error) {
 	}
 	podDescInfoJson, err = json.Marshal(podDesc)
 	if err != nil {
-		log.Info("Failed to json marshal")
+		log.Info(util.FailedToJsonMarshal)
 		return "", err
 	}
 	return string(podDescInfoJson), nil
@@ -353,7 +353,7 @@ func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 	if _, isMirrorPod := pod.Annotations[corev1.MirrorPodAnnotationKey]; isMirrorPod {
 		ref.UID = types.UID(pod.Annotations[corev1.MirrorPodAnnotationKey])
 	}
-	events, _ := clientset.CoreV1().Events("default").Search(scheme.Scheme, ref)
+	events, _ := clientset.CoreV1().Events(util.Default).Search(scheme.Scheme, ref)
 	podDescInfo.PodName = podName
 	if len(events.Items) == 0 {
 		podDescInfo.PodEventsInfo = append(podDescInfo.PodEventsInfo,
@@ -371,7 +371,7 @@ func getLabelSelector(manifest []Manifest) models.LabelSelector {
 	var label models.Label
 
 	for i := 0; i < len(manifest); i++ {
-		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service" {
+		if manifest[i].Kind == util.Deployment || manifest[i].Kind == util.Pod || manifest[i].Kind == "Service" {
 			appName := manifest[i].Metadata.Name
 			if manifest[i].Metadata.Labels.App != "" {
 				appName = manifest[i].Metadata.Labels.App
@@ -391,7 +391,7 @@ func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string
 	if response != nil {
 		appInfoJson, err := json.Marshal(response)
 		if err != nil {
-			log.Info("Failed to json marshal")
+			log.Info(util.FailedToJsonMarshal)
 			return "", err
 		}
 		return string(appInfoJson), nil
@@ -399,7 +399,7 @@ func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string
 
 	appInfoJson, err := json.Marshal(appInfo)
 	if err != nil {
-		log.Info("Failed to json marshal")
+		log.Info(util.FailedToJsonMarshal)
 		return "", err
 	}
 
@@ -411,12 +411,12 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	config *rest.Config) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
-		if label.Kind == "Pod" || label.Kind == "Deployment" {
+		if label.Kind == util.Pod || label.Kind == util.Deployment {
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
 			}
 
-			pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
+			pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
 			if err != nil {
 				return appInfo, nil, err
 			}

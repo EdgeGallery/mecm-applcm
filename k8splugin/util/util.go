@@ -83,6 +83,10 @@ const (
 	TooBig = 0x6400000
 	SingleFileTooBig = 0x6400000
 	RpcName = " RpcName ["
+	Pod = "Pod"
+	Deployment = "Deployment"
+	FailedToJsonMarshal = "Failed to json marshal"
+	AppInsIdValid = "appInsId is invalid"
 )
 
 var cipherSuiteMap = map[string]uint16{
