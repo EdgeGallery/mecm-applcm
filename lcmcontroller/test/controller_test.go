@@ -39,12 +39,13 @@ import (
 
 var (
 	filePermission os.FileMode = 0750
-	directory      string      = "/packages/"
-	hostIpAddress  string      = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+	directory                  = "/packages/"
+	hostIpAddress              = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
 		rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal))
-	tenantIdentifier      string = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
-	appInstanceIdentifier string = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
-	appName               string = "postioning-service"
+	tenantIdentifier      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	appInstanceIdentifier = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	appName               = "postioning-service"
+	queryFailed           = "Query failed"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -154,9 +155,9 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 		queryController.Query()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, "Query failed")
+		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, exOutput, response.Body.String(), "Query failed")
+		assert.Equal(t, exOutput, response.Body.String(), queryFailed)
 	})
 }
 
@@ -184,9 +185,9 @@ func testPodDescribe(t *testing.T, extraParams map[string]string, path string, t
 		queryController.GetPodDescription()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, "Query failed")
+		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, exOutput, response.Body.String(), "Query failed")
+		assert.Equal(t, exOutput, response.Body.String(), queryFailed)
 	})
 }
 
