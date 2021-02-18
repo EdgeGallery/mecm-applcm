@@ -137,3 +137,12 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 	log.Info("host configuration file deleted successfully.")
 	return resp, nil
 }
+
+// Pod description
+func (s *ServerGRPC) PodDescribe(ctx context.Context, request *lcmservice.PodDescribeRequest) (*lcmservice.PodDescribeResponse, error) {
+	resp := &lcmservice.PodDescribeResponse{
+		Response: SUCCESS_RETURN,
+	}
+	return resp, nil
+}
+

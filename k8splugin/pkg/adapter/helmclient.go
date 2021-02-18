@@ -23,9 +23,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ghodss/yaml"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	"k8splugin/config"
 	"k8splugin/models"
 	"k8splugin/pgdb"
@@ -39,9 +41,11 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
+	"k8s.io/client-go/tools/reference"
+	"k8s.io/kubectl/pkg/scheme"
 )
 
 // Variables to be defined in deployment file
@@ -256,7 +260,116 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 		return "", err
 	}
 	return appInfoJson, nil
+}
 
+// Get pod description
+func (hc *HelmClient) PodDescribe(relName string) (string, error) {
+	log.Info("In Pod describe function")
+	var podDesc models.PodDescribeInfo
+
+	clientset, manifest, err := hc.getClientSet(relName)
+	if nil != err {
+		return "", err
+	}
+
+	labelSelector := getLabelSelector(manifest)
+
+	for _, label := range labelSelector.Label {
+		if label.Kind == util.Pod || label.Kind == util.Deployment {
+			podDesc, err = updatePodDescInfo(podDesc, clientset, label)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+	podDescInfoJson, err := json.Marshal(podDesc)
+	if err != nil {
+		log.Info(util.FailedToJsonMarshal)
+		return "", err
+	}
+	return string(podDescInfoJson), nil
+}
+
+func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
+	label models.Label) (models.PodDescribeInfo, error) {
+	options := metav1.ListOptions{
+		LabelSelector: label.Selector,
+	}
+	pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
+	if err != nil {
+		return podDesc, err
+	}
+	for _, podItem := range pods.Items {
+		podName := podItem.GetObjectMeta().GetName()
+		pod, err := clientset.CoreV1().Pods(util.Default).Get(context.TODO(), podName, metav1.GetOptions{})
+		if err != nil {
+			return podDesc, err
+		}
+
+		if ref, err := reference.GetReference(scheme.Scheme, pod); err != nil {
+			log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
+			return podDesc, err
+		} else {
+			podDescInfo := getPodDescInfo(ref, pod, clientset, podName)
+			podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
+		}
+	}
+	return podDesc, nil
+}
+
+func (hc *HelmClient) getClientSet(relName string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
+	// Get release namespace
+	releaseNamespace := util.GetReleaseNamespace()
+	actionConfig := new(action.Configuration)
+	if err = actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
+		util.HelmDriver, func(format string, v ...interface{}) {
+			_ = fmt.Sprintf(format, v)
+		}); err != nil {
+		log.Error(util.ActionConfig)
+		return clientset, manifest, err
+	}
+	s := action.NewStatus(actionConfig)
+	res, err := s.Run(relName)
+	if err != nil {
+		log.Error("Unable to query chart with release name")
+		return clientset, manifest, err
+	}
+	manifest, err = splitManifestYaml([]byte(res.Manifest))
+	if err != nil {
+		log.Errorf("Query response processing failed release name: %s. Err: %s",
+			relName, err)
+		return clientset, manifest, err
+	}
+
+	// uses the current context in kubeconfig
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+	if err != nil {
+		return clientset, manifest, err
+	}
+	// creates the clientset
+	clientset, err = kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return clientset, manifest, err
+	}
+	return clientset, manifest, nil
+}
+
+func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
+	podName string) (podDescInfo models.PodDescInfo) {
+	ref.Kind = ""
+	if _, isMirrorPod := pod.Annotations[corev1.MirrorPodAnnotationKey]; isMirrorPod {
+		ref.UID = types.UID(pod.Annotations[corev1.MirrorPodAnnotationKey])
+	}
+	events, _ := clientset.CoreV1().Events(util.Default).Search(scheme.Scheme, ref)
+	podDescInfo.PodName = podName
+	if len(events.Items) == 0 {
+		podDescInfo.PodEventsInfo = append(podDescInfo.PodEventsInfo,
+			"Pod is running successfully")
+	}
+	for _, e := range events.Items {
+		podDescInfo.PodEventsInfo = append(podDescInfo.PodEventsInfo, strings.TrimSpace(e.Message))
+	}
+	return podDescInfo
 }
 
 // Get label selector
@@ -265,7 +378,7 @@ func getLabelSelector(manifest []Manifest) models.LabelSelector {
 	var label models.Label
 
 	for i := 0; i < len(manifest); i++ {
-		if manifest[i].Kind == "Deployment" || manifest[i].Kind == "Pod" || manifest[i].Kind == "Service" {
+		if manifest[i].Kind == util.Deployment || manifest[i].Kind == util.Pod || manifest[i].Kind == "Service" {
 			appName := manifest[i].Metadata.Name
 			if manifest[i].Metadata.Labels.App != "" {
 				appName = manifest[i].Metadata.Labels.App
@@ -285,7 +398,7 @@ func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string
 	if response != nil {
 		appInfoJson, err := json.Marshal(response)
 		if err != nil {
-			log.Info("Failed to json marshal")
+			log.Info(util.FailedToJsonMarshal)
 			return "", err
 		}
 		return string(appInfoJson), nil
@@ -293,7 +406,7 @@ func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string
 
 	appInfoJson, err := json.Marshal(appInfo)
 	if err != nil {
-		log.Info("Failed to json marshal")
+		log.Info(util.FailedToJsonMarshal)
 		return "", err
 	}
 
@@ -305,12 +418,12 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	config *rest.Config) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
-		if label.Kind == "Pod" || label.Kind == "Deployment" {
+		if label.Kind == util.Pod || label.Kind == util.Deployment {
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
 			}
 
-			pods, err := clientset.CoreV1().Pods("default").List(context.Background(), options)
+			pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
 			if err != nil {
 				return appInfo, nil, err
 			}

@@ -70,6 +70,7 @@ const (
 	FailedToValInputParams = "failed to validate input parameters"
 	FailedToGetClient      = "failed to get client"
 	AppRecordDoesNotExit   = "app info record does not exist in database"
+	PodDescribe  = "PodDescribe"
 	Query        = "Query"
 	Instantiate  = "Instantiate"
 	Terminate    = "Terminate"
@@ -82,6 +83,10 @@ const (
 	TooBig = 0x6400000
 	SingleFileTooBig = 0x6400000
 	RpcName = " RpcName ["
+	Pod = "Pod"
+	Deployment = "Deployment"
+	FailedToJsonMarshal = "Failed to json marshal"
+	AppInsIdValid = "appInsId is invalid"
 )
 
 var cipherSuiteMap = map[string]uint16{

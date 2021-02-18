@@ -140,6 +140,56 @@ func (t *RateLimit) Handler(ctx context.Context, info *tap.Info) (context.Contex
 	return ctx, nil
 }
 
+// Pod Description
+func (s *ServerGRPC) PodDescribe(ctx context.Context, req *lcmservice.PodDescribeRequest) (resp *lcmservice.PodDescribeResponse, err error) {
+
+	resp = &lcmservice.PodDescribeResponse{
+		Response: util.Failure,
+	}
+
+	err = s.displayReceivedMsg(ctx, util.PodDescribe)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToDispRecvMsg)
+		return resp, err
+	}
+
+	// Input validation
+	hostIp, appInsId, err := s.validateInputParamsForPodDesc(req)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToValInputParams)
+		return resp, err
+	}
+
+	// Get Client
+	client, err := adapter.GetClient(util.DeployType, hostIp)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToGetClient)
+		return resp, err
+	}
+
+	appInstanceRecord := &models.AppInstanceInfo{
+		AppInsId: appInsId,
+	}
+	readErr := s.db.ReadData(appInstanceRecord, util.AppInsId)
+	if readErr != nil {
+		log.Error(util.AppRecordDoesNotExit)
+		s.displayResponseMsg(ctx, util.Query, util.AppRecordDoesNotExit)
+		return resp, err
+	}
+
+	// Query Chart
+	r, err := client.PodDescribe(appInstanceRecord.WorkloadId)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.PodDescribe, "failed to get pod describe information")
+		return resp, err
+	}
+	resp = &lcmservice.PodDescribeResponse{
+		Response: r,
+	}
+	s.handleLoggingForSuccess(ctx, util.PodDescribe, "Pod description is successful")
+	return resp, nil
+}
+
 // Query application
 func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
 
@@ -526,7 +576,7 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument,
-			"appInsId is invalid"))
+			util.AppInsIdValid))
 	}
 
 	return hostIp, appInsId, nil
@@ -566,6 +616,32 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	return hostIp, nil
 }
 
+// Validate input parameters for pod describe
+func (s *ServerGRPC) validateInputParamsForPodDesc(
+	req *lcmservice.PodDescribeRequest) (hostIp string, podName string, err error) {
+
+	accessToken := req.GetAccessToken()
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
+	if err != nil {
+		return "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.AccssTokenIsInvalid))
+	}
+
+	hostIp = req.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+
+	appInsId := req.GetAppInstanceId()
+	err = util.ValidateUUID(appInsId)
+	if err != nil {
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
+	}
+
+	return hostIp, appInsId, nil
+}
+
 // Validate input parameters for Query
 func (s *ServerGRPC) validateInputParamsForQuery(
 	req *lcmservice.QueryRequest) (hostIp string, appInsId string, err error) {
@@ -586,7 +662,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, "appInsId is invalid"))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
 	}
 
 	return hostIp, appInsId, nil

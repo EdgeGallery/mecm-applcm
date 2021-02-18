@@ -36,7 +36,6 @@ func init() {
 
 
 	ns := beego.NewNamespace("/lcmcontroller/v1/",
-
 		beego.NSInclude(
 			&controllers.LcmController{Db: adapter},
 		),

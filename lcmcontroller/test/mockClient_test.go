@@ -50,3 +50,8 @@ func (mc *mockClient) RemoveConfig(ctx context.Context, hostIP string,
 	accessToken string) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
+
+func (mc *mockClient) PodDescription(ctx context.Context, accessToken string, hostIp string,
+	podName string) (response string, error error) {
+	return SUCCESS_RETURN, nil
+}

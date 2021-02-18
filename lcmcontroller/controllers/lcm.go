@@ -1426,3 +1426,70 @@ func (c *LcmController) handleLoggingForSuccess(clientIp string, msg string) {
 	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 }
+
+// @Title GetPodDescription
+// @Description perform get pod description
+// @Param	tenantId	    path 	string	true	"tenantId"
+// @Param	appInstanceId   path 	string	true	"appInstanceId"
+// @Param   access_token    header  string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId/pods/desc  [get]
+func (c *LcmController) GetPodDescription() {
+	log.Info("Get pod description request received.")
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	response, err := adapter.GetPodDescription(accessToken, appInfoRecord.HostIp, appInsId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		res := strings.Contains(err.Error(), "not found")
+		if res {
+			c.handleLoggingForError(clientIp, util.StatusNotFound, err.Error())
+			return
+		}
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	c.handleLoggingForSuccess(clientIp, "Pod description is successful")
+}

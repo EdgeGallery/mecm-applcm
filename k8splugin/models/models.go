@@ -67,3 +67,14 @@ type Label struct {
 	Kind     string
 	Selector string
 }
+
+// Pod information
+type PodDescribeInfo struct {
+	PodDescInfo []PodDescInfo `json:"podDescInfo"`
+}
+
+// Pod Description Info
+type PodDescInfo struct {
+	PodName     string `json:"podName"`
+	PodEventsInfo []string `json:"podEventsInfo"`
+}

@@ -92,6 +92,9 @@ func TestLcmOperation(t *testing.T) {
 	// Test query
 	testQuery(t, nil, "", testDb, "Success")
 
+	// Test query
+	testPodDescribe(t, nil, "", testDb, "Success")
+
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
 
@@ -149,6 +152,36 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Test query
 		queryController.Query()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, "Query failed")
+		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, exOutput, response.Body.String(), "Query failed")
+	})
+}
+
+func testPodDescribe(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+
+	t.Run("TestPodDescribeQuery", func(t *testing.T) {
+
+		// Get Request
+		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
+			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/pods/desc", extraParams, "file", path, "GET")
+
+		// Prepare Input
+		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
+		setParam(queryInput)
+
+		// Prepare beego controller
+		queryBeegoController := beego.Controller{Ctx: &context.Context{Input: queryInput, Request: queryRequest,
+			ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		queryController := &controllers.LcmController{Db: testDb, Controller: queryBeegoController}
+
+		// Test query
+		queryController.GetPodDescription()
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, "Query failed")
