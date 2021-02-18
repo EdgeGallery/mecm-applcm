@@ -133,7 +133,7 @@ func TestKpi(t *testing.T) {
 		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, "Get KPI failed")
 
 		response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, finalOutput, response.Body.String(), "Query failed")
+		assert.Equal(t, finalOutput, response.Body.String(), queryFailed)
 	})
 }
 
