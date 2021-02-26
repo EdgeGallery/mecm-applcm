@@ -77,6 +77,7 @@ const (
 	UploadConfig = "UploadConfig"
 	RemoveConfig = "RemoveConfig"
 	MecmTenantRole = "ROLE_MECM_TENANT"
+	MecmAdminRole = "ROLE_MECM_ADMIN"
 	MecmGuestRole = "ROLE_MECM_GUEST"
 
 	TooManyFile int = 1024
@@ -228,6 +229,9 @@ func ValidateRole(claims  jwt.MapClaims, allowedRoles []string) error {
 					break
 				} else if arr.Index(i).Interface() == MecmGuestRole {
 					roleName = MecmGuestRole
+					break
+				} else if arr.Index(i).Interface() == MecmAdminRole {
+					roleName = MecmAdminRole
 					break
 				}
 			}
