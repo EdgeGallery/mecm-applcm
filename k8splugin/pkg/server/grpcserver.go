@@ -450,7 +450,7 @@ func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 // Validate input parameters for remove config
 func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (string, error) {
 	accessToken := request.GetAccessToken()
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
 			return "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
@@ -495,7 +495,7 @@ func (s *ServerGRPC) validateInputForInstantiation(stream lcmservice.AppLCM_Inst
 		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
 	}
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
 			return "", "", "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
@@ -555,7 +555,7 @@ func (s *ServerGRPC) validateInputForInstantiation(stream lcmservice.AppLCM_Inst
 func (s *ServerGRPC) validateInputParamsForTerm(
 	req *lcmservice.TerminateRequest) (hostIp string, appInsId string, err error) {
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
 			return "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
@@ -592,7 +592,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 		return
 	}
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
 			return "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
@@ -621,7 +621,7 @@ func (s *ServerGRPC) validateInputParamsForPodDesc(
 	req *lcmservice.PodDescribeRequest) (hostIp string, podName string, err error) {
 
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole, util.MecmGuestRole})
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AccssTokenIsInvalid))
@@ -647,7 +647,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	req *lcmservice.QueryRequest) (hostIp string, appInsId string, err error) {
 
 	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AccssTokenIsInvalid))

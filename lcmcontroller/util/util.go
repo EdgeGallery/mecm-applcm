@@ -109,6 +109,7 @@ const (
 	ApiGwPort               = "API_GW_PORT"
 
 	MecmTenantRole       = "ROLE_MECM_TENANT"
+	MecmAdminRole        = "ROLE_MECM_ADMIN"
 	MecmGuestRole        = "ROLE_MECM_GUEST"
 	UserId               = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 	MaxIPVal             = 255
@@ -370,6 +371,9 @@ func ValidateRole(claims jwt.MapClaims, allowedRoles []string) error {
 					break
 				} else if arr.Index(i).Interface() == MecmGuestRole {
 					roleName = MecmGuestRole
+					break
+				} else if arr.Index(i).Interface() == MecmAdminRole {
+					roleName = MecmAdminRole
 					break
 				}
 			}
