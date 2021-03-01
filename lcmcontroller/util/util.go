@@ -116,6 +116,7 @@ const (
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
+	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
 )
