@@ -52,6 +52,6 @@ func (mc *mockClient) RemoveConfig(ctx context.Context, hostIP string,
 }
 
 func (mc *mockClient) WorkloadDescription(ctx context.Context, accessToken string, hostIp string,
-	podName string) (response string, error error) {
+	workloadName string) (response string, error error) {
 	return SUCCESS_RETURN, nil
 }

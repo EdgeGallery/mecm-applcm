@@ -118,18 +118,18 @@ func (c *PluginAdapter) RemoveConfig(host string, accessToken string) (status st
 	return status, nil
 }
 
-// Get pod description
-func (c *PluginAdapter) GetPodDescription(accessToken, host, appInsId string) (response string, error error) {
-	log.Info("Get pod description started")
+// Get workload description
+func (c *PluginAdapter) GetWorkloadDescription(accessToken, host, appInsId string) (response string, error error) {
+	log.Info("Get workload description started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	response, err := c.client.WorkloadDescription(ctx, accessToken, appInsId, host)
 	if err != nil {
-		log.Errorf("failed to get pod description")
+		log.Errorf("failed to get workload description")
 		return "", err
 	}
-	log.Info("Queried pod description completed with status: Success")
+	log.Info("Queried workload description completed with status: Success")
 	return response, nil
 }

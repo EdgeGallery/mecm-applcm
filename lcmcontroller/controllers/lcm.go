@@ -644,7 +644,7 @@ func (c *LcmController) Query() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
-	c.handleLoggingForSuccess(clientIp, "Query pod statistics is successful")
+	c.handleLoggingForSuccess(clientIp, "Query workload statistics is successful")
 }
 
 // @Title Query kpi
@@ -1461,16 +1461,16 @@ func (c *LcmController) handleLoggingForSuccess(clientIp string, msg string) {
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 }
 
-// @Title GetPodDescription
-// @Description perform get pod description
+// @Title GetWorkloadDescription
+// @Description perform get workload description
 // @Param	tenantId	    path 	string	true	"tenantId"
 // @Param	appInstanceId   path 	string	true	"appInstanceId"
 // @Param   access_token    header  string  true    "access token"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router /tenants/:tenantId/app_instances/:appInstanceId/pods/desc  [get]
-func (c *LcmController) GetPodDescription() {
-	log.Info("Get pod description request received.")
+// @router /tenants/:tenantId/app_instances/:appInstanceId/workload/describe  [get]
+func (c *LcmController) GetWorkloadDescription() {
+	log.Info("Get workload description request received.")
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -1516,7 +1516,7 @@ func (c *LcmController) GetPodDescription() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	response, err := adapter.GetPodDescription(accessToken, appInfoRecord.HostIp, appInsId)
+	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.HostIp, appInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
@@ -1532,7 +1532,7 @@ func (c *LcmController) GetPodDescription() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
-	c.handleLoggingForSuccess(clientIp, "Pod description is successful")
+	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
 
 // Get vim name

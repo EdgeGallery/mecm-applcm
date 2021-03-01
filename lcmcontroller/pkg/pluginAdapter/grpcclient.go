@@ -354,7 +354,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 	return res.GetStatus(), err
 }
 
-// Get pod description
+// Get workload description
 func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string,
 	appInsId string, hostIP string) (response string, error error) {
 
