@@ -16,3 +16,4 @@ openapitools/
 gen/
 .openapi-generator/
 golangci.xml
+main
