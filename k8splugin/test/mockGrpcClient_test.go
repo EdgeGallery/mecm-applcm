@@ -160,17 +160,17 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 }
 
 // Get pod description
-func (c *mockGrpcClient) PodDescribe(accessToken string, appInsId string, hostIP string) (response string, error error) {
+func (c *mockGrpcClient) WorkloadDescribe(accessToken string, appInsId string, hostIP string) (response string, error error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
-	req := &lcmservice.PodDescribeRequest{
+	req := &lcmservice.WorkloadDescribeRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
 	}
-	resp, err := c.client.PodDescribe(ctx, req)
+	resp, err := c.client.WorkloadDescribe(ctx, req)
 	return resp.Response, err
 }
 

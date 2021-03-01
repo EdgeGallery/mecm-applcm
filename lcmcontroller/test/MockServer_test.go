@@ -139,8 +139,8 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 }
 
 // Pod description
-func (s *ServerGRPC) PodDescribe(ctx context.Context, request *lcmservice.PodDescribeRequest) (*lcmservice.PodDescribeResponse, error) {
-	resp := &lcmservice.PodDescribeResponse{
+func (s *ServerGRPC) WorkloadDescribe(ctx context.Context, request *lcmservice.WorkloadDescribeRequest) (*lcmservice.WorkloadDescribeResponse, error) {
+	resp := &lcmservice.WorkloadDescribeResponse{
 		Response: SUCCESS_RETURN,
 	}
 	return resp, nil

@@ -72,14 +72,30 @@ message RemoveCfgResponse {
   string status = 1;
 }
 
-message PodDescribeRequest {
+message WorkloadDescribeRequest {
   string accessToken = 1;
   string appInstanceId = 2;
   string hostIp = 3;
 }
 
-message PodDescribeResponse {
+message WorkloadDescribeResponse {
   string response = 1;
+  // {
+  //   "vmDescribeInfo": [
+  //     {
+  //      "resourceName": "string",
+  //       "logicalResourceId": "string",
+  //       "physicalResourceId": "string",
+  //       "events": [
+  //         {
+  //           "eventTime": "string",
+  //           "resourceStatus": "string",
+  //           "resourceStatusReason": "string"
+  //         }
+  //       ]
+  //     }
+  //   ]
+  // }
 }
 
 message CreateVmImageRequest {
@@ -136,7 +152,7 @@ service AppLCM {
   rpc query (QueryRequest) returns (QueryResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
-  rpc podDescribe (PodDescribeRequest) returns (PodDescribeResponse) {}
+  rpc workloadDescribe (WorkloadDescribeRequest) returns (WorkloadDescribeResponse) {}
 }
 
 service VmImageService {

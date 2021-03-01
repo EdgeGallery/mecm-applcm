@@ -141,9 +141,9 @@ func (t *RateLimit) Handler(ctx context.Context, info *tap.Info) (context.Contex
 }
 
 // Pod Description
-func (s *ServerGRPC) PodDescribe(ctx context.Context, req *lcmservice.PodDescribeRequest) (resp *lcmservice.PodDescribeResponse, err error) {
+func (s *ServerGRPC) WorkloadDescribe(ctx context.Context, req *lcmservice.WorkloadDescribeRequest) (resp *lcmservice.WorkloadDescribeResponse, err error) {
 
-	resp = &lcmservice.PodDescribeResponse{
+	resp = &lcmservice.WorkloadDescribeResponse{
 		Response: util.Failure,
 	}
 
@@ -178,12 +178,12 @@ func (s *ServerGRPC) PodDescribe(ctx context.Context, req *lcmservice.PodDescrib
 	}
 
 	// Query Chart
-	r, err := client.PodDescribe(appInstanceRecord.WorkloadId)
+	r, err := client.WorkloadDescribe(appInstanceRecord.WorkloadId)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.PodDescribe, "failed to get pod describe information")
 		return resp, err
 	}
-	resp = &lcmservice.PodDescribeResponse{
+	resp = &lcmservice.WorkloadDescribeResponse{
 		Response: r,
 	}
 	s.handleLoggingForSuccess(ctx, util.PodDescribe, "Pod description is successful")
@@ -618,7 +618,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 
 // Validate input parameters for pod describe
 func (s *ServerGRPC) validateInputParamsForPodDesc(
-	req *lcmservice.PodDescribeRequest) (hostIp string, podName string, err error) {
+	req *lcmservice.WorkloadDescribeRequest) (hostIp string, podName string, err error) {
 
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole, util.MecmGuestRole})

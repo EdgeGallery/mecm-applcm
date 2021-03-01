@@ -355,15 +355,15 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 }
 
 // Get pod description
-func (c *ClientGRPC) PodDescription(ctx context.Context, accessToken string,
+func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string,
 	appInsId string, hostIP string) (response string, error error) {
 
-	req := &lcmservice.PodDescribeRequest{
+	req := &lcmservice.WorkloadDescribeRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
 	}
-	resp, err := c.client.PodDescribe(ctx, req)
+	resp, err := c.client.WorkloadDescribe(ctx, req)
 	if err != nil {
 		return "", err
 	}
