@@ -125,7 +125,7 @@ func (c *PluginAdapter) GetPodDescription(accessToken, host, appInsId string) (r
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	response, err := c.client.PodDescription(ctx, accessToken, appInsId, host)
+	response, err := c.client.WorkloadDescription(ctx, accessToken, appInsId, host)
 	if err != nil {
 		log.Errorf("failed to get pod description")
 		return "", err

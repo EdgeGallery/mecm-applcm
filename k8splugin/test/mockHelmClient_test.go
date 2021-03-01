@@ -38,7 +38,7 @@ func (hc *mockedHelmClient) Query(relName string) (string, error) {
 	return "{\"Output\":\"Success\"}", nil
 }
 
-func (hc *mockedHelmClient) PodDescribe(relName string) (string, error) {
+func (hc *mockedHelmClient) WorkloadDescribe(relName string) (string, error) {
 	// Output to be checked
 	return "{\"Output\":\"Success\"}", nil
 }

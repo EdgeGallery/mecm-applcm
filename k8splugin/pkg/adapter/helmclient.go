@@ -263,7 +263,7 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 }
 
 // Get pod description
-func (hc *HelmClient) PodDescribe(relName string) (string, error) {
+func (hc *HelmClient) WorkloadDescribe(relName string) (string, error) {
 	log.Info("In Pod describe function")
 	var podDesc models.PodDescribeInfo
 
