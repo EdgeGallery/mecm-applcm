@@ -81,19 +81,19 @@ func TestValidatePasswordInvalid(t *testing.T) {
 
 func TestValidateAccessTokenSuccess(t *testing.T) {
 	accessToken := createToken(1)
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	assert.Nil(t, err, "TestValidateAccessTokenSuccess execution result")
 }
 
 func TestValidateAccessTokenFailure(t *testing.T) {
 	accessToken := ""
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	assert.Error(t, err, "TestValidateAccessTokenFailure execution result")
 }
 
 func TestValidateAccessTokenInvalid(t *testing.T) {
 	accessToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9"
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	assert.Error(t, err, "TestValidateAccessTokenInvalid execution result")
 }
 
@@ -103,7 +103,7 @@ func TestValidateAccessTokenInvalid1(t *testing.T) {
 		"9uIiwidXNlcklkIjoiNzI2OTYzOGUtNTYzNy00YjhjLTgxNzgtYjUxMTJiYTdiNjliIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BUFBTVE9SR" +
 		"V9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiLCJST0xFX01FQ01fVEVOQU5UIl0sImp0aSI6IjQ5ZTBhMGMwLTIxZmItNDAwZC04" +
 		"M2MyLTI3NzIwNWQ1ZTY3MCIsImNsaWVudF9pZCI6Im1lY20tZmUiLCJlbmFibGVTbXMiOiJ0cnVlIn0."
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole})
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	assert.Error(t, err, "TestValidateAccessTokenInvalid1 execution result")
 }
 

@@ -170,7 +170,7 @@ func (c *LcmController) RemoveConfig() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, "")
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
 	if err != nil {
 		if err.Error() == util.Forbidden {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
@@ -335,7 +335,7 @@ func (c *LcmController) isPermitted(accessToken, clientIp string) (string, error
 			return tenantId, err
 		}
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		if err.Error() == util.Forbidden {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
@@ -359,7 +359,7 @@ func (c *LcmController) validateToken(accessToken string, clientIp string) (stri
 	if err != nil {
 		return "", "", nil, nil, "", " ", err
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole}, tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		if err.Error() == util.Forbidden {
 			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
@@ -496,7 +496,8 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, "")
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole},"")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -572,7 +573,8 @@ func (c *LcmController) Query() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -640,7 +642,8 @@ func (c *LcmController) QueryKPI() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -705,7 +708,8 @@ func (c *LcmController) QueryMepCapabilities() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -1452,7 +1456,8 @@ func (c *LcmController) GetPodDescription() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole}, tenantId)
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
