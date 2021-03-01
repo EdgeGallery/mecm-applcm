@@ -32,9 +32,9 @@ message InstantiateResponse {
 }
 
 message TerminateRequest {
-   string accessToken = 1;
-   string appInstanceId = 2;
-   string hostIp = 3;
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
 }
 
 message TerminateResponse {
@@ -42,9 +42,9 @@ message TerminateResponse {
 }
 
 message QueryRequest {
-   string accessToken = 1;
-   string appInstanceId = 2;
-   string hostIp = 3;
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
 }
 
 message QueryResponse {
@@ -73,13 +73,61 @@ message RemoveCfgResponse {
 }
 
 message PodDescribeRequest {
-   string accessToken = 1;
-   string appInstanceId = 2;
-   string hostIp = 3;
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
 }
 
 message PodDescribeResponse {
   string response = 1;
+}
+
+message CreateVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string vmId = 4;
+}
+
+message CreateVmImageResponse {
+  string response = 1;
+  // {'imageId': 'xxxaaabbccssdd'}
+}
+
+message QueryVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string imageId = 4;
+}
+
+message QueryVmImageResponse {
+  string response = 1;
+  // {'status': 'Pending', 'sumChunkNum': 100, 'chunkSize': 2048}
+}
+
+message DeleteVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string imageId = 4;
+}
+
+message DeleteVmImageResponse {
+  string response = 1;
+  // {'code': 200, 'msg': 'Ok'}
+}
+
+message DownloadVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string imageId = 4;
+  int32  chunkNum = 5;
+}
+
+message DownloadVmImageResponse {
+  bytes content = 1;
 }
 
 service AppLCM {
@@ -89,4 +137,11 @@ service AppLCM {
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
   rpc podDescribe (PodDescribeRequest) returns (PodDescribeResponse) {}
+}
+
+service VmImageService {
+  rpc createVmImage(CreateVmImageRequest) returns (CreateVmImageResponse) {}
+  rpc queryVmImage(QueryVmImageRequest) returns (QueryVmImageResponse) {}
+  rpc deleteVmImage(DeleteVmImageRequest) returns (DeleteVmImageResponse) {}
+  rpc downloadVmImage(DownloadVmImageRequest) returns (stream DownloadVmImageResponse) {}
 }
