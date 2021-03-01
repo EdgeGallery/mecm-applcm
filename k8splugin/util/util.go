@@ -77,6 +77,7 @@ const (
 	UploadConfig           = "UploadConfig"
 	RemoveConfig           = "RemoveConfig"
 	MecmTenantRole         = "ROLE_MECM_TENANT"
+	MecmAdminRole          = "ROLE_MECM_ADMIN"
 	MecmGuestRole          = "ROLE_MECM_GUEST"
 
 	TooManyFile int = 1024
