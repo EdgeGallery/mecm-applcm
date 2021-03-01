@@ -13,29 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package pluginAdapter
+
+package adapter
 
 import (
-	"lcmcontroller/config"
-	"mime/multipart"
-
-	"golang.org/x/net/context"
+	"bytes"
+	"k8splugin/pgdb"
 )
 
-// GRPC client APIs
+// Client APIs
 type ClientIntf interface {
-	Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-		accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error)
-	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
-	Query(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
-	UploadConfig(ctx context.Context, multipartFile multipart.File,
-		hostIP string, accessToken string) (status string, error error)
-	RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error)
-	WorkloadDescription(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
-
-	// Image related API
-	CreateVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
-	QueryVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string, imageId string) (response string, error error)
-	DeleteVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string, imageId string) (status string, error error)
-	DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string, imageId string, chunkNum string) (response string, error error)
+	Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error)
+	UnDeploy(relName string) error
+	Query(relName string) (string, error)
+	WorkloadDescribe(relName string) (string, error)
 }
