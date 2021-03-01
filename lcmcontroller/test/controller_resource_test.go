@@ -124,7 +124,7 @@ func TestKpi(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		kpiController := &controllers.LcmController{Db: testDb, Controller: kpiBeegoController}
+		kpiController := &controllers.LcmController{controllers.BaseController{Db: testDb, Controller: kpiBeegoController}}
 
 		// Test KPI
 		kpiController.QueryKPI()
@@ -180,7 +180,8 @@ func TestMepCapabilities(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		capabilityController := &controllers.LcmController{Db: testDb, Controller: capabilityBeegoController}
+		capabilityController := &controllers.LcmController{controllers.BaseController{Db: testDb, Controller: capabilityBeegoController}}
+
 
 		// Test Capability
 		capabilityController.QueryMepCapabilities()
@@ -235,7 +236,8 @@ func TestMepCapabilitiesId(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		capabilityController := &controllers.LcmController{Db: testDb, Controller: capabilityBeegoController}
+		capabilityController := &controllers.LcmController{controllers.BaseController{Db: testDb, Controller: capabilityBeegoController}}
+
 
 		// Test Capability
 		capabilityController.QueryMepCapabilities()
@@ -293,7 +295,8 @@ func TestAppDeploymentStatus(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		appDeployStatusController := &controllers.LcmController{Db: testDb, Controller: appDeployStatusBeegoController}
+		appDeployStatusController := &controllers.LcmController{controllers.BaseController{Db: testDb, Controller: appDeployStatusBeegoController}}
+
 
 		// Test Capability
 		appDeployStatusController.AppDeploymentStatus()

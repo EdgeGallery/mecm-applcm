@@ -18,15 +18,12 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
 	log "github.com/sirupsen/logrus"
-	"lcmcontroller/pkg/dbAdapter"
 )
 
 // Image Controller
 type ImageController struct {
-	beego.Controller
-	Db dbAdapter.Database
+	BaseController
 }
 
 // @Title Create Image
