@@ -94,7 +94,7 @@ func TestLcmOperation(t *testing.T) {
 	testQuery(t, nil, "", testDb, "Success")
 
 	// Test query
-	testPodDescribe(t, nil, "", testDb, "Success")
+	testWorkloadDescribe(t, nil, "", testDb, "Success")
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
@@ -161,13 +161,13 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 	})
 }
 
-func testPodDescribe(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testWorkloadDescribe(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
 
-	t.Run("TestPodDescribeQuery", func(t *testing.T) {
+	t.Run("TestWorkloadDescribeQuery", func(t *testing.T) {
 
 		// Get Request
 		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/pods/desc", extraParams, "file", path, "GET")
+			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/workload/describe", extraParams, "file", path, "GET")
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -182,7 +182,7 @@ func testPodDescribe(t *testing.T, extraParams map[string]string, path string, t
 		queryController := &controllers.LcmController{Db: testDb, Controller: queryBeegoController}
 
 		// Test query
-		queryController.GetPodDescription()
+		queryController.GetWorkloadDescription()
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)

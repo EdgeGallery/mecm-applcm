@@ -262,9 +262,9 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	return appInfoJson, nil
 }
 
-// Get pod description
+// Get workload description
 func (hc *HelmClient) WorkloadDescribe(relName string) (string, error) {
-	log.Info("In Pod describe function")
+	log.Info("In Workload describe function")
 	var podDesc models.PodDescribeInfo
 
 	clientset, manifest, err := hc.getClientSet(relName)

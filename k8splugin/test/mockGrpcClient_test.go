@@ -159,7 +159,7 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 	return resp.Response, err
 }
 
-// Get pod description
+// Get workload description
 func (c *mockGrpcClient) WorkloadDescribe(accessToken string, appInsId string, hostIP string) (response string, error error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
