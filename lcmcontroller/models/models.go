@@ -18,12 +18,45 @@ package models
 
 import (
 	"github.com/astaxie/beego/orm"
+	"time"
 )
 
 // Init application info record
 func init() {
 	orm.RegisterModel(new(AppInfoRecord))
 	orm.RegisterModel(new(TenantInfoRecord))
+	orm.RegisterModel(new(MecHost))
+	orm.RegisterModel(new(MecHwCapability))
+}
+
+// MEC host record
+type MecHost struct {
+	MechostId string `orm:"pk"`
+	CreateTime time.Time `orm:"auto_now_add;type(datetime)"`
+	MechostIp string
+	MechostName string
+	ZipCode string
+	City string;
+	Address string
+	Affinity string
+	UserName string
+	ApplcmIp string
+	AppRuleIp string
+	ConfigUploadStatus string
+	Coordinates string
+	Vim string
+	Hwcapabilities []*MecHwCapability `orm:"reverse(many)"` // reverse relationship of fk
+	// Association with AppInfoRecord is pending
+}
+
+// MEC host hardware capabilities
+type MecHwCapability struct {
+	MecCapabilityId string `orm:"pk"`
+	CreateTime time.Time `orm:"auto_now_add;type(datetime)"`
+	HwType string
+	HwVendor string
+	HwModel string
+	MecHost *MecHost `orm:"rel(fk)"` // RelForeignKey relation
 }
 
 // Application info record
