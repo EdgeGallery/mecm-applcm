@@ -131,7 +131,7 @@ func init() {
 			Params:           nil})
 	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
 		beego.ControllerComments{
-			Method:           "GetImageInfo",
+			Method:           "GetImage",
 			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
