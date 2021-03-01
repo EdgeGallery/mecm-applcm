@@ -70,14 +70,14 @@ const (
 	FailedToValInputParams = "failed to validate input parameters"
 	FailedToGetClient      = "failed to get client"
 	AppRecordDoesNotExit   = "app info record does not exist in database"
-	PodDescribe  = "WorkloadDescribe"
-	Query        = "Query"
-	Instantiate  = "Instantiate"
-	Terminate    = "Terminate"
-	UploadConfig = "UploadConfig"
-	RemoveConfig = "RemoveConfig"
-	MecmTenantRole = "ROLE_MECM_TENANT"
-	MecmGuestRole = "ROLE_MECM_GUEST"
+	WorkloadDescribe       = "WorkloadDescribe"
+	Query                  = "Query"
+	Instantiate            = "Instantiate"
+	Terminate              = "Terminate"
+	UploadConfig           = "UploadConfig"
+	RemoveConfig           = "RemoveConfig"
+	MecmTenantRole         = "ROLE_MECM_TENANT"
+	MecmGuestRole          = "ROLE_MECM_GUEST"
 
 	TooManyFile int = 1024
 	TooBig = 0x6400000
