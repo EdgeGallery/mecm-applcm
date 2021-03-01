@@ -147,23 +147,23 @@ func (s *ServerGRPC) WorkloadDescribe(ctx context.Context, req *lcmservice.Workl
 		Response: util.Failure,
 	}
 
-	err = s.displayReceivedMsg(ctx, util.WorkloadDescribe)
+	err = s.displayReceivedMsg(ctx, util.PodDescribe)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.WorkloadDescribe, util.FailedToDispRecvMsg)
+		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToDispRecvMsg)
 		return resp, err
 	}
 
 	// Input validation
 	hostIp, appInsId, err := s.validateInputParamsForPodDesc(req)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.WorkloadDescribe, util.FailedToValInputParams)
+		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToValInputParams)
 		return resp, err
 	}
 
 	// Get Client
 	client, err := adapter.GetClient(util.DeployType, hostIp)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.WorkloadDescribe, util.FailedToGetClient)
+		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToGetClient)
 		return resp, err
 	}
 
@@ -180,13 +180,13 @@ func (s *ServerGRPC) WorkloadDescribe(ctx context.Context, req *lcmservice.Workl
 	// Query Chart
 	r, err := client.WorkloadDescribe(appInstanceRecord.WorkloadId)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.WorkloadDescribe, "failed to get pod describe information")
+		s.displayResponseMsg(ctx, util.PodDescribe, "failed to get pod describe information")
 		return resp, err
 	}
 	resp = &lcmservice.WorkloadDescribeResponse{
 		Response: r,
 	}
-	s.handleLoggingForSuccess(ctx, util.WorkloadDescribe, "Pod description is successful")
+	s.handleLoggingForSuccess(ctx, util.PodDescribe, "Pod description is successful")
 	return resp, nil
 }
 
