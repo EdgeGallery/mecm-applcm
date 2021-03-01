@@ -82,6 +82,12 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
+	vim, err := c.getVim(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	file, header, err := c.GetFile("configFile")
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -110,7 +116,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	pluginInfo := util.GetPluginInfo()
+	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -186,7 +192,13 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	pluginInfo := util.GetPluginInfo()
+	vim, err := c.getVim(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -280,7 +292,13 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, path, clientIp)
+	vim, err := c.getVim(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, path, clientIp, vim)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.removeCsarFiles(packageName, header, clientIp)
@@ -442,7 +460,13 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp)
+	vim, err := c.getVim(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -590,7 +614,13 @@ func (c *LcmController) Query() {
 		return
 	}
 
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp)
+	vim, err := c.getVim(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -949,7 +979,7 @@ func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*mod
 // Get app name
 func (c *LcmController) getAppName(clientIp string) (string, error) {
 	appName := c.GetString("appName")
-	name, err := util.ValidateAppName(appName)
+	name, err := util.ValidateName(appName)
 	if err != nil || !name {
 		c.handleLoggingForError(clientIp, util.BadRequest, "AppName is invalid")
 		return "", errors.New("AppName is invalid")
@@ -1070,7 +1100,7 @@ func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file 
 
 // Get artifact and plugin info
 func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName string,
-	clientIp string) (string, string, error) {
+	clientIp string, vim string) (string, string, error) {
 	switch deployType {
 	case "helm":
 		pkgPath := PackageFolderPath + packageName + PackageArtifactPath + "Charts"
@@ -1081,7 +1111,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 			return "", "", err
 		}
 
-		pluginInfo := util.GetPluginInfo()
+		pluginInfo := util.GetPluginInfo(vim)
 		return artifact, pluginInfo, nil
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
@@ -1320,12 +1350,12 @@ func (c *LcmController) handleLoggingK8s(clientIp string, errorString string) {
 	}
 }
 
-func (c *LcmController) getPluginAdapter(deployType, clientIp string) (*pluginAdapter.PluginAdapter, error) {
+func (c *LcmController) getPluginAdapter(deployType, clientIp string, vim string) (*pluginAdapter.PluginAdapter, error) {
 	var pluginInfo string
 
 	switch deployType {
 	case "helm":
-		pluginInfo = util.GetPluginInfo()
+		pluginInfo = util.GetPluginInfo(vim)
 	default:
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
 		return nil, errors.New(util.DeployTypeIsNotHelmBased)
@@ -1470,7 +1500,13 @@ func (c *LcmController) GetPodDescription() {
 		return
 	}
 
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp)
+	vim, err := c.getVim(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1493,3 +1529,19 @@ func (c *LcmController) GetPodDescription() {
 	}
 	c.handleLoggingForSuccess(clientIp, "Pod description is successful")
 }
+
+// Get vim name
+func (c *LcmController) getVim(clientIp string) (string, error) {
+
+	// Get VIM from host table, TBD
+	vim := ""
+
+	// Default to k8s for backward compatibility
+	if vim == "" {
+		log.Info("Setting plugin to default value which is k8s, as no VIM is mentioned explicitly")
+		vim = "k8s"
+	}
+	return vim, nil
+}
+
+
