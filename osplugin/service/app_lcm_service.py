@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 import os
 import threading
+import uuid
+import zipfile
 
+from heatclient.common import template_utils
 from heatclient.exc import HTTPNotFound
 from pony.orm import db_session, commit
 
+import config
 import utils
+from core.csar.pkg import get_hot_yaml_path
 from core.models import AppInsMapper
 from core.openstack_utils import create_heat_client, RC_FILE_DIR
 from internal.lcmservice import lcmservice_pb2_grpc
@@ -90,15 +96,86 @@ def validate_input_params_for_upload_cfg(stream):
     return host_ip
 
 
+_APP_INS_PATH = config.base_dir + '/instance'
+
+
 class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
     @db_session
     def instantiate(self, request_iterator, context):
-        pass
+        logging.info('receive instantiate msg...')
+        res = TerminateResponse(status=utils.Failure)
+
+        host_ip = validate_input_params_for_upload_cfg(request_iterator)
+        if not host_ip:
+            return res
+
+        app_instance_id = get_app_instance_id(request_iterator)
+        if not app_instance_id:
+            return res
+
+        app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
+        if app_ins_mapper is not None:
+            logging.info('app ins %s exist', app_instance_id)
+            return res
+
+        app_ins_path = _APP_INS_PATH + '/' + app_instance_id
+        utils.create_dir(app_ins_path)
+        app_pkg_path = app_ins_path + '/pkg.zip'
+        app_unzip_pkg_path = app_ins_path + '/unzip'
+
+        try:
+            with open(app_pkg_path, 'w') as new_file:
+                while True:
+                    package_data = get_package_data(request_iterator)
+                    if package_data is None:
+                        break
+                    new_file.buffer.write(package_data)
+        except Exception as e:
+            logging.error(e)
+            utils.delete_dir(app_ins_path)
+            return res
+
+        try:
+            with zipfile.ZipFile(app_pkg_path) as zip_file:
+                namelist = zip_file.namelist()
+                package_name = namelist[0]
+                for f in namelist:
+                    zip_file.extract(f, app_unzip_pkg_path)
+        except Exception as e:
+            logging.error(e)
+            utils.delete_dir(app_ins_path)
+            return res
+
+        hot_yaml_path = get_hot_yaml_path(app_unzip_pkg_path + '/' + package_name)
+        tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
+        fields = {
+            'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
+            'template': template,
+            'files': dict(list(tpl_files.items()))
+        }
+        heat = create_heat_client(host_ip)
+        try:
+            stack_resp = heat.stacks.create(**fields)
+        except Exception as e:
+            logging.error(e)
+            utils.delete_dir(app_ins_path)
+            return res
+        AppInsMapper(app_instance_id=app_instance_id,
+                     host_ip=host_ip,
+                     stack_id=stack_resp['stack']['id'],
+                     operational_status=utils.Instantiating)
+        commit()
+
+        start_check_stack_status(app_instance_id=app_instance_id, expect_status='COMPLETE')
+        utils.delete_dir(app_ins_path)
+
+        res.status = utils.Success
+        return res
 
     @db_session
     def terminate(self, request, context):
-        res = TerminateResponse(status=utils.Failure)
         logging.info('receive terminate msg...')
+        res = TerminateResponse(status=utils.Failure)
 
         host_ip = validate_input_params_for_upload_cfg([request])
         if not host_ip:
@@ -131,11 +208,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     def query(self, request, context):
         logging.info('receive query msg...')
-        return QueryResponse(response=utils.Failure)
+        res = QueryResponse(response=utils.Failure)
+        return res
 
     def uploadConfig(self, request_iterator, context):
-        res = UploadCfgResponse(status=utils.Failure)
         logging.info('receive uploadConfig msg...')
+        res = UploadCfgResponse(status=utils.Failure)
 
         host_ip = validate_input_params_for_upload_cfg(request_iterator)
         if not host_ip:
@@ -160,8 +238,14 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def removeConfig(self, request, context):
-        res = RemoveCfgResponse(status=utils.Failure)
+        """
+        删除openstack 配置文件
+        :param request: 请求体
+        :param context: 上下文信息
+        :return: Success/Failure
+        """
         logging.info('receive removeConfig msg...')
+        res = RemoveCfgResponse(status=utils.Failure)
 
         host_ip = validate_input_params_for_upload_cfg([request])
         if not host_ip:
@@ -183,4 +267,24 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def workloadDescribe(self, request, context):
-        pass
+        logging.info('receive workload describe msg...')
+        res = TerminateResponse(status=utils.Failure)
+
+        host_ip = validate_input_params_for_upload_cfg([request])
+        if not host_ip:
+            return res
+
+        app_instance_id = get_app_instance_id([request])
+        if not app_instance_id:
+            return res
+
+        app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
+        if not app_ins_mapper:
+            logging.info('app实例 %s 不存在', app_instance_id)
+            return res
+
+        heat = create_heat_client(host_ip)
+
+        events = heat.events.list(stack_id=app_ins_mapper.stack_id)
+        res.status = json.dumps(events)
+        return res
