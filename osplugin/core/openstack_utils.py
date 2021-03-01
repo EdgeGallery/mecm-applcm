@@ -1,6 +1,32 @@
 # -*- coding: utf-8 -*-
 import re
 
+from heatclient import client
+from heatclient.exc import HTTPNotFound
+from heatclient.common import template_utils
+from keystoneauth1 import identity, session
+from pony.orm import db_session, commit
+
+import config
+
+RC_FILE_DIR = config.base_dir + '/config'
+
+
+def create_heat_client(host_ip):
+    rc_file_path = RC_FILE_DIR + '/' + host_ip
+    rc = RCFile(rc_file_path)
+
+    auth = identity.Password(
+        user_domain_name=rc.user_domain_name,
+        username=rc.username,
+        password=rc.password,
+        project_domain_name=rc.project_domain_name,
+        project_name=rc.project_name,
+        auth_url=rc.auth_url
+    )
+    sess = session.Session(auth=auth)
+    return client.Client('1', session=sess)
+
 
 class RCFile(object):
     _PATTERN = r'^export (.+)="(.+)"$'

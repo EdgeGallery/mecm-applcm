@@ -19,3 +19,5 @@ db_password = os.getenv('DB_PASSWORD', '')
 db_host = os.getenv('DB_HOST', '')
 db_port = int(os.getenv('DB_PORT', '3306'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
+
+base_dir = os.getenv('BASE_DIR', 'target')
