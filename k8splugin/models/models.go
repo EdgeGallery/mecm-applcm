@@ -70,7 +70,7 @@ type Label struct {
 
 // Pod information
 type PodDescribeInfo struct {
-	PodDescInfo []PodDescInfo `json:"podDescInfo"`
+	PodDescInfo []PodDescInfo `json:"pods"`
 }
 
 // Pod Description Info

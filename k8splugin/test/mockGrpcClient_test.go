@@ -160,17 +160,17 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 }
 
 // Get workload description
-func (c *mockGrpcClient) WorkloadDescribe(accessToken string, appInsId string, hostIP string) (response string, error error) {
+func (c *mockGrpcClient) WorkloadEvents(accessToken string, appInsId string, hostIP string) (response string, error error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
-	req := &lcmservice.WorkloadDescribeRequest{
+	req := &lcmservice.WorkloadEventsRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
 	}
-	resp, err := c.client.WorkloadDescribe(ctx, req)
+	resp, err := c.client.WorkloadEvents(ctx, req)
 	return resp.Response, err
 }
 

@@ -94,7 +94,7 @@ func TestLcmOperation(t *testing.T) {
 	testQuery(t, nil, "", testDb, "Success")
 
 	// Test query
-	testWorkloadDescribe(t, nil, "", testDb, "Success")
+	testWorkloadEvents(t, nil, "", testDb, "Success")
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
@@ -162,14 +162,14 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 	})
 }
 
-func testWorkloadDescribe(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database,
+func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database,
 	exOutput string) {
 
-	t.Run("TestWorkloadDescribeQuery", func(t *testing.T) {
+	t.Run("TestWorkloadEventsQuery", func(t *testing.T) {
 
 		// Get Request
 		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/workload/describe", extraParams, "file", path, "GET")
+			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/workload/events", extraParams, "file", path, "GET")
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}

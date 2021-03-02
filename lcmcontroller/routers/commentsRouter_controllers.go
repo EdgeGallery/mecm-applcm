@@ -106,7 +106,7 @@ func init() {
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "GetWorkloadDescription",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/workload/describe",
+			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/workload/events",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,

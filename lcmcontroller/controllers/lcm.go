@@ -1352,7 +1352,7 @@ func (c *LcmController) handleLoggingForSuccess(clientIp string, msg string) {
 // @Param   access_token    header  string  true    "access token"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router /tenants/:tenantId/app_instances/:appInstanceId/workload/describe  [get]
+// @router /tenants/:tenantId/app_instances/:appInstanceId/workload/events  [get]
 func (c *LcmController) GetWorkloadDescription() {
 	log.Info("Get workload description request received.")
 

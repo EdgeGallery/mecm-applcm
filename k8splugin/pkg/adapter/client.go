@@ -26,5 +26,5 @@ type ClientIntf interface {
 	Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error)
 	UnDeploy(relName string) error
 	Query(relName string) (string, error)
-	WorkloadDescribe(relName string) (string, error)
+	WorkloadEvents(relName string) (string, error)
 }

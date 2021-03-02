@@ -72,13 +72,13 @@ message RemoveCfgResponse {
   string status = 1;
 }
 
-message WorkloadDescribeRequest {
+message WorkloadEventsRequest {
   string accessToken = 1;
   string appInstanceId = 2;
   string hostIp = 3;
 }
 
-message WorkloadDescribeResponse {
+message WorkloadEventsResponse {
   string response = 1;
   // {
   //   "vmDescribeInfo": [
@@ -152,7 +152,7 @@ service AppLCM {
   rpc query (QueryRequest) returns (QueryResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
-  rpc workloadDescribe (WorkloadDescribeRequest) returns (WorkloadDescribeResponse) {}
+  rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}
 }
 
 service VmImageService {

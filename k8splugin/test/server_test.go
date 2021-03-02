@@ -107,7 +107,7 @@ func testQuery(t *testing.T, config *conf.Configurations) {
 func testPodDescribe(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
-	status, _ := client.WorkloadDescribe(token, appInstanceIdentifier, hostIpAddress)
+	status, _ := client.WorkloadEvents(token, appInstanceIdentifier, hostIpAddress)
 	assert.Equal(t, "{\"Output\":\"Success\"}", status, "Pod describe failed")
 }
 
