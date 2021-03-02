@@ -129,9 +129,9 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 }
 
 // Get vim name
-func (c *BaseController) getVim(clientIp string) (string, error) {
+func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) {
 
-	// Get VIM from host table, TBD
+	// Get VIM from host table based on hostIp, TBD
 	vim := ""
 
 	// Default to k8s for backward compatibility
@@ -161,4 +161,10 @@ func (c *BaseController) getPluginAdapter(deployType, clientIp string, vim strin
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	return adapter, nil
+}
+
+// Handled logging for success case
+func (c *BaseController) handleLoggingForSuccess(clientIp string, msg string) {
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 }

@@ -374,8 +374,18 @@ func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string
 
 // Create VM Image
 func (c *ClientGRPC) CreateVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string) (response string, error error) {
-	return "", nil
+	hostIP string, vmId string) (response string, error error) {
+	req := &lcmservice.CreateVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		VmId:          vmId,
+	}
+	resp, err := c.imageClient.CreateVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
 }
 
 // Query VM Image

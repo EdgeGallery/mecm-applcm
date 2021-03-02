@@ -79,7 +79,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp)
+	vim, err := c.getVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -189,7 +189,7 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp)
+	vim, err := c.getVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -289,7 +289,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp)
+	vim, err := c.getVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -430,7 +430,7 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -586,7 +586,7 @@ func (c *LcmController) Query() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1339,12 +1339,6 @@ func getFilesFromDir(packageName string) (files []os.FileInfo, err error) {
 	return files, nil
 }
 
-// Handled logging for success case
-func (c *LcmController) handleLoggingForSuccess(clientIp string, msg string) {
-	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
-		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
-}
-
 // @Title GetWorkloadDescription
 // @Description perform get workload description
 // @Param	tenantId	    path 	string	true	"tenantId"
@@ -1389,7 +1383,7 @@ func (c *LcmController) GetWorkloadDescription() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
