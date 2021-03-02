@@ -450,7 +450,9 @@ func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.
 		podName := pod.GetObjectMeta().GetName()
 		podMetrics, err := getPodMetrics(config, podName)
 		if err != nil {
-			return podInfo, err
+			podInfo.PodName = podName
+			podInfo.PodStatus = string(pod.Status.Phase)
+			continue
 		}
 
 		podInfo, err = updateContainerInfo(podMetrics, clientset, podInfo)
