@@ -16,9 +16,9 @@ class AppInsMapper(db.Entity):
 class VmImageInfoMapper(db.Entity):
     app_instance_id = Required(str, 64)
     host_ip = Required(str, 15)
-    stack_id = Required(str, 64)
     vm_id = Required(str, 64)
     image_id = Required(str, 64)
+    image_name = Required(str, 64)
     image_size = Required(int)
 
 
