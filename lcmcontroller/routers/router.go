@@ -34,7 +34,6 @@ const RootPath string = "/lcmcontroller/v1"
 func init() {
 	adapter := initDbAdapter()
 
-
 	ns := beego.NewNamespace("/lcmcontroller/v1/",
 		beego.NSInclude(
 			&controllers.LcmController{controllers.BaseController{Db: adapter}},

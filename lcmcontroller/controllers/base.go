@@ -142,7 +142,8 @@ func (c *BaseController) getVim(clientIp string) (string, error) {
 	return vim, nil
 }
 
-func (c *BaseController) getPluginAdapter(deployType, clientIp string, vim string) (*pluginAdapter.PluginAdapter, error) {
+func (c *BaseController) getPluginAdapter(deployType, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+	error) {
 	var pluginInfo string
 
 	switch deployType {

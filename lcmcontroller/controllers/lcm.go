@@ -491,7 +491,7 @@ func (c *LcmController) AppDeploymentStatus() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole},"")
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, "")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -1037,7 +1037,8 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 }
 
 // Insert or update application info record
-func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId string) error {
+func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId,
+	packageId string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId:   appInsId,
 		HostIp:     hostIp,
@@ -1184,7 +1185,8 @@ func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse ma
 	return metricResponse, nil
 }
 
-func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
+func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort,
+	clientIp string) (cpuUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
 	cpu, statusCode, errCpu := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.CpuQuery)
@@ -1204,7 +1206,8 @@ func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clien
 	return cpuUtilization, nil
 }
 
-func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort, clientIp string) (memUsage map[string]interface{}, err error) {
+func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort,
+	clientIp string) (memUsage map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
 	mem, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.MemQuery)
@@ -1224,7 +1227,8 @@ func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort, cl
 	return memUsage, nil
 }
 
-func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort, clientIp string) (diskUtilization map[string]interface{}, err error) {
+func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
+	clientIp string) (diskUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
 	disk, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.DiskQuery)
@@ -1414,6 +1418,3 @@ func (c *LcmController) GetWorkloadDescription() {
 	}
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
-
-
-

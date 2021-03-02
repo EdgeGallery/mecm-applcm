@@ -86,7 +86,8 @@ func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId stri
 }
 
 // Upload configuration
-func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string, error error) {
+func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string,
+	error error) {
 	log.Info("Upload config started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
@@ -152,7 +153,8 @@ func (c *PluginAdapter) CreateVmImage(host string, accessToken string, appInsId 
 }
 
 // Delete VM Image
-func (c *PluginAdapter) DeleteVmImage(host string, accessToken string, appInsId string, imageId string) (status string, error error) {
+func (c *PluginAdapter) DeleteVmImage(host string, accessToken string, appInsId string,
+	imageId string) (status string, error error) {
 	log.Info("Delete VM Image started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
@@ -169,7 +171,8 @@ func (c *PluginAdapter) DeleteVmImage(host string, accessToken string, appInsId 
 }
 
 // Query VM Image
-func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId string, imageId string) (status string, error error) {
+func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId string,
+	imageId string) (status string, error error) {
 	log.Info("Query VM Image started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
