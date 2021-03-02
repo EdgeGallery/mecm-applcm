@@ -139,8 +139,8 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 }
 
 // Workload description
-func (s *ServerGRPC) WorkloadDescribe(ctx context.Context, request *lcmservice.WorkloadDescribeRequest) (*lcmservice.WorkloadDescribeResponse, error) {
-	resp := &lcmservice.WorkloadDescribeResponse{
+func (s *ServerGRPC) WorkloadEvents(ctx context.Context, request *lcmservice.WorkloadEventsRequest) (*lcmservice.WorkloadEventsResponse, error) {
+	resp := &lcmservice.WorkloadEventsResponse{
 		Response: SUCCESS_RETURN,
 	}
 	return resp, nil

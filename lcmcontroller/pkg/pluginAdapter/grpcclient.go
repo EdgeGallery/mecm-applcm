@@ -360,12 +360,12 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string,
 	appInsId string, hostIP string) (response string, error error) {
 
-	req := &lcmservice.WorkloadDescribeRequest{
+	req := &lcmservice.WorkloadEventsRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
 	}
-	resp, err := c.client.WorkloadDescribe(ctx, req)
+	resp, err := c.client.WorkloadEvents(ctx, req)
 	if err != nil {
 		return "", err
 	}
