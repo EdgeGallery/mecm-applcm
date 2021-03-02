@@ -27,7 +27,7 @@ const SUCCESS_RETURN = "Success"
 type mockClient struct{}
 
 func (mc *mockClient) CreateVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string) (response string, error error) {
+	hostIP string, vmId string) (response string, error error) {
 	return SUCCESS_RETURN, nil
 }
 

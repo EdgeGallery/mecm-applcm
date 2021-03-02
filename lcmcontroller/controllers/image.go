@@ -18,7 +18,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	"lcmcontroller/models"
+	"lcmcontroller/util"
+	"unsafe"
 )
 
 // Image Controller
@@ -38,7 +42,70 @@ type ImageController struct {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images [post]
 func (c *ImageController) CreateImage() {
 	log.Info("Image creation request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	var request models.CreateVimRequest
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
+	if err != nil {
+		c.writeErrorResponse("failed to unmarshal request", util.BadRequest)
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	response, err := adapter.CreateVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, request.VmId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		// To check if any more error code needs to be returned.
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "VM Image creation is successful")
 }
+
 
 // @Title Delete Image
 // @Description deletion of image

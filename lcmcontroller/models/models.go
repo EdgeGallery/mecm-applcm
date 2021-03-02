@@ -92,3 +92,8 @@ type KpiModel struct {
 		} `json:"result"`
 	} `json:"data"`
 }
+
+// CreateVimRequest record
+type CreateVimRequest struct {
+	VmId string `json:"vmId"`
+}

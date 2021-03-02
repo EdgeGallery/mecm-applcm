@@ -516,11 +516,10 @@ func GetPluginAddress(plugin string) string {
 }
 
 // Get plugin port
-func GetPluginPort(plugin string) string {
-	pluginPortVar := plugin + PluginPortSuffix
-	pluginPort := os.Getenv(pluginPortVar)
+func GetPluginPort(portVar string) string {
+	pluginPort := os.Getenv(portVar)
 	if pluginPort == "" {
-		log.Error("Plugin port couldn't be found for : " +  pluginPortVar)
+		log.Error("Plugin port couldn't be found for : " +  portVar)
 	}
 	return pluginPort
 }
@@ -645,9 +644,10 @@ func GetPluginInfo(vim string) string {
 	if vim == "" {
 		vim = "k8s"
 	}
-	plugin := strings.ToUpper(vim) + PluginSuffix
-	pluginAddr := GetPluginAddress(plugin)
-	pluginPort := GetPluginPort(plugin)
+	pluginAddrVar := strings.ToUpper(vim) + PluginSuffix
+	pluginAddr := GetPluginAddress(pluginAddrVar)
+	pluginPortVar := pluginAddrVar + PluginPortSuffix
+	pluginPort := GetPluginPort(pluginPortVar)
 	pluginInfo := pluginAddr + ":" + pluginPort
 	return pluginInfo
 }
