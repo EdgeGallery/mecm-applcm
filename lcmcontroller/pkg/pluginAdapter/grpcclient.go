@@ -33,9 +33,10 @@ import (
 
 // GRPC client to different GRPC supported plugins
 type ClientGRPC struct {
-	conn      *grpc.ClientConn
-	client    lcmservice.AppLCMClient
-	chunkSize int
+	conn        *grpc.ClientConn
+	client      lcmservice.AppLCMClient
+	imageClient lcmservice.VmImageServiceClient
+	chunkSize   int
 }
 
 // GRPC client configuration
@@ -74,7 +75,8 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 		return c, err
 	}
 
-	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn)}, nil
+	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn),
+		imageClient: lcmservice.NewVmImageServiceClient(conn)}, nil
 }
 
 // Instantiate application
@@ -368,6 +370,30 @@ func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string
 		return "", err
 	}
 	return resp.Response, err
+}
+
+// Create VM Image
+func (c *ClientGRPC) CreateVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string) (response string, error error) {
+	return "", nil
+}
+
+// Query VM Image
+func (c *ClientGRPC) QueryVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string) (response string, error error) {
+	return "", nil
+}
+
+// Delete VM Image
+func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string) (response string, error error) {
+	return "", nil
+}
+
+// Download VM Image
+func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string, chunkNum string) (response string, error error) {
+	return "", nil
 }
 
 // Close connection

@@ -26,13 +26,11 @@ import (
 	"io/ioutil"
 	"lcmcontroller/config"
 	"lcmcontroller/models"
-	"lcmcontroller/pkg/dbAdapter"
 	"mime/multipart"
 	"path/filepath"
 	"strings"
 	"unsafe"
 
-	"github.com/astaxie/beego"
 	"github.com/ghodss/yaml"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
@@ -48,8 +46,7 @@ var (
 
 // Lcm Controller
 type LcmController struct {
-	beego.Controller
-	Db dbAdapter.Database
+	BaseController
 }
 
 // @Title Upload Config
@@ -338,33 +335,6 @@ func (c *LcmController) Instantiate() {
 	c.ServeJSON()
 }
 
-func (c *LcmController) isPermitted(accessToken, clientIp string) (string, error) {
-	var tenantId = ""
-	var err error
-
-	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
-		return "", errors.New(util.RequestBodyTooLarge)
-	}
-
-	if c.isTenantAvailable() {
-		tenantId, err = c.getTenantId(clientIp)
-		if err != nil {
-			return tenantId, err
-		}
-	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		if err.Error() == util.Forbidden {
-			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
-			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		}
-		return tenantId, err
-	}
-	return tenantId, nil
-}
-
 func (c *LcmController) validateToken(accessToken string, clientIp string) (string, string, multipart.File,
 	*multipart.FileHeader, string, string, error) {
 
@@ -521,7 +491,7 @@ func (c *LcmController) AppDeploymentStatus() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole},"")
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, "")
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
@@ -778,19 +748,6 @@ func (c *LcmController) QueryMepCapabilities() {
 	c.handleLoggingForSuccess(clientIp, "Query mep capabilities is successful")
 }
 
-// Write error response
-func (c *LcmController) writeErrorResponse(errMsg string, code int) {
-	log.Error(errMsg)
-	c.writeResponse(errMsg, code)
-}
-
-// Write response
-func (c *LcmController) writeResponse(msg string, code int) {
-	c.Data["json"] = msg
-	c.Ctx.ResponseWriter.WriteHeader(code)
-	c.ServeJSON()
-}
-
 // Get csar file
 func (c *LcmController) getFile(clientIp string) (multipart.File, *multipart.FileHeader, error) {
 	file, header, err := c.GetFile("file")
@@ -964,22 +921,6 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 	return nil
 }
 
-// Get app info record
-func (c *LcmController) getAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {
-	appInfoRecord := &models.AppInfoRecord{
-		AppInsId: appInsId,
-	}
-
-	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
-	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
-			"App info record does not exist in database")
-		return nil, readErr
-	}
-	return appInfoRecord, nil
-
-}
-
 // Get app name
 func (c *LcmController) getAppName(clientIp string) (string, error) {
 	appName := c.GetString("appName")
@@ -1052,34 +993,6 @@ func (c *LcmController) getUrlCapabilityId(clientIp string) (string, error) {
 	return capabilityId, nil
 }
 
-// Get app Instance Id
-func (c *LcmController) getAppInstId(clientIp string) (string, error) {
-	appInsId := c.Ctx.Input.Param(":appInstanceId")
-	err := util.ValidateUUID(appInsId)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "App instance is invalid")
-		return "", err
-	}
-	return appInsId, nil
-}
-
-// Get app Instance Id
-func (c *LcmController) getTenantId(clientIp string) (string, error) {
-	tenantId := c.Ctx.Input.Param(":tenantId")
-	err := util.ValidateUUID(tenantId)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Tenant id is invalid")
-		return "", err
-	}
-	return tenantId, nil
-}
-
-// Get app Instance Id
-func (c *LcmController) isTenantAvailable() bool {
-	tenantId := c.Ctx.Input.Param(":tenantId")
-	return tenantId != ""
-}
-
 // Create package path
 func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file multipart.File) error {
 
@@ -1123,15 +1036,9 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 	}
 }
 
-// Handled logging for error case
-func (c *LcmController) handleLoggingForError(clientIp string, code int, errMsg string) {
-	c.writeErrorResponse(errMsg, code)
-	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
-		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
-}
-
 // Insert or update application info record
-func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId string) error {
+func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId,
+	packageId string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId:   appInsId,
 		HostIp:     hostIp,
@@ -1251,12 +1158,6 @@ func (c *LcmController) getInputParameters(clientIp string) (string, string, mul
 	return hostIp, appInsId, file, header, tenantId, packageId, nil
 }
 
-// To display log for received message
-func (c *LcmController) displayReceivedMsg(clientIp string) {
-	log.Info("Received message from ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
-		util.Resource + c.Ctx.Input.URL() + "]")
-}
-
 // Returns the utilization details
 func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse map[string]interface{}, err error) {
 	clientIp := c.Ctx.Input.IP()
@@ -1284,7 +1185,8 @@ func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse ma
 	return metricResponse, nil
 }
 
-func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clientIp string) (cpuUtilization map[string]interface{}, err error) {
+func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort,
+	clientIp string) (cpuUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
 	cpu, statusCode, errCpu := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.CpuQuery)
@@ -1304,7 +1206,8 @@ func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort, clien
 	return cpuUtilization, nil
 }
 
-func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort, clientIp string) (memUsage map[string]interface{}, err error) {
+func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort,
+	clientIp string) (memUsage map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
 	mem, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.MemQuery)
@@ -1324,7 +1227,8 @@ func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort, cl
 	return memUsage, nil
 }
 
-func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort, clientIp string) (diskUtilization map[string]interface{}, err error) {
+func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
+	clientIp string) (diskUtilization map[string]interface{}, err error) {
 	var statInfo models.KpiModel
 
 	disk, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.DiskQuery)
@@ -1352,26 +1256,6 @@ func (c *LcmController) handleLoggingK8s(clientIp string, errorString string) {
 	} else {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
 	}
-}
-
-func (c *LcmController) getPluginAdapter(deployType, clientIp string, vim string) (*pluginAdapter.PluginAdapter, error) {
-	var pluginInfo string
-
-	switch deployType {
-	case "helm":
-		pluginInfo = util.GetPluginInfo(vim)
-	default:
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
-		return nil, errors.New(util.DeployTypeIsNotHelmBased)
-	}
-
-	client, err := pluginAdapter.GetClient(pluginInfo)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-		return nil, err
-	}
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	return adapter, nil
 }
 
 func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter,
@@ -1534,19 +1418,3 @@ func (c *LcmController) GetWorkloadDescription() {
 	}
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
-
-// Get vim name
-func (c *LcmController) getVim(clientIp string) (string, error) {
-
-	// Get VIM from host table, TBD
-	vim := ""
-
-	// Default to k8s for backward compatibility
-	if vim == "" {
-		log.Info("Setting plugin to default value which is k8s, as no VIM is mentioned explicitly")
-		vim = "k8s"
-	}
-	return vim, nil
-}
-
-

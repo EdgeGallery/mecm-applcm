@@ -26,6 +26,26 @@ const SUCCESS_RETURN = "Success"
 
 type mockClient struct{}
 
+func (mc *mockClient) CreateVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string) (response string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
+func (mc *mockClient) QueryVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string) (response string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
+func (mc *mockClient) DeleteVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string) (status string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
+func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string, chunkNum string) (response string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
 func (mc *mockClient) Instantiate(ctx context.Context, deployArtifact string, hostIP string,
 	accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
 	return SUCCESS_RETURN, nil

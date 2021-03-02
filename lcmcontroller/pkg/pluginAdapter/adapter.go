@@ -86,7 +86,8 @@ func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId stri
 }
 
 // Upload configuration
-func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string, error error) {
+func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string,
+	error error) {
 	log.Info("Upload config started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
@@ -131,5 +132,76 @@ func (c *PluginAdapter) GetWorkloadDescription(accessToken, host, appInsId strin
 		return "", err
 	}
 	log.Info("Queried workload description completed with status: Success")
+	return response, nil
+}
+
+// Create VM Image
+func (c *PluginAdapter) CreateVmImage(host string, accessToken string, appInsId string) (response string, error error) {
+	log.Info("Create VM Image started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.CreateVmImage(ctx, accessToken, appInsId, host)
+	if err != nil {
+		log.Error("failed to create VM image")
+		return util.Failure, err
+	}
+
+	log.Info("VM image creation completed with response: ", response)
+	return response, nil
+}
+
+// Delete VM Image
+func (c *PluginAdapter) DeleteVmImage(host string, accessToken string, appInsId string,
+	imageId string) (status string, error error) {
+	log.Info("Delete VM Image started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.DeleteVmImage(ctx, accessToken, appInsId, host, imageId)
+	if err != nil {
+		log.Error("failed to delete VM image")
+		return util.Failure, err
+	}
+
+	log.Info("VM image deletion completed with status: ", status)
+	return status, nil
+}
+
+// Query VM Image
+func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId string,
+	imageId string) (status string, error error) {
+	log.Info("Query VM Image started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.QueryVmImage(ctx, accessToken, appInsId, host, imageId)
+	if err != nil {
+		log.Error("failed to query VM image")
+		return util.Failure, err
+	}
+
+	log.Info("VM image query completed with response: ", response)
+	return response, nil
+}
+
+// Query VM Image
+func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsId string, imageId string,
+	chunkNum string) (status string, error error) {
+	log.Info("Download VM Image chunk started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum)
+	if err != nil {
+		log.Error("failed to download VM image chunk")
+		return util.Failure, err
+	}
+
+	log.Info("VM image chunk download completed with response: ", response)
 	return response, nil
 }

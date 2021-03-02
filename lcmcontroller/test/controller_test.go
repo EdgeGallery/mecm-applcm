@@ -149,7 +149,8 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		queryController := &controllers.LcmController{Db: testDb, Controller: queryBeegoController}
+		queryController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: queryBeegoController}}
 
 		// Test query
 		queryController.Query()
@@ -161,7 +162,8 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 	})
 }
 
-func testWorkloadDescribe(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testWorkloadDescribe(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database,
+	exOutput string) {
 
 	t.Run("TestWorkloadDescribeQuery", func(t *testing.T) {
 
@@ -179,7 +181,8 @@ func testWorkloadDescribe(t *testing.T, extraParams map[string]string, path stri
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		queryController := &controllers.LcmController{Db: testDb, Controller: queryBeegoController}
+		queryController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: queryBeegoController}}
 
 		// Test query
 		queryController.GetWorkloadDescription()
@@ -209,7 +212,8 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		terminateController := &controllers.LcmController{Db: testDb, Controller: terminateBeegoController}
+		terminateController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: terminateBeegoController}}
 
 		// Test query
 		terminateController.Terminate()
@@ -238,7 +242,8 @@ func testInstantiate(t *testing.T, extraParams map[string]string, path string, t
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		instantiateController := &controllers.LcmController{Db: testDb, Controller: instantiateBeegoController}
+		instantiateController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
 
 		// Test instantiate
 		instantiateController.Instantiate()
@@ -266,7 +271,8 @@ func testUpload(t *testing.T, extraParams map[string]string, path string) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		uploadController := &controllers.LcmController{Db: &mockDb{}, Controller: uploadBeegoController}
+		uploadController := &controllers.LcmController{controllers.BaseController{Db: &mockDb{},
+			Controller: uploadBeegoController}}
 
 		// Test instantiate
 		uploadController.UploadConfig()
@@ -292,7 +298,8 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		removeController := &controllers.LcmController{Db: &mockDb{}, Controller: removeBeegoController}
+		removeController := &controllers.LcmController{controllers.BaseController{Db: &mockDb{},
+			Controller: removeBeegoController}}
 
 		// Test instantiate
 		removeController.RemoveConfig()
