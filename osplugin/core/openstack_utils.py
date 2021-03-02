@@ -6,17 +6,22 @@ from heatclient.exc import HTTPNotFound
 from heatclient.common import template_utils
 from keystoneauth1 import identity, session
 from pony.orm import db_session, commit
+from novaclient import client as nova_client
+from glanceclient import client as glance_client
 
 import config
 
 RC_FILE_DIR = config.base_dir + '/config'
 
 
-def create_heat_client(host_ip):
+def get_rc(host_ip):
     rc_file_path = RC_FILE_DIR + '/' + host_ip
-    rc = RCFile(rc_file_path)
+    return RCFile(rc_file_path)
 
-    auth = identity.Password(
+
+def get_auth(host_ip):
+    rc = get_rc(host_ip)
+    return identity.Password(
         user_domain_name=rc.user_domain_name,
         username=rc.username,
         password=rc.password,
@@ -24,8 +29,23 @@ def create_heat_client(host_ip):
         project_name=rc.project_name,
         auth_url=rc.auth_url
     )
-    sess = session.Session(auth=auth)
-    return client.Client('1', session=sess)
+
+
+def get_session(host_ip):
+    return session.Session(auth=get_auth(host_ip))
+
+
+def create_heat_client(host_ip):
+    return client.Client('1', session=get_session(host_ip))
+
+
+def create_nova_client(host_ip):
+    rc = get_rc(host_ip)
+    return nova_client.Client('2', rc.username, rc.password, rc.project_name, rc.auth_url)
+
+
+def create_glance_client(host_ip):
+    return glance_client.Client('2', session=get_session(host_ip))
 
 
 class RCFile(object):

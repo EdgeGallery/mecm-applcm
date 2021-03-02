@@ -19,7 +19,7 @@ class VmImageInfoMapper(db.Entity):
     stack_id = Required(str, 64)
     vm_id = Required(str, 64)
     image_id = Required(str, 64)
-    image_size = Required(int, 32)
+    image_size = Required(int)
 
 
 db.generate_mapping(create_tables=True)
