@@ -189,20 +189,6 @@ func (c *ImageController) DeleteImage() {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId [get]
 func (c *ImageController) GetImage() {
 	log.Info("Query image request received.")
-}
-
-// @Title Download Image file
-// @Description download a specific chunk of image file
-// @Param   tenantId        path 	string	true   "tenantId"
-// @Param   appInstanceId   path 	string	true   "appInstanceId"
-// @Param   imageId         path 	string	true   "imageId"
-// @Param   access_token    header  string  true   "access token"
-// @Param   chunk_num       header  string  true   "chunk number"
-// @Success 200 ok
-// @Failure 404 image or chunk doesn't exist
-// @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file [get]
-func (c *ImageController) GetImageFile() {
-	log.Info("Download image file request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -263,6 +249,20 @@ func (c *ImageController) GetImageFile() {
 	}
 
 	c.handleLoggingForSuccess(clientIp, "VM Image query is successful")
+}
+
+// @Title Download Image file
+// @Description download a specific chunk of image file
+// @Param   tenantId        path 	string	true   "tenantId"
+// @Param   appInstanceId   path 	string	true   "appInstanceId"
+// @Param   imageId         path 	string	true   "imageId"
+// @Param   access_token    header  string  true   "access token"
+// @Param   chunk_num       header  string  true   "chunk number"
+// @Success 200 ok
+// @Failure 404 image or chunk doesn't exist
+// @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file [get]
+func (c *ImageController) GetImageFile() {
+	log.Info("Download image file request received.")
 }
 
 // Get Image Id
