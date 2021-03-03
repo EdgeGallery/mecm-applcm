@@ -190,7 +190,7 @@ func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId s
 
 // Query VM Image
 func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsId string, imageId string,
-	chunkNum string) (status string, error error) {
+	chunkNum int32) (status string, error error) {
 	log.Info("Download VM Image chunk started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)

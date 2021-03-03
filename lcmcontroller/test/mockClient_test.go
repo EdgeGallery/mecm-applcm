@@ -42,7 +42,7 @@ func (mc *mockClient) DeleteVmImage(ctx context.Context, accessToken string, app
 }
 
 func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum string) (response string, error error) {
+	hostIP string, imageId string, chunkNum int32) (response string, error error) {
 	return SUCCESS_RETURN, nil
 }
 

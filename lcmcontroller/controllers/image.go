@@ -19,9 +19,11 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
+	"strconv"
 	"unsafe"
 )
 
@@ -38,7 +40,6 @@ type ImageController struct {
 // @Param   vmId            body 	string	true   "vmId"
 // @Success 200 ok
 // @Failure 400 bad request
-// @Failure 404 vm doesn't exist
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images [post]
 func (c *ImageController) CreateImage() {
 	log.Info("Image creation request received.")
@@ -113,11 +114,67 @@ func (c *ImageController) CreateImage() {
 // @Param   appInstanceId   path 	string	true   "appInstanceId"
 // @Param   imageId         path 	string	true   "imageId"
 // @Param   access_token    header  string  true   "access token"
-// @Success 204 no content
-// @Failure 404 image doesn't exist
+// @Success 200 ok
+// @Failure 400 bad request
+// @Failure 500 internal server error
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId [delete]
 func (c *ImageController) DeleteImage() {
 	log.Info("Image deletion request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	imageId, err := c.getImageId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	_, err = adapter.DeleteVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		// To check if any more error code needs to be returned.
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "VM Image Deletion is successful")
+	c.ServeJSON()
 }
 
 // @Title Query Image
@@ -127,7 +184,8 @@ func (c *ImageController) DeleteImage() {
 // @Param   imageId         path 	string	true   "imageId"
 // @Param   access_token    header  string  true   "access token"
 // @Success 200 ok
-// @Failure 404 image doesn't exist
+// @Failure 400 bad request
+// @Failure 500 internal server error
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId [get]
 func (c *ImageController) GetImage() {
 	log.Info("Query image request received.")
@@ -145,4 +203,26 @@ func (c *ImageController) GetImage() {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file [get]
 func (c *ImageController) GetImageFile() {
 	log.Info("Download image file request received.")
+}
+
+// Get Image Id
+func (c *ImageController) getImageId(clientIp string) (string, error) {
+	imageId := c.Ctx.Input.Param(":imageId")
+	if len(imageId) > util.MaxIdLength {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Image ID is invalid")
+		return "", errors.New("Image ID is invalid")
+	}
+	return imageId, nil
+}
+
+// Get Chunk number
+func (c *ImageController) getChunkNum(clientIp string) (int32, error) {
+	chunkString := c.Ctx.Input.Param(":chunk_num")
+
+	i, err := strconv.ParseInt(chunkString, 10, 32)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Chunk number is invalid")
+		return 0, errors.New("Chunk number is invalid")
+	}
+	return int32(i), nil
 }

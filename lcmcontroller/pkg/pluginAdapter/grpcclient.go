@@ -391,19 +391,50 @@ func (c *ClientGRPC) CreateVmImage(ctx context.Context, accessToken string, appI
 // Query VM Image
 func (c *ClientGRPC) QueryVmImage(ctx context.Context, accessToken string, appInsId string,
 	hostIP string, imageId string) (response string, error error) {
-	return "", nil
+	req := &lcmservice.QueryVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		ImageId:       imageId,
+	}
+	resp, err := c.imageClient.QueryVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
 }
 
 // Delete VM Image
 func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appInsId string,
 	hostIP string, imageId string) (response string, error error) {
-	return "", nil
+	req := &lcmservice.DeleteVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		ImageId:       imageId,
+	}
+	resp, err := c.imageClient.DeleteVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
 }
 
 // Download VM Image
 func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum string) (response string, error error) {
-	return "", nil
+	hostIP string, imageId string, chunkNum int32) (response string, error error) {
+	req := &lcmservice.DownloadVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		ImageId:       imageId,
+		ChunkNum:      chunkNum,
+	}
+	_, err := c.imageClient.DownloadVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return "", err
 }
 
 // Close connection
