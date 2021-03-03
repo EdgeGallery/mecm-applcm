@@ -16,6 +16,7 @@
 package pluginAdapter
 
 import (
+	"bytes"
 	"lcmcontroller/config"
 	"mime/multipart"
 
@@ -42,5 +43,5 @@ type ClientIntf interface {
 	DeleteVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
 		imageId string) (status string, error error)
 	DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
-		imageId string, chunkNum int32) (response string, error error)
+		imageId string, chunkNum int32) (buf bytes.Buffer, error error)
 }

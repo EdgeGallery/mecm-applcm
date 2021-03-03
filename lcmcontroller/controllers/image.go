@@ -23,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
+	"os"
 	"strconv"
 	"unsafe"
 )
@@ -314,7 +315,15 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	response, err := adapter.DownloadVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId,
+	// Create temporary file to hold helm chart
+	file, err := os.Create("temp")
+	if err != nil {
+		log.Error("Unable to create file")
+		return
+	}
+	defer os.Remove("temp")
+
+	buf, err := adapter.DownloadVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId,
 		chunkNum)
 	util.ClearByteArray(bKey)
 	if err != nil {
@@ -323,11 +332,19 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	// Write input bytes to temp file
+	_, err = buf.WriteTo(file)
+
+	// uploadfilename, this is a key value, corresponding to the name attribute value of input type-‘file’ in html
+	f, h, err := c.GetFile("temp")
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
+		log.Error("Getfile error", err)
 	}
+
+	// Close the uploaded file, otherwise the temporary file cannot be cleared
+	defer f.Close()
+	// The storage location is static/upload, there is no folder to create first
+	c.SaveToFile("temp", "static/upload/" + h.Filename)
 
 	c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
 }

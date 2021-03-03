@@ -16,6 +16,7 @@
 package pluginAdapter
 
 import (
+	"bytes"
 	"context"
 	"lcmcontroller/config"
 	"lcmcontroller/util"
@@ -190,7 +191,7 @@ func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId s
 
 // Query VM Image
 func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsId string, imageId string,
-	chunkNum int32) (status string, error error) {
+	chunkNum int32) (buf bytes.Buffer, error error) {
 	log.Info("Download VM Image chunk started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
@@ -199,7 +200,7 @@ func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsI
 	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum)
 	if err != nil {
 		log.Error("failed to download VM image chunk")
-		return util.Failure, err
+		return response, err
 	}
 
 	log.Info("VM image chunk download completed with response: ", response)

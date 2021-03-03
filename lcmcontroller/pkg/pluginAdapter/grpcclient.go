@@ -17,6 +17,9 @@
 package pluginAdapter
 
 import (
+	"bytes"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"lcmcontroller/config"
 	"lcmcontroller/internal/lcmservice"
@@ -422,7 +425,7 @@ func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appI
 
 // Download VM Image
 func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32) (response string, error error) {
+	hostIP string, imageId string, chunkNum int32) (buf bytes.Buffer, error error) {
 	req := &lcmservice.DownloadVmImageRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
@@ -430,11 +433,40 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 		ImageId:       imageId,
 		ChunkNum:      chunkNum,
 	}
-	_, err := c.imageClient.DownloadVmImage(ctx, req)
+
+	file := bytes.Buffer{}
+
+	stream, err := c.imageClient.DownloadVmImage(ctx, req)
 	if err != nil {
-		return "", err
+		return file, err
 	}
-	return "", err
+
+	for {
+		err := c.contextError(stream.Context())
+		if err != nil {
+			return file, err
+		}
+
+		log.Debug("Waiting to receive more data")
+
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Debug("No more data")
+			break
+		}
+		if err != nil {
+			return file, c.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
+		}
+
+		// Receive chunk and write to package
+		chunk := req.GetContent()
+
+		_, err = file.Write(chunk)
+		if err != nil {
+			return file, c.logError(status.Error(codes.Internal, "cannot write chunk data"))
+		}
+	}
+	return file, nil
 }
 
 // Close connection
@@ -443,3 +475,24 @@ func (c *ClientGRPC) Close() {
 		c.conn.Close()
 	}
 }
+
+// Context Error
+func (c *ClientGRPC) contextError(ctx context.Context) error {
+	switch ctx.Err() {
+	case context.Canceled:
+		return c.logError(status.Error(codes.Canceled, "request is canceled"))
+	case context.DeadlineExceeded:
+		return c.logError(status.Error(codes.DeadlineExceeded, "deadline is exceeded"))
+	default:
+		return nil
+	}
+}
+
+// Logging error
+func (c *ClientGRPC) logError(err error) error {
+	if err != nil {
+		log.Errorf("Error Information: %v", err)
+	}
+	return err
+}
+

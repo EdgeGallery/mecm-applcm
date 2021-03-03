@@ -17,6 +17,7 @@
 package test
 
 import (
+	"bytes"
 	"context"
 	"lcmcontroller/config"
 	"mime/multipart"
@@ -42,8 +43,8 @@ func (mc *mockClient) DeleteVmImage(ctx context.Context, accessToken string, app
 }
 
 func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32) (response string, error error) {
-	return SUCCESS_RETURN, nil
+	hostIP string, imageId string, chunkNum int32) (response bytes.Buffer, error error) {
+	return bytes.Buffer{}, nil
 }
 
 func (mc *mockClient) Instantiate(ctx context.Context, deployArtifact string, hostIP string,
