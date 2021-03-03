@@ -446,12 +446,18 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 
 // Get pod information
 func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config) (podInfo models.PodInfo, err error) {
+	var containerInfo models.ContainerInfo
 	for _, pod := range pods.Items {
 		podName := pod.GetObjectMeta().GetName()
 		podMetrics, err := getPodMetrics(config, podName)
 		if err != nil {
 			podInfo.PodName = podName
 			podInfo.PodStatus = string(pod.Status.Phase)
+			containerInfo.ContainerName = ""
+			containerInfo.MetricsUsage.CpuUsage = ""
+			containerInfo.MetricsUsage.MemUsage = ""
+			containerInfo.MetricsUsage.DiskUsage = ""
+			podInfo.Containers = append(podInfo.Containers, containerInfo)
 			continue
 		}
 
