@@ -42,5 +42,5 @@ type ClientIntf interface {
 	DeleteVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
 		imageId string) (status string, error error)
 	DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
-		imageId string, chunkNum string) (response string, error error)
+		imageId string, chunkNum int32) (response string, error error)
 }

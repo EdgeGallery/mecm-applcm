@@ -82,14 +82,14 @@ const (
 	UuidRegex = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 	NameRegex = `^[\w-]{4,128}$`
 
-	minPasswordSize              = 8
-	maxPasswordSize              = 16
-	specialCharRegex      string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
-	singleDigitRegex      string = `\d`
-	lowerCaseRegex        string = `[a-z]`
-	upperCaseRegex        string = `[A-Z]`
-	maxPasswordCount             = 2
-	maxMepCapabilityIdLen        = 32
+	minPasswordSize         = 8
+	maxPasswordSize         = 16
+	specialCharRegex string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
+	singleDigitRegex string = `\d`
+	lowerCaseRegex   string = `[a-z]`
+	upperCaseRegex   string = `[A-Z]`
+	maxPasswordCount        = 2
+	MaxIdLength             = 32
 
 	TooManyFile      = 1024
 	TooBig           = 0x6400000
@@ -182,7 +182,7 @@ func ValidateSrcAddress(id string) error {
 
 // Validate IPv4 address
 func ValidateMepCapabilityId(id string) error {
-	if len(id) > maxMepCapabilityIdLen {
+	if len(id) > MaxIdLength {
 		return errors.New("MEP capability ID length exceeded max length 32")
 	}
 	return nil
