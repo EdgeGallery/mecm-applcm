@@ -23,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
+	"os"
 	"strconv"
 	"unsafe"
 )
@@ -314,7 +315,16 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	response, err := adapter.DownloadVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId,
+	// Create temporary file to hold helm chart
+	file, err := os.Create(util.TEMP_FILE)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		util.ClearByteArray(bKey)
+		return
+	}
+	defer os.Remove(util.TEMP_FILE)
+
+	buf, err := adapter.DownloadVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId,
 		chunkNum)
 	util.ClearByteArray(bKey)
 	if err != nil {
@@ -323,12 +333,14 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	// Write input bytes to temp file
+	_, err = buf.WriteTo(file)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 
+	c.Ctx.Output.Download(util.TEMP_FILE)
 	c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
 }
 
