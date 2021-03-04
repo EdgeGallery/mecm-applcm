@@ -5,8 +5,9 @@ from heatclient import client
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
 from glanceclient import client as glance_client
-
+import yaml
 import config
+from core.CustomGlanceClient import CustomGlanceClient
 from core.exceptions import PackageNotValid
 
 RC_FILE_DIR = config.base_dir + '/config'
@@ -39,11 +40,14 @@ def create_heat_client(host_ip):
 
 def create_nova_client(host_ip):
     rc = get_rc(host_ip)
-    return nova_client.Client('2', rc.username, rc.password, rc.project_name, rc.auth_url)
+    return nova_client.Client('2', session=get_session(host_ip))
 
 
 def create_glance_client(host_ip):
-    return glance_client.Client('2', session=get_session(host_ip))
+    asession = get_session(host_ip)
+    print(asession.get_token())
+    return CustomGlanceClient(session=asession)
+    # return glance_client.Client('2', session=get_session(host_ip))
 
 
 class RCFile(object):
