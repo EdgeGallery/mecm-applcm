@@ -21,3 +21,5 @@ db_port = int(os.getenv('DB_PORT', '5432'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
 
 base_dir = os.getenv('BASE_DIR', 'target')
+# default chunk_size 1M
+chunk_size = os.getenv("IMAGE_CHUNK_SIZE", 1024 * 1024 * 1)

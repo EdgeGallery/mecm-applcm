@@ -10,7 +10,7 @@ from novaclient import client as nova_client
 from glanceclient import client as glance_client
 import yaml
 import config
-from core.CustomGlanceClient import CustomGlanceClient
+from core.custom_glance_client import CustomGlanceClient
 
 RC_FILE_DIR = config.base_dir + '/config'
 
@@ -47,7 +47,6 @@ def create_nova_client(host_ip):
 
 def create_glance_client(host_ip):
     asession = get_session(host_ip)
-    print(asession.get_token())
     return CustomGlanceClient(session=asession)
     # return glance_client.Client('2', session=get_session(host_ip))
 

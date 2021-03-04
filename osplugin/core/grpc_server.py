@@ -9,10 +9,16 @@ from service.vm_image_service import VmImageService
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LISTEN_PORT = 8888
+MAX_MESSAGE_LENGTH = 1024 * 1024 * 50
 
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=200, thread_name_prefix='grpc-thread-'))
+    options = [
+        ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
+        ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)]
+
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=200, thread_name_prefix='grpc-thread-'),
+                         options=options)
     lcmservice_pb2_grpc.add_AppLCMServicer_to_server(AppLcmService(), server)
     lcmservice_pb2_grpc.add_VmImageServicer_to_server(VmImageService(), server)
 
