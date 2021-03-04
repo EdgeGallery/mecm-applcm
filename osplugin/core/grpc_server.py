@@ -8,7 +8,7 @@ from service.app_lcm_service import AppLcmService
 from service.vm_image_service import VmImageService
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-_LISTEN_PORT = 8888
+_LISTEN_PORT = 8234
 MAX_MESSAGE_LENGTH = 1024 * 1024 * 50
 
 
