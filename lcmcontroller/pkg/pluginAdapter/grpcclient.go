@@ -434,17 +434,17 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 		ChunkNum:      chunkNum,
 	}
 
-	file := bytes.Buffer{}
+	buf = bytes.Buffer{}
 
 	stream, err := c.imageClient.DownloadVmImage(ctx, req)
 	if err != nil {
-		return file, err
+		return buf, err
 	}
 
 	for {
 		err := c.contextError(stream.Context())
 		if err != nil {
-			return file, err
+			return buf, err
 		}
 
 		log.Debug("Waiting to receive more data")
@@ -455,18 +455,18 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 			break
 		}
 		if err != nil {
-			return file, c.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
+			return buf, c.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
 		}
 
 		// Receive chunk and write to package
 		chunk := req.GetContent()
 
-		_, err = file.Write(chunk)
+		_, err = buf.Write(chunk)
 		if err != nil {
-			return file, c.logError(status.Error(codes.Internal, "cannot write chunk data"))
+			return buf, c.logError(status.Error(codes.Internal, "cannot write chunk data"))
 		}
 	}
-	return file, nil
+	return buf, nil
 }
 
 // Close connection

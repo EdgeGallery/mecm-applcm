@@ -119,6 +119,7 @@ const (
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
+	TEMP_FILE            = "/usr/app/temp"
 )
 
 var cipherSuiteMap = map[string]uint16{
@@ -510,7 +511,7 @@ func GetMepPort() string {
 func GetPluginAddress(plugin string) string {
 	pluginAddr := os.Getenv(plugin)
 	if pluginAddr != "" {
-		log.Error("Plugin address couldn't be found for : " + plugin )
+		log.Error("Plugin address couldn't be found for : " + plugin)
 	}
 	return pluginAddr
 }
@@ -519,7 +520,7 @@ func GetPluginAddress(plugin string) string {
 func GetPluginPort(portVar string) string {
 	pluginPort := os.Getenv(portVar)
 	if pluginPort == "" {
-		log.Error("Plugin port couldn't be found for : " +  portVar)
+		log.Error("Plugin port couldn't be found for : " + portVar)
 	}
 	return pluginPort
 }

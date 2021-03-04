@@ -316,12 +316,13 @@ func (c *ImageController) GetImageFile() {
 	}
 
 	// Create temporary file to hold helm chart
-	file, err := os.Create("temp")
+	file, err := os.Create(util.TEMP_FILE)
 	if err != nil {
-		log.Error("Unable to create file")
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		util.ClearByteArray(bKey)
 		return
 	}
-	defer os.Remove("temp")
+	defer os.Remove(util.TEMP_FILE)
 
 	buf, err := adapter.DownloadVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId,
 		chunkNum)
@@ -334,18 +335,12 @@ func (c *ImageController) GetImageFile() {
 
 	// Write input bytes to temp file
 	_, err = buf.WriteTo(file)
-
-	// uploadfilename, this is a key value, corresponding to the name attribute value of input type-‘file’ in html
-	f, h, err := c.GetFile("temp")
 	if err != nil {
-		log.Error("Getfile error", err)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
 	}
 
-	// Close the uploaded file, otherwise the temporary file cannot be cleared
-	defer f.Close()
-	// The storage location is static/upload, there is no folder to create first
-	c.SaveToFile("temp", "static/upload/" + h.Filename)
-
+	c.Ctx.Output.Download(util.TEMP_FILE)
 	c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
 }
 
