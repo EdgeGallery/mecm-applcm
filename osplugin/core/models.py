@@ -18,7 +18,6 @@ class VmImageInfoMapper(db.Entity):
     _table_ = 't_vm_image_info'
     app_instance_id = Required(str, max_len=64)
     host_ip = Required(str, max_len=15)
-    stack_id = Required(str, max_len=64)
     vm_id = Required(str, max_len=64)
     image_id = Required(str, max_len=64)
     image_size = Required(int, size=64)
