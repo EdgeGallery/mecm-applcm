@@ -24,6 +24,7 @@ import (
 	"lcmcontroller/pkg/dbAdapter"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
+	"strings"
 )
 
 // Base Controller
@@ -167,4 +168,61 @@ func (c *BaseController) getPluginAdapter(deployType, clientIp string, vim strin
 func (c *BaseController) handleLoggingForSuccess(clientIp string, msg string) {
 	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
+}
+
+// Get host IP from url
+func (c *BaseController) getUrlHostIP(clientIp string) (string, error) {
+	hostIp := c.Ctx.Input.Param(":hostIp")
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid from url")
+		return "", err
+	}
+	return hostIp, nil
+}
+
+// Handled looging for k8s
+func (c *BaseController) handleLoggingK8s(clientIp string, errorString string) {
+	if strings.Contains(errorString, util.Forbidden) {
+		c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+	} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+	} else {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
+	}
+}
+
+// Delete app info record
+func (c *BaseController) deleteAppInfoRecord(appInsId string) error {
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId: appInsId,
+	}
+
+	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete tenant record
+func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
+	tenantRecord := &models.TenantInfoRecord{
+		TenantId: tenantId,
+	}
+
+	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	if count == 0 {
+		err = c.Db.DeleteData(tenantRecord, util.TenantId)
+		if err != nil {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return err
+		}
+	}
+	return nil
 }

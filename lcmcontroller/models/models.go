@@ -31,32 +31,34 @@ func init() {
 
 // MEC host record
 type MecHost struct {
-	MechostId string `orm:"pk"`
-	CreateTime time.Time `orm:"auto_now_add;type(datetime)"`
-	MechostIp string
-	MechostName string
-	ZipCode string
-	City string;
-	Address string
-	Affinity string
-	UserName string
-	ApplcmIp string
-	AppRuleIp string
+	MecHostId          string    `orm:"pk"`
+	CreateTime         time.Time `orm:"auto_now_add;type(datetime)"`
+	MechostIp          string
+	MechostName        string
+	ZipCode            string
+	City               string
+	Address            string
+	Affinity           string
+	UserName           string
 	ConfigUploadStatus string
-	Coordinates string
-	Vim string
-	Hwcapabilities []*MecHwCapability `orm:"reverse(many)"` // reverse relationship of fk
+	Coordinates        string
+	Vim                string
+	Origin             string
+	SyncStatus         bool
+	Hwcapabilities     []*MecHwCapability `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
 	// Association with AppInfoRecord is pending
 }
 
 // MEC host hardware capabilities
 type MecHwCapability struct {
-	MecCapabilityId string `orm:"pk"`
-	CreateTime time.Time `orm:"auto_now_add;type(datetime)"`
-	HwType string
-	HwVendor string
-	HwModel string
-	MecHost *MecHost `orm:"rel(fk)"` // RelForeignKey relation
+	MecCapabilityId string    `orm:"pk"`
+	CreateTime      time.Time `orm:"auto_now_add;type(datetime)"`
+	HwType          string
+	HwVendor        string
+	HwModel         string
+	Origin          string
+	SyncStatus      bool
+	MecHost         *MecHost `orm:"rel(fk)"` // RelForeignKey relation
 }
 
 // Application info record
@@ -76,8 +78,8 @@ type TenantInfoRecord struct {
 // Metric Information
 type MetricInfo struct {
 	CpuUsage  map[string]interface{} `json:"cpuusage"`
-	MemUsage  map[string]interface{}`json:"memusage"`
-	DiskUsage  map[string]interface{}`json:"diskusage"`
+	MemUsage  map[string]interface{} `json:"memusage"`
+	DiskUsage map[string]interface{} `json:"diskusage"`
 }
 
 // Kpi Information
@@ -96,4 +98,25 @@ type KpiModel struct {
 // CreateVimRequest record
 type CreateVimRequest struct {
 	VmId string `json:"vmId"`
+}
+
+// Mec host information
+type MecHostInfo struct {
+	MechostIp      string              `json:"mechostIp"`
+	MechostName    string              `json:"mechostName"`
+	ZipCode        string              `json:"zipCode"`
+	City           string              `json:"city"`
+	Address        string              `json:"address"`
+	Affinity       string              `json:"affinity"`
+	UserName       string              `json:"userName"`
+	Coordinates    string              `json:"coordinates"`
+	Vim            string              `json:"vim"`
+	Hwcapabilities []MecHwCapabilities `json:"hwcapabilities"`
+}
+
+// Mec hardware capabilities
+type MecHwCapabilities struct {
+	HwType   string `json:"hwType"`
+	HwVendor string `json:"hwVendor"`
+	HwModel  string `json:"hwModel"`
 }
