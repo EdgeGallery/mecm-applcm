@@ -105,10 +105,45 @@ func init() {
 			Params:           nil})
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
-			Method:           "GetPodDescription",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/pods/desc",
+			Method:           "GetWorkloadDescription",
+			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/workload/events",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
+
+
+	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
+		beego.ControllerComments{
+			Method:           "CreateImage",
+			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images",
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
+		beego.ControllerComments{
+			Method:           "DeleteImage",
+			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId",
+			AllowHTTPMethods: []string{"delete"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
+		beego.ControllerComments{
+			Method:           "GetImage",
+			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
+		beego.ControllerComments{
+			Method:           "GetImageFile",
+			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 }

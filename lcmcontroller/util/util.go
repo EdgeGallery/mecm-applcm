@@ -43,8 +43,8 @@ var (
 
 const (
 	AccessToken              string = "access_token"
-	K8sPlugin                string = "K8S_PLUGIN"
-	K8sPluginPort            string = "K8S_PLUGIN_PORT"
+	PluginSuffix             string = "_PLUGIN"
+	PluginPortSuffix         string = "_PORT"
 	MepServer                string = "MEP_SERVER"
 	AuthorizationFailed      string = "Authorization failed"
 	Default                  string = "default"
@@ -79,17 +79,17 @@ const (
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
 
-	UuidRegex    = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
-	AppNameRegex = `^[\w-]{4,128}$`
+	UuidRegex = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
+	NameRegex = `^[\w-]{4,128}$`
 
-	minPasswordSize              = 8
-	maxPasswordSize              = 16
-	specialCharRegex      string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
-	singleDigitRegex      string = `\d`
-	lowerCaseRegex        string = `[a-z]`
-	upperCaseRegex        string = `[A-Z]`
-	maxPasswordCount             = 2
-	maxMepCapabilityIdLen        = 32
+	minPasswordSize         = 8
+	maxPasswordSize         = 16
+	specialCharRegex string = `['~!@#$%^&()-_=+\|[{}\];:'",<.>/?]`
+	singleDigitRegex string = `\d`
+	lowerCaseRegex   string = `[a-z]`
+	upperCaseRegex   string = `[A-Z]`
+	maxPasswordCount        = 2
+	MaxIdLength             = 32
 
 	TooManyFile      = 1024
 	TooBig           = 0x6400000
@@ -116,8 +116,10 @@ const (
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
+	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
+	TEMP_FILE            = "/usr/app/temp"
 )
 
 var cipherSuiteMap = map[string]uint16{
@@ -181,7 +183,7 @@ func ValidateSrcAddress(id string) error {
 
 // Validate IPv4 address
 func ValidateMepCapabilityId(id string) error {
-	if len(id) > maxMepCapabilityIdLen {
+	if len(id) > MaxIdLength {
 		return errors.New("MEP capability ID length exceeded max length 32")
 	}
 	return nil
@@ -505,16 +507,22 @@ func GetMepPort() string {
 	return mepPort
 }
 
-// Get k8splugin address
-func GetK8sPlugin() string {
-	k8sPlugin := os.Getenv(K8sPlugin)
-	return k8sPlugin
+// Get plugin address
+func GetPluginAddress(plugin string) string {
+	pluginAddr := os.Getenv(plugin)
+	if pluginAddr != "" {
+		log.Error("Plugin address couldn't be found for : " + plugin)
+	}
+	return pluginAddr
 }
 
-// Get k8splugin port
-func GetK8sPluginPort() string {
-	k8sPluginPort := os.Getenv(K8sPluginPort)
-	return k8sPluginPort
+// Get plugin port
+func GetPluginPort(portVar string) string {
+	pluginPort := os.Getenv(portVar)
+	if pluginPort == "" {
+		log.Error("Plugin port couldn't be found for : " + portVar)
+	}
+	return pluginPort
 }
 
 // Get API Gateway address
@@ -593,9 +601,9 @@ func GetHostInfo(url string) (string, int, error) {
 	return "", resp.StatusCode, errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
 
-// Validate app name
-func ValidateAppName(appName string) (bool, error) {
-	return regexp.MatchString(AppNameRegex, appName)
+// Validate name
+func ValidateName(appName string) (bool, error) {
+	return regexp.MatchString(NameRegex, appName)
 }
 
 // Handle number of REST requests per second
@@ -632,10 +640,16 @@ func GetPrometheusServiceNameAndPort() (string, string) {
 }
 
 // Get plugin info
-func GetPluginInfo() string {
-	k8sPlugin := GetK8sPlugin()
-	k8sPluginPort := GetK8sPluginPort()
-	pluginInfo := k8sPlugin + ":" + k8sPluginPort
+func GetPluginInfo(vim string) string {
+	// Default case of kubernetes for backward compatibility
+	if vim == "" {
+		vim = "k8s"
+	}
+	pluginAddrVar := strings.ToUpper(vim) + PluginSuffix
+	pluginAddr := GetPluginAddress(pluginAddrVar)
+	pluginPortVar := pluginAddrVar + PluginPortSuffix
+	pluginPort := GetPluginPort(pluginPortVar)
+	pluginInfo := pluginAddr + ":" + pluginPort
 	return pluginInfo
 }
 

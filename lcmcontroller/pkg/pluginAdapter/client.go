@@ -16,6 +16,7 @@
 package pluginAdapter
 
 import (
+	"bytes"
 	"lcmcontroller/config"
 	"mime/multipart"
 
@@ -31,5 +32,16 @@ type ClientIntf interface {
 	UploadConfig(ctx context.Context, multipartFile multipart.File,
 		hostIP string, accessToken string) (status string, error error)
 	RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error)
-	PodDescription(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
+	WorkloadDescription(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string,
+		error error)
+
+	// Image related API
+	CreateVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string, vmId string) (response string,
+		error error)
+	QueryVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
+		imageId string) (response string, error error)
+	DeleteVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
+		imageId string) (status string, error error)
+	DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
+		imageId string, chunkNum int32) (buf bytes.Buffer, error error)
 }

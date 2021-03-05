@@ -17,6 +17,9 @@
 package pluginAdapter
 
 import (
+	"bytes"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"lcmcontroller/config"
 	"lcmcontroller/internal/lcmservice"
@@ -33,9 +36,10 @@ import (
 
 // GRPC client to different GRPC supported plugins
 type ClientGRPC struct {
-	conn      *grpc.ClientConn
-	client    lcmservice.AppLCMClient
-	chunkSize int
+	conn        *grpc.ClientConn
+	client      lcmservice.AppLCMClient
+	imageClient lcmservice.VmImageServiceClient
+	chunkSize   int
 }
 
 // GRPC client configuration
@@ -74,7 +78,8 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 		return c, err
 	}
 
-	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn)}, nil
+	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn),
+		imageClient: lcmservice.NewVmImageServiceClient(conn)}, nil
 }
 
 // Instantiate application
@@ -354,20 +359,114 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 	return res.GetStatus(), err
 }
 
-// Get pod description
-func (c *ClientGRPC) PodDescription(ctx context.Context, accessToken string,
+// Get workload description
+func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string,
 	appInsId string, hostIP string) (response string, error error) {
 
-	req := &lcmservice.PodDescribeRequest{
+	req := &lcmservice.WorkloadEventsRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
 	}
-	resp, err := c.client.PodDescribe(ctx, req)
+	resp, err := c.client.WorkloadEvents(ctx, req)
 	if err != nil {
 		return "", err
 	}
 	return resp.Response, err
+}
+
+// Create VM Image
+func (c *ClientGRPC) CreateVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, vmId string) (response string, error error) {
+	req := &lcmservice.CreateVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		VmId:          vmId,
+	}
+	resp, err := c.imageClient.CreateVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Query VM Image
+func (c *ClientGRPC) QueryVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string) (response string, error error) {
+	req := &lcmservice.QueryVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		ImageId:       imageId,
+	}
+	resp, err := c.imageClient.QueryVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Delete VM Image
+func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string) (response string, error error) {
+	req := &lcmservice.DeleteVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		ImageId:       imageId,
+	}
+	resp, err := c.imageClient.DeleteVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Download VM Image
+func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
+	hostIP string, imageId string, chunkNum int32) (buf bytes.Buffer, error error) {
+	req := &lcmservice.DownloadVmImageRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		ImageId:       imageId,
+		ChunkNum:      chunkNum,
+	}
+
+	buf = bytes.Buffer{}
+
+	stream, err := c.imageClient.DownloadVmImage(ctx, req)
+	if err != nil {
+		return buf, err
+	}
+
+	for {
+		err := c.contextError(stream.Context())
+		if err != nil {
+			return buf, err
+		}
+
+		log.Debug("Waiting to receive more data")
+
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Debug("No more data")
+			break
+		}
+		if err != nil {
+			return buf, c.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
+		}
+
+		// Receive chunk and write to package
+		chunk := req.GetContent()
+
+		_, err = buf.Write(chunk)
+		if err != nil {
+			return buf, c.logError(status.Error(codes.Internal, "cannot write chunk data"))
+		}
+	}
+	return buf, nil
 }
 
 // Close connection
@@ -376,3 +475,24 @@ func (c *ClientGRPC) Close() {
 		c.conn.Close()
 	}
 }
+
+// Context Error
+func (c *ClientGRPC) contextError(ctx context.Context) error {
+	switch ctx.Err() {
+	case context.Canceled:
+		return c.logError(status.Error(codes.Canceled, "request is canceled"))
+	case context.DeadlineExceeded:
+		return c.logError(status.Error(codes.DeadlineExceeded, "deadline is exceeded"))
+	default:
+		return nil
+	}
+}
+
+// Logging error
+func (c *ClientGRPC) logError(err error) error {
+	if err != nil {
+		log.Errorf("Error Information: %v", err)
+	}
+	return err
+}
+

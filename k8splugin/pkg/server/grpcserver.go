@@ -141,29 +141,29 @@ func (t *RateLimit) Handler(ctx context.Context, info *tap.Info) (context.Contex
 }
 
 // Pod Description
-func (s *ServerGRPC) PodDescribe(ctx context.Context, req *lcmservice.PodDescribeRequest) (resp *lcmservice.PodDescribeResponse, err error) {
+func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.WorkloadEventsRequest) (resp *lcmservice.WorkloadEventsResponse, err error) {
 
-	resp = &lcmservice.PodDescribeResponse{
+	resp = &lcmservice.WorkloadEventsResponse{
 		Response: util.Failure,
 	}
 
-	err = s.displayReceivedMsg(ctx, util.PodDescribe)
+	err = s.displayReceivedMsg(ctx, util.WorkloadEvents)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToDispRecvMsg)
+		s.displayResponseMsg(ctx, util.WorkloadEvents, util.FailedToDispRecvMsg)
 		return resp, err
 	}
 
 	// Input validation
 	hostIp, appInsId, err := s.validateInputParamsForPodDesc(req)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToValInputParams)
+		s.displayResponseMsg(ctx, util.WorkloadEvents, util.FailedToValInputParams)
 		return resp, err
 	}
 
 	// Get Client
 	client, err := adapter.GetClient(util.DeployType, hostIp)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.PodDescribe, util.FailedToGetClient)
+		s.displayResponseMsg(ctx, util.WorkloadEvents, util.FailedToGetClient)
 		return resp, err
 	}
 
@@ -178,15 +178,15 @@ func (s *ServerGRPC) PodDescribe(ctx context.Context, req *lcmservice.PodDescrib
 	}
 
 	// Query Chart
-	r, err := client.PodDescribe(appInstanceRecord.WorkloadId)
+	r, err := client.WorkloadEvents(appInstanceRecord.WorkloadId)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.PodDescribe, "failed to get pod describe information")
+		s.displayResponseMsg(ctx, util.WorkloadEvents, "failed to get pod describe information")
 		return resp, err
 	}
-	resp = &lcmservice.PodDescribeResponse{
+	resp = &lcmservice.WorkloadEventsResponse{
 		Response: r,
 	}
-	s.handleLoggingForSuccess(ctx, util.PodDescribe, "Pod description is successful")
+	s.handleLoggingForSuccess(ctx, util.WorkloadEvents, "Pod description is successful")
 	return resp, nil
 }
 
@@ -618,7 +618,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 
 // Validate input parameters for pod describe
 func (s *ServerGRPC) validateInputParamsForPodDesc(
-	req *lcmservice.PodDescribeRequest) (hostIp string, podName string, err error) {
+	req *lcmservice.WorkloadEventsRequest) (hostIp string, podName string, err error) {
 
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole, util.MecmGuestRole})

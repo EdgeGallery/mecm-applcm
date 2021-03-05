@@ -124,7 +124,8 @@ func TestKpi(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		kpiController := &controllers.LcmController{Db: testDb, Controller: kpiBeegoController}
+		kpiController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: kpiBeegoController}}
 
 		// Test KPI
 		kpiController.QueryKPI()
@@ -180,13 +181,15 @@ func TestMepCapabilities(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		capabilityController := &controllers.LcmController{Db: testDb, Controller: capabilityBeegoController}
+		capabilityController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: capabilityBeegoController}}
 
 		// Test Capability
 		capabilityController.QueryMepCapabilities()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
+		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability "+
+			"status failed")
 		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, capabilityOutput, response.Body.String(), "Get Capability data failed")
 	})
@@ -235,13 +238,15 @@ func TestMepCapabilitiesId(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		capabilityController := &controllers.LcmController{Db: testDb, Controller: capabilityBeegoController}
+		capabilityController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: capabilityBeegoController}}
 
 		// Test Capability
 		capabilityController.QueryMepCapabilities()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability status failed")
+		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, "Get Capability "+
+			"status failed")
 		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, capabilityIdOutput, response.Body.String(), "Get Capability data failed")
 	})
@@ -293,7 +298,8 @@ func TestAppDeploymentStatus(t *testing.T) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		appDeployStatusController := &controllers.LcmController{Db: testDb, Controller: appDeployStatusBeegoController}
+		appDeployStatusController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: appDeployStatusBeegoController}}
 
 		// Test Capability
 		appDeployStatusController.AppDeploymentStatus()

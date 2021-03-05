@@ -262,9 +262,9 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	return appInfoJson, nil
 }
 
-// Get pod description
-func (hc *HelmClient) PodDescribe(relName string) (string, error) {
-	log.Info("In Pod describe function")
+// Get workload description
+func (hc *HelmClient) WorkloadEvents(relName string) (string, error) {
+	log.Info("In Workload describe function")
 	var podDesc models.PodDescribeInfo
 
 	clientset, manifest, err := hc.getClientSet(relName)
@@ -446,11 +446,19 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 
 // Get pod information
 func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config) (podInfo models.PodInfo, err error) {
+	var containerInfo models.ContainerInfo
 	for _, pod := range pods.Items {
 		podName := pod.GetObjectMeta().GetName()
 		podMetrics, err := getPodMetrics(config, podName)
 		if err != nil {
-			return podInfo, err
+			podInfo.PodName = podName
+			podInfo.PodStatus = string(pod.Status.Phase)
+			containerInfo.ContainerName = ""
+			containerInfo.MetricsUsage.CpuUsage = ""
+			containerInfo.MetricsUsage.MemUsage = ""
+			containerInfo.MetricsUsage.DiskUsage = ""
+			podInfo.Containers = append(podInfo.Containers, containerInfo)
+			continue
 		}
 
 		podInfo, err = updateContainerInfo(podMetrics, clientset, podInfo)
