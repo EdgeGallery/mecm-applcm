@@ -72,7 +72,7 @@ const (
 	MaxNumberOfRecords              = 50
 	MaxNumberOfTenantRecords        = 20
 	MaxNumberOfHostRecords          = 20
-	MaxFileNameSize                 = 64
+	MaxFileNameSize                 = 128 
 
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
