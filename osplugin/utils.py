@@ -2,6 +2,7 @@
 
 import os
 import re
+import uuid
 
 import jwt
 import logging
@@ -30,7 +31,7 @@ def create_dir(path):
 
 def delete_dir(path):
     for i in os.listdir(path):
-        file_data = path + '/' +i
+        file_data = path + '/' + i
         if os.path.isfile(file_data):
             os.remove(file_data)
         else:
@@ -68,3 +69,7 @@ def validate_ipv4_address(host_ip):
         return True
     else:
         return False
+
+
+def gen_uuid():
+    return ''.join(str(uuid.uuid4()).split('-'))

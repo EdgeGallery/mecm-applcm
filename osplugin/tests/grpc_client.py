@@ -48,7 +48,7 @@ def make_download_image_request(access_token, chunk_num, host_ip, app_instance_i
 
 
 if __name__ == '__main__':
-    with grpc.insecure_channel('localhost:8888') as channel:
+    with grpc.insecure_channel('localhost:8234') as channel:
         stub = lcmservice_pb2_grpc.VmImageStub(channel)
         # response = stub.createVmImage(
         #     make_create_image_request(access_token="test_access_token", host_ip=test_host_ip, app_instance_id="1",
@@ -62,11 +62,15 @@ if __name__ == '__main__':
         #     make_delete_image_request(access_token="test_access_token", host_ip=test_host_ip, app_instance_id="1",
         #                               image_id="8947f294-a17c-400d-aa17-4f15700ef1c0"))
 
-        response = stub.downloadVmImage(
-            make_download_image_request(access_token="test_access_token", host_ip=test_host_ip, chunk_num=1,
-                                        app_instance_id="1", image_id="cc038a08-fb1e-44a5-90cf-71ada395bb4b"))
+        # response = stub.downloadVmImage(
+        #     make_download_image_request(access_token="test_access_token", host_ip=test_host_ip, chunk_num=1,
+        #                                app_instance_id="1", image_id="cc038a08-fb1e-44a5-90cf-71ada395bb4b"))
+        # print(str(response))
+        stub2 = lcmservice_pb2_grpc.AppLCMStub(channel)
+        response = stub2.instantiate(make_instantiate_request(access_token="test_access_token",
+                                                              app_instance_id="1",
+                                                              host_ip='10.10.9.75',
+                                                              package_path="./resources/simple-package.zip",
+                                                              ak="a",
+                                                              sk="s"))
         print(str(response))
-# stub = lcmservice_pb2_grpc.AppLCMStub(channel)
-# stub.terminate(lcmservice_pb2.TerminateRequest(accessToken=test_access_token,
-#                                                hostIp=test_host_ip,
-#                                                appInstanceId=''))

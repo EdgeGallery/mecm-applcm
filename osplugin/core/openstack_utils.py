@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import re
 
-from heatclient import client
+from heatclient import client as heat_client
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
-from glanceclient import client as glance_client
-import yaml
 import config
 from core.CustomGlanceClient import CustomGlanceClient
 from core.exceptions import PackageNotValid
@@ -35,11 +33,10 @@ def get_session(host_ip):
 
 
 def create_heat_client(host_ip):
-    return client.Client('1', session=get_session(host_ip))
+    return heat_client.Client('1', session=get_session(host_ip))
 
 
 def create_nova_client(host_ip):
-    rc = get_rc(host_ip)
     return nova_client.Client('2', session=get_session(host_ip))
 
 
@@ -47,11 +44,10 @@ def create_glance_client(host_ip):
     asession = get_session(host_ip)
     print(asession.get_token())
     return CustomGlanceClient(session=asession)
-    # return glance_client.Client('2', session=get_session(host_ip))
 
 
 class RCFile(object):
-    _PATTERN = r'^export (.+)="(.+)"$'
+    _PATTERN = r'^export (.+)="?(.+)"?$'
 
     user_domain_name = 'Default'
     project_domain_name = 'Default'
@@ -122,9 +118,11 @@ class NovaServer(HOTBase):
             'config_drive': True,
             'block_device_mapping_v2': [],
             'networks': [],
-            'availability_zone': None,
             'user_data_format': 'RAW'
         }
+
+        if 'nfvi_constraints' in template['properties']:
+            self.properties['availability_zone'] = template['properties']['nfvi_constraints']
 
         # user data
         if 'bootdata' in template['properties']:
@@ -177,7 +175,10 @@ class NovaServer(HOTBase):
                     })
 
         _change_input_to_param(self.properties)
-        hot_file['resources'][name] = self
+        hot_file['resources'][name] = {
+            'type': self.type,
+            'properties': self.properties
+        }
 
 
 class LocalStorage(HOTBase):
@@ -187,7 +188,10 @@ class LocalStorage(HOTBase):
             'image': image,
             'size': size
         }
-        hot_file['resources']['VirtualLocalStorage1'] = self
+        hot_file['resources']['VirtualLocalStorage1'] = {
+            'type': self.type,
+            'properties': self.properties
+        }
 
 
 class VirtualStorage(HOTBase):
@@ -203,7 +207,10 @@ class VirtualStorage(HOTBase):
             'size': size
         }
         _change_input_to_param(self.properties)
-        hot_file['resources'][name] = self
+        hot_file['resources'][name] = {
+            'type': self.type,
+            'properties': self.properties
+        }
 
 
 class VirtualLink(HOTBase):
@@ -215,10 +222,13 @@ class VirtualLink(HOTBase):
         }
         if 'physical_network' in template['properties']['vl_profile']:
             self.properties['physical_network'] = template['properties']['vl_profile']['physical_network']
-        if 'segmentation_id' in template['properties']['vl_profile']:
+        if 'provider_segmentation_id' in template['properties']['vl_profile']:
             self.properties['segmentation_id'] = template['properties']['vl_profile']['provider_segmentation_id']
         _change_input_to_param(self.properties)
-        hot_file['resources'][name] = self
+        hot_file['resources'][name] = {
+            'type': self.type,
+            'properties': self.properties
+        }
 
 
 class VirtualPort(HOTBase):
@@ -237,12 +247,13 @@ class VirtualPort(HOTBase):
 
         self.properties = {
             'network': network,
-            'binding:vnic_type': 'normal',
-            'port_security_enabled': True
         }
         if 'vnic_type' in template['properties']:
-            self.properties['vnic_type'] = template['properties']['vnic_type']
+            self.properties['binding:vnic_type'] = template['properties']['vnic_type']
         if 'port_security_enabled' in template['properties']:
             self.properties['port_security_enabled'] = template['properties']['port_security_enabled']
         _change_input_to_param(self.properties)
-        hot_file['resources'][name] = self
+        hot_file['resources'][name] = {
+            'type': self.type,
+            'properties': self.properties
+        }

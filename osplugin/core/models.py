@@ -2,7 +2,65 @@
 
 from pony.orm import PrimaryKey, Required, Optional
 
+import config
+import utils
 from core.orm.adapter import db
+
+_APP_TASK_PATH = config.base_dir + '/tmp/tasks'
+
+
+class InstantiateRequest(object):
+    accessToken = None
+    app_instance_id = None
+    hostIp = None
+    ak = None
+    sk = None
+    app_package_path = None
+
+    def __init__(self, request_iterator):
+        self._task_path = _APP_TASK_PATH + '/' + utils.gen_uuid()
+        utils.create_dir(self._task_path)
+        for request in request_iterator:
+            if request.accessToken:
+                self.accessToken = request.accessToken
+            elif request.appInstanceId:
+                self.app_instance_id = request.appInstanceId
+            elif request.hostIp:
+                self.hostIp = request.hostIp
+            elif request.package:
+                self.app_package_path = self._task_path + '/package.zip'
+                with open(self.app_package_path, 'ab') as package_file:
+                    package_file.write(request.package)
+            elif request.ak:
+                self.ak = request.ak
+            elif request.sk:
+                self.sk = request.sk
+
+    def delete_package_tmp(self):
+        utils.delete_dir(self._task_path)
+        self.app_package_path = None
+
+
+class UploadCfgRequest(object):
+    accessToken = None
+    hostIp = None
+    config_file = None
+
+    def __init__(self, request_iterator):
+        for request in request_iterator:
+            if request.accessToken:
+                self.accessToken = request.accessToken
+            elif request.appInstanceId:
+                self.app_instance_id = request.appInstanceId
+            elif request.hostIp:
+                self.hostIp = request.hostIp
+            elif request.config_file:
+                self.config_file = request.config_file
+
+
+"""
+数据库定义
+"""
 
 
 class AppInsMapper(db.Entity):
