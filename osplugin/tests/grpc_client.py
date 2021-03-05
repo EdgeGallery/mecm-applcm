@@ -33,7 +33,7 @@ def make_instantiate_request(access_token, app_instance_id, host_ip, package_pat
 
 def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
     return lcmservice_pb2.CreateVmImageRequest(accessToken=access_token, hostIp=host_ip, appInstanceId=app_instance_id,
-                                               vmId="fab3acb9-9927-468d-a784-b528fcf297cb")
+                                               vmId=vm_id)
 
 
 def make_delete_image_request(access_token, host_ip, app_instance_id, image_id):
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
         # response = stub.queryVmImage(
         #     make_delete_image_request(access_token="test_access_token", host_ip=test_host_ip, app_instance_id="1",
-        #                               image_id="8947f294-a17c-400d-aa17-4f15700ef1c0"))
+        #                               image_id="f514d88e-9c1f-4302-bbbc-6d045dc2a704"))
 
         # response = stub.downloadVmImage(
         #     make_download_image_request(access_token="test_access_token", host_ip=test_host_ip, chunk_num=1,
@@ -74,3 +74,16 @@ if __name__ == '__main__':
                                                               ak="a",
                                                               sk="s"))
         print(str(response))
+        # for i in range(1, 12975):
+        #     response = stub.downloadVmImage(
+        #         make_download_image_request(access_token="test_access_token", host_ip=test_host_ip, chunk_num=i,
+        #                                     app_instance_id="1", image_id="f514d88e-9c1f-4302-bbbc-6d045dc2a704"))
+        #     file = open('image.QCOW2', 'ab')
+        #     print(response)
+        #     for res in response:
+        #         print(res)
+        #         file.write(res.content)
+# stub = lcmservice_pb2_grpc.AppLCMStub(channel)
+# stub.terminate(lcmservice_pb2.TerminateRequest(accessToken=test_access_token,
+#                                                hostIp=test_host_ip,
+#                                                appInstanceId=''))

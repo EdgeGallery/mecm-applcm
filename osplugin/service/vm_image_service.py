@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-from internal.lcmservice import lcmservice_pb2_grpc
-from core.openstack_utils import create_nova_client
-from core.openstack_utils import create_glance_client
-from core.models import VmImageInfoMapper
-from core.models import AppInsMapper
-from internal.lcmservice.lcmservice_pb2 import CreateVmImageRequest, CreateVmImageResponse, QueryVmImageResponse, \
-    DownloadVmImageResponse
-import time
-import utils
-from pony.orm import db_session, commit
 import json
-import requests
+import time
+
+from pony.orm import db_session, commit
+import logging
+import config
+import utils
+from core.models import VmImageInfoMapper
+from core.openstack_utils import create_glance_client
+from core.openstack_utils import create_nova_client
+from internal.lcmservice import lcmservice_pb2_grpc
+from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
+    DownloadVmImageResponse, DeleteVmImageResponse
 
 
 def get_image_name(name):
@@ -23,19 +24,33 @@ def get_chunk_num(size, chunk_size=1024):
     return size // chunk_size + 1
 
 
+def validate_input_params_for_upload_cfg(req):
+    access_token = req.accessToken
+    host_ip = req.hostIp
+    if not utils.validate_access_token(access_token):
+        return None
+    if not utils.validate_ipv4_address(host_ip):
+        return None
+    return host_ip
+
+
 class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def createVmImage(self, request, context):
         res = CreateVmImageResponse(response=utils.Failure)
-        nova_client = create_nova_client(request.hostIp)
+        # host_ip = validate_input_params_for_upload_cfg(request)
+        host_ip = request.hostIp
+        if not host_ip:
+            return res
+        nova_client = create_nova_client(host_ip)
         # 使用 vm名称 创建镜像名称，接口响应较慢
-        # vmInfo = nova_client.servers.get(request.vmId)
-
+        vmInfo = nova_client.servers.get(request.vmId)
+        logging.info('vm %s: status: %s', vmInfo.id, vmInfo.status)
         image_name = get_image_name(request.vmId)
         image_id = nova_client.servers.create_image(request.vmId, image_name)
 
-        glance_client = create_glance_client(request.hostIp)
+        glance_client = create_glance_client(host_ip)
         image_info = glance_client.images.get(image_id)
         print(image_info)
         VmImageInfoMapper(image_id=image_id,
@@ -51,31 +66,37 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
     @db_session
     def queryVmImage(self, request, context):
         res = QueryVmImageResponse(response=utils.Failure)
-        vm_info = VmImageInfoMapper.get(image_id=request.imageId)
-        print(type(vm_info))
-        if not vm_info:
+        host_ip = validate_input_params_for_upload_cfg(request)
+        if not host_ip:
             return res
-        glance_client = create_glance_client(request.hostIp)
+        vm_info = VmImageInfoMapper.get(image_id=request.imageId)
+        if not vm_info:
+            logging.info("image not found! image_id: %s", request.imageId)
+            return res
+        glance_client = create_glance_client(host_ip)
         image_info = glance_client.images.get(request.imageId)
-        print(image_info)
+        logging.info("openstack image %s status: %s", image_info.id, image_info.status)
         res.response = json.dumps({
             "imageId": vm_info.image_id,
             "imageName": vm_info.image_name,
             "appInstanceId": vm_info.app_instance_id,
             "status": image_info.status,
             "sumChunkNum": get_chunk_num(vm_info.image_size),
-            "chunkSize": 1024
+            "chunkSize": config.chunk_size
         })
         return res
 
     @db_session
     def deleteVmImage(self, request, context):
-        res = QueryVmImageResponse(response=utils.Failure)
+        res = DeleteVmImageResponse(response=utils.Failure)
+        host_ip = validate_input_params_for_upload_cfg(request)
+        if not host_ip:
+            return res
         vm_info = VmImageInfoMapper.get(image_id=request.imageId)
         if not vm_info:
+            logging.info("image not found! image_id: %s", request.imageId)
             return res
-        print(request)
-        glance_client = create_glance_client(vm_info.host_ip)
+        glance_client = create_glance_client(host_ip)
         image_res = glance_client.images.delete(request.imageId)
         vm_info.delete()
         commit()
@@ -83,14 +104,22 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         res.response = utils.Success
         return res
 
+    @db_session
     def downloadVmImage(self, request, context):
-        # res = DownloadVmImageResponse(content=utils.Failure)
-        # vm_info = VmImageInfoMapper.get(image_id=request.imageId)
-        # if not vm_info:
-        #     return res
-        glance_client = create_glance_client(request.hostIp)
-        image_res = glance_client.images.data(request.imageId)
-        glance_client.images.download_chunk(1, request.imageId, False, chunk_size=1)
-        print(image_res)
-        # stream = image_chunk_download(host_ip='10.10.9.75', image_id=request.imageId, chunk_num=request.chunkNum)
-        return DownloadVmImageResponse(content=image_res)
+        res = DownloadVmImageResponse(content=bytes(utils.Failure, encoding='utf8'))
+        host_ip = validate_input_params_for_upload_cfg(request)
+        if not host_ip:
+            return res
+        vm_info = VmImageInfoMapper.get(image_id=request.imageId)
+        if not vm_info:
+            logging.info("image not found! image_id: %s", request.imageId)
+            return res
+        glance_client = create_glance_client(host_ip)
+        qq, resp = glance_client.images.download_chunk(request.chunkNum, vm_info.image_size, request.imageId, False,
+                                                       chunk_size=int(config.chunk_size))
+        logging.debug("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ", vm_info.image_size,
+                      request.chunkNum, config.chunk_size)
+        print(len(resp.content))
+
+        res = DownloadVmImageResponse(content=resp.content)
+        yield res

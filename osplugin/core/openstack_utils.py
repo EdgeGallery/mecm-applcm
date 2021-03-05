@@ -5,8 +5,8 @@ from heatclient import client as heat_client
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
 import config
-from core.CustomGlanceClient import CustomGlanceClient
 from core.exceptions import PackageNotValid
+from core.custom_glance_client import CustomGlanceClient
 
 RC_FILE_DIR = config.base_dir + '/config'
 
@@ -42,7 +42,6 @@ def create_nova_client(host_ip):
 
 def create_glance_client(host_ip):
     asession = get_session(host_ip)
-    print(asession.get_token())
     return CustomGlanceClient(session=asession)
 
 
