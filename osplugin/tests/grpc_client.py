@@ -49,8 +49,8 @@ def make_download_image_request(access_token, chunk_num, host_ip, app_instance_i
 
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:8234') as channel:
-        stub = lcmservice_pb2_grpc.VmImageStub(channel)
-        # response = stub.createVmImage(
+        # stub = lcmservice_pb2_grpc.VmImageStub(channel)
+        # response1 = stub.createVmImage(
         #     make_create_image_request(access_token="test_access_token", host_ip=test_host_ip, app_instance_id="1",
         #                               vm_id="1"))
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         stub2 = lcmservice_pb2_grpc.AppLCMStub(channel)
         response = stub2.instantiate(make_instantiate_request(access_token="test_access_token",
                                                               app_instance_id="1",
-                                                              host_ip='10.10.9.75',
+                                                              host_ip='159.138.23.91',
                                                               package_path="./resources/simple-package.zip",
                                                               ak="a",
                                                               sk="s"))

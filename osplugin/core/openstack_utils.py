@@ -46,7 +46,7 @@ def create_glance_client(host_ip):
 
 
 class RCFile(object):
-    _PATTERN = r'^export (.+)="?(.+)"?$'
+    _PATTERN = r'^export (.+)=(.+)$'
 
     user_domain_name = 'Default'
     project_domain_name = 'Default'
@@ -60,7 +60,7 @@ class RCFile(object):
             for line in file.readlines():
                 match = re.match(self._PATTERN, line)
                 group1 = match.group(1)
-                group2 = match.group(2)
+                group2 = match.group(2).replace('"', '')
                 if group1 == 'OS_AUTH_URL':
                     self.auth_url = group2
                 elif group1 == 'OS_USERNAME':

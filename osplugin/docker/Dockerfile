@@ -27,6 +27,6 @@ COPY --from=builder $HOME/config.py $HOME/config.py
 COPY --from=builder $HOME/run.py $HOME/run.py
 COPY --from=builder $HOME/utils.py $HOME/utils.py
 
-EXPOSE 8888
+EXPOSE 8234
 
 CMD ["sh", "-c", "$HOME/bin/start.sh"]
