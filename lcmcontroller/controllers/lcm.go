@@ -924,7 +924,7 @@ func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
 // Get app name
 func (c *LcmController) getAppName(clientIp string) (string, error) {
 	appName := c.GetString("appName")
-	name, err := util.ValidateName(appName)
+	name, err := util.ValidateName(appName, util.NameRegex)
 	if err != nil || !name {
 		c.handleLoggingForError(clientIp, util.BadRequest, "AppName is invalid")
 		return "", errors.New("AppName is invalid")
@@ -969,17 +969,6 @@ func (c *LcmController) getUrlPackageId(clientIp string) (string, error) {
 		return packageId, nil
 	}
 	return "", nil
-}
-
-// Get host IP from url
-func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
-	hostIp := c.Ctx.Input.Param(":hostIp")
-	err := util.ValidateIpv4Address(hostIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid from url")
-		return "", err
-	}
-	return hostIp, nil
 }
 
 // Get mep capability id from url
@@ -1089,41 +1078,6 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save tenant record to database.")
 		return err
-	}
-	return nil
-}
-
-// Delete app info record
-func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
-	appInfoRecord := &models.AppInfoRecord{
-		AppInsId: appInsId,
-	}
-
-	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Delete tenant record
-func (c *LcmController) deleteTenantRecord(clientIp, tenantId string) error {
-	tenantRecord := &models.TenantInfoRecord{
-		TenantId: tenantId,
-	}
-
-	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return err
-	}
-
-	if count == 0 {
-		err = c.Db.DeleteData(tenantRecord, util.TenantId)
-		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-			return err
-		}
 	}
 	return nil
 }
@@ -1248,16 +1202,6 @@ func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
 	return diskUtilization, nil
 }
 
-func (c *LcmController) handleLoggingK8s(clientIp string, errorString string) {
-	if strings.Contains(errorString, util.Forbidden) {
-		c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-	} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-	} else {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
-	}
-}
-
 func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter,
 	clientIp, appInsId, tenantId string) {
 	err := acm.DeleteAppAuthConfig()
@@ -1279,7 +1223,6 @@ func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter
 
 func (c *LcmController) getPkgName(clientIp string, bKey []byte,
 	header *multipart.FileHeader, file multipart.File) (string, string, string, error) {
-	var fileName = ""
 
 	pkgPath := PackageFolderPath + header.Filename
 	err := c.createPackagePath(pkgPath, clientIp, file)
@@ -1306,7 +1249,7 @@ func (c *LcmController) getPkgName(clientIp string, bKey []byte,
 			return "", "", "", err
 		}
 	}
-	fileName = getManifestFileName(files)
+	fileName := getManifestFileName(files)
 	return packageName, path, fileName, nil
 }
 

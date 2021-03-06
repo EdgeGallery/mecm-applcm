@@ -103,3 +103,6 @@ func (db *mockDb) QueryCount(tableName string) (int64, error) {
 func (db *mockDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
 	return 0, nil
 }
+func (db *mockDb) InsertMulti(bulk int, mds interface{}) (int64, error) {
+	return 0, nil
+}

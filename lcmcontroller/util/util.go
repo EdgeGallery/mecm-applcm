@@ -59,6 +59,7 @@ const (
 	IllegalTenantId          string = "Illegal TenantId"
 	AppInsId                        = "app_ins_id"
 	TenantId                        = "tenant_id"
+	HostIp                          = "mec_host_id"
 	FailedToGetClient               = "Failed to get client"
 	FailedToGetPluginInfo           = "Failed to get plugin info"
 	MepCapabilityIsNotValid         = "MEP capability id is not valid"
@@ -70,7 +71,8 @@ const (
 	Timeout                         = 180
 	MaxNumberOfRecords              = 50
 	MaxNumberOfTenantRecords        = 20
-	MaxFileNameSize                 = 64
+	MaxNumberOfHostRecords          = 20
+	MaxFileNameSize                 = 128 
 
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
@@ -79,8 +81,10 @@ const (
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
 
-	UuidRegex = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
-	NameRegex = `^[\w-]{4,128}$`
+	UuidRegex     = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
+	NameRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-]*[\\d\\p{L}]$"
+	CityRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}\\/\\s]*[\\d\\p{L}]$"
+	AffinityRegex = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-\\,]*[\\d\\p{L}]$"
 
 	minPasswordSize         = 8
 	maxPasswordSize         = 16
@@ -117,6 +121,7 @@ const (
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
+	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
 	TEMP_FILE            = "/usr/app/temp"
@@ -601,9 +606,12 @@ func GetHostInfo(url string) (string, int, error) {
 	return "", resp.StatusCode, errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
 
-// Validate name
-func ValidateName(appName string) (bool, error) {
-	return regexp.MatchString(NameRegex, appName)
+// Validate app name
+func ValidateName(name string, regex string) (bool, error) {
+	if len(name) > 128 {
+		return false, errors.New("name length is larger than max size")
+	}
+	return regexp.MatchString(regex, name)
 }
 
 // Handle number of REST requests per second
