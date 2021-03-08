@@ -1,0 +1,155 @@
+// Copyright 2020 Huawei Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package lcmservice;
+
+message InstantiateRequest {
+  oneof data {
+    string accessToken = 1;
+    string appInstanceId = 2;
+    string hostIp = 3;
+    bytes package = 4;
+    string ak     = 5;
+    string sk     = 6;
+  };
+}
+
+message InstantiateResponse {
+  string status = 1;
+}
+
+message TerminateRequest {
+   string accessToken = 1;
+   string appInstanceId = 2;
+   string hostIp = 3;
+}
+
+message TerminateResponse {
+  string status = 1;
+}
+
+message QueryRequest {
+   string accessToken = 1;
+   string appInstanceId = 2;
+   string hostIp = 3;
+}
+
+message QueryResponse {
+  string response = 1;
+}
+
+message UploadCfgRequest {
+  oneof data {
+    string accessToken = 1;
+    string hostIp = 2;
+    bytes configFile = 3;
+  };
+}
+
+message UploadCfgResponse {
+  string status = 1;
+}
+
+message RemoveCfgRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+}
+
+message RemoveCfgResponse {
+  string status = 1;
+}
+
+message PodDescribeRequest {
+   string accessToken = 1;
+   string appInstanceId = 2;
+   string hostIp = 3;
+}
+
+message PodDescribeResponse {
+  string response = 1;
+}
+
+message WorkloadDescribeRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+}
+
+message WorkloadDescribeResponse {
+  string response = 1;
+}
+
+service AppLCM {
+  rpc instantiate (stream InstantiateRequest) returns (InstantiateResponse) {}
+  rpc terminate (TerminateRequest) returns (TerminateResponse) {}
+  rpc query (QueryRequest) returns (QueryResponse) {}
+  rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
+  rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
+  rpc podDescribe (PodDescribeRequest) returns (PodDescribeResponse) {}
+  rpc workloadDescribe (WorkloadDescribeRequest) returns (WorkloadDescribeResponse) {}
+}
+
+message CreateVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string vmId = 4;
+}
+
+message CreateVmImageResponse {
+  string response = 1;
+}
+
+message QueryVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string imageId = 4;
+}
+
+message QueryVmImageResponse {
+  string response = 1;
+}
+
+message DeleteVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string imageId = 4;
+}
+
+message DeleteVmImageResponse {
+  string response = 1;
+}
+
+message DownloadVmImageRequest {
+  string accessToken = 1;
+  string appInstanceId = 2;
+  string hostIp = 3;
+  string imageId = 4;
+  int32  chunkNum = 5;
+}
+
+message DownloadVmImageResponse {
+  bytes content = 1;
+}
+
+service VmImage {
+  rpc createVmImage(CreateVmImageRequest) returns (CreateVmImageResponse) {} // 创建虚拟机镜像
+  rpc queryVmImage(QueryVmImageRequest) returns (QueryVmImageResponse) {} // 查询镜像信息
+  rpc deleteVmImage(DeleteVmImageRequest) returns (DeleteVmImageResponse) {} // 删除镜像
+  rpc downloadVmImage(DownloadVmImageRequest) returns (stream DownloadVmImageResponse) {} // 分片下载镜像
+}
