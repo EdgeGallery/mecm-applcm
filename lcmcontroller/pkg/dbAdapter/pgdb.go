@@ -88,12 +88,6 @@ func (db *PgDb) QueryTable(tableName string) orm.QuerySeter {
 	return results
 }
 
-// Insert mulitple record
-func (db *PgDb) InsertMulti(bulk int, mds interface{}) (int64, error) {
-	num, err := db.ormer.InsertMulti(bulk, mds)
-	return num, err
-}
-
 // Load Related
 func (db *PgDb) LoadRelated(md interface{}, name string) (int64, error) {
 	num, err := db.ormer.LoadRelated(md, name)
