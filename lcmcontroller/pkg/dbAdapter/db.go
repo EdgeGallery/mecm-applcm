@@ -27,6 +27,5 @@ type Database interface {
 	QueryCount(tableName string) (int64, error)
 	QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error)
 	QueryTable(query string) orm.QuerySeter
-	InsertMulti(bulk int, mds interface{}) (int64, error)
 	LoadRelated(md interface{}, name string) (int64, error)
 }

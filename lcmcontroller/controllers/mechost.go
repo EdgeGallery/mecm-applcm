@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/config"
 	"lcmcontroller/models"
@@ -133,6 +134,7 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 	return nil
 }
 
+// Insert or update mec host record
 func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo, origin string) error {
 	// Insert or update host info record
 	hostInfoRecord := &models.MecHost{
@@ -148,22 +150,6 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		Vim:         request.Vim,
 		Origin:      origin,
 		SyncStatus:  false,
-	}
-
-	var mecHostRec models.MecHost
-	var recCount = 0
-	for _, hwCapRecord := range request.Hwcapabilities {
-		capabilityRecord := &models.MecHwCapability{
-			MecCapabilityId: hwCapRecord.HwType + request.MechostIp,
-			HwType:          hwCapRecord.HwType,
-			HwVendor:        hwCapRecord.HwVendor,
-			HwModel:         hwCapRecord.HwModel,
-			MecHost:         hostInfoRecord,
-			Origin:          origin,
-			SyncStatus:      false,
-		}
-		mecHostRec.Hwcapabilities = append(mecHostRec.Hwcapabilities, capabilityRecord)
-		recCount++
 	}
 
 	count, err := c.Db.QueryCount("mec_host")
@@ -185,12 +171,24 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		return err
 	}
 
-	_, err = c.Db.InsertMulti(recCount, mecHostRec.Hwcapabilities)
-	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to save capability info record to database.")
-		return err
+	for _, hwCapRecord := range request.Hwcapabilities {
+		capabilityRecord := &models.MecHwCapability{
+			MecCapabilityId: hwCapRecord.HwType + request.MechostIp,
+			HwType:          hwCapRecord.HwType,
+			HwVendor:        hwCapRecord.HwVendor,
+			HwModel:         hwCapRecord.HwModel,
+			MecHost:         hostInfoRecord,
+			Origin:          origin,
+			SyncStatus:      false,
+		}
+		err = c.Db.InsertOrUpdateData(capabilityRecord, "mec_capability_id")
+		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+				"Failed to save capability info record to database.")
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -330,4 +328,29 @@ func (c *MecHostController) GetMecHost() {
 	}
 	_, _ = c.Ctx.ResponseWriter.Write(response)
 	c.handleLoggingForSuccess(clientIp, "Query MEC host info is successful")
+}
+
+// @Title Query AppInstance information
+// @Description AppInstance information
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /appInstances [get]
+func (c *MecHostController) GetAppInstance() {
+	log.Info("Query app instance request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	var maps []orm.Params
+	_, _ = c.Db.QueryTable("app_info_record").Values(&maps)
+	res, err := json.Marshal(maps)
+	if err != nil {
+		return
+	}
+	_, _ = c.Ctx.ResponseWriter.Write(res)
+	c.handleLoggingForSuccess(clientIp, "Query App Instance info is successful")
 }
