@@ -63,11 +63,16 @@ type MecHwCapability struct {
 
 // Application info record
 type AppInfoRecord struct {
-	AppInsId   string `orm:"pk"`
+	AppInsId   string    `orm:"pk"`
+	CreateTime time.Time `orm:"auto_now_add;type(datetime)"`
 	HostIp     string
 	DeployType string
 	TenantId   string
 	PackageId  string
+	AppName    string
+	Origin     string
+	SyncStatus bool
+	MecHost    *MecHost `orm:"rel(fk)"` // RelForeignKey relation
 }
 
 // Tenant info record

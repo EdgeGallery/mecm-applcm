@@ -316,7 +316,7 @@ func (c *LcmController) Instantiate() {
 		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
-	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId)
+	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId, appName)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.removeCsarFiles(packageName, header, clientIp)
@@ -1026,14 +1026,41 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 }
 
 // Insert or update application info record
-func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId,
-	packageId string) error {
+func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType,
+	clientIp, tenantId, packageId, appName string) error {
+	origin := c.Ctx.Request.Header.Get("origin")
+	if origin == "" {
+		origin = "MECM"
+	}
+	originVar, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		return err
+	}
+	hostInfoRec := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return readErr
+	}
+	syncStatus := true
+	if origin == "MEPM" {
+		syncStatus = false
+	}
 	appInfoRecord := &models.AppInfoRecord{
 		AppInsId:   appInsId,
 		HostIp:     hostIp,
 		DeployType: deployType,
 		TenantId:   tenantId,
 		PackageId:  packageId,
+		AppName:    appName,
+		Origin:     origin,
+		SyncStatus: syncStatus,
+		MecHost:    hostInfoRec,
 	}
 
 	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
