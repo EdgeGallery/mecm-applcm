@@ -51,7 +51,7 @@ func init() {
 		beego.ControllerComments{
 			Method:           "RemoveConfig",
 			Router:           "/configuration",
-			AllowHTTPMethods: []string{"delete"},
+			AllowHTTPMethods: []string{util.DELETE},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
@@ -112,7 +112,6 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-
 	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
 		beego.ControllerComments{
 			Method:           "CreateImage",
@@ -125,7 +124,7 @@ func init() {
 		beego.ControllerComments{
 			Method:           "DeleteImage",
 			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId",
-			AllowHTTPMethods: []string{"delete"},
+			AllowHTTPMethods: []string{util.DELETE},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
@@ -151,6 +150,22 @@ func init() {
 			Method:           "AddMecHost",
 			Router:           "/hosts",
 			AllowHTTPMethods: []string{"post", "put"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
+		beego.ControllerComments{
+			Method:           "DeleteMecHost",
+			Router:           "/hosts/:hostIp",
+			AllowHTTPMethods: []string{util.DELETE},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
+		beego.ControllerComments{
+			Method:           "GetMecHost",
+			Router:           "/hosts",
+			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})

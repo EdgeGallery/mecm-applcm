@@ -20,6 +20,7 @@ package controllers
 import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	"lcmcontroller/config"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 )
@@ -193,3 +194,140 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 	return nil
 }
 
+// @Title Delete MEC host
+// @Description Delete mec host information
+// @Param   hostIp   path 	string	true   "hostIp"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts/:hostIp [post]
+func (c *MecHostController) DeleteMecHost() {
+	log.Info("Delete mec host request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	hostIp, err := c.getUrlHostIP(clientIp)
+	if err != nil {
+		return
+	}
+
+	err = c.deleteHostInfoRecord(clientIp, hostIp)
+	if err != nil {
+		return
+	}
+	c.handleLoggingForSuccess(clientIp, "Delete mec host is successful")
+	c.ServeJSON()
+}
+
+// Delete host info record
+func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error {
+
+	var appInstances []*models.AppInfoRecord
+	_, _ = c.Db.QueryTable("app_info_record").Filter("host_ip", hostIp).All(&appInstances)
+	for _, appInstance := range appInstances {
+		err := c.TerminateApplication(clientIp, appInstance)
+		if err != nil {
+			return err
+		}
+	}
+
+	hostInfoRecord := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// Terminate application
+func (c *MecHostController) TerminateApplication(clientIp string, appInstance *models.AppInfoRecord) error {
+	appInfoRecord, err := c.getAppInfoRecord(appInstance.AppInsId, clientIp)
+	if err != nil {
+		return err
+	}
+
+	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	if err != nil {
+		return err
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+	if err != nil {
+		return err
+	}
+
+	_, err = adapter.Terminate(appInfoRecord.HostIp, "", appInfoRecord.AppInsId)
+	if err != nil {
+		errorString := err.Error()
+		c.handleLoggingK8s(clientIp, errorString)
+		return err
+	}
+
+	acm := config.NewAppConfigMgr(appInfoRecord.AppInsId, "", config.AppAuthConfig{})
+	err = acm.DeleteAppAuthConfig()
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	err = c.deleteTenantRecord(clientIp, appInfoRecord.TenantId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// @Title Query MEC hosts
+// @Description Query mec host information
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts [get]
+func (c *MecHostController) GetMecHost() {
+	log.Info("Query mec host request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	var mecHosts []*models.MecHost
+	_, _ = c.Db.QueryTable("mec_host").All(&mecHosts)
+	for _, mecHost := range mecHosts {
+		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
+	}
+	var mecHostsRes []models.MecHostInfo
+	res, err := json.Marshal(mecHosts)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+	err = json.Unmarshal(res, &mecHostsRes)
+	if err != nil {
+		c.writeErrorResponse("failed to unmarshal request", util.BadRequest)
+		return
+	}
+	response, err := json.Marshal(mecHostsRes)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+	_, _ = c.Ctx.ResponseWriter.Write(response)
+	c.handleLoggingForSuccess(clientIp, "Query MEC host info is successful")
+}
