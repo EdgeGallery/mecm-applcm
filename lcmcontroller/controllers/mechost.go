@@ -24,6 +24,7 @@ import (
 	"lcmcontroller/config"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
+	"strings"
 )
 
 // Mec host Controller
@@ -227,7 +228,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 	var appInstances []*models.AppInfoRecord
 	_, _ = c.Db.QueryTable("app_info_record").Filter("host_ip", hostIp).All(&appInstances)
 	for _, appInstance := range appInstances {
-		err := c.TerminateApplication(clientIp, appInstance)
+		err := c.TerminateApplication(clientIp, appInstance.AppInsId)
 		if err != nil {
 			return err
 		}
@@ -247,8 +248,8 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 }
 
 // Terminate application
-func (c *MecHostController) TerminateApplication(clientIp string, appInstance *models.AppInfoRecord) error {
-	appInfoRecord, err := c.getAppInfoRecord(appInstance.AppInsId, clientIp)
+func (c *MecHostController) TerminateApplication(clientIp string, appInsId string) error {
+	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
 	if err != nil {
 		return err
 	}
@@ -353,4 +354,51 @@ func (c *MecHostController) GetAppInstance() {
 	}
 	_, _ = c.Ctx.ResponseWriter.Write(res)
 	c.handleLoggingForSuccess(clientIp, "Query App Instance info is successful")
+}
+
+// @Title Batch terminate application
+// @Description Batch terminate application
+// @Param   tenantId    path 	string	                  true   "tenantId"
+// @Param   body        body    models.AppInstancesInfo   true   "The comma separated appinstances id's"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/batchTerminate [delete]
+func (c *MecHostController) BatchTerminate() {
+	log.Info("Batch terminate request received.")
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	_, err = c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
+	var request models.AppInstancesInfo
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
+	if err != nil {
+		c.writeErrorResponse("failed to unmarshal request", util.BadRequest)
+		return
+	}
+
+	listOfAppIds := strings.Split(request.AppInstances, ",")
+	for _, appInsId := range listOfAppIds {
+		err = util.ValidateUUID(appInsId)
+		if err != nil {
+			c.handleLoggingForError(clientIp, util.BadRequest, "App instance is invalid")
+			return
+		}
+
+		err = c.TerminateApplication(clientIp, appInsId)
+		if err != nil {
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Batch termination is successful")
+	c.ServeJSON()
 }
