@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/config"
 	"lcmcontroller/models"
@@ -327,4 +328,29 @@ func (c *MecHostController) GetMecHost() {
 	}
 	_, _ = c.Ctx.ResponseWriter.Write(response)
 	c.handleLoggingForSuccess(clientIp, "Query MEC host info is successful")
+}
+
+// @Title Query AppInstance information
+// @Description AppInstance information
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /appInstances [get]
+func (c *MecHostController) GetAppInstance() {
+	log.Info("Query app instance request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	var maps []orm.Params
+	_, _ = c.Db.QueryTable("app_info_record").Values(&maps)
+	res, err := json.Marshal(maps)
+	if err != nil {
+		return
+	}
+	_, _ = c.Ctx.ResponseWriter.Write(res)
+	c.handleLoggingForSuccess(clientIp, "Query App Instance info is successful")
 }
