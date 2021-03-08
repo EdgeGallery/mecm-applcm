@@ -16,6 +16,8 @@
 
 package dbAdapter
 
+import "github.com/astaxie/beego/orm"
+
 // Database API's
 type Database interface {
 	InitDatabase() error
@@ -24,5 +26,6 @@ type Database interface {
 	DeleteData(data interface{}, cols ...string) (err error)
 	QueryCount(tableName string) (int64, error)
 	QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error)
+	QueryTable(query string) orm.QuerySeter
 	InsertMulti(bulk int, mds interface{}) (int64, error)
 }

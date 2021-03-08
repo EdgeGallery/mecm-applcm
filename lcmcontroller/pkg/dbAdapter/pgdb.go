@@ -82,6 +82,12 @@ func (db *PgDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (i
 	return num, err
 }
 
+// return a raw query setter for raw sql string.
+func (db *PgDb) QueryTable(tableName string) orm.QuerySeter {
+	results := db.ormer.QueryTable(tableName)
+	return results
+}
+
 // Insert mulitple record
 func (db *PgDb) InsertMulti(bulk int, mds interface{}) (int64, error) {
 	num, err := db.ormer.InsertMulti(bulk, mds)
