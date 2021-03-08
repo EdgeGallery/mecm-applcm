@@ -282,3 +282,43 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 
 	return nil
 }
+
+// @Title Query MEC hosts
+// @Description Query mec host information
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts [get]
+func (c *MecHostController) GetMecHost() {
+	log.Info("Query mec host request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	var mecHosts []*models.MecHost
+	_, _ = c.Db.QueryTable("mec_host").All(&mecHosts)
+	for _, mecHost := range mecHosts {
+		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
+	}
+	var mecHostsRes []models.MecHostInfo
+	res, err := json.Marshal(mecHosts)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+	err = json.Unmarshal(res, &mecHostsRes)
+	if err != nil {
+		c.writeErrorResponse("failed to unmarshal request", util.BadRequest)
+		return
+	}
+	response, err := json.Marshal(mecHostsRes)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+	_, _ = c.Ctx.ResponseWriter.Write(response)
+	c.handleLoggingForSuccess(clientIp, "Query MEC host info is successful")
+}

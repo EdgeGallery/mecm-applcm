@@ -112,3 +112,7 @@ func (db *mockDb) QueryTable(tableName string) orm.QuerySeter {
 func (db *mockDb) InsertMulti(bulk int, mds interface{}) (int64, error) {
 	return 0, nil
 }
+
+func (db *mockDb) LoadRelated(md interface{}, name string) (int64, error) {
+	return 0, nil
+}
