@@ -1,32 +1,28 @@
-FROM ht-hub.21cn.com/library/python3:ubuntu-20.04 as builder
+FROM ubuntu:20.04 AS base
 
-ENV HOME=/usr/app
+RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y python3 python3-pip python3-venv python3-dev gcc libpq-dev
 
-RUN apt-get update && apt-get install python3-dev gcc libc-dev
 
-RUN mkdir -p $HOME
+FROM base AS builder
 
-WORKDIR /python3/cache
+RUN python3 -m venv /venv && \
+/venv/bin/pip3 install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple
+COPY requirements.txt /requirements.txt
 
-COPY requirements.txt .
+RUN /venv/bin/pip3 install -r /requirements.txt -i https://mirrors.aliyun.com/pypi/simple
 
-RUN python3 -m venv ./venv && source ./venv/bin/activate && pip3 install -r requirements.txt
 
-COPY . $HOME
+FROM base
 
-FROM python3:alpine
+WORKDIR /app
 
-WORKDIR $HOME
+COPY core ./core
+COPY internal ./internal
+COPY service ./service
+COPY *.py ./
 
-COPY --from=builder $HOME/venv $HOME/venv
-COPY --from=builder $HOME/configs $HOME/configs
-COPY --from=builder $HOME/core $HOME/core
-COPY --from=builder $HOME/internal $HOME/internal
-COPY --from=builder $HOME/service $HOME/service
-COPY --from=builder $HOME/config.py $HOME/config.py
-COPY --from=builder $HOME/run.py $HOME/run.py
-COPY --from=builder $HOME/utils.py $HOME/utils.py
+COPY --from=builder /venv ./venv
 
-EXPOSE 8234
-
-CMD ["sh", "-c", "$HOME/bin/start.sh"]
+CMD ./venv/bin/python3 run.py
