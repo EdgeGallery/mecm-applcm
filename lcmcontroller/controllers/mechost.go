@@ -52,7 +52,7 @@ func (c *MecHostController) AddMecHost() {
 	var request models.MecHostInfo
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
 	if err != nil {
-		c.writeErrorResponse("failed to unmarshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
 
@@ -319,7 +319,7 @@ func (c *MecHostController) GetMecHost() {
 	}
 	err = json.Unmarshal(res, &mecHostsRes)
 	if err != nil {
-		c.writeErrorResponse("failed to unmarshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
 	response, err := json.Marshal(mecHostsRes)
@@ -382,7 +382,7 @@ func (c *MecHostController) BatchTerminate() {
 	var request models.AppInstancesInfo
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
 	if err != nil {
-		c.writeErrorResponse("failed to unmarshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
 
