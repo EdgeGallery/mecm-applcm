@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
-from heatclient import client as heat_client
+from heatclient.v1.client import Client as HeatClient
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
 import config
@@ -33,7 +33,18 @@ def get_session(host_ip):
 
 
 def create_heat_client(host_ip):
-    return heat_client.Client('1', session=get_session(host_ip))
+    rc = get_rc(host_ip)
+    auth = identity.Password(
+        user_domain_name=rc.user_domain_name,
+        username=rc.username,
+        password=rc.password,
+        project_domain_name=rc.project_domain_name,
+        project_name=rc.project_name,
+        auth_url=rc.auth_url
+    )
+    sess = session.Session(auth=auth)
+    return HeatClient(session=sess, endpoint_override=rc.heat_url)
+    # return heat_client.Client('1', session=get_session(host_ip))
 
 
 def create_nova_client(host_ip):
@@ -54,6 +65,7 @@ class RCFile(object):
     password = None
     project_name = None
     auth_url = None
+    heat_url = None
 
     def __init__(self, rc_path):
         with open(rc_path, 'r') as file:
@@ -73,6 +85,8 @@ class RCFile(object):
                     self.project_domain_name = group2
                 elif group1 == 'OS_USER_DOMAIN_NAME':
                     self.user_domain_name = group2
+                elif group1 == 'HEAT_URL':
+                    self.heat_url = group2
 
 
 class HOTBase(object):
@@ -119,6 +133,11 @@ class NovaServer(HOTBase):
             'networks': [],
             'user_data_format': 'RAW'
         }
+
+        if 'vdu_profile' in template['properties']:
+            # TODO 亲和性配置
+            if 'flavor_extra_specs' in template['properties']['vdu_profile']:
+                pass
 
         if 'nfvi_constraints' in template['properties']:
             self.properties['availability_zone'] = template['properties']['nfvi_constraints']
