@@ -229,42 +229,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 	var appInstances []*models.AppInfoRecord
 	_, _ = c.Db.QueryTable("app_info_record").Filter("host_ip", hostIp).All(&appInstances)
 	for _, appInstance := range appInstances {
-		appInfoRecord, err := c.getAppInfoRecord(appInstance.AppInsId, clientIp)
-		if err != nil {
-			return err
-		}
-
-		vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
-		if err != nil {
-			return err
-		}
-
-		adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
-		if err != nil {
-			return err
-		}
-
-		_, err = adapter.Terminate(appInfoRecord.HostIp, "", appInfoRecord.AppInsId)
-		if err != nil {
-			errorString := err.Error()
-			c.handleLoggingK8s(clientIp, errorString)
-			return err
-		}
-
-		acm := config.NewAppConfigMgr(appInfoRecord.AppInsId, "", config.AppAuthConfig{})
-		err = acm.DeleteAppAuthConfig()
-		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-			return err
-		}
-
-		err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
-		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-			return err
-		}
-
-		err = c.deleteTenantRecord(clientIp, appInfoRecord.TenantId)
+		err := c.TerminateApplication(clientIp, appInstance)
 		if err != nil {
 			return err
 		}
@@ -280,6 +245,50 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		return err
 	}
 
+	return nil
+}
+
+// Terminate application
+func (c *MecHostController) TerminateApplication(clientIp string, appInstance *models.AppInfoRecord) error {
+	appInfoRecord, err := c.getAppInfoRecord(appInstance.AppInsId, clientIp)
+	if err != nil {
+		return err
+	}
+
+	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	if err != nil {
+		return err
+	}
+
+	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+	if err != nil {
+		return err
+	}
+
+	_, err = adapter.Terminate(appInfoRecord.HostIp, "", appInfoRecord.AppInsId)
+	if err != nil {
+		errorString := err.Error()
+		c.handleLoggingK8s(clientIp, errorString)
+		return err
+	}
+
+	acm := config.NewAppConfigMgr(appInfoRecord.AppInsId, "", config.AppAuthConfig{})
+	err = acm.DeleteAppAuthConfig()
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	err = c.deleteTenantRecord(clientIp, appInfoRecord.TenantId)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
