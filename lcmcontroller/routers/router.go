@@ -38,6 +38,7 @@ func init() {
 		beego.NSInclude(
 			&controllers.LcmController{controllers.BaseController{Db: adapter}},
 			&controllers.ImageController{controllers.BaseController{Db: adapter}},
+			&controllers.MecHostController{controllers.BaseController{Db: adapter}},
 		),
 	)
 	beego.AddNamespace(ns)
