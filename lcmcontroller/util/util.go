@@ -122,6 +122,7 @@ const (
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
+	DELETE               = "delete"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
 	TEMP_FILE            = "/usr/app/temp"
