@@ -177,4 +177,12 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
+	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
+		beego.ControllerComments{
+			Method:           "BatchTerminate",
+			Router:           "/tenants/:tenantId/app_instances/batchTerminate",
+			AllowHTTPMethods: []string{util.DELETE},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
 }

@@ -52,6 +52,7 @@ const (
 	Failure                  string = "Failure"
 	ClientIpaddressInvalid          = "clientIp address is invalid"
 	FailedToSendMetadataInfo string = "failed to send metadata information"
+	FailedToUnmarshal        string = "failed to unmarshal request"
 	FailedToCreateClient     string = "failed to create client: %v"
 	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
 	InvalidToken             string = "invalid token"
@@ -61,8 +62,6 @@ const (
 	TenantId                        = "tenant_id"
 	HostIp                          = "mec_host_id"
 	FailedToGetClient               = "Failed to get client"
-	FailedToGetPluginInfo           = "Failed to get plugin info"
-	MepCapabilityIsNotValid         = "MEP capability id is not valid"
 	RequestBodyTooLarge             = "request body too large"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
@@ -72,7 +71,7 @@ const (
 	MaxNumberOfRecords              = 50
 	MaxNumberOfTenantRecords        = 20
 	MaxNumberOfHostRecords          = 20
-	MaxFileNameSize                 = 128 
+	MaxFileNameSize                 = 128
 
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
