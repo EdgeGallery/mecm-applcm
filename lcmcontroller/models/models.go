@@ -27,6 +27,8 @@ func init() {
 	orm.RegisterModel(new(TenantInfoRecord))
 	orm.RegisterModel(new(MecHost))
 	orm.RegisterModel(new(MecHwCapability))
+	orm.RegisterModel(new(AppInstanceStaleRec))
+	orm.RegisterModel(new(MecHostStaleRec))
 }
 
 // MEC host record
@@ -127,4 +129,14 @@ type MecHwCapabilities struct {
 // App instances information
 type AppInstancesInfo struct {
 	AppInstances string `json:"appInstances"`
+}
+
+// App instances key information
+type AppInstanceStaleRec struct {
+	AppInsId string `orm:"pk"`
+}
+
+// App instances key information
+type MecHostStaleRec struct {
+	MecHostId string `orm:"pk"`
 }

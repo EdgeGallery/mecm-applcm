@@ -465,6 +465,9 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
+	var origin = appInfoRecord.Origin
+	var syncStatus = appInfoRecord.SyncStatus
+
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -475,6 +478,18 @@ func (c *LcmController) Terminate() {
 	if err != nil {
 		return
 	}
+
+	appInsKeyRec := &models.AppInstanceStaleRec{
+		AppInsId: appInsId,
+	}
+	if !syncStatus && strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app instance key record to database.")
+			return
+		}
+	}
+
 	c.handleLoggingForSuccess(clientIp, "Termination is successful")
 	c.ServeJSON()
 }
@@ -1396,7 +1411,7 @@ func (c *LcmController) GetWorkloadDescription() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/sync_updated [get]
-func (c *LcmController) SyncAppInstancesRec() {
+func (c *LcmController) SynchronizeUpdatedRecord() {
 	log.Info("Sync app instances request received.")
 
 	var appInstances []*models.AppInfoRecord
@@ -1417,7 +1432,7 @@ func (c *LcmController) SyncAppInstancesRec() {
 
 	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).All(&appInstances)
 	for _, appInstance := range appInstances {
-		if !appInstance.SyncStatus {
+		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
 			appInstancesSync = append(appInstancesSync, appInstance)
 		}
 	}
@@ -1433,15 +1448,53 @@ func (c *LcmController) SyncAppInstancesRec() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
-	for _, appInstance := range appInstances {
-		if !appInstance.SyncStatus {
-			appInstance.SyncStatus = true
-			err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
-			if err != nil && err.Error() != util.LastInsertIdNotSupported {
-				log.Error("Failed to save app info record to database.")
-				return
-			}
+	for _, appInstance := range appInstancesSync {
+		appInstance.SyncStatus = true
+		err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app info record to database.")
+			return
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "AppInstance synchronization is successful")
+}
+
+// @Title Sync app instances stale records
+// @Description Sync app instances stale records
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /app_instances/sync_deleted [get]
+func (c *LcmController) SynchronizeStaleRecord() {
+	log.Info("Sync app instances stale request received.")
+
+	var appInstStaleRecs []*models.AppInstanceStaleRec
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	_, _ = c.Db.QueryTable("app_instance_stale_rec").All(&appInstStaleRecs)
+	res, err := json.Marshal(appInstStaleRecs)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	for _, appInstStaleRec := range appInstStaleRecs {
+		err = c.Db.DeleteData(appInstStaleRec, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Stale appInstance records synchronization is successful")
 }

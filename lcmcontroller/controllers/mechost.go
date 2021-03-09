@@ -38,7 +38,7 @@ type MecHostController struct {
 // @Param   origin      header  string               true   "origin information"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router /hosts [post, put]
+// @router /hosts [post]
 func (c *MecHostController) AddMecHost() {
 	log.Info("Add mec host request received.")
 	clientIp := c.Ctx.Input.IP()
@@ -74,6 +74,51 @@ func (c *MecHostController) AddMecHost() {
 	}
 
 	c.handleLoggingForSuccess(clientIp, "Add mec host is successful")
+	c.ServeJSON()
+}
+
+// @Title Update MEC host
+// @Description Add mec host information
+// @Param   body        body    models.MecHostInfo   true      "The mec host information"
+// @Param   origin      header  string               true   "origin information"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts [put]
+func (c *MecHostController) UpdateMecHost() {
+	log.Info("Update mec host request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	var request models.MecHostInfo
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return
+	}
+
+	origin := c.Ctx.Request.Header.Get("origin")
+	originVar, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		return
+	}
+
+	err = c.ValidateAddMecHostRequest(clientIp, request)
+	if err != nil {
+		return
+	}
+
+	err = c.InsertorUpdateMecHostRecord(clientIp, request, origin)
+	if err != nil {
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Update mec host is successful")
 	c.ServeJSON()
 }
 
@@ -166,7 +211,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 	}
 
 	err = c.Db.InsertOrUpdateData(hostInfoRecord, util.HostIp)
-	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to save host info record to database.")
 		return err
@@ -181,7 +226,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 			MecHost:         hostInfoRecord,
 		}
 		err = c.Db.InsertOrUpdateData(capabilityRecord, "mec_capability_id")
-		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 				"Failed to save capability info record to database.")
 			return err
@@ -236,10 +281,31 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		MecHostId: hostIp,
 	}
 
+	readErr := c.Db.ReadData(hostInfoRecord, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return readErr
+	}
+	var origin = hostInfoRecord.Origin
+	var syncStatus = hostInfoRecord.SyncStatus
+
 	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
+	}
+
+	mecHostKeyRec := &models.MecHostStaleRec{
+		MecHostId: hostIp,
+	}
+
+	if !syncStatus && strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save mec host key record to database.")
+			return err
+		}
 	}
 
 	return nil
@@ -276,6 +342,8 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
+	var origin = appInfoRecord.Origin
+	var syncStatus = appInfoRecord.SyncStatus
 	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -285,6 +353,18 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 	err = c.deleteTenantRecord(clientIp, appInfoRecord.TenantId)
 	if err != nil {
 		return err
+	}
+
+	appInsKeyRec := &models.AppInstanceStaleRec{
+		AppInsId: appInsId,
+	}
+
+	if !syncStatus && strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app instance key record to database.")
+			return err
+		}
 	}
 	return nil
 }
@@ -406,7 +486,7 @@ func (c *MecHostController) BatchTerminate() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /hosts/sync_updated [get]
-func (c *LcmController) SyncMecHostsRec() {
+func (c *LcmController) SynchronizeMecHostUpdatedRecord() {
 	log.Info("Sync mec hosts request received.")
 
 	var mecHosts []*models.MecHost
@@ -422,8 +502,8 @@ func (c *LcmController) SyncMecHostsRec() {
 
 	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
 	for _, mecHost := range mecHosts {
-		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
-		if !mecHost.SyncStatus {
+		if !mecHost.SyncStatus && strings.EqualFold(mecHost.Origin, "mepm") {
+			_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 			mecHostsSync = append(mecHostsSync, mecHost)
 		}
 	}
@@ -450,14 +530,12 @@ func (c *LcmController) SyncMecHostsRec() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
-	for _, mecHost := range mecHosts {
-		if !mecHost.SyncStatus {
-			mecHost.SyncStatus = true
-			err = c.Db.InsertOrUpdateData(mecHost, util.HostIp)
-			if err != nil && err.Error() != util.LastInsertIdNotSupported {
-				log.Error("Failed to save mec host info record to database.")
-				return
-			}
+	for _, mecHost := range mecHostsSync {
+		mecHost.SyncStatus = true
+		err = c.Db.InsertOrUpdateData(mecHost, util.HostIp)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save mec host info record to database.")
+			return
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "Mec hosts synchronization is successful")
