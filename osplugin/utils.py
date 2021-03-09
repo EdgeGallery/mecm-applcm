@@ -73,3 +73,14 @@ def validate_ipv4_address(host_ip):
 
 def gen_uuid():
     return ''.join(str(uuid.uuid4()).split('-'))
+
+
+def validate_uuid(param):
+    if not param:
+        logging.info('param require')
+        return False
+    p = re.compile('^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+    if p.match(param):
+        return True
+    else:
+        return False

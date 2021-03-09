@@ -189,11 +189,27 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         heat = create_heat_client(host_ip)
         output_list = heat.stacks.output_list(app_ins_mapper.stack_id)
+
         response = {
             'code': 200,
             'msg': 'ok',
-            'data': output_list
+            'data': []
         }
+        for key, value in output_list.items():
+            item = {
+                'vmId': value['vmId'],
+                'vncUrl': value['vncUrl'],
+                'networks': []
+            }
+            for net_name, ip_data in value['networks']:
+                if utils.validate_uuid(net_name):
+                    continue
+                network = {
+                    'name': net_name,
+                    'ip': ip_data['addr']
+                }
+                item['networks'].append(network)
+            response['data'].append(item)
 
         res.response = json.dumps(response)
         return res
