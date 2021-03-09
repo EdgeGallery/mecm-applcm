@@ -457,8 +457,8 @@ func (c *LcmController) SyncMecHostsRec() {
 
 	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
 	for _, mecHost := range mecHosts {
-		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 		if !mecHost.SyncStatus {
+			_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 			mecHostsSync = append(mecHostsSync, mecHost)
 		}
 	}
@@ -485,14 +485,12 @@ func (c *LcmController) SyncMecHostsRec() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
-	for _, mecHost := range mecHosts {
-		if !mecHost.SyncStatus {
-			mecHost.SyncStatus = true
-			err = c.Db.InsertOrUpdateData(mecHost, util.HostIp)
-			if err != nil && err.Error() != util.LastInsertIdNotSupported {
-				log.Error("Failed to save mec host info record to database.")
-				return
-			}
+	for _, mecHost := range mecHostsSync {
+		mecHost.SyncStatus = true
+		err = c.Db.InsertOrUpdateData(mecHost, util.HostIp)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save mec host info record to database.")
+			return
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "Mec hosts synchronization is successful")
