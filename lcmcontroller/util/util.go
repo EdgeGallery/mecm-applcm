@@ -53,6 +53,7 @@ const (
 	ClientIpaddressInvalid          = "clientIp address is invalid"
 	FailedToSendMetadataInfo string = "failed to send metadata information"
 	FailedToUnmarshal        string = "failed to unmarshal request"
+	LastInsertIdNotSupported string = "LastInsertId is not supported by this driver"
 	FailedToCreateClient     string = "failed to create client: %v"
 	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
 	InvalidToken             string = "invalid token"

@@ -316,7 +316,15 @@ func (c *LcmController) Instantiate() {
 		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
-	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId, appName)
+	var appInfoParams models.AppInfoRecord
+	appInfoParams.AppInsId = appInsId
+	appInfoParams.HostIp = hostIp
+	appInfoParams.DeployType = deployType
+	appInfoParams.TenantId = tenantId
+	appInfoParams.PackageId = packageId
+	appInfoParams.AppName = appName
+
+	err = c.insertOrUpdateAppInfoRecord(clientIp, appInfoParams)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.removeCsarFiles(packageName, header, clientIp)
@@ -1026,8 +1034,7 @@ func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName 
 }
 
 // Insert or update application info record
-func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType,
-	clientIp, tenantId, packageId, appName string) error {
+func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoParams models.AppInfoRecord) error {
 	origin := c.Ctx.Request.Header.Get("origin")
 	if origin == "" {
 		origin = "MECM"
@@ -1038,7 +1045,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 		return err
 	}
 	hostInfoRec := &models.MecHost{
-		MecHostId: hostIp,
+		MecHostId: appInfoParams.HostIp,
 	}
 
 	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
@@ -1052,18 +1059,18 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 		syncStatus = false
 	}
 	appInfoRecord := &models.AppInfoRecord{
-		AppInsId:   appInsId,
-		HostIp:     hostIp,
-		DeployType: deployType,
-		TenantId:   tenantId,
-		PackageId:  packageId,
-		AppName:    appName,
+		AppInsId:   appInfoParams.AppInsId,
+		HostIp:     appInfoParams.HostIp,
+		DeployType: appInfoParams.DeployType,
+		TenantId:   appInfoParams.TenantId,
+		PackageId:  appInfoParams.PackageId,
+		AppName:    appInfoParams.AppName,
 		Origin:     origin,
 		SyncStatus: syncStatus,
 		MecHost:    hostInfoRec,
 	}
 
-	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, appInfoParams.TenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -1076,7 +1083,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 	}
 
 	err = c.Db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
-	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save app info record to database.")
 		return err
 	}
@@ -1102,7 +1109,7 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 	}
 
 	err = c.Db.InsertOrUpdateData(tenantRecord, util.TenantId)
-	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save tenant record to database.")
 		return err
 	}
@@ -1430,7 +1437,7 @@ func (c *LcmController) SyncAppInstancesRec() {
 		if !appInstance.SyncStatus {
 			appInstance.SyncStatus = true
 			err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
-			if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+			if err != nil && err.Error() != util.LastInsertIdNotSupported {
 				log.Error("Failed to save app info record to database.")
 				return
 			}
