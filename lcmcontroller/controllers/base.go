@@ -181,7 +181,7 @@ func (c *BaseController) getUrlHostIP(clientIp string) (string, error) {
 	return hostIp, nil
 }
 
-// Handled looging for k8s
+// Handle logging for k8s
 func (c *BaseController) handleLoggingK8s(clientIp string, errorString string) {
 	if strings.Contains(errorString, util.Forbidden) {
 		c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
