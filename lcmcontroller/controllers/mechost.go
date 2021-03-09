@@ -166,7 +166,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 	}
 
 	err = c.Db.InsertOrUpdateData(hostInfoRecord, util.HostIp)
-	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to save host info record to database.")
 		return err
@@ -181,7 +181,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 			MecHost:         hostInfoRecord,
 		}
 		err = c.Db.InsertOrUpdateData(capabilityRecord, "mec_capability_id")
-		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
 				"Failed to save capability info record to database.")
 			return err
@@ -257,7 +257,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 
 	if origin == "MEPM" && !syncStatus {
 		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
-		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save mec host key record to database.")
 			return err
 		}
@@ -316,7 +316,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 
 	if origin == "MEPM" && !syncStatus {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
-		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app instance key record to database.")
 			return err
 		}
