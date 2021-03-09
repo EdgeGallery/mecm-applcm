@@ -1,12 +1,28 @@
+# Copyright 2021 21CN Corporation Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # -*- coding: utf-8 -*-
 import re
 
+from cinderclient import client as cinder_client
 from heatclient.v1.client import Client as HeatClient
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
+
 import config
-from core.exceptions import PackageNotValid
 from core.custom_glance_client import CustomGlanceClient
+from core.exceptions import PackageNotValid
 
 RC_FILE_DIR = config.base_dir + '/config'
 
@@ -47,12 +63,19 @@ def create_heat_client(host_ip):
 
 
 def create_nova_client(host_ip):
-    return nova_client.Client('2', session=get_session(host_ip))
+    rc = get_rc(host_ip)
+    return nova_client.Client('2', session=get_session(host_ip), endpoint_override=rc.nova_url)
 
 
 def create_glance_client(host_ip):
+    rc = get_rc(host_ip)
     asession = get_session(host_ip)
-    return CustomGlanceClient(session=asession)
+    return CustomGlanceClient(session=asession, endpoint_override=rc.glance_url)
+
+
+def create_cinder_client(host_ip):
+    rc = get_rc(host_ip)
+    return cinder_client.Client("3", session=get_session(host_ip), endpoint_override=rc.cinder_url)
 
 
 class RCFile(object):
@@ -86,6 +109,12 @@ class RCFile(object):
                     self.user_domain_name = group2
                 elif group1 == 'HEAT_URL':
                     self.heat_url = group2
+                elif group1 == 'GLANCE_URL':
+                    self.glance_url = group2
+                elif group1 == 'NOVA_URL':
+                    self.nova_url = group2
+                elif group1 == 'CINDER_URL':
+                    self.cinder_url = group2
 
 
 class HOTBase(object):

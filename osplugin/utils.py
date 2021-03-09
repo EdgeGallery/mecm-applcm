@@ -1,11 +1,25 @@
+# Copyright 2021 21CN Corporation Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import re
 import uuid
 
 import jwt
-import logging
 
 from config import jwt_public_key
 
@@ -73,6 +87,10 @@ def validate_ipv4_address(host_ip):
 
 def gen_uuid():
     return ''.join(str(uuid.uuid4()).split('-'))
+
+
+if __name__ == '__main__':
+    jwt.encode({"user_id": "123", "user_name": "123", "authorities": "123"},)
 
 
 def validate_uuid(param):
