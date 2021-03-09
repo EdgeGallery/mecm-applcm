@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from internal.lcmservice import lcmservice_pb2 as internal_dot_lcmservice_dot_lcmservice__pb2
+import lcmservice_pb2 as lcmservice__pb2
 
 
 class AppLCMStub(object):
@@ -16,38 +16,33 @@ class AppLCMStub(object):
         """
         self.instantiate = channel.stream_unary(
                 '/lcmservice.AppLCM/instantiate',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.InstantiateRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.InstantiateResponse.FromString,
+                request_serializer=lcmservice__pb2.InstantiateRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.InstantiateResponse.FromString,
                 )
         self.terminate = channel.unary_unary(
                 '/lcmservice.AppLCM/terminate',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.TerminateRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.TerminateResponse.FromString,
+                request_serializer=lcmservice__pb2.TerminateRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.TerminateResponse.FromString,
                 )
         self.query = channel.unary_unary(
                 '/lcmservice.AppLCM/query',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryResponse.FromString,
+                request_serializer=lcmservice__pb2.QueryRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.QueryResponse.FromString,
                 )
         self.uploadConfig = channel.stream_unary(
                 '/lcmservice.AppLCM/uploadConfig',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.UploadCfgRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.UploadCfgResponse.FromString,
+                request_serializer=lcmservice__pb2.UploadCfgRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.UploadCfgResponse.FromString,
                 )
         self.removeConfig = channel.unary_unary(
                 '/lcmservice.AppLCM/removeConfig',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.RemoveCfgRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.RemoveCfgResponse.FromString,
+                request_serializer=lcmservice__pb2.RemoveCfgRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.RemoveCfgResponse.FromString,
                 )
-        self.podDescribe = channel.unary_unary(
-                '/lcmservice.AppLCM/podDescribe',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.PodDescribeRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.PodDescribeResponse.FromString,
-                )
-        self.workloadDescribe = channel.unary_unary(
-                '/lcmservice.AppLCM/workloadDescribe',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.WorkloadDescribeRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.WorkloadDescribeResponse.FromString,
+        self.workloadEvents = channel.unary_unary(
+                '/lcmservice.AppLCM/workloadEvents',
+                request_serializer=lcmservice__pb2.WorkloadEventsRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.WorkloadEventsResponse.FromString,
                 )
 
 
@@ -84,13 +79,7 @@ class AppLCMServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def podDescribe(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def workloadDescribe(self, request, context):
+    def workloadEvents(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -101,38 +90,33 @@ def add_AppLCMServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'instantiate': grpc.stream_unary_rpc_method_handler(
                     servicer.instantiate,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.InstantiateRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.InstantiateResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.InstantiateRequest.FromString,
+                    response_serializer=lcmservice__pb2.InstantiateResponse.SerializeToString,
             ),
             'terminate': grpc.unary_unary_rpc_method_handler(
                     servicer.terminate,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.TerminateRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.TerminateResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.TerminateRequest.FromString,
+                    response_serializer=lcmservice__pb2.TerminateResponse.SerializeToString,
             ),
             'query': grpc.unary_unary_rpc_method_handler(
                     servicer.query,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.QueryRequest.FromString,
+                    response_serializer=lcmservice__pb2.QueryResponse.SerializeToString,
             ),
             'uploadConfig': grpc.stream_unary_rpc_method_handler(
                     servicer.uploadConfig,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.UploadCfgRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.UploadCfgResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.UploadCfgRequest.FromString,
+                    response_serializer=lcmservice__pb2.UploadCfgResponse.SerializeToString,
             ),
             'removeConfig': grpc.unary_unary_rpc_method_handler(
                     servicer.removeConfig,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.RemoveCfgRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.RemoveCfgResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.RemoveCfgRequest.FromString,
+                    response_serializer=lcmservice__pb2.RemoveCfgResponse.SerializeToString,
             ),
-            'podDescribe': grpc.unary_unary_rpc_method_handler(
-                    servicer.podDescribe,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.PodDescribeRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.PodDescribeResponse.SerializeToString,
-            ),
-            'workloadDescribe': grpc.unary_unary_rpc_method_handler(
-                    servicer.workloadDescribe,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.WorkloadDescribeRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.WorkloadDescribeResponse.SerializeToString,
+            'workloadEvents': grpc.unary_unary_rpc_method_handler(
+                    servicer.workloadEvents,
+                    request_deserializer=lcmservice__pb2.WorkloadEventsRequest.FromString,
+                    response_serializer=lcmservice__pb2.WorkloadEventsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -156,8 +140,8 @@ class AppLCM(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.stream_unary(request_iterator, target, '/lcmservice.AppLCM/instantiate',
-            internal_dot_lcmservice_dot_lcmservice__pb2.InstantiateRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.InstantiateResponse.FromString,
+            lcmservice__pb2.InstantiateRequest.SerializeToString,
+            lcmservice__pb2.InstantiateResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -173,8 +157,8 @@ class AppLCM(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/terminate',
-            internal_dot_lcmservice_dot_lcmservice__pb2.TerminateRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.TerminateResponse.FromString,
+            lcmservice__pb2.TerminateRequest.SerializeToString,
+            lcmservice__pb2.TerminateResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -190,8 +174,8 @@ class AppLCM(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/query',
-            internal_dot_lcmservice_dot_lcmservice__pb2.QueryRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.QueryResponse.FromString,
+            lcmservice__pb2.QueryRequest.SerializeToString,
+            lcmservice__pb2.QueryResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -207,8 +191,8 @@ class AppLCM(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.stream_unary(request_iterator, target, '/lcmservice.AppLCM/uploadConfig',
-            internal_dot_lcmservice_dot_lcmservice__pb2.UploadCfgRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.UploadCfgResponse.FromString,
+            lcmservice__pb2.UploadCfgRequest.SerializeToString,
+            lcmservice__pb2.UploadCfgResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -224,13 +208,13 @@ class AppLCM(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/removeConfig',
-            internal_dot_lcmservice_dot_lcmservice__pb2.RemoveCfgRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.RemoveCfgResponse.FromString,
+            lcmservice__pb2.RemoveCfgRequest.SerializeToString,
+            lcmservice__pb2.RemoveCfgResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def podDescribe(request,
+    def workloadEvents(request,
             target,
             options=(),
             channel_credentials=None,
@@ -240,26 +224,9 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/podDescribe',
-            internal_dot_lcmservice_dot_lcmservice__pb2.PodDescribeRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.PodDescribeResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def workloadDescribe(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/workloadDescribe',
-            internal_dot_lcmservice_dot_lcmservice__pb2.WorkloadDescribeRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.WorkloadDescribeResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/workloadEvents',
+            lcmservice__pb2.WorkloadEventsRequest.SerializeToString,
+            lcmservice__pb2.WorkloadEventsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -275,23 +242,23 @@ class VmImageStub(object):
         """
         self.createVmImage = channel.unary_unary(
                 '/lcmservice.VmImage/createVmImage',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.CreateVmImageRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.CreateVmImageResponse.FromString,
+                request_serializer=lcmservice__pb2.CreateVmImageRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.CreateVmImageResponse.FromString,
                 )
         self.queryVmImage = channel.unary_unary(
                 '/lcmservice.VmImage/queryVmImage',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryVmImageRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryVmImageResponse.FromString,
+                request_serializer=lcmservice__pb2.QueryVmImageRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.QueryVmImageResponse.FromString,
                 )
         self.deleteVmImage = channel.unary_unary(
                 '/lcmservice.VmImage/deleteVmImage',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.DeleteVmImageRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.DeleteVmImageResponse.FromString,
+                request_serializer=lcmservice__pb2.DeleteVmImageRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.DeleteVmImageResponse.FromString,
                 )
         self.downloadVmImage = channel.unary_stream(
                 '/lcmservice.VmImage/downloadVmImage',
-                request_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.DownloadVmImageRequest.SerializeToString,
-                response_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.DownloadVmImageResponse.FromString,
+                request_serializer=lcmservice__pb2.DownloadVmImageRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.DownloadVmImageResponse.FromString,
                 )
 
 
@@ -327,23 +294,23 @@ def add_VmImageServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'createVmImage': grpc.unary_unary_rpc_method_handler(
                     servicer.createVmImage,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.CreateVmImageRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.CreateVmImageResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.CreateVmImageRequest.FromString,
+                    response_serializer=lcmservice__pb2.CreateVmImageResponse.SerializeToString,
             ),
             'queryVmImage': grpc.unary_unary_rpc_method_handler(
                     servicer.queryVmImage,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryVmImageRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.QueryVmImageResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.QueryVmImageRequest.FromString,
+                    response_serializer=lcmservice__pb2.QueryVmImageResponse.SerializeToString,
             ),
             'deleteVmImage': grpc.unary_unary_rpc_method_handler(
                     servicer.deleteVmImage,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.DeleteVmImageRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.DeleteVmImageResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.DeleteVmImageRequest.FromString,
+                    response_serializer=lcmservice__pb2.DeleteVmImageResponse.SerializeToString,
             ),
             'downloadVmImage': grpc.unary_stream_rpc_method_handler(
                     servicer.downloadVmImage,
-                    request_deserializer=internal_dot_lcmservice_dot_lcmservice__pb2.DownloadVmImageRequest.FromString,
-                    response_serializer=internal_dot_lcmservice_dot_lcmservice__pb2.DownloadVmImageResponse.SerializeToString,
+                    request_deserializer=lcmservice__pb2.DownloadVmImageRequest.FromString,
+                    response_serializer=lcmservice__pb2.DownloadVmImageResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -367,8 +334,8 @@ class VmImage(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lcmservice.VmImage/createVmImage',
-            internal_dot_lcmservice_dot_lcmservice__pb2.CreateVmImageRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.CreateVmImageResponse.FromString,
+            lcmservice__pb2.CreateVmImageRequest.SerializeToString,
+            lcmservice__pb2.CreateVmImageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -384,8 +351,8 @@ class VmImage(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lcmservice.VmImage/queryVmImage',
-            internal_dot_lcmservice_dot_lcmservice__pb2.QueryVmImageRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.QueryVmImageResponse.FromString,
+            lcmservice__pb2.QueryVmImageRequest.SerializeToString,
+            lcmservice__pb2.QueryVmImageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -401,8 +368,8 @@ class VmImage(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lcmservice.VmImage/deleteVmImage',
-            internal_dot_lcmservice_dot_lcmservice__pb2.DeleteVmImageRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.DeleteVmImageResponse.FromString,
+            lcmservice__pb2.DeleteVmImageRequest.SerializeToString,
+            lcmservice__pb2.DeleteVmImageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -418,7 +385,7 @@ class VmImage(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lcmservice.VmImage/downloadVmImage',
-            internal_dot_lcmservice_dot_lcmservice__pb2.DownloadVmImageRequest.SerializeToString,
-            internal_dot_lcmservice_dot_lcmservice__pb2.DownloadVmImageResponse.FromString,
+            lcmservice__pb2.DownloadVmImageRequest.SerializeToString,
+            lcmservice__pb2.DownloadVmImageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

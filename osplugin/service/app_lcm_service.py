@@ -239,7 +239,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         logging.info('host configuration file deleted successfully')
         return res
 
-    def workloadDescribe(self, request, context):
+    def workloadEvents(self, request, context):
         logging.info('receive workload describe msg...')
         res = TerminateResponse(status=utils.Failure)
 
