@@ -77,6 +77,51 @@ func (c *MecHostController) AddMecHost() {
 	c.ServeJSON()
 }
 
+// @Title Update MEC host
+// @Description Add mec host information
+// @Param   body        body    models.MecHostInfo   true      "The mec host information"
+// @Param   origin      header  string               true   "origin information"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts [put]
+func (c *MecHostController) UpdateMecHost() {
+	log.Info("Update mec host request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	var request models.MecHostInfo
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return
+	}
+
+	origin := c.Ctx.Request.Header.Get("origin")
+	originVar, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		return
+	}
+
+	err = c.ValidateAddMecHostRequest(clientIp, request)
+	if err != nil {
+		return
+	}
+
+	err = c.InsertorUpdateMecHostRecord(clientIp, request, origin)
+	if err != nil {
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Update mec host is successful")
+	c.ServeJSON()
+}
+
 // Validate add mec host request fields
 func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request models.MecHostInfo) error {
 
