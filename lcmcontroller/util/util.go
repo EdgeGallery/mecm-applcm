@@ -124,6 +124,7 @@ const (
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
+	Hosts                = "/hosts"
 	DELETE               = "delete"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["

@@ -147,7 +147,7 @@ func init() {
 	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
 		beego.ControllerComments{
 			Method:           "AddMecHost",
-			Router:           "/hosts",
+			Router:           util.Hosts,
 			AllowHTTPMethods: []string{"post"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
@@ -155,7 +155,7 @@ func init() {
 	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
 		beego.ControllerComments{
 			Method:           "UpdateMecHost",
-			Router:           "/hosts",
+			Router:           util.Hosts,
 			AllowHTTPMethods: []string{"put"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
@@ -171,7 +171,7 @@ func init() {
 	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
 		beego.ControllerComments{
 			Method:           "GetMecHost",
-			Router:           "/hosts",
+			Router:           util.Hosts,
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
