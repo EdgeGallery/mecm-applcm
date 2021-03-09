@@ -465,6 +465,9 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
+	var origin = appInfoRecord.Origin
+	var syncStatus = appInfoRecord.SyncStatus
+
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -475,6 +478,18 @@ func (c *LcmController) Terminate() {
 	if err != nil {
 		return
 	}
+
+	appInsKeyRec := &models.AppInstanceStaleRec{
+		AppInsId: appInsId,
+	}
+	if origin == "MEPM" && !syncStatus {
+		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app instance key record to database.")
+			return
+		}
+	}
+
 	c.handleLoggingForSuccess(clientIp, "Termination is successful")
 	c.ServeJSON()
 }
@@ -1433,14 +1448,12 @@ func (c *LcmController) SyncAppInstancesRec() {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
-	for _, appInstance := range appInstances {
-		if !appInstance.SyncStatus {
-			appInstance.SyncStatus = true
-			err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
-			if err != nil && err.Error() != util.LastInsertIdNotSupported {
-				log.Error("Failed to save app info record to database.")
-				return
-			}
+	for _, appInstance := range appInstancesSync {
+		appInstance.SyncStatus = true
+		err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app info record to database.")
+			return
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "AppInstance synchronization is successful")

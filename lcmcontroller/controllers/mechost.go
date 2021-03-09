@@ -236,10 +236,31 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		MecHostId: hostIp,
 	}
 
+	readErr := c.Db.ReadData(hostInfoRecord, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return readErr
+	}
+	var origin = hostInfoRecord.Origin
+	var syncStatus = hostInfoRecord.SyncStatus
+
 	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
+	}
+
+	mecHostKeyRec := &models.MecHostStaleRec{
+		MecHostId: hostIp,
+	}
+
+	if origin == "MEPM" && !syncStatus {
+		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
+		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+			log.Error("Failed to save mec host key record to database.")
+			return err
+		}
 	}
 
 	return nil
@@ -276,6 +297,8 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
+	var origin = appInfoRecord.Origin
+	var syncStatus = appInfoRecord.SyncStatus
 	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -285,6 +308,18 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 	err = c.deleteTenantRecord(clientIp, appInfoRecord.TenantId)
 	if err != nil {
 		return err
+	}
+
+	appInsKeyRec := &models.AppInstanceStaleRec{
+		AppInsId: appInsId,
+	}
+
+	if origin == "MEPM" && !syncStatus {
+		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
+		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+			log.Error("Failed to save app instance key record to database.")
+			return err
+		}
 	}
 	return nil
 }
