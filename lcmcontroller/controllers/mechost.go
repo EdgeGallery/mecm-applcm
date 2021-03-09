@@ -486,7 +486,7 @@ func (c *MecHostController) BatchTerminate() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /hosts/sync_updated [get]
-func (c *LcmController) SynchronizeMecHostUpdatedRecord() {
+func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 	log.Info("Sync mec hosts request received.")
 
 	var mecHosts []*models.MecHost
@@ -539,4 +539,44 @@ func (c *LcmController) SynchronizeMecHostUpdatedRecord() {
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "Mec hosts synchronization is successful")
+}
+
+// @Title Sync mec host stale records
+// @Description Sync mec host stale records
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts/sync_deleted [get]
+func (c *MecHostController) SynchronizeMecHostStaleRecord() {
+	log.Info("Sync mec host stale request received.")
+
+	var mecHostStaleRecs []*models.MecHostStaleRec
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	_, _ = c.Db.QueryTable("mec_host_stale_rec").All(&mecHostStaleRecs)
+	res, err := json.Marshal(mecHostStaleRecs)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	for _, mecHostStaleRec := range mecHostStaleRecs {
+		err = c.Db.DeleteData(mecHostStaleRec, util.HostIp)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Stale mec host records synchronization is successful")
 }
