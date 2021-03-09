@@ -149,7 +149,7 @@ func init() {
 		beego.ControllerComments{
 			Method:           "AddMecHost",
 			Router:           "/hosts",
-			AllowHTTPMethods: []string{"post", "put"},
+			AllowHTTPMethods: []string{"post"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})

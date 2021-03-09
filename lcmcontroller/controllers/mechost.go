@@ -38,7 +38,7 @@ type MecHostController struct {
 // @Param   origin      header  string               true   "origin information"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router /hosts [post, put]
+// @router /hosts [post]
 func (c *MecHostController) AddMecHost() {
 	log.Info("Add mec host request received.")
 	clientIp := c.Ctx.Input.IP()
