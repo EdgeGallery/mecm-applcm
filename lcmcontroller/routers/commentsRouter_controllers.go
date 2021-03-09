@@ -208,4 +208,12 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
+		beego.ControllerComments{
+			Method:           "SyncAppInstanceStaleRec",
+			Router:           "/app_instances/sync_deleted",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
 }

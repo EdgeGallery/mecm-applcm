@@ -1458,3 +1458,43 @@ func (c *LcmController) SyncAppInstancesRec() {
 	}
 	c.handleLoggingForSuccess(clientIp, "AppInstance synchronization is successful")
 }
+
+// @Title Sync app instances stale records
+// @Description Sync app instances stale records
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /app_instances/sync_deleted [get]
+func (c *LcmController) SyncAppInstanceStaleRec() {
+	log.Info("Sync app instances stale request received.")
+
+	var appInstStaleRecs []*models.AppInstanceStaleRec
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	_, _ = c.Db.QueryTable("app_instance_stale_rec").All(&appInstStaleRecs)
+	res, err := json.Marshal(appInstStaleRecs)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	for _, appInstStaleRec := range appInstStaleRecs {
+		err = c.Db.DeleteData(appInstStaleRec, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Stale appInstance records synchronization is successful")
+}
