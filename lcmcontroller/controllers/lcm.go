@@ -482,7 +482,7 @@ func (c *LcmController) Terminate() {
 	appInsKeyRec := &models.AppInstanceStaleRec{
 		AppInsId: appInsId,
 	}
-	if origin == "MEPM" && !syncStatus {
+	if !syncStatus && strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app instance key record to database.")
@@ -1432,7 +1432,7 @@ func (c *LcmController) SyncAppInstancesRec() {
 
 	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).All(&appInstances)
 	for _, appInstance := range appInstances {
-		if !appInstance.SyncStatus {
+		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
 			appInstancesSync = append(appInstancesSync, appInstance)
 		}
 	}

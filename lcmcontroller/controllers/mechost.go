@@ -300,7 +300,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		MecHostId: hostIp,
 	}
 
-	if origin == "MEPM" && !syncStatus {
+	if !syncStatus && strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save mec host key record to database.")
@@ -359,7 +359,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		AppInsId: appInsId,
 	}
 
-	if origin == "MEPM" && !syncStatus {
+	if !syncStatus && strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app instance key record to database.")
@@ -502,7 +502,7 @@ func (c *LcmController) SyncMecHostsRec() {
 
 	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
 	for _, mecHost := range mecHosts {
-		if !mecHost.SyncStatus {
+		if !mecHost.SyncStatus && strings.EqualFold(mecHost.Origin, "mepm") {
 			_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 			mecHostsSync = append(mecHostsSync, mecHost)
 		}
