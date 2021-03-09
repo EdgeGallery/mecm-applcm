@@ -100,7 +100,7 @@ def _get_flavor(template):
     sys_disk = str(template['capabilities']['virtual_compute']['properties']['virtual_local_storage'][
         'size_of_storage'])
 
-    return cpu + 'c-' + memory + 'm' + sys_disk + 'g'
+    return cpu + 'c-' + memory + 'm-' + sys_disk + 'g'
 
 
 def _change_input_to_param(properties):
