@@ -44,7 +44,6 @@ def create_heat_client(host_ip):
     )
     sess = session.Session(auth=auth)
     return HeatClient(session=sess, endpoint_override=rc.heat_url)
-    # return heat_client.Client('1', session=get_session(host_ip))
 
 
 def create_nova_client(host_ip):
@@ -231,35 +230,37 @@ class VirtualStorage(HOTBase):
         }
 
 
+"""
 class VirtualLink(HOTBase):
     def __init__(self, name, template, hot_file):
         super().__init__('OS::Neutron::ProviderNet')
         self.properties = {
-            'name': template['properties']['vl_profile']['network_name'],
-            'network_type': template['properties']['vl_profile']['network_type']
+            'name': template['properties']['vl_profile']['network_name']
         }
+        if 'network_type' in template['properties']['vl_profile']:
+            self.properties['network_type'] = template['properties']['vl_profile']['network_type']
         if 'physical_network' in template['properties']['vl_profile']:
             self.properties['physical_network'] = template['properties']['vl_profile']['physical_network']
         if 'provider_segmentation_id' in template['properties']['vl_profile']:
             self.properties['segmentation_id'] = template['properties']['vl_profile']['provider_segmentation_id']
+
         _change_input_to_param(self.properties)
         hot_file['resources'][name] = {
             'type': self.type,
             'properties': self.properties
         }
+"""
 
 
 class VirtualPort(HOTBase):
-    def __init__(self, name, template, hot_file):
+    def __init__(self, name, template, hot_file, node_templates):
         super().__init__('OS::Neutron::Port')
         network = None
         for requirement in template['requirements']:
             if 'virtual_binding' in requirement:
                 pass
             if 'virtual_link' in requirement:
-                network = {
-                    'get_resource': requirement['virtual_link']
-                }
+                network = node_templates[requirement['virtual_link']]['properties']['vl_profile']['network_name']
         if network is None:
             raise PackageNotValid('network未定义')
 

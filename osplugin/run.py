@@ -8,5 +8,5 @@ _LOGGING_FORMAT = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: 
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format=_LOGGING_FORMAT)
+    logging.basicConfig(level=logging.DEBUG, format=_LOGGING_FORMAT)
     grpc_server.serve()

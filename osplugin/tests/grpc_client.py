@@ -31,6 +31,10 @@ def make_instantiate_request(access_token, app_instance_id, host_ip, package_pat
         yield request
 
 
+def make_terminate_request(access_token, app_instance_id, host_ip):
+    return lcmservice_pb2.TerminateRequest(accessToken=access_token, appInstanceId=app_instance_id, hostIp=host_ip)
+
+
 def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
     return lcmservice_pb2.CreateVmImageRequest(accessToken=access_token, hostIp=host_ip, appInstanceId=app_instance_id,
                                                vmId=vm_id)
@@ -67,12 +71,17 @@ if __name__ == '__main__':
         #                                app_instance_id="1", image_id="cc038a08-fb1e-44a5-90cf-71ada395bb4b"))
         # print(str(response))
         stub2 = lcmservice_pb2_grpc.AppLCMStub(channel)
+
         response = stub2.instantiate(make_instantiate_request(access_token="test_access_token",
-                                                              app_instance_id="1",
-                                                              host_ip='159.138.23.91',
-                                                              package_path="./resources/simple-package.zip",
+                                                              app_instance_id="3",
+                                                              host_ip='10.10.9.75',
+                                                              package_path="./resources/ht-package.zip",
                                                               ak="a",
                                                               sk="s"))
+        """
+        response = stub2.terminate(make_terminate_request(access_token=test_access_token,
+                                                          app_instance_id="4",
+                                                          host_ip='10.10.9.75'))"""
         print(str(response))
         # for i in range(1, 12975):
         #     response = stub.downloadVmImage(

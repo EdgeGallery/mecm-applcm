@@ -21,35 +21,36 @@ from internal.lcmservice.lcmservice_pb2 import TerminateResponse, QueryResponse,
 _APP_TMP_PATH = config.base_dir + '/tmp'
 
 
-def start_check_stack_status(app_instance_id, expect_status):
-    t = threading.Timer(5, check_stack_status, (app_instance_id, expect_status))
+def start_check_stack_status(app_instance_id):
+    t = threading.Timer(5, check_stack_status, app_instance_id)
     t.start()
 
 
 @db_session
-def check_stack_status(app_instance_id, expect_status):
+def check_stack_status(app_instance_id):
     app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
     if not app_ins_mapper:
         return
     heat = create_heat_client(app_ins_mapper.host_ip)
     stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
-    if stack_resp is None and expect_status == utils.Terminated:
+    if stack_resp is None and app_ins_mapper.operational_status == 'Terminating':
         app_ins_mapper.delete()
-    elif stack_resp is not None and stack_resp.status == 'COMPLETE':
+        return
+    if stack_resp.status == 'COMPLETE' or stack_resp.status == 'FAILED':
         logging.info('app ins: %s, stack_status: %s, reason: %s',
                      app_instance_id,
                      stack_resp.stack_status,
                      stack_resp.stack_status_reason)
-        if stack_resp.status == 'CREATE_COMPLETE':
+        if stack_resp.action == 'CREATE' and stack_resp.stack_status == 'CREATE_COMPLETE':
             app_ins_mapper.operational_status = utils.Instantiated
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
-        elif stack_resp.status == 'DELETE_COMPLETE':
+        elif stack_resp.action == 'DELETE' and stack_resp.stack_status == 'DELETE_COMPLETE':
             app_ins_mapper.delete()
         else:
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
             app_ins_mapper.operational_status = utils.Failure
     else:
-        start_check_stack_status(app_instance_id, expect_status)
+        start_check_stack_status(app_instance_id)
 
 
 def validate_input_params(param):
@@ -65,10 +66,11 @@ def validate_input_params(param):
 class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
     @db_session
     def instantiate(self, request_iterator, context):
-        logging.info('receive instantiate msg...')
+        logging.debug('receive instantiate msg...')
         res = TerminateResponse(status=utils.Failure)
 
         parameter = InstantiateRequest(request_iterator)
+        logging.debug('parameters: %s', parameter)
 
         host_ip = validate_input_params(parameter)
         if not host_ip:
@@ -79,6 +81,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
+        logging.debug('db data %s', app_ins_mapper)
         if app_ins_mapper is not None:
             logging.info('app ins %s exist', app_instance_id)
             return res
@@ -87,22 +90,25 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             logging.info('app package data is none')
             return res
 
+        logging.debug('writing package file')
         app_ins_tmp_path = _APP_TMP_PATH + '/instance/' + app_instance_id
         utils.create_dir(app_ins_tmp_path)
 
         try:
+            logging.debug('unzip package')
             with zipfile.ZipFile(parameter.app_package_path) as zip_file:
                 namelist = zip_file.namelist()
                 for f in namelist:
                     zip_file.extract(f, app_ins_tmp_path)
+            parameter.delete_package_tmp()
         except Exception as e:
             logging.error(e)
             parameter.delete_package_tmp()
             utils.delete_dir(app_ins_tmp_path)
             return res
 
-        parameter.delete_package_tmp()
         hot_yaml_path = get_hot_yaml_path(app_ins_tmp_path)
+        logging.debug('hot template path %s', hot_yaml_path)
         """
         """
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
@@ -111,9 +117,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'template': template,
             'files': dict(list(tpl_files.items()))
         }
+        logging.debug('init heat client')
         heat = create_heat_client(host_ip)
         try:
             stack_resp = heat.stacks.create(**fields)
+            utils.delete_dir(app_ins_tmp_path)
         except Exception as e:
             logging.error(e)
             utils.delete_dir(app_ins_tmp_path)
@@ -124,9 +132,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                      operational_status=utils.Instantiating)
         commit()
 
-        start_check_stack_status(app_instance_id=app_instance_id, expect_status='COMPLETE')
-
-        utils.delete_dir(app_ins_tmp_path)
+        start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.Success
         return res
@@ -160,7 +166,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         app_ins_mapper.operational_status = utils.Terminating
 
         commit()
-        start_check_stack_status(app_instance_id=app_instance_id, expect_status=utils.Terminated)
+        start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.Success
         return res

@@ -7,7 +7,7 @@ import zipfile
 import yaml
 
 from core.exceptions import PackageNotValid
-from core.openstack_utils import NovaServer, VirtualStorage, VirtualPort, VirtualLink
+from core.openstack_utils import NovaServer, VirtualStorage, VirtualPort
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
 _APPD_TOSCA_METADATA_PATH = 'TOSCA_VNFD.meta'
@@ -33,9 +33,10 @@ def _translate(appd, base_path):
         elif template['type'] == 'tosca.nodes.nfv.Vdu.Compute':
             NovaServer(name, template, hot, appd['topology_template']['node_templates'])
         elif template['type'] == 'tosca.nodes.nfv.VduCp':
-            VirtualPort(name, template, hot)
+            VirtualPort(name, template, hot, appd['topology_template']['node_templates'])
         elif template['type'] == 'tosca.nodes.nfv.VnfVirtualLink':
-            VirtualLink(name, template, hot)
+            # VirtualLink(name, template, hot)
+            pass
         elif template['type'] == 'tosca.nodes.nfv.Vdu.VirtualBlockStorage':
             VirtualStorage(name, template, hot)
         elif template['type'] == 'tosca.nodes.nfv.app.configuration':
