@@ -56,8 +56,6 @@ type MecHwCapability struct {
 	HwType          string
 	HwVendor        string
 	HwModel         string
-	Origin          string
-	SyncStatus      bool
 	MecHost         *MecHost `orm:"rel(fk)"` // RelForeignKey relation
 }
 

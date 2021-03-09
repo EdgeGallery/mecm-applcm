@@ -53,6 +53,7 @@ const (
 	ClientIpaddressInvalid          = "clientIp address is invalid"
 	FailedToSendMetadataInfo string = "failed to send metadata information"
 	FailedToUnmarshal        string = "failed to unmarshal request"
+	FailedToMarshal          string = "failed to marshal request"
 	LastInsertIdNotSupported string = "LastInsertId is not supported by this driver"
 	FailedToCreateClient     string = "failed to create client: %v"
 	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
@@ -62,6 +63,7 @@ const (
 	AppInsId                        = "app_ins_id"
 	TenantId                        = "tenant_id"
 	HostIp                          = "mec_host_id"
+	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
 	RequestBodyTooLarge             = "request body too large"
 	MaxSize                  int    = 20

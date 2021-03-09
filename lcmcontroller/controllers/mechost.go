@@ -153,7 +153,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		SyncStatus:  false,
 	}
 
-	count, err := c.Db.QueryCount("mec_host")
+	count, err := c.Db.QueryCount(util.Mec_Host)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -179,8 +179,6 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 			HwVendor:        hwCapRecord.HwVendor,
 			HwModel:         hwCapRecord.HwModel,
 			MecHost:         hostInfoRecord,
-			Origin:          origin,
-			SyncStatus:      false,
 		}
 		err = c.Db.InsertOrUpdateData(capabilityRecord, "mec_capability_id")
 		if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
@@ -307,14 +305,14 @@ func (c *MecHostController) GetMecHost() {
 	c.displayReceivedMsg(clientIp)
 
 	var mecHosts []*models.MecHost
-	_, _ = c.Db.QueryTable("mec_host").All(&mecHosts)
+	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
 	for _, mecHost := range mecHosts {
 		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 	}
 	var mecHostsRes []models.MecHostInfo
 	res, err := json.Marshal(mecHosts)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 	err = json.Unmarshal(res, &mecHostsRes)
@@ -324,7 +322,7 @@ func (c *MecHostController) GetMecHost() {
 	}
 	response, err := json.Marshal(mecHostsRes)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 	_, _ = c.Ctx.ResponseWriter.Write(response)
@@ -401,4 +399,66 @@ func (c *MecHostController) BatchTerminate() {
 	}
 	c.handleLoggingForSuccess(clientIp, "Batch termination is successful")
 	c.ServeJSON()
+}
+
+// @Title Sync mec host records
+// @Description Sync mec host records
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /hosts/sync_updated [get]
+func (c *LcmController) SyncMecHostsRec() {
+	log.Info("Sync mec hosts request received.")
+
+	var mecHosts []*models.MecHost
+	var mecHostsSync []*models.MecHost
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
+	for _, mecHost := range mecHosts {
+		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
+		if !mecHost.SyncStatus {
+			mecHostsSync = append(mecHostsSync, mecHost)
+		}
+	}
+
+	var mecHostsRes []models.MecHostInfo
+	res, err := json.Marshal(mecHostsSync)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+	err = json.Unmarshal(res, &mecHostsRes)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return
+	}
+	response, err := json.Marshal(mecHostsRes)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(response)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	for _, mecHost := range mecHosts {
+		if !mecHost.SyncStatus {
+			mecHost.SyncStatus = true
+			err = c.Db.InsertOrUpdateData(mecHost, util.HostIp)
+			if err != nil && err.Error() != util.LastInsertIdNotSupported {
+				log.Error("Failed to save mec host info record to database.")
+				return
+			}
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Mec hosts synchronization is successful")
 }
