@@ -203,11 +203,11 @@ func init() {
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "SynchronizeStaleRecord",
-			Router:           "/app_instances/sync_deleted",
+			Router:           "/tenants/:tenantId/app_instances/sync_deleted",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
-			Params:           nil})			
+			Params:           nil})
 	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
 		beego.ControllerComments{
 			Method:           "SynchronizeMecHostUpdatedRecord",

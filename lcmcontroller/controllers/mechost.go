@@ -344,6 +344,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 
 	var origin = appInfoRecord.Origin
 	var syncStatus = appInfoRecord.SyncStatus
+	var tenantId = appInfoRecord.TenantId
 	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -357,6 +358,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 
 	appInsKeyRec := &models.AppInstanceStaleRec{
 		AppInsId: appInsId,
+		TenantId: tenantId,
 	}
 
 	if !syncStatus && strings.EqualFold(origin, "mepm") {
