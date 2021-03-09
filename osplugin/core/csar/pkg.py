@@ -25,7 +25,7 @@ def _translate(appd, base_path):
         'description': 'this is an example',
         'resources': {},
         'parameters': appd['topology_template']['inputs'],
-        'outputs': []
+        'outputs': {}
     }
     for name, template in appd['topology_template']['node_templates'].items():
         if template['type'] == 'tosca.nodes.nfv.VNF':

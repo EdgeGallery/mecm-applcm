@@ -73,9 +73,9 @@ if __name__ == '__main__':
         stub2 = lcmservice_pb2_grpc.AppLCMStub(channel)
 
         response = stub2.instantiate(make_instantiate_request(access_token="test_access_token",
-                                                              app_instance_id="3",
-                                                              host_ip='10.10.9.75',
-                                                              package_path="./resources/ht-package.zip",
+                                                              app_instance_id="4",
+                                                              host_ip='159.138.58.41',
+                                                              package_path="./resources/simple-package.zip",
                                                               ak="a",
                                                               sk="s"))
         """

@@ -97,8 +97,10 @@ def _get_flavor(template):
     cpu = str(template['capabilities']['virtual_compute']['properties']['virtual_cpu']['num_virtual_cpu'])
     memory = str(template['capabilities']['virtual_compute']['properties']['virtual_memory'][
                      'virtual_mem_size'])
+    sys_disk = str(template['capabilities']['virtual_compute']['properties']['virtual_local_storage'][
+        'size_of_storage'])
 
-    return cpu + 'c-' + memory + 'm'
+    return cpu + 'c-' + memory + 'm' + sys_disk + 'g'
 
 
 def _change_input_to_param(properties):
@@ -128,7 +130,7 @@ class NovaServer(HOTBase):
             'name': template['properties']['name'],
             'flavor': _get_flavor(template),
             'config_drive': True,
-            'block_device_mapping_v2': [],
+            'image': template['properties']['sw_image_data']['name'],
             'networks': [],
             'user_data_format': 'RAW'
         }
@@ -168,6 +170,7 @@ class NovaServer(HOTBase):
                             }
                         })
 
+        """
         # sys disk
         self.properties['block_device_mapping_v2'].append({
             'volume_id': {
@@ -179,6 +182,7 @@ class NovaServer(HOTBase):
             'size_of_storage']
         image = template['properties']['sw_image_data']['name']
         LocalStorage(sys_disk, image, hot_file)
+        """
 
         # data disk
         if 'requirements' in template:
@@ -196,8 +200,22 @@ class NovaServer(HOTBase):
             'type': self.type,
             'properties': self.properties
         }
+        hot_file['outputs'][name] = {
+            'value': {
+                'vmId': {
+                    'get_resource': name
+                },
+                'vncUrl': {
+                    'get_attr': [name, 'console_urls', 'novnc']
+                },
+                'networks': {
+                    'get_attr': [name, 'addresses']
+                }
+            }
+        }
 
 
+"""
 class LocalStorage(HOTBase):
     def __init__(self, size, image, hot_file):
         super().__init__('OS::Cinder::Volume')
@@ -209,6 +227,7 @@ class LocalStorage(HOTBase):
             'type': self.type,
             'properties': self.properties
         }
+"""
 
 
 class VirtualStorage(HOTBase):

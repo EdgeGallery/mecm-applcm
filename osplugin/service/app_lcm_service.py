@@ -179,7 +179,23 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if not host_ip:
             return res
 
-        res.response = '{"code": 200, "msg": "ok"}'
+        app_instance_id = request.appInstanceId
+        if not app_instance_id:
+            return res
+
+        app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
+        if not app_ins_mapper:
+            return res
+
+        heat = create_heat_client(host_ip)
+        output_list = heat.stacks.output_list(app_ins_mapper.stack_id)
+        response = {
+            'code': 200,
+            'msg': 'ok',
+            'data': output_list
+        }
+
+        res.response = json.dumps(response)
         return res
 
     def uploadConfig(self, request_iterator, context):
@@ -259,5 +275,5 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         heat = create_heat_client(host_ip)
 
         events = heat.events.list(stack_id=app_ins_mapper.stack_id)
-        res.status = json.dumps(events)
+        res.response = json.dumps(events)
         return res

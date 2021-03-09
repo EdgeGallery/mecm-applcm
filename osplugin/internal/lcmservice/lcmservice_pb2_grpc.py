@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import lcmservice_pb2 as lcmservice__pb2
+import internal.lcmservice.lcmservice_pb2 as lcmservice__pb2
 
 
 class AppLCMStub(object):
