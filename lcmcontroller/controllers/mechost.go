@@ -486,7 +486,7 @@ func (c *MecHostController) BatchTerminate() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /hosts/sync_updated [get]
-func (c *LcmController) SyncMecHostsRec() {
+func (c *LcmController) SynchronizeMecHostUpdatedRecord() {
 	log.Info("Sync mec hosts request received.")
 
 	var mecHosts []*models.MecHost

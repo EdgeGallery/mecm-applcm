@@ -1411,7 +1411,7 @@ func (c *LcmController) GetWorkloadDescription() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/sync_updated [get]
-func (c *LcmController) SyncAppInstancesRec() {
+func (c *LcmController) SynchronizeUpdatedRecord() {
 	log.Info("Sync app instances request received.")
 
 	var appInstances []*models.AppInfoRecord
@@ -1464,7 +1464,7 @@ func (c *LcmController) SyncAppInstancesRec() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /app_instances/sync_deleted [get]
-func (c *LcmController) SyncAppInstanceStaleRec() {
+func (c *LcmController) SynchronizeStaleRecord() {
 	log.Info("Sync app instances stale request received.")
 
 	var appInstStaleRecs []*models.AppInstanceStaleRec

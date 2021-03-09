@@ -194,15 +194,15 @@ func init() {
 			Params:           nil})
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
-			Method:           "SyncAppInstancesRec",
+			Method:           "SynchronizeUpdatedRecord",
 			Router:           "/tenants/:tenantId/app_instances/sync_updated",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
+	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
 		beego.ControllerComments{
-			Method:           "SyncMecHostsRec",
+			Method:           "SynchronizeMecHostUpdatedRecord",
 			Router:           "/hosts/sync_updated",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
@@ -210,7 +210,7 @@ func init() {
 			Params:           nil})
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
-			Method:           "SyncAppInstanceStaleRec",
+			Method:           "SynchronizeStaleRecord",
 			Router:           "/app_instances/sync_deleted",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
