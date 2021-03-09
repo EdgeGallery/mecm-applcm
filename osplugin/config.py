@@ -15,8 +15,8 @@ _JWT_PUBLIC_KEY_DEF = ''
 jwt_public_key = os.getenv('JWT_PUBLIC_KEY', _JWT_PUBLIC_KEY_DEF)
 
 db_user = os.getenv('DB_USER', 'osplugin')
-db_password = os.getenv('DB_PASSWORD', 'LH@21cn.com')
-db_host = os.getenv('DB_HOST', '10.21.3.39')
+db_password = os.getenv('DB_PASSWORD', 'abc123!!ABC')
+db_host = os.getenv('DB_HOST', 'osplugin')
 db_port = int(os.getenv('DB_PORT', '5432'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
 
