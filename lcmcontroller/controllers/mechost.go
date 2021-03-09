@@ -153,7 +153,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		SyncStatus:  false,
 	}
 
-	count, err := c.Db.QueryCount("mec_host")
+	count, err := c.Db.QueryCount(util.Mec_Host)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -305,14 +305,14 @@ func (c *MecHostController) GetMecHost() {
 	c.displayReceivedMsg(clientIp)
 
 	var mecHosts []*models.MecHost
-	_, _ = c.Db.QueryTable("mec_host").All(&mecHosts)
+	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
 	for _, mecHost := range mecHosts {
 		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 	}
 	var mecHostsRes []models.MecHostInfo
 	res, err := json.Marshal(mecHosts)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 	err = json.Unmarshal(res, &mecHostsRes)
@@ -322,7 +322,7 @@ func (c *MecHostController) GetMecHost() {
 	}
 	response, err := json.Marshal(mecHostsRes)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 	_, _ = c.Ctx.ResponseWriter.Write(response)
@@ -420,7 +420,7 @@ func (c *LcmController) SyncMecHostsRec() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	_, _ = c.Db.QueryTable("mec_host").All(&mecHosts)
+	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
 	for _, mecHost := range mecHosts {
 		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 		if !mecHost.SyncStatus {
@@ -431,7 +431,7 @@ func (c *LcmController) SyncMecHostsRec() {
 	var mecHostsRes []models.MecHostInfo
 	res, err := json.Marshal(mecHostsSync)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 	err = json.Unmarshal(res, &mecHostsRes)
@@ -441,7 +441,7 @@ func (c *LcmController) SyncMecHostsRec() {
 	}
 	response, err := json.Marshal(mecHostsRes)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 
