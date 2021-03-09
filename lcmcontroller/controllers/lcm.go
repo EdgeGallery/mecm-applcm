@@ -1382,3 +1382,59 @@ func (c *LcmController) GetWorkloadDescription() {
 	}
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
+
+// @Title Sync app instances records
+// @Description Sync app instances records
+// @Param   tenantId    path 	string	    true   "tenantId"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/sync_updated [get]
+func (c *LcmController) SyncAppInstancesRec() {
+	log.Info("Sync app instances request received.")
+
+	var appInstances []*models.AppInfoRecord
+	var appInstancesSync []*models.AppInfoRecord
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
+	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).All(&appInstances)
+	for _, appInstance := range appInstances {
+		if !appInstance.SyncStatus {
+			appInstancesSync = append(appInstancesSync, appInstance)
+		}
+	}
+
+	res, err := json.Marshal(appInstancesSync)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	for _, appInstance := range appInstances {
+		if !appInstance.SyncStatus {
+			appInstance.SyncStatus = true
+			err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
+			if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+				log.Error("Failed to save app info record to database.")
+				return
+			}
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "AppInstance synchronization is successful")
+}

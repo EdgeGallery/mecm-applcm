@@ -46,7 +46,7 @@ type MecHost struct {
 	Origin             string
 	SyncStatus         bool
 	Hwcapabilities     []*MecHwCapability `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
-	AppInfoRecords []*AppInfoRecord `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
+	AppInfoRecords     []*AppInfoRecord   `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
 }
 
 // MEC host hardware capabilities
