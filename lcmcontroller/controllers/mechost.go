@@ -297,7 +297,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 	}
 
 	mecHostKeyRec := &models.MecHostStaleRec{
-		MecHostId: hostIp,
+		MecHostIp: hostIp,
 	}
 
 	if !syncStatus && strings.EqualFold(origin, "mepm") {
