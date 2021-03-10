@@ -415,7 +415,7 @@ func (c *MecHostController) GetMecHost() {
 // @Description AppInstance information
 // @Success 200 ok
 // @Failure 400 bad request
-// @router /appInstances [get]
+// @router /tenants/:tenantId/app_instances [get]
 func (c *MecHostController) GetAppInstance() {
 	log.Info("Query app instance request received.")
 	clientIp := c.Ctx.Input.IP()
@@ -426,8 +426,13 @@ func (c *MecHostController) GetAppInstance() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
 	var maps []orm.Params
-	_, _ = c.Db.QueryTable("app_info_record").Values(&maps)
+	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).Values(&maps)
 	res, err := json.Marshal(maps)
 	if err != nil {
 		return

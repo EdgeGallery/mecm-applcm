@@ -179,7 +179,7 @@ func init() {
 	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
 		beego.ControllerComments{
 			Method:           "GetAppInstance",
-			Router:           "/appInstances",
+			Router:           "/tenants/:tenantId/app_instances",
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
