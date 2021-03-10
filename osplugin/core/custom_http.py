@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,30 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+
 import logging
 
+from glanceclient import exc
 from glanceclient.common.http import HTTPClient
 from glanceclient.common.http import SessionClient
 from keystoneauth1 import exceptions as ksa_exc
-from oslo_utils import importutils
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
-from glanceclient import exc
-
-osprofiler_web = importutils.try_import("osprofiler.web")
 
 LOG = logging.getLogger(__name__)
 USER_AGENT = 'python-glanceclient'
-CHUNKSIZE = 1024 * 64  # 64kB
 REQ_ID_HEADER = 'X-OpenStack-Request-ID'
-TOKEN_HEADERS = ['X-Auth-Token', 'X-Service-Token']
 
 
 class CustomSessionClient(SessionClient):
+    """
+    自定义 SessionClient 取消 headers encode , 分片下载时 Range头encode 后返回416
+    """
 
     def __init__(self, session, **kwargs):
         kwargs.setdefault('user_agent', USER_AGENT)
@@ -77,11 +72,12 @@ class CustomSessionClient(SessionClient):
 
 
 def get_http_client(endpoint=None, session=None, **kwargs):
+    """
+    get_http_client
+    """
     if session:
         return CustomSessionClient(session, **kwargs)
     elif endpoint:
-
         return HTTPClient(endpoint, **kwargs)
-    else:
-        raise AttributeError('Constructing a client must contain either an '
-                             'endpoint or a session')
+    raise AttributeError('Constructing a client must contain either an '
+                         'endpoint or a session')
