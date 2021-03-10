@@ -149,5 +149,5 @@ type MecHostStaleRecords struct {
 
 // App instances key information
 type MecHostStaleRec struct {
-	MecHostId string `orm:"pk"`
+	MecHostIp string `orm:"pk" json:"mechostIp"`
 }

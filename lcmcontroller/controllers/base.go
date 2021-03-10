@@ -132,8 +132,13 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 // Get vim name
 func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) {
 
-	// Get VIM from host table based on hostIp, TBD
-	vim := ""
+	mecHostInfoRec, err := c.getMecHostInfoRecord(hostIp, clientIp)
+	if err != nil {
+		return "", err
+	}
+
+	// Get VIM from host table based on hostIp
+	vim := mecHostInfoRec.Vim
 
 	// Default to k8s for backward compatibility
 	if vim == "" {
@@ -225,4 +230,19 @@ func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
 		}
 	}
 	return nil
+}
+
+// Get mec host info record
+func (c *BaseController) getMecHostInfoRecord(hostIp string, clientIp string) (*models.MecHost, error) {
+	mecHostInfoRecord := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return nil, readErr
+	}
+	return mecHostInfoRecord, nil
 }
