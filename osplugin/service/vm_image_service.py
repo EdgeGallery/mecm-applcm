@@ -1,13 +1,29 @@
+# Copyright 2021 21CN Corporation Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # -*- coding: utf-8 -*-
 import json
+import logging
 import time
 
 from pony.orm import db_session, commit
-import logging
+
 import config
 import utils
-from core.models import VmImageInfoMapper
+from core.models import VmImageInfoMapper, AppInsMapper
 from core.openstack_utils import create_glance_client
+from core.openstack_utils import create_heat_client
 from core.openstack_utils import create_nova_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
@@ -34,25 +50,39 @@ def validate_input_params_for_upload_cfg(req):
     return host_ip
 
 
+# @author wangy1
+
 class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def createVmImage(self, request, context):
         res = CreateVmImageResponse(response=utils.Failure)
-        # host_ip = validate_input_params_for_upload_cfg(request)
-        host_ip = request.hostIp
+        host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
+        app_ins_mapper = AppInsMapper.get(app_instance_id=request.appInstanceId)
+        if not app_ins_mapper:
+            return
+        heat = create_heat_client(app_ins_mapper.host_ip)
+        stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
+        if stack_resp is None and stack_resp.status == utils.Terminated:
+            app_ins_mapper.delete()
         nova_client = create_nova_client(host_ip)
-        # 使用 vm名称 创建镜像名称，接口响应较慢
         vmInfo = nova_client.servers.get(request.vmId)
         logging.info('vm %s: status: %s', vmInfo.id, vmInfo.status)
-        image_name = get_image_name(request.vmId)
+        image_name = get_image_name(vmInfo.name)
         image_id = nova_client.servers.create_image(request.vmId, image_name)
-
         glance_client = create_glance_client(host_ip)
         image_info = glance_client.images.get(image_id)
-        print(image_info)
+
+        # 虚机从卷启动时，创建镜像后镜像大小为0 需要从卷上传打包成镜像才可以下载, 调用update_to_image 需要删除虚机
+        # block_device_mapping = json.loads(image_info.block_device_mapping)
+        # cinder_client = create_cinder_client(host_ip)
+        # snap = cinder_client.volume_snapshots.get(block_device_mapping[0]["snapshot_id"])
+        # image = cinder_client.volumes.upload_to_image(snap.volume_id,
+        #                                               image_name="test--1", disk_format="qcow2",
+        #                                               container_format="bare", force=False)
+
         VmImageInfoMapper(image_id=image_id,
                           image_name=image_name,
                           image_size=image_info.size,

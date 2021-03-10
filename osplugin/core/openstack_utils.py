@@ -1,12 +1,28 @@
+# Copyright 2021 21CN Corporation Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # -*- coding: utf-8 -*-
 import re
 
+from cinderclient import client as cinder_client
 from heatclient.v1.client import Client as HeatClient
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
+
 import config
-from core.exceptions import PackageNotValid
 from core.custom_glance_client import CustomGlanceClient
+from core.exceptions import PackageNotValid
 
 RC_FILE_DIR = config.base_dir + '/config'
 
@@ -44,16 +60,22 @@ def create_heat_client(host_ip):
     )
     sess = session.Session(auth=auth)
     return HeatClient(session=sess, endpoint_override=rc.heat_url)
-    # return heat_client.Client('1', session=get_session(host_ip))
 
 
 def create_nova_client(host_ip):
-    return nova_client.Client('2', session=get_session(host_ip))
+    rc = get_rc(host_ip)
+    return nova_client.Client('2', session=get_session(host_ip), endpoint_override=rc.nova_url)
 
 
 def create_glance_client(host_ip):
+    rc = get_rc(host_ip)
     asession = get_session(host_ip)
-    return CustomGlanceClient(session=asession)
+    return CustomGlanceClient(session=asession, endpoint_override=rc.glance_url)
+
+
+def create_cinder_client(host_ip):
+    rc = get_rc(host_ip)
+    return cinder_client.Client("3", session=get_session(host_ip), endpoint_override=rc.cinder_url)
 
 
 class RCFile(object):
@@ -87,6 +109,12 @@ class RCFile(object):
                     self.user_domain_name = group2
                 elif group1 == 'HEAT_URL':
                     self.heat_url = group2
+                elif group1 == 'GLANCE_URL':
+                    self.glance_url = group2
+                elif group1 == 'NOVA_URL':
+                    self.nova_url = group2
+                elif group1 == 'CINDER_URL':
+                    self.cinder_url = group2
 
 
 class HOTBase(object):
@@ -98,8 +126,10 @@ def _get_flavor(template):
     cpu = str(template['capabilities']['virtual_compute']['properties']['virtual_cpu']['num_virtual_cpu'])
     memory = str(template['capabilities']['virtual_compute']['properties']['virtual_memory'][
                      'virtual_mem_size'])
+    sys_disk = str(template['capabilities']['virtual_compute']['properties']['virtual_local_storage'][
+        'size_of_storage'])
 
-    return cpu + 'c-' + memory + 'm'
+    return cpu + 'c-' + memory + 'm-' + sys_disk + 'g'
 
 
 def _change_input_to_param(properties):
@@ -129,7 +159,7 @@ class NovaServer(HOTBase):
             'name': template['properties']['name'],
             'flavor': _get_flavor(template),
             'config_drive': True,
-            'block_device_mapping_v2': [],
+            'image': template['properties']['sw_image_data']['name'],
             'networks': [],
             'user_data_format': 'RAW'
         }
@@ -169,6 +199,7 @@ class NovaServer(HOTBase):
                             }
                         })
 
+        """
         # sys disk
         self.properties['block_device_mapping_v2'].append({
             'volume_id': {
@@ -180,6 +211,7 @@ class NovaServer(HOTBase):
             'size_of_storage']
         image = template['properties']['sw_image_data']['name']
         LocalStorage(sys_disk, image, hot_file)
+        """
 
         # data disk
         if 'requirements' in template:
@@ -197,8 +229,22 @@ class NovaServer(HOTBase):
             'type': self.type,
             'properties': self.properties
         }
+        hot_file['outputs'][name] = {
+            'value': {
+                'vmId': {
+                    'get_resource': name
+                },
+                'vncUrl': {
+                    'get_attr': [name, 'console_urls', 'novnc']
+                },
+                'networks': {
+                    'get_attr': [name, 'addresses']
+                }
+            }
+        }
 
 
+"""
 class LocalStorage(HOTBase):
     def __init__(self, size, image, hot_file):
         super().__init__('OS::Cinder::Volume')
@@ -210,6 +256,7 @@ class LocalStorage(HOTBase):
             'type': self.type,
             'properties': self.properties
         }
+"""
 
 
 class VirtualStorage(HOTBase):
@@ -231,35 +278,37 @@ class VirtualStorage(HOTBase):
         }
 
 
+"""
 class VirtualLink(HOTBase):
     def __init__(self, name, template, hot_file):
         super().__init__('OS::Neutron::ProviderNet')
         self.properties = {
-            'name': template['properties']['vl_profile']['network_name'],
-            'network_type': template['properties']['vl_profile']['network_type']
+            'name': template['properties']['vl_profile']['network_name']
         }
+        if 'network_type' in template['properties']['vl_profile']:
+            self.properties['network_type'] = template['properties']['vl_profile']['network_type']
         if 'physical_network' in template['properties']['vl_profile']:
             self.properties['physical_network'] = template['properties']['vl_profile']['physical_network']
         if 'provider_segmentation_id' in template['properties']['vl_profile']:
             self.properties['segmentation_id'] = template['properties']['vl_profile']['provider_segmentation_id']
+
         _change_input_to_param(self.properties)
         hot_file['resources'][name] = {
             'type': self.type,
             'properties': self.properties
         }
+"""
 
 
 class VirtualPort(HOTBase):
-    def __init__(self, name, template, hot_file):
+    def __init__(self, name, template, hot_file, node_templates):
         super().__init__('OS::Neutron::Port')
         network = None
         for requirement in template['requirements']:
             if 'virtual_binding' in requirement:
                 pass
             if 'virtual_link' in requirement:
-                network = {
-                    'get_resource': requirement['virtual_link']
-                }
+                network = node_templates[requirement['virtual_link']]['properties']['vl_profile']['network_name']
         if network is None:
             raise PackageNotValid('network未定义')
 

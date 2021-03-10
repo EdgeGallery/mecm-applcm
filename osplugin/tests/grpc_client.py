@@ -1,9 +1,29 @@
+# Copyright 2021 21CN Corporation Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 #!python3
 # -*- coding: utf-8 -*-
 import grpc
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice import lcmservice_pb2
-from tests.test_data import test_access_token, test_host_ip
+# !python3
+# -*- coding: utf-8 -*-
+import grpc
+
+from internal.lcmservice import lcmservice_pb2
+from internal.lcmservice import lcmservice_pb2_grpc
 
 
 def make_upload_request(access_token, host_ip, config_file_data):
@@ -31,58 +51,28 @@ def make_instantiate_request(access_token, app_instance_id, host_ip, package_pat
         yield request
 
 
-def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
-    return lcmservice_pb2.CreateVmImageRequest(accessToken=access_token, hostIp=host_ip, appInstanceId=app_instance_id,
-                                               vmId=vm_id)
+def make_terminate_request(access_token, app_instance_id, host_ip):
+    return lcmservice_pb2.TerminateRequest(accessToken=access_token, appInstanceId=app_instance_id, hostIp=host_ip)
 
-
-def make_delete_image_request(access_token, host_ip, app_instance_id, image_id):
-    return lcmservice_pb2.DeleteVmImageRequest(accessToken=access_token, hostIp=host_ip, appInstanceId=app_instance_id,
-                                               imageId=image_id)
-
-
-def make_download_image_request(access_token, chunk_num, host_ip, app_instance_id, image_id):
-    return lcmservice_pb2.DownloadVmImageRequest(accessToken=access_token, hostIp=host_ip, chunkNum=chunk_num,
-                                                 appInstanceId=app_instance_id,
-                                                 imageId=image_id)
 
 
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:8234') as channel:
-        # stub = lcmservice_pb2_grpc.VmImageStub(channel)
-        # response1 = stub.createVmImage(
-        #     make_create_image_request(access_token="test_access_token", host_ip=test_host_ip, app_instance_id="1",
-        #                               vm_id="1"))
 
-        # response = stub.deleteVmImage(
-        #     make_delete_image_request(access_token="test_access_token", host_ip=test_host_ip, app_instance_id="1",
-        #                               image_id="98920865-8c34-4f32-a166-f7c06775a34a"))
-
-        # response = stub.queryVmImage(
-        #     make_delete_image_request(access_token="test_access_token", host_ip=test_host_ip, app_instance_id="1",
-        #                               image_id="f514d88e-9c1f-4302-bbbc-6d045dc2a704"))
-
-        # response = stub.downloadVmImage(
-        #     make_download_image_request(access_token="test_access_token", host_ip=test_host_ip, chunk_num=1,
-        #                                app_instance_id="1", image_id="cc038a08-fb1e-44a5-90cf-71ada395bb4b"))
-        # print(str(response))
         stub2 = lcmservice_pb2_grpc.AppLCMStub(channel)
+
         response = stub2.instantiate(make_instantiate_request(access_token="test_access_token",
-                                                              app_instance_id="1",
-                                                              host_ip='159.138.23.91',
-                                                              package_path="./resources/simple-package.zip",
+                                                              app_instance_id="4",
+                                                              host_ip='10.10.9.75',
+                                                              package_path="./resources/ht-package.zip",
                                                               ak="a",
                                                               sk="s"))
+        """
+        response = stub2.terminate(make_terminate_request(access_token=test_access_token,
+                                                          app_instance_id="4",
+                                                          host_ip='10.10.9.75'))"""
         print(str(response))
-        # for i in range(1, 12975):
-        #     response = stub.downloadVmImage(
-        #         make_download_image_request(access_token="test_access_token", host_ip=test_host_ip, chunk_num=i,
-        #                                     app_instance_id="1", image_id="f514d88e-9c1f-4302-bbbc-6d045dc2a704"))
-        #     file = open('image.QCOW2', 'ab')
-        #     print(response)
-        #     for res in response:
-        #         print(res)
-        #         file.write(res.content)
+
 # stub = lcmservice_pb2_grpc.AppLCMStub(channel)
 # stub.terminate(lcmservice_pb2.TerminateRequest(accessToken=test_access_token,
 #                                                hostIp=test_host_ip,
