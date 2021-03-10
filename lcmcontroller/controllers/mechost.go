@@ -498,6 +498,8 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 
 	var mecHosts []*models.MecHost
 	var mecHostsSync []*models.MecHost
+	var mecHostsRes []models.MecHostInfo
+	var mecHostSyncRecords models.MecHostUpdatedRecords
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -515,7 +517,6 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 		}
 	}
 
-	var mecHostsRes []models.MecHostInfo
 	res, err := json.Marshal(mecHostsSync)
 	if err != nil {
 		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
@@ -526,7 +527,10 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
-	response, err := json.Marshal(mecHostsRes)
+
+	mecHostSyncRecords.MecHostUpdatedRecs = append(mecHostSyncRecords.MecHostUpdatedRecs, mecHostsRes...)
+
+	response, err := json.Marshal(mecHostSyncRecords)
 	if err != nil {
 		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
@@ -556,7 +560,8 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 	log.Info("Sync mec host stale request received.")
 
-	var mecHostStaleRecs []*models.MecHostStaleRec
+	var mecHostStaleRecs []models.MecHostStaleRec
+	var mecHostStaleRecords models.MecHostStaleRecords
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -567,7 +572,9 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 	c.displayReceivedMsg(clientIp)
 
 	_, _ = c.Db.QueryTable("mec_host_stale_rec").All(&mecHostStaleRecs)
-	res, err := json.Marshal(mecHostStaleRecs)
+
+	mecHostStaleRecords.MecHostStaleRecs = append(mecHostStaleRecords.MecHostStaleRecs, mecHostStaleRecs...)
+	res, err := json.Marshal(mecHostStaleRecords)
 	if err != nil {
 		c.writeErrorResponse("failed to marshal request", util.BadRequest)
 		return
@@ -579,7 +586,7 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 		return
 	}
 	for _, mecHostStaleRec := range mecHostStaleRecs {
-		err = c.Db.DeleteData(mecHostStaleRec, util.HostIp)
+		err = c.Db.DeleteData(&mecHostStaleRec, util.HostIp)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return

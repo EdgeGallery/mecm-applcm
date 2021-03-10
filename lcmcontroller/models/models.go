@@ -105,6 +105,11 @@ type CreateVimRequest struct {
 	VmId string `json:"vmId"`
 }
 
+// Mec host updated records
+type MecHostUpdatedRecords struct {
+	MecHostUpdatedRecs []MecHostInfo `json:"mecHostUpdatedRecs"`
+}
+
 // Mec host information
 type MecHostInfo struct {
 	MechostIp      string              `json:"mechostIp"`
@@ -135,6 +140,11 @@ type AppInstancesInfo struct {
 type AppInstanceStaleRec struct {
 	AppInsId string `orm:"pk"`
 	TenantId string
+}
+
+// Mec host stale records
+type MecHostStaleRecords struct {
+	MecHostStaleRecs []MecHostStaleRec `json:"mecHostStaleRecs"`
 }
 
 // App instances key information
