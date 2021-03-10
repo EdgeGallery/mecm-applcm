@@ -134,6 +134,7 @@ type AppInstancesInfo struct {
 // App instances key information
 type AppInstanceStaleRec struct {
 	AppInsId string `orm:"pk"`
+	TenantId string
 }
 
 // App instances key information

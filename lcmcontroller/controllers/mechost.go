@@ -344,6 +344,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 
 	var origin = appInfoRecord.Origin
 	var syncStatus = appInfoRecord.SyncStatus
+	var tenantId = appInfoRecord.TenantId
 	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -357,6 +358,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 
 	appInsKeyRec := &models.AppInstanceStaleRec{
 		AppInsId: appInsId,
+		TenantId: tenantId,
 	}
 
 	if !syncStatus && strings.EqualFold(origin, "mepm") {
@@ -413,7 +415,7 @@ func (c *MecHostController) GetMecHost() {
 // @Description AppInstance information
 // @Success 200 ok
 // @Failure 400 bad request
-// @router /appInstances [get]
+// @router /tenants/:tenantId/app_instances [get]
 func (c *MecHostController) GetAppInstance() {
 	log.Info("Query app instance request received.")
 	clientIp := c.Ctx.Input.IP()
@@ -424,8 +426,13 @@ func (c *MecHostController) GetAppInstance() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
 	var maps []orm.Params
-	_, _ = c.Db.QueryTable("app_info_record").Values(&maps)
+	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).Values(&maps)
 	res, err := json.Marshal(maps)
 	if err != nil {
 		return

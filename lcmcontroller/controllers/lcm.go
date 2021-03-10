@@ -481,6 +481,7 @@ func (c *LcmController) Terminate() {
 
 	appInsKeyRec := &models.AppInstanceStaleRec{
 		AppInsId: appInsId,
+		TenantId: tenantId,
 	}
 	if !syncStatus && strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
@@ -1463,7 +1464,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 // @Description Sync app instances stale records
 // @Success 200 ok
 // @Failure 400 bad request
-// @router /app_instances/sync_deleted [get]
+// @router /tenants/:tenantId/app_instances/sync_deleted [get]
 func (c *LcmController) SynchronizeStaleRecord() {
 	log.Info("Sync app instances stale request received.")
 
@@ -1477,7 +1478,11 @@ func (c *LcmController) SynchronizeStaleRecord() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	_, _ = c.Db.QueryTable("app_instance_stale_rec").All(&appInstStaleRecs)
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+	_, _ = c.Db.QueryTable("app_instance_stale_rec").Filter("tenant_id", tenantId).All(&appInstStaleRecs)
 	res, err := json.Marshal(appInstStaleRecs)
 	if err != nil {
 		c.writeErrorResponse("failed to marshal request", util.BadRequest)
