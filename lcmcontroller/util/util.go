@@ -55,6 +55,7 @@ const (
 	FailedToUnmarshal        string = "failed to unmarshal request"
 	FailedToMarshal          string = "failed to marshal request"
 	LastInsertIdNotSupported string = "LastInsertId is not supported by this driver"
+	MecHostRecDoesNotExist   string = "Mec host info record does not exist in database"
 	FailedToCreateClient     string = "failed to create client: %v"
 	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
 	InvalidToken             string = "invalid token"
