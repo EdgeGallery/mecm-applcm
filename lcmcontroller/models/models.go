@@ -112,16 +112,17 @@ type MecHostUpdatedRecords struct {
 
 // Mec host information
 type MecHostInfo struct {
-	MechostIp      string              `json:"mechostIp"`
-	MechostName    string              `json:"mechostName"`
-	ZipCode        string              `json:"zipCode"`
-	City           string              `json:"city"`
-	Address        string              `json:"address"`
-	Affinity       string              `json:"affinity"`
-	UserName       string              `json:"userName"`
-	Coordinates    string              `json:"coordinates"`
-	Vim            string              `json:"vim"`
-	Hwcapabilities []MecHwCapabilities `json:"hwcapabilities"`
+	MechostIp          string              `json:"mechostIp"`
+	MechostName        string              `json:"mechostName"`
+	ZipCode            string              `json:"zipCode"`
+	City               string              `json:"city"`
+	Address            string              `json:"address"`
+	Affinity           string              `json:"affinity"`
+	UserName           string              `json:"userName"`
+	ConfigUploadStatus string              `json:"configUploadStatus"`
+	Coordinates        string              `json:"coordinates"`
+	Vim                string              `json:"vim"`
+	Hwcapabilities     []MecHwCapabilities `json:"hwcapabilities"`
 }
 
 // Mec hardware capabilities
@@ -149,5 +150,5 @@ type MecHostStaleRecords struct {
 
 // App instances key information
 type MecHostStaleRec struct {
-	MecHostIp string `orm:"pk" json:"mechostIp"`
+	MecHostId string `orm:"pk" json:"mechostIp"`
 }
