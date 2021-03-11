@@ -151,8 +151,8 @@ func (c *LcmController) extractCsarPackage(packagePath string) (string, error) {
 	packageDir := path.Dir(packagePath)
 	err := os.MkdirAll(packageDir, 0750)
 	if err != nil {
-		log.Error("Failed to make directory")
-		return "" ,errors.New("Failed to make directory")
+		log.Error(util.FailedToMakeDir)
+		return "" ,errors.New(util.FailedToMakeDir)
 	}
 	for _, file := range zipReader.Reader.File {
 
@@ -227,14 +227,12 @@ func (c *LcmController) getFileContainsExtension(clientIp string, pkgDir string,
 	}
 
 	for _, file := range files {
-		if file.Mode().IsRegular() {
-			if filepath.Ext(file.Name()) == ext {
-				return pkgDir + "/" + file.Name(), nil
-			}
+		if file.Mode().IsRegular() && filepath.Ext(file.Name()) == ext {
+			return pkgDir + "/" + file.Name(), nil
 		}
 	}
-	log.Error("file name with " + ext + "not found")
-	return "", errors.New("file name with " + ext + "not found")
+	log.Error(util.FileNameNotFound + ext)
+	return "", errors.New(util.FileNameNotFound + ext)
 }
 
 // Get application package details
@@ -364,7 +362,7 @@ func (c *LcmController) Instantiate() {
 	}
 
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		AppPkgId: packageId + tenantId + hostIp,
+		PkgHostKey: packageId + tenantId + hostIp,
 	}
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
@@ -947,8 +945,8 @@ func (c *LcmController) openPackage(packagePath string) (string, error) {
 	dirName := util.RandomDirectoryName(10)
 	err := os.MkdirAll(PackageFolderPath+dirName, 0750)
 	if err != nil {
-		c.writeErrorResponse("Failed to make directory", util.StatusInternalServerError)
-		return "" ,errors.New("Failed to make directory")
+		c.writeErrorResponse(util.FailedToMakeDir, util.StatusInternalServerError)
+		return "" ,errors.New(util.FailedToMakeDir)
 	}
 	for _, file := range zipReader.Reader.File {
 
@@ -977,8 +975,8 @@ func (c *LcmController) getAppName(clientIp string) (string, error) {
 	appName := c.GetString("appName")
 	name, err := util.ValidateName(appName, util.NameRegex)
 	if err != nil || !name {
-		c.handleLoggingForError(clientIp, util.BadRequest, "AppName is invalid")
-		return "", errors.New("AppName is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.AppNameIsNotValid)
+		return "", errors.New(util.AppNameIsNotValid)
 	}
 	return appName, nil
 }
@@ -988,7 +986,7 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	hostIp := c.GetString("hostIp")
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
 		return "", err
 	}
 	return hostIp, nil
@@ -1000,7 +998,7 @@ func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
 	hostIp := c.Ctx.Input.Param(":hostIp")
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
 		return "", err
 	}
 	return hostIp, nil
@@ -1011,7 +1009,7 @@ func (c *LcmController) getPackageId(clientIp string) (string, error) {
 	packageId := c.GetString("packageId")
 	if packageId != "" {
 		if len(packageId) > 64 {
-			c.handleLoggingForError(clientIp, util.BadRequest, "package id is invalid")
+			c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
 			return "", errors.New("package id length exceeds max limit")
 		}
 		return packageId, nil
@@ -1037,7 +1035,7 @@ func (c *LcmController) getUrlPackageId(clientIp string) (string, error) {
 	if packageId != "" {
 		//uuid, err := util.IsValidUUID(packageId)
 		if len(packageId) > 64 {
-			c.handleLoggingForError(clientIp, util.BadRequest, "package id is invalid")
+			c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
 			return "", errors.New("invalid package id")
 		}
 		return packageId, nil
@@ -1080,13 +1078,13 @@ func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file 
 
 // Insert or update application info record
 func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoParams models.AppInfoRecord) error {
-	origin := c.Ctx.Request.Header.Get("origin")
+	origin := c.Ctx.Request.Header.Get(util.Origin)
 	if origin == "" {
 		origin = "MEO"
 	}
 	originVar, err := util.ValidateName(origin, util.NameRegex)
 	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
 		return err
 	}
 	hostInfoRec := &models.MecHost{
@@ -1166,7 +1164,7 @@ func (c *LcmController) getInputParameters(clientIp string) (string, string, str
 	hostIp := c.Ctx.Request.Header.Get(util.MecHostIp)
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
 		return "", "", "", "", err
 	}
 
@@ -1468,7 +1466,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 
 	res, err := json.Marshal(appInstancesSync)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 
@@ -1514,7 +1512,7 @@ func (c *LcmController) SynchronizeStaleRecord() {
 	_, _ = c.Db.QueryTable("app_instance_stale_rec").Filter("tenant_id", tenantId).All(&appInstStaleRecs)
 	res, err := json.Marshal(appInstStaleRecs)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 
@@ -1567,6 +1565,11 @@ func (c *LcmController) getInputParametersForUploadCfg(clientIp string) (hostIp 
 
 	err = c.validateYamlFile(clientIp, file)
 	if err != nil {
+		return hostIp, vim, file, err
+	}
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return hostIp, vim, file, err
 	}
 	return hostIp, vim, file, nil
@@ -1624,26 +1627,7 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
-	appId, err := c.getAppId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	if len(appId) == 0 {
-		appId = util.GenerateUUID()
-	}
-
-	packageId, err := c.getPackageId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	if len(packageId) == 0 {
-		packageId = appId +  util.GenerateUUID()
-	}
-
-	tenantId, err := c.getTenantId(clientIp)
+	appId, packageId, tenantId, err := c.getInputParametersForUploadPkg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1750,26 +1734,26 @@ func (c *LcmController) ValidateInstantiateInputParameters(clientIp string, req 
 	hostIp := req.HostIp
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
 		return "", "", "",  "", "", err
 	}
 
 	packageId := req.PackageId
 	if len(packageId) == 0 {
-		c.handleLoggingForError(clientIp, util.BadRequest, "package ID is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
 		return "", "", "",  "", "", err
 	}
 
 	if len(packageId) > 64 {
-		c.handleLoggingForError(clientIp, util.BadRequest, "package id is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
 		return "", "", "", "", "", errors.New("package id length exceeds max limit")
 	}
 
 	appName := req.AppName
 	name, err := util.ValidateName(appName, util.NameRegex)
 	if err != nil || !name {
-		c.handleLoggingForError(clientIp, util.BadRequest, "AppName is invalid")
-		return "", "", "",  "", "", errors.New("AppName is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.AppNameIsNotValid)
+		return "", "", "",  "", "", errors.New(util.AppNameIsNotValid)
 	}
 
 	appInsId, err := c.getAppInstId(clientIp)
@@ -2165,7 +2149,7 @@ func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 
 	originVar, err := util.ValidateName(origin, util.NameRegex)
 	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
 		return err
 	}
 
@@ -2218,7 +2202,7 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 
 	originVar, err := util.ValidateName(origin, util.NameRegex)
 	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
 		return err
 	}
 	appPkgRec := &models.AppPackageRecord{
@@ -2293,13 +2277,7 @@ func (c *LcmController) DistributionStatus() {
 		return
 	}
 
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	packageId, err := c.getUrlPackageId(clientIp)
+	tenantId, packageId, err := c.getInputParametersForDistributionStatus(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -2309,14 +2287,14 @@ func (c *LcmController) DistributionStatus() {
 	if packageId == "" {
 		count, _ := c.Db.QueryTable(util.AppPackageRecordId).Filter(util.TenantId, tenantId).All(&appPkgRecords)
 		if count == 0 {
-			c.writeErrorResponse("Records does not exist", util.StatusNotFound)
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
 			return
 		}
 	} else {
 		count, _ := c.Db.QueryTable(util.AppPackageRecordId).Filter(util.AppPkgId, packageId + tenantId).All(&appPkgRecords)
 		if count == 0 {
-			c.writeErrorResponse("Records does not exist", util.StatusNotFound)
-			c.writeErrorResponse("Records does not exist", util.StatusNotFound)
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
 			return
 		}
 	}
@@ -2352,7 +2330,7 @@ func (c *LcmController) DistributionStatus() {
 
 	res, err := json.Marshal(appPkgs)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 
@@ -2364,4 +2342,45 @@ func (c *LcmController) DistributionStatus() {
 
 	c.handleLoggingForSuccess(clientIp, "Query app package records successful")
     return
+}
+
+// Get input parameters for distribution status
+func (c *LcmController) getInputParametersForDistributionStatus(clientIp string) (string, string, error) {
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", err
+	}
+
+	packageId, err := c.getUrlPackageId(clientIp)
+	if err != nil {
+		return "", "", err
+	}
+	return 	tenantId, packageId, err
+}
+
+// Get input parameters for upload package
+func (c *LcmController) getInputParametersForUploadPkg(clientIp string) (string, string, string, error) {
+
+	appId, err := c.getAppId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+	if len(appId) == 0 {
+		appId = util.GenerateUUID()
+	}
+
+	packageId, err := c.getPackageId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if len(packageId) == 0 {
+		packageId = appId +  util.GenerateUUID()
+	}
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+	return appId, packageId, tenantId, nil
 }

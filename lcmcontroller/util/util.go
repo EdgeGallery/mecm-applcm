@@ -61,7 +61,6 @@ const (
 	LastInsertIdNotSupported string = "LastInsertId is not supported by this driver"
 	MecHostRecDoesNotExist   string = "Mec host info record does not exist in database"
 	FailedToCreateClient     string = "failed to create client: %v"
-	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
 	InvalidToken             string = "invalid token"
 	Forbidden                string = "forbidden"
 	IllegalTenantId          string = "Illegal TenantId"
@@ -73,8 +72,14 @@ const (
 	HostIp                          = "mec_host_id"
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
-	FailedToGetPluginInfo           = "Failed to get plugin info"
-	MepCapabilityIsNotValid         = "MEP capability id is not valid"
+    FailedToMakeDir                 = "failed to make directory"
+    FileNameNotFound                = "file name not found with "
+    AppNameIsNotValid               = "AppName is invalid"
+    HostIpIsInvalid                 = "HostIp address is invalid"
+    PackageIdIsInvalid              = "package id is invalid"
+    Origin                          = "origin"
+    OriginIsInvalid                 = "Origin is invalid"
+    RecordDoesNotExist              = "Records does not exist"
 	RequestBodyTooLarge             = "request body too large"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
@@ -530,7 +535,7 @@ func GetMepPort() string {
 // Get plugin address
 func GetPluginAddress(plugin string) string {
 	pluginAddr := os.Getenv(plugin)
-	if pluginAddr != "" {
+	if pluginAddr == "" {
 		log.Error("Plugin address couldn't be found for : " + plugin)
 	}
 	return pluginAddr
