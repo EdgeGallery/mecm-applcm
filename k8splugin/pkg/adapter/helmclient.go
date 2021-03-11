@@ -17,7 +17,6 @@
 package adapter
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -33,6 +32,7 @@ import (
 	"k8splugin/pgdb"
 	"k8splugin/util"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -51,6 +51,7 @@ import (
 // Variables to be defined in deployment file
 var (
 	kubeconfigPath   = "/usr/app/config/"
+	appPackagesBasePath = "/usr/app/packages/"
 )
 
 // Helm client
@@ -100,28 +101,50 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 	}
 }
 
+// Gets deployment artifact
+func (c *HelmClient) getDeploymentArtifact(dir string, ext string) (string, error) {
+	d, err := os.Open(dir)
+	if err != nil {
+		log.Info("failed to open the directory")
+		return "", err
+	}
+	defer d.Close()
+
+	files, err := d.Readdir(-1)
+	if err != nil {
+		log.Info("failed to read the directory")
+		return "", err
+	}
+
+	for _, file := range files {
+		if file.Mode().IsRegular() && (filepath.Ext(file.Name()) == ext ||
+			filepath.Ext(file.Name()) == ".gz" || filepath.Ext(file.Name()) == ".tgz") {
+			return dir + "/" + file.Name(), nil
+		}
+	}
+	return "", err
+}
+
+// Get helm chart
+func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, error) {
+
+	pkgPath := appPackagesBasePath + tenantId + "/" + packageId + hostIp + "/Artifacts/Deployment/Charts"
+	artifact, _ := c.getDeploymentArtifact(pkgPath, ".tar")
+	if artifact == "" {
+		log.Error("Artifact not available in application package.")
+		return "", errors.New("Helm chart not available in application package.")
+	}
+	return artifact, nil
+}
+
 // Install a given helm chart
-func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
+func (hc *HelmClient) Deploy(tenantId, hostIp, packageId, appInsId, ak, sk string, db pgdb.Database) (string, error) {
 	log.Info("Inside helm client")
 
-	// Create temporary file to hold helm chart
-	file, err := os.Create(util.TempFile)
+	helmChart, err := hc.getHelmChart(tenantId, hostIp, packageId)
+	tarFile, err := os.Open(helmChart)
 	if err != nil {
-		log.Error("Unable to create file")
-		return "", err
-	}
-	defer os.Remove(util.TempFile)
-
-	// Write input bytes to temp file
-	_, err = pkg.WriteTo(file)
-	if err != nil {
-		log.Error("Unable to write to file")
-		return "", err
-	}
-
-	tarFile, err := os.Open(util.TempFile)
-	if err != nil {
-		log.Error("Failed to open the tar file")
+		log.Error("Failed to open helm chart tar file")
 		return "", err
 	}
 	defer tarFile.Close()
@@ -134,6 +157,12 @@ func (hc *HelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk st
 	}
 	defer os.Remove(dirName + ".tar.gz")
 	defer  os.RemoveAll(dirName)
+
+	log.WithFields(log.Fields{
+		"helm_chart": dirName,
+		"app_instance_id": appInsId,
+	}).Info("deployment chart")
+
 	// Load the file to chart
 	chart, err := loader.Load(dirName + ".tar.gz")
 	if err != nil {

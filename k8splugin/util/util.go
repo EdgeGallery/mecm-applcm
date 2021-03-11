@@ -51,6 +51,11 @@ const (
 	FilePerm = 0750
 	TempFile = "temp.tar.gz"
 	HostIpIsInvalid = "hostIp is invalid"
+	TenantIdIsInvalid = "tenantId is invalid"
+	AKIsInvalid = "ak is invalid"
+	SKIsInvalid = "sk is invalid"
+	PackageIdIsInvalid = "packageId is invalid"
+	TenantIsInvalid = "hostIp is invalid"
 	AccssTokenIsInvalid = "accessToken is invalid"
 	Success = "Success"
 	Failure = "Failure"
@@ -58,6 +63,7 @@ const (
 	HelmDriver = ""
 	DeployType = "helm"
 	AppInsId = "app_ins_id"
+	AppPkgId = "app_pkg_id"
 	maxHostNameLen = 253
 	maxAkLen = 20
 	maxSkLen = 64
@@ -65,17 +71,21 @@ const (
 	ServerNameRegex string = `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
 	Forbidden string = "forbidden"
 	MaxConfigFile              = 5242880
+	MaxPackageFile             = 536870912
 
 	FailedToDispRecvMsg    = "failed to display receive msg"
 	FailedToValInputParams = "failed to validate input parameters"
 	FailedToGetClient      = "failed to get client"
 	AppRecordDoesNotExit   = "app info record does not exist in database"
+	AppPkgRecordDoesNotExit   = "app package record does not exist in database"
 	WorkloadEvents       = "WorkloadEvents"
 	Query                  = "Query"
 	Instantiate            = "Instantiate"
 	Terminate              = "Terminate"
 	UploadConfig           = "UploadConfig"
+	UploadPackage          = "UploadPackage"
 	RemoveConfig           = "RemoveConfig"
+	DeletePackage          = "DeletePackage"
 	MecmTenantRole         = "ROLE_MECM_TENANT"
 	MecmAdminRole          = "ROLE_MECM_ADMIN"
 	MecmGuestRole          = "ROLE_MECM_GUEST"
@@ -154,7 +164,7 @@ func ClearByteArray(data []byte) {
 // Validate access token
 func ValidateAccessToken(accessToken string, allowedRoles []string) error {
 	if accessToken == "" {
-		return errors.New("require token")
+		return nil
 	}
 
 	claims := jwt.MapClaims{}

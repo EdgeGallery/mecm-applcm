@@ -23,6 +23,7 @@ import (
 // Init application info record
 func init() {
 	orm.RegisterModel(new(AppInstanceInfo))
+	orm.RegisterModel(new(AppPackage))
 }
 
 // Application instance info record
@@ -30,6 +31,15 @@ type AppInstanceInfo struct {
 	AppInsId   string `orm:"pk"`
 	HostIp     string
 	WorkloadId string
+}
+
+// Application package info record
+type AppPackage struct {
+	AppPkgId      string `orm:"pk"`
+	HostIp        string
+	TenantId      string
+	PackageId     string
+	DockerImages  string
 }
 
 // Application Information
@@ -77,4 +87,20 @@ type PodDescribeInfo struct {
 type PodDescInfo struct {
 	PodName     string `json:"podName"`
 	PodEventsInfo []string `json:"podEventsInfo"`
+}
+
+type SwImageDescriptor struct {
+	Id               string `json:"id"`
+	Name             string `json:"name"`
+	Version          string `json:"version"`
+	Checksum         string `json:"checksum"`
+	ContainerFormat  string `json:"containerFormat"`
+	DiskFormat       string `json:"diskFormat"`
+	MinDisk          string `json:"minDisk"`
+	MinRam           string `json:"minRam"`
+	Architecture     string `json:"architecture"`
+	Size             string `json:"size"`
+	SwImage          string `json:"swImage"`
+	OperatingSystem  string `json:"operatingSystem"`
+	SupportedVirtualisationEnvironment string `json:"supportedVirtualisationEnvironment"`
 }

@@ -129,6 +129,36 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 	return appInfoRecord, nil
 }
 
+// Get app package record
+func (c *BaseController) getAppPackageRecord(appPkgId string, tenantId string, clientIp string) (*models.AppPackageRecord, error) {
+	appPkgRecord := &models.AppPackageRecord{
+		AppPkgId: appPkgId + tenantId,
+	}
+
+	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package record does not exist in database")
+		return nil, readErr
+	}
+	return appPkgRecord, nil
+}
+
+// Get app package host record
+func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, clientIp string) (*models.AppPackageHostRecord, error) {
+	appPkgHostRecord := &models.AppPackageHostRecord{
+		PkgHostKey: appPkgId + tenantId + hostIp,
+	}
+
+	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package host record does not exist in database")
+		return nil, readErr
+	}
+	return appPkgHostRecord, nil
+}
+
 // Get vim name
 func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) {
 
@@ -148,17 +178,11 @@ func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) 
 	return vim, nil
 }
 
-func (c *BaseController) getPluginAdapter(deployType, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+func (c *BaseController) getPluginAdapter(_, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
 	error) {
 	var pluginInfo string
 
-	switch deployType {
-	case "helm":
-		pluginInfo = util.GetPluginInfo(vim)
-	default:
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
-		return nil, errors.New(util.DeployTypeIsNotHelmBased)
-	}
+	pluginInfo = util.GetPluginInfo(vim)
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -204,6 +228,32 @@ func (c *BaseController) deleteAppInfoRecord(appInsId string) error {
 	}
 
 	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete app package record
+func (c *BaseController) deleteAppPackageRecord(appPkgId string, tenantId string) error {
+	appPkgRecord := &models.AppPackageRecord{
+		AppPkgId: appPkgId + tenantId,
+	}
+
+	err := c.Db.DeleteData(appPkgRecord, util.AppPkgId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete app package host record
+func (c *BaseController) deleteAppPackageHostRecord(hostIp, appPkgId, tenantId string) error {
+	appPkgHostRecord := &models.AppPackageHostRecord{
+		PkgHostKey: appPkgId + tenantId + hostIp,
+	}
+
+	err := c.Db.DeleteData(appPkgHostRecord, util.PkgHostKey)
 	if err != nil {
 		return err
 	}

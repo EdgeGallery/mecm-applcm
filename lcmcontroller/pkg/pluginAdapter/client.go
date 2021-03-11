@@ -25,7 +25,7 @@ import (
 
 // GRPC client APIs
 type ClientIntf interface {
-	Instantiate(ctx context.Context, deployArtifact string, hostIP string,
+	Instantiate(ctx context.Context, tenantId string, host string, packageId string,
 		accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error)
 	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
 	Query(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
@@ -34,6 +34,12 @@ type ClientIntf interface {
 	RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error)
 	WorkloadDescription(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string,
 		error error)
+
+	// App package API
+	UploadPackage(ctx context.Context, tenantId string, appPkg string, hostIP string,
+		packageId string, accessToken string) (status string, error error)
+	DeletePackage(ctx context.Context, tenantId string, hostIP string, accessToken string,  packageId string) (status string, error error)
+
 
 	// Image related API
 	CreateVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string, vmId string) (response string,

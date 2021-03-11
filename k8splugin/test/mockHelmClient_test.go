@@ -17,7 +17,6 @@
 package test
 
 import (
-	"bytes"
 	"k8splugin/pgdb"
 )
 
@@ -25,7 +24,7 @@ import (
 type mockedHelmClient struct {
 }
 
-func (hc *mockedHelmClient) Deploy(pkg bytes.Buffer, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
+func (hc *mockedHelmClient) Deploy(tenantId string, hostIp string, packageId string, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
 	return "testRelease", nil
 }
 

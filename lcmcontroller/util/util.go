@@ -24,6 +24,7 @@ import (
 	"github.com/astaxie/beego/context"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
+	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/ulule/limiter/v3"
 	"io/ioutil"
@@ -43,6 +44,9 @@ var (
 
 const (
 	AccessToken              string = "access_token"
+	MecHostIp                string = "hostIp"
+	AppName                  string = "appName"
+	PackageId                string = "packageId"
 	PluginSuffix             string = "_PLUGIN"
 	PluginPortSuffix         string = "_PORT"
 	MepServer                string = "MEP_SERVER"
@@ -62,15 +66,21 @@ const (
 	Forbidden                string = "forbidden"
 	IllegalTenantId          string = "Illegal TenantId"
 	AppInsId                        = "app_ins_id"
+	AppPkgId                        = "app_pkg_id"
+	AppPackageRecordId              = "app_package_record"
+	PkgHostKey                      = "pkg_host_key"
 	TenantId                        = "tenant_id"
 	HostIp                          = "mec_host_id"
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
+	FailedToGetPluginInfo           = "Failed to get plugin info"
+	MepCapabilityIsNotValid         = "MEP capability id is not valid"
 	RequestBodyTooLarge             = "request body too large"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30
 	MaxConfigFile            int64  = 5242880
+	MaxAppPackageFile        int64  = 536870912
 	Timeout                         = 180
 	MaxNumberOfRecords              = 50
 	MaxNumberOfTenantRecords        = 20
@@ -284,7 +294,7 @@ func ValidateDbParams(dbPwd string) (bool, error) {
 // Validate access token
 func ValidateAccessToken(accessToken string, allowedRoles []string, tenantId string) error {
 	if accessToken == "" {
-		return errors.New("require token")
+		return nil
 	}
 
 	claims := jwt.MapClaims{}
@@ -675,4 +685,9 @@ func RandomDirectoryName(n int) string {
 		s[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(s)
+}
+
+func GenerateUUID() string {
+	uuId := uuid.NewV4()
+	return strings.Replace(uuId.String(), "-", "", -1)
 }
