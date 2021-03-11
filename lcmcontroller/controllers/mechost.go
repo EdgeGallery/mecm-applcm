@@ -182,6 +182,11 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 
 // Insert or update mec host record
 func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo, origin string) error {
+
+	syncStatus := true
+	if origin == "MEPM" {
+		syncStatus = false
+	}
 	// Insert or update host info record
 	hostInfoRecord := &models.MecHost{
 		MecHostId:          request.MechostIp,
@@ -196,7 +201,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		Coordinates:        request.Coordinates,
 		Vim:                request.Vim,
 		Origin:             origin,
-		SyncStatus:         false,
+		SyncStatus:         syncStatus,
 	}
 
 	count, err := c.Db.QueryCount(util.Mec_Host)
