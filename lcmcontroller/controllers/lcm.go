@@ -1627,26 +1627,7 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
-	appId, err := c.getAppId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	if len(appId) == 0 {
-		appId = util.GenerateUUID()
-	}
-
-	packageId, err := c.getPackageId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	if len(packageId) == 0 {
-		packageId = appId +  util.GenerateUUID()
-	}
-
-	tenantId, err := c.getTenantId(clientIp)
+	appId, packageId, tenantId, err := c.getInputParametersForUploadPkg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -2296,7 +2277,7 @@ func (c *LcmController) DistributionStatus() {
 		return
 	}
 
-	tenantId, packageId, err := c.getInputParametersForDistributionStatus()
+	tenantId, packageId, err := c.getInputParametersForDistributionStatus(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -2375,4 +2356,31 @@ func (c *LcmController) getInputParametersForDistributionStatus(clientIp string)
 		return "", "", err
 	}
 	return 	tenantId, packageId, err
+}
+
+// Get input parameters for upload package
+func (c *LcmController) getInputParametersForUploadPkg(clientIp string) (string, string, string, error) {
+
+	appId, err := c.getAppId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+	if len(appId) == 0 {
+		appId = util.GenerateUUID()
+	}
+
+	packageId, err := c.getPackageId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if len(packageId) == 0 {
+		packageId = appId +  util.GenerateUUID()
+	}
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+	return appId, packageId, tenantId, nil
 }
