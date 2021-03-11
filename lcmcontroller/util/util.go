@@ -530,7 +530,7 @@ func GetMepPort() string {
 // Get plugin address
 func GetPluginAddress(plugin string) string {
 	pluginAddr := os.Getenv(plugin)
-	if pluginAddr != "" {
+	if pluginAddr == "" {
 		log.Error("Plugin address couldn't be found for : " + plugin)
 	}
 	return pluginAddr

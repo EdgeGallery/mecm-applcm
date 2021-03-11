@@ -364,7 +364,7 @@ func (c *LcmController) Instantiate() {
 	}
 
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		AppPkgId: packageId + tenantId + hostIp,
+		PkgHostKey: packageId + tenantId + hostIp,
 	}
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
@@ -1567,6 +1567,11 @@ func (c *LcmController) getInputParametersForUploadCfg(clientIp string) (hostIp 
 
 	err = c.validateYamlFile(clientIp, file)
 	if err != nil {
+		return hostIp, vim, file, err
+	}
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return hostIp, vim, file, err
 	}
 	return hostIp, vim, file, nil
