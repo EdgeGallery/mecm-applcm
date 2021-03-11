@@ -79,6 +79,17 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
+	hostInfoRec := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return
+	}
+
 	vim, err := c.getVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -135,6 +146,13 @@ func (c *LcmController) UploadConfig() {
 		}
 		return
 	}
+
+	hostInfoRec.ConfigUploadStatus = "true"
+	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
+		log.Error("Failed to save mec host info record to database.")
+		return
+	}
 	c.handleLoggingForSuccess(clientIp, "Upload config is successful")
 	c.ServeJSON()
 }
@@ -189,6 +207,17 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 
+	hostInfoRec := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return
+	}
+
 	vim, err := c.getVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -214,6 +243,12 @@ func (c *LcmController) RemoveConfig() {
 		} else {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		}
+		return
+	}
+	hostInfoRec.ConfigUploadStatus = "false"
+	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
+		log.Error("Failed to save mec host info record to database.")
 		return
 	}
 	c.handleLoggingForSuccess(clientIp, "Remove config is successful")

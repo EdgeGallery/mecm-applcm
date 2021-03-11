@@ -184,18 +184,19 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo, origin string) error {
 	// Insert or update host info record
 	hostInfoRecord := &models.MecHost{
-		MecHostId:   request.MechostIp,
-		MechostIp:   request.MechostIp,
-		MechostName: request.MechostName,
-		ZipCode:     request.ZipCode,
-		City:        request.City,
-		Address:     request.Address,
-		Affinity:    request.Affinity,
-		UserName:    request.UserName,
-		Coordinates: request.Coordinates,
-		Vim:         request.Vim,
-		Origin:      origin,
-		SyncStatus:  false,
+		MecHostId:          request.MechostIp,
+		MechostIp:          request.MechostIp,
+		MechostName:        request.MechostName,
+		ZipCode:            request.ZipCode,
+		City:               request.City,
+		Address:            request.Address,
+		Affinity:           request.Affinity,
+		UserName:           request.UserName,
+		ConfigUploadStatus: "false",
+		Coordinates:        request.Coordinates,
+		Vim:                request.Vim,
+		Origin:             origin,
+		SyncStatus:         false,
 	}
 
 	count, err := c.Db.QueryCount(util.Mec_Host)
@@ -297,13 +298,13 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 	}
 
 	mecHostKeyRec := &models.MecHostStaleRec{
-		MecHostIp: hostIp,
+		MecHostId: hostIp,
 	}
 
 	if !syncStatus && strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			log.Error("Failed to save mec host key record to database.")
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
 		}
 	}
