@@ -73,7 +73,7 @@ func (c *LcmController) UploadConfig() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, vim, file, err := c.getInputParametersForUploadCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -86,41 +86,7 @@ func (c *LcmController) UploadConfig() {
 	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
 	if readErr != nil {
 		c.handleLoggingForError(clientIp, util.StatusNotFound,
-			"Mec host info record does not exist in database")
-		return
-	}
-
-	vim, err := c.getVim(clientIp, hostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	file, header, err := c.GetFile("configFile")
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest, "Upload config file error")
-		return
-	}
-
-	err = util.ValidateFileExtensionEmpty(header.Filename)
-	if err != nil || len(header.Filename) > util.MaxFileNameSize {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest,
-			"File shouldn't contains any extension or filename is larger than max size")
-		return
-	}
-
-	err = util.ValidateFileSize(header.Size, util.MaxConfigFile)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
-		return
-	}
-
-	err = c.validateYamlFile(clientIp, file)
-	if err != nil {
-		util.ClearByteArray(bKey)
+			util.MecHostRecDoesNotExist)
 		return
 	}
 
@@ -201,29 +167,11 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, vim, hostInfoRec, err := c.getInputParametersForRemoveCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
-
-	hostInfoRec := &models.MecHost{
-		MecHostId: hostIp,
-	}
-
-	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
-	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
-			"Mec host info record does not exist in database")
-		return
-	}
-
-	vim, err := c.getVim(clientIp, hostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -1537,4 +1485,69 @@ func (c *LcmController) SynchronizeStaleRecord() {
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "Stale appInstance records synchronization is successful")
+}
+
+// Get in put parameters for upload configuration
+func (c *LcmController) getInputParametersForUploadCfg(clientIp string) (hostIp string,
+	vim string, file multipart.File, err error) {
+	hostIp, err = c.getHostIP(clientIp)
+	if err != nil {
+		return hostIp, vim, file, err
+	}
+
+	vim, err = c.getVim(clientIp, hostIp)
+	if err != nil {
+		return hostIp, vim, file, err
+	}
+
+	file, header, err := c.GetFile("configFile")
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Upload config file error")
+		return hostIp, vim, file, err
+	}
+
+	err = util.ValidateFileExtensionEmpty(header.Filename)
+	if err != nil || len(header.Filename) > util.MaxFileNameSize {
+		c.handleLoggingForError(clientIp, util.BadRequest,
+			"File shouldn't contains any extension or filename is larger than max size")
+		return hostIp, vim, file, err
+	}
+
+	err = util.ValidateFileSize(header.Size, util.MaxConfigFile)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
+		return hostIp, vim, file, err
+	}
+
+	err = c.validateYamlFile(clientIp, file)
+	if err != nil {
+		return hostIp, vim, file, err
+	}
+	return hostIp, vim, file, nil
+}
+
+// Get in put parameters for remove configuration
+func (c *LcmController) getInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, error) {
+	hostIp, err := c.getHostIP(clientIp)
+	if err != nil {
+		return "", "", &models.MecHost{}, err
+	}
+
+	hostInfoRec := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			util.MecHostRecDoesNotExist)
+		return "", "", hostInfoRec, err
+	}
+
+	vim, err := c.getVim(clientIp, hostIp)
+	if err != nil {
+		return "", "", hostInfoRec, err
+	}
+
+	return hostIp, vim, hostInfoRec, err
 }
