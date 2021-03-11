@@ -84,7 +84,7 @@ func TestValidateAccessTokenSuccess(t *testing.T) {
 func TestValidateAccessTokenFailure(t *testing.T) {
 	accessToken := ""
 	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, util.UserId)
-	assert.Error(t, err, "TestValidateAccessTokenFailure execution result")
+	assert.Nil(t, err, "TestValidateAccessTokenFailure execution result")
 }
 
 func TestValidateAccessTokenInvalid(t *testing.T) {

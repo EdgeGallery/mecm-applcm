@@ -39,7 +39,7 @@ var (
 
 // Creates a new file upload http request with optional extra params
 func getHttpRequest(uri string, params map[string]string, paramName string, path string,
-	requestType string) (req *http.Request, err error) {
+	requestType string, requestBody []byte) (req *http.Request, err error) {
 
 	var (
 		writer *multipart.Writer
@@ -73,9 +73,9 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 		}
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 	} else {
-		body := &bytes.Buffer{}
-		_ = multipart.NewWriter(body)
-		req, err = http.NewRequest(requestType, uri, body)
+		//body := requestBody
+		//_ = multipart.NewWriter(body)
+		req, err = http.NewRequest(requestType, uri, bytes.NewBuffer(requestBody))
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +85,12 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 	accessToken := createToken("e921ce54-82c8-4532-b5c6-8516cf75f7a6")
 	// Add additional headers
 	req.Header.Set("access_token", accessToken)
+	req.Header.Set("hostIp", "1.1.1.1")
+	req.Header.Set("appName", "testApplication")
+	req.Header.Set("appId", "e261211d80d04cb6aed00e5cd1f2cd1")
+	req.Header.Set("packageId", packageId)
 	req.Header.Set("X-Forwarded-For", fwdIp)
+
 
 	// Parse and create multipart form
 	_ = req.ParseMultipartForm(32 << 20)

@@ -18,7 +18,7 @@ package test
 
 import (
 	"bytes"
-	"fmt"
+	"encoding/json"
 	"github.com/agiledragon/gomonkey"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
@@ -29,7 +29,6 @@ import (
 	"lcmcontroller/pkg/dbAdapter"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -40,10 +39,9 @@ import (
 var (
 	filePermission os.FileMode = 0750
 	directory                  = "/packages/"
-	hostIpAddress              = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
-		rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal))
 	tenantIdentifier      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
 	appInstanceIdentifier = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
+	packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
 	appName               = "postioning-service"
 	queryFailed           = "Query failed"
 )
@@ -79,13 +77,24 @@ func TestLcmOperation(t *testing.T) {
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{
-		"hostIp":    hostIpAddress,
-		"packageId": "51e5fe1053254a32bce87ebe9708c453",
+		"hostIp":    "1.1.1.1",
+		"packageId": packageId,
 		"appName":   appName,
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
-		tenantRecords: make(map[string]models.TenantInfoRecord)}
+		tenantRecords: make(map[string]models.TenantInfoRecord),
+		appPackageRecords: make(map[string]models.AppPackageRecord),
+		mecHostRecords: make(map[string]models.MecHost),
+		appPackageHostRecords: make(map[string]models.AppPackageHostRecord)}
+
+	//Upload package
+	testUploadPackage(t, extraParams, path, testDb)
+
+	testAddMecHost(t, extraParams, path, testDb)
+
+	//Distribute package
+	testDistributePackage(t, extraParams, path, testDb)
 
 	// Test instantiate
 	testInstantiate(t, extraParams, path, testDb)
@@ -112,9 +121,14 @@ func TestConfigOperation(t *testing.T) {
 	path += "/config"
 	// Setting extra parameters
 	extraParams := map[string]string{
-		"hostIp":  hostIpAddress,
+		"hostIp":  "1.1.1.1",
 		"appName": appName,
 	}
+	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
+		tenantRecords: make(map[string]models.TenantInfoRecord),
+		appPackageRecords: make(map[string]models.AppPackageRecord),
+		mecHostRecords: make(map[string]models.MecHost),
+		appPackageHostRecords: make(map[string]models.AppPackageHostRecord)}
 
 	var c *beego.Controller
 	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(c), "ServeJSON", func(*beego.Controller, ...bool) {
@@ -124,11 +138,13 @@ func TestConfigOperation(t *testing.T) {
 	})
 	defer patch1.Reset()
 
+	testAddMecHost(t, extraParams, path, testDb)
+
 	// Test upload
-	testUpload(t, extraParams, path)
+	testUpload(t, extraParams, path, testDb)
 
 	// Test removal
-	testRemoval(t, extraParams, path)
+	testRemoval(t, extraParams, path, testDb)
 }
 
 func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
@@ -137,7 +153,7 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Get Request
 		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4", extraParams, "file", path, "GET")
+			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -169,7 +185,7 @@ func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string
 
 		// Get Request
 		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/workload/events", extraParams, "file", path, "GET")
+			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/workload/events", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -200,7 +216,7 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 		// Terminate Request
 		terminateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-"+
 			"b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/terminate", extraParams, "file",
-			path, "POST")
+			path, "POST", []byte(""))
 
 		// Prepare Input
 		terminateInput := &context.BeegoInput{Context: &context.Context{Request: terminateRequest}}
@@ -227,13 +243,19 @@ func testInstantiate(t *testing.T, extraParams map[string]string, path string, t
 
 	t.Run("TestAppInstanceInstantiate", func(t *testing.T) {
 
-		// Get Request
+		// POST Request
 		instantiateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
 			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams,
-			"file", path, "POST")
+			"file", "", "POST", []byte(""))
+
+		requestBody, _ := json.Marshal(map[string]string{
+			"hostIp": "1.1.1.1",
+			"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
+			"appName": "testApplication",
+		})
 
 		// Prepare Input
-		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}}
+		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}, RequestBody: requestBody}
 		setParam(instantiateInput)
 
 		// Prepare beego controller
@@ -253,13 +275,121 @@ func testInstantiate(t *testing.T, extraParams map[string]string, path string, t
 	})
 }
 
-func testUpload(t *testing.T, extraParams map[string]string, path string) {
+func testUploadPackage(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+
+	t.Run("TestUploadPackage", func(t *testing.T) {
+
+		// Get Request
+		url := "https://edgegallery:8094/lcmcontroller/v1/tenants/" + tenantIdentifier + "/packages"
+		uploadPkgRequest, _ := getHttpRequest(url, extraParams,
+			"package", path, "POST", []byte(""))
+
+		// Prepare Input
+		uploadPkgInput := &context.BeegoInput{Context: &context.Context{Request: uploadPkgRequest}}
+		setParam(uploadPkgInput)
+
+		// Prepare beego controller
+		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: uploadPkgInput,
+			Request: uploadPkgRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		instantiateController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
+
+		// Test instantiate
+		instantiateController.UploadPackage()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Upload package failed")
+	})
+}
+
+func testAddMecHost(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+
+	t.Run("TestAddMecHost", func(t *testing.T) {
+
+		requestBody, _ := json.Marshal(map[string]string{
+			"mechostIp": "1.1.1.1",
+			"mechostName": "edgegallery3",
+			"zipCode": "560036",
+			"city": "bangalore",
+			"address": "anadapura",
+			"affinity": "karanataka",
+			"userName": "ramasubba",
+			"coordinates":"1,2",
+			"vim": "k8s",
+		})
+
+		// Get Request
+		mecHostRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/hosts", extraParams,
+			"package", "", "POST", requestBody)
+
+		// Prepare Input
+		mecHostInput := &context.BeegoInput{Context: &context.Context{Request: mecHostRequest}, RequestBody: requestBody}
+		setParam(mecHostInput)
+
+		// Prepare beego controller
+		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: mecHostInput,
+			Request: mecHostRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		instantiateController := &controllers.MecHostController{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
+
+		// Test instantiate
+		instantiateController.AddMecHost()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Add MEC host failed")
+	})
+}
+
+func testDistributePackage(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+
+	t.Run("TestDistributePackage", func(t *testing.T) {
+
+		/*requestBody := map[string][]string{
+			"hostIp": []string{"1.1.1.1", "2.2.2.2"},
+		}*/
+		requestBody, _ := json.Marshal(map[string][]string{
+			"hostIp": []string{"1.1.1.1"},
+		})
+		// Get Request
+		url := "https://edgegallery:8094/lcmcontroller/v1/tenants/" + tenantIdentifier + "/packages" + packageId
+		distributePkgRequest, _ := getHttpRequest(url, extraParams,
+			"package", "", "POST", []byte(""))
+
+		// Prepare Input
+		distributePkgInput := &context.BeegoInput{Context: &context.Context{Request: distributePkgRequest}, RequestBody: requestBody}
+
+		setParam(distributePkgInput)
+
+		// Prepare beego controller
+		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: distributePkgInput,
+			Request: distributePkgRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		instantiateController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
+
+		// Test instantiate
+		instantiateController.DistributePackage()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Distribute package failed")
+	})
+}
+
+func testUpload(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestConfigUpload", func(t *testing.T) {
 
 		// Get Request
 		uploadRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/configuration", extraParams,
-			"configFile", path, "POST")
+			"configFile", path, "POST", []byte(""))
 
 		// Prepare Input
 		uploadInput := &context.BeegoInput{Context: &context.Context{Request: uploadRequest}}
@@ -271,7 +401,7 @@ func testUpload(t *testing.T, extraParams map[string]string, path string) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		uploadController := &controllers.LcmController{controllers.BaseController{Db: &mockDb{},
+		uploadController := &controllers.LcmController{controllers.BaseController{Db: testDb,
 			Controller: uploadBeegoController}}
 
 		// Test instantiate
@@ -282,11 +412,11 @@ func testUpload(t *testing.T, extraParams map[string]string, path string) {
 	})
 }
 
-func testRemoval(t *testing.T, extraParams map[string]string, path string) {
+func testRemoval(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 	t.Run("TestConfigRemoval", func(t *testing.T) {
 		// Get Request
 		removeRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/configuration", extraParams,
-			"configFile", path, "DELETE")
+			"configFile", path, "DELETE", []byte(""))
 
 		// Prepare Input
 		removeInput := &context.BeegoInput{Context: &context.Context{Request: removeRequest}}
@@ -298,7 +428,7 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		removeController := &controllers.LcmController{controllers.BaseController{Db: &mockDb{},
+		removeController := &controllers.LcmController{controllers.BaseController{Db: testDb,
 			Controller: removeBeegoController}}
 
 		// Test instantiate
@@ -312,4 +442,5 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string) {
 func setParam(ctx *context.BeegoInput) {
 	ctx.SetParam(":tenantId", tenantIdentifier)
 	ctx.SetParam(":appInstanceId", appInstanceIdentifier)
+	ctx.SetParam(":packageId", packageId)
 }

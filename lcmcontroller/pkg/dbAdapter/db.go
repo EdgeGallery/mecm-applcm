@@ -28,4 +28,5 @@ type Database interface {
 	QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error)
 	QueryTable(query string) orm.QuerySeter
 	LoadRelated(md interface{}, name string) (int64, error)
+	QueryCountForAppPackage(tableName, fieldName, fieldValue string) (int64, error)
 }

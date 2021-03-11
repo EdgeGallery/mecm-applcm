@@ -88,6 +88,12 @@ func (db *PgDb) QueryTable(tableName string) orm.QuerySeter {
 	return results
 }
 
+// Query count based on fieldname and fieldvalue
+func (db *PgDb) QueryCountForAppPackage(tableName, fieldName, fieldValue string) (int64, error) {
+	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
+	return num, err
+}
+
 // Load Related
 func (db *PgDb) LoadRelated(md interface{}, name string) (int64, error) {
 	num, err := db.ormer.LoadRelated(md, name)

@@ -27,6 +27,10 @@ const SUCCESS_RETURN = "Success"
 
 type mockClient struct{}
 
+func (mc *mockClient) Instantiate(ctx context.Context, tenantId string, host string, packageId string, accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
 func (mc *mockClient) CreateVmImage(ctx context.Context, accessToken string, appInsId string,
 	hostIP string, vmId string) (response string, error error) {
 	return SUCCESS_RETURN, nil
@@ -47,10 +51,6 @@ func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, a
 	return bytes.Buffer{}, nil
 }
 
-func (mc *mockClient) Instantiate(ctx context.Context, deployArtifact string, hostIP string,
-	accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
-	return SUCCESS_RETURN, nil
-}
 
 func (mc *mockClient) Terminate(ctx context.Context, hostIP string, accessToken string,
 	appInsId string) (status string, error error) {
@@ -76,3 +76,14 @@ func (mc *mockClient) WorkloadDescription(ctx context.Context, accessToken strin
 	workloadName string) (response string, error error) {
 	return SUCCESS_RETURN, nil
 }
+
+func (mc *mockClient) UploadPackage(ctx context.Context, tenantId string, appPkg string, hostIP string,
+	packageId string, accessToken string) (status string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
+func (mc *mockClient) DeletePackage(ctx context.Context, tenantId string, hostIP string, accessToken string,  packageId string) (status string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
+
