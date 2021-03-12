@@ -23,6 +23,7 @@ from glanceclient.v2.images import Controller
 from requests import codes
 
 from core import custom_http
+from core.exceptions import DownloadChunkException
 
 
 class CustomGlanceClient(client.Client):
@@ -56,7 +57,7 @@ def get_chunk_start_end(chunk_num, size, chunk_size):
     if chunk_num == size // chunk_size + 1:
         return start, (start + size % chunk_size) - 1
     if chunk_num > size // chunk_size + 1:
-        raise Exception("chunk_num oversize!")
+        raise DownloadChunkException("chunk_num oversize!")
     return start, chunk_size * chunk_num - 1
 
 

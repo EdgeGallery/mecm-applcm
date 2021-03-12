@@ -31,8 +31,10 @@ from core.openstack_utils import create_nova_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
     DownloadVmImageResponse, DeleteVmImageResponse
+from core.exceptions import DownloadChunkException
 
 LOG = logger
+
 
 def get_image_name(name):
     """
@@ -174,15 +176,19 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
-        iterable_with_length, resp = \
-            glance_client.images.download_chunk(request.chunkNum,
-                                                vm_info.image_size,
-                                                request.imageId, False,
-                                                chunk_size=int(config.chunk_size))
+        try:
+            iterable_with_length, resp = \
+                glance_client.images.download_chunk(request.chunkNum,
+                                                    vm_info.image_size,
+                                                    request.imageId, False,
+                                                    chunk_size=int(config.chunk_size))
+        except DownloadChunkException as e:
+            return res
+
         LOG.debug("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
-                      vm_info.image_size,
-                      request.chunkNum,
-                      config.chunk_size)
+                  vm_info.image_size,
+                  request.chunkNum,
+                  config.chunk_size)
         print(len(resp.content))
 
         res = DownloadVmImageResponse(content=resp.content)
