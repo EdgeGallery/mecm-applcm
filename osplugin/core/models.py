@@ -67,12 +67,10 @@ class UploadCfgRequest(object):
         for request in request_iterator:
             if request.accessToken:
                 self.accessToken = request.accessToken
-            elif request.appInstanceId:
-                self.app_instance_id = request.appInstanceId
             elif request.hostIp:
                 self.hostIp = request.hostIp
-            elif request.config_file:
-                self.config_file = request.config_file
+            elif request.configFile:
+                self.config_file = request.configFile
 
 
 """

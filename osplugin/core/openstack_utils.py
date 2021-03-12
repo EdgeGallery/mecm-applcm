@@ -17,7 +17,6 @@
 """
 import re
 
-from cinderclient import client as cinder_client
 from heatclient.v1.client import Client as HeatClient
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
@@ -47,7 +46,7 @@ def get_auth(host_ip):
 
 
 def get_session(host_ip):
-    return session.Session(auth=get_auth(host_ip))
+    return session.Session(auth=get_auth(host_ip), verify=config.server_ca_verify)
 
 
 def create_heat_client(host_ip):
@@ -60,24 +59,22 @@ def create_heat_client(host_ip):
         project_name=rc.project_name,
         auth_url=rc.auth_url
     )
-    sess = session.Session(auth=auth)
-    return HeatClient(session=sess, endpoint_override=rc.heat_url, verify=config.server_ca_verify)
+    sess = session.Session(auth=auth, verify=config.server_ca_verify)
+    return HeatClient(session=sess, endpoint_override=rc.heat_url)
 
 
 def create_nova_client(host_ip):
     rc = get_rc(host_ip)
     return nova_client.Client('2',
                               session=get_session(host_ip),
-                              endpoint_override=rc.nova_url,
-                              verify=config.server_ca_verify)
+                              endpoint_override=rc.nova_url)
 
 
 def create_glance_client(host_ip):
     rc = get_rc(host_ip)
     asession = get_session(host_ip)
     return CustomGlanceClient(session=asession,
-                              endpoint_override=rc.glance_url,
-                              verify=config.server_ca_verify)
+                              endpoint_override=rc.glance_url)
 
 
 class RCFile(object):

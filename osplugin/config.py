@@ -24,8 +24,11 @@ if os.getenv('ENABLE_SSL', 'false') == 'true':
 
 listen_ip = os.getenv('LISTEN_IP', '[::]')
 
-private_key_certificate_chain_pairs = ['', '']
-root_certificates = []
+private_key_certificate_chain_pairs = [
+    '/usr/app/ssl/server_tls.crt',
+    '/usr/app/ssl/server_tls.key'
+]
+root_certificates = ['/usr/app/ssl/ca.crt']
 require_client_auth = False
 
 _JWT_PUBLIC_KEY_DEF = '-----BEGIN PUBLIC KEY-----\n' \
@@ -42,7 +45,7 @@ jwt_public_key = os.getenv('JWT_PUBLIC_KEY', _JWT_PUBLIC_KEY_DEF)
 
 db_user = os.getenv('DB_USER', 'osplugin')
 db_password = os.getenv('DB_PASSWORD', '')
-db_host = os.getenv('DB_HOST', '127.0.0.1')
+db_host = os.getenv('DB_HOST', 'mepm-postgres')
 db_port = int(os.getenv('DB_PORT', '5432'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
 
