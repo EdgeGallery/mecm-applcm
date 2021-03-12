@@ -24,8 +24,11 @@ if os.getenv('ENABLE_SSL', 'false') == 'true':
 
 listen_ip = os.getenv('LISTEN_IP', '[::]')
 
-private_key_certificate_chain_pairs = ['', '']
-root_certificates = []
+private_key_certificate_chain_pairs = [
+    '/usr/app/ssl/server_tls.crt',
+    '/usr/app/ssl/server_tls.key'
+]
+root_certificates = ['/usr/app/ssl/ca.crt']
 require_client_auth = False
 
 _JWT_PUBLIC_KEY_DEF = '-----BEGIN PUBLIC KEY-----\n' \
