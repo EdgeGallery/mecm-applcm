@@ -46,7 +46,7 @@ def start_check_stack_status(app_instance_id):
     Args:
         app_instance_id:
     """
-    thread_timer = threading.Timer(5, check_stack_status, app_instance_id)
+    thread_timer = threading.Timer(5, check_stack_status, [app_instance_id])
     thread_timer.start()
 
 
@@ -66,10 +66,10 @@ def check_stack_status(app_instance_id):
         app_ins_mapper.delete()
         return
     if stack_resp.status == 'COMPLETE' or stack_resp.status == 'FAILED':
-        LOG.info('app ins: %s, stack_status: %s, reason: %s',
-                     app_instance_id,
-                     stack_resp.stack_status,
-                     stack_resp.stack_status_reason)
+        LOG.debug('app ins: %s, stack_status: %s, reason: %s',
+                  app_instance_id,
+                  stack_resp.stack_status,
+                  stack_resp.stack_status_reason)
         if stack_resp.action == 'CREATE' and stack_resp.stack_status == 'CREATE_COMPLETE':
             app_ins_mapper.operational_status = utils.INSTANTIATED
             app_ins_mapper.operation_info = stack_resp.stack_status_reason

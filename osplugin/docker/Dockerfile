@@ -30,7 +30,7 @@ RUN /venv/bin/pip3 install -r /requirements.txt -i https://mirrors.aliyun.com/py
 
 FROM base
 
-WORKDIR /app
+WORKDIR /usr/app
 
 COPY core ./core
 COPY internal ./internal

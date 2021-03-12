@@ -42,7 +42,7 @@ jwt_public_key = os.getenv('JWT_PUBLIC_KEY', _JWT_PUBLIC_KEY_DEF)
 
 db_user = os.getenv('DB_USER', 'osplugin')
 db_password = os.getenv('DB_PASSWORD', '')
-db_host = os.getenv('DB_HOST', '127.0.0.1')
+db_host = os.getenv('DB_HOST', 'mepm-postgres')
 db_port = int(os.getenv('DB_PORT', '5432'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
 
