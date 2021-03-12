@@ -21,7 +21,6 @@ import grpc
 
 from internal.lcmservice import lcmservice_pb2
 from internal.lcmservice import lcmservice_pb2_grpc
-from tests.test_data import test_host_ip
 
 
 def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
@@ -60,7 +59,7 @@ if __name__ == '__main__':
         stub = lcmservice_pb2_grpc.VmImageStub(channel)
         response = stub.createVmImage(
             make_create_image_request(access_token="test_access_token",
-                                      host_ip=test_host_ip,
+                                      host_ip='10.10.9.75',
                                       app_instance_id="1",
                                       vm_id="2fd65cfb-fa1e-4461-bc40-326a55f01803"))
         """

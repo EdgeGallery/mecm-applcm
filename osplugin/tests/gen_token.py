@@ -22,7 +22,7 @@ import time
 
 import jwt
 
-jwt_private_key = '-----BEGIN RSA PRIVATE KEY-----\n' \
+_JWT_PRIVATE_KEY = '-----BEGIN RSA PRIVATE KEY-----\n' \
                   'MIIEpAIBAAKCAQEAmesVPVWJmsRIzitiu6rsbbIfBbt3t97qiJ4yQH1bCHpYu+ab\n' \
                   '+Xs5heSnfFjHH8nZDAR0n2zvliztIvTDwl/2NF9+/loFvmQMrSv1dQQCOBc5qZ5r\n' \
                   'w/0o7Cq3buXHHJ7CwP0NnreK4N1sZ4oLBTQQe4ERkXhiBNVxAmnbgl7QuhemMV0g\n' \
@@ -50,7 +50,7 @@ jwt_private_key = '-----BEGIN RSA PRIVATE KEY-----\n' \
                   'KjY122i1BhnVpHeHSGMCZ/bpC0T7eWYzGhk3OkJpggmo3UsbmOu1sA==\n' \
                   '-----END RSA PRIVATE KEY-----'
 
-token_dict = {
+_BODY = {
     'iat': time.time(),
     'exp': time.time() + 3600000,
     'authorities': 'user-mgmt',
@@ -58,11 +58,12 @@ token_dict = {
     'user_name': 'MEPM',
 }
 
-headers = {
+_HEADERS = {
     'alg': 'RS256',
     'type': 'JWT'
 }
 
+test_access_token = jwt.encode(_BODY, _JWT_PRIVATE_KEY, algorithm='RS256', headers=_HEADERS)
+
 if __name__ == '__main__':
-    jwt_token = jwt.encode(token_dict, jwt_private_key, algorithm='RS256', headers=headers)
-    print(jwt_token)
+    print(test_access_token)
