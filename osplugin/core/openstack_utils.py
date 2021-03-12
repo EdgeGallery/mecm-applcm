@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,7 @@
 # limitations under the License.
 
 # -*- coding: utf-8 -*-
+"""
 import re
 
 from cinderclient import client as cinder_client
@@ -59,23 +61,23 @@ def create_heat_client(host_ip):
         auth_url=rc.auth_url
     )
     sess = session.Session(auth=auth)
-    return HeatClient(session=sess, endpoint_override=rc.heat_url)
+    return HeatClient(session=sess, endpoint_override=rc.heat_url, verify=config.server_ca_verify)
 
 
 def create_nova_client(host_ip):
     rc = get_rc(host_ip)
-    return nova_client.Client('2', session=get_session(host_ip), endpoint_override=rc.nova_url)
+    return nova_client.Client('2',
+                              session=get_session(host_ip),
+                              endpoint_override=rc.nova_url,
+                              verify=config.server_ca_verify)
 
 
 def create_glance_client(host_ip):
     rc = get_rc(host_ip)
     asession = get_session(host_ip)
-    return CustomGlanceClient(session=asession, endpoint_override=rc.glance_url)
-
-
-def create_cinder_client(host_ip):
-    rc = get_rc(host_ip)
-    return cinder_client.Client("3", session=get_session(host_ip), endpoint_override=rc.cinder_url)
+    return CustomGlanceClient(session=asession,
+                              endpoint_override=rc.glance_url,
+                              verify=config.server_ca_verify)
 
 
 class RCFile(object):
@@ -127,7 +129,7 @@ def _get_flavor(template):
     memory = str(template['capabilities']['virtual_compute']['properties']['virtual_memory'][
                      'virtual_mem_size'])
     sys_disk = str(template['capabilities']['virtual_compute']['properties']['virtual_local_storage'][
-        'size_of_storage'])
+                       'size_of_storage'])
 
     return cpu + 'c-' + memory + 'm-' + sys_disk + 'g'
 

@@ -9,4 +9,4 @@ python-glanceclient==3.2.2
 python-novaclient==17.3.0
 psycopg2==2.8.6
 pony==0.7.14
-python-cinderclient=7.3.0
+python-cinderclient==7.3.0

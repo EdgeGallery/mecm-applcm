@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,5 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-test_access_token = ''
-test_host_ip = '10.10.9.75'
+"""
+
+import unittest
+
+
+class PackageAnalyzeTest(unittest.TestCase):
+    def test_analyze(self):
+        pass

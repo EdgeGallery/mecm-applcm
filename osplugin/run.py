@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!python3
-# -*- coding: utf-8 -*-
-import logging
+"""
 
-from core import grpc_server
 # !python3
 # -*- coding: utf-8 -*-
-import logging
-
 from core import grpc_server
-
-_LOGGING_FORMAT = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format=_LOGGING_FORMAT)
     grpc_server.serve()
