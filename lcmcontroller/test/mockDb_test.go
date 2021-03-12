@@ -112,7 +112,7 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.PkgHostKey {
 		appPackageHost, ok := data.(*models.AppPackageHostRecord)
 		if ok {
-			readAppPackageHost := db.appPackageHostRecords[appPackageHost.AppPkgId]
+			readAppPackageHost := db.appPackageHostRecords[appPackageHost.PkgHostKey]
 			if (reflect.DeepEqual(readAppPackageHost,models.AppPackageHostRecord{})) {
 				return errors.New("App package host record not found")
 			}
