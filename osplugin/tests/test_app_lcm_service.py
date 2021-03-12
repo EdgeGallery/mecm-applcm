@@ -28,10 +28,10 @@ LOG = logger
 class AppLcmServiceTest(unittest.TestCase):
     app_lcm_service = AppLcmService()
     access_token = gen_token.test_access_token
-    host_ip = '10.10.9.75'
+    host_ip = '19.3.44.22'
 
     def test_instantiate(self):
-        with open('tests/resources/ht-package.zip', 'rb') as f:
+        with open('tests/resources/simple-package-fs.zip', 'rb') as f:
             package_data = f.read()
         data = [
             lcmservice_pb2.InstantiateRequest(accessToken=self.access_token),
