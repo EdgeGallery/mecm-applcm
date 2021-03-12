@@ -40,3 +40,8 @@ db_name = os.getenv('DB_NAME', 'osplugindb')
 base_dir = os.getenv('BASE_DIR', 'target')
 # default chunk_size 1M
 chunk_size = os.getenv("IMAGE_CHUNK_SIZE", 1024 * 1024 * 1)
+
+_SERVER_CA_VERIFY = os.getenv('SERVER_CA_VERIFY_DIR', 'False')
+if _SERVER_CA_VERIFY == 'False':
+    _SERVER_CA_VERIFY = False
+server_ca_verify = _SERVER_CA_VERIFY

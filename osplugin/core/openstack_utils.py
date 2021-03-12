@@ -61,23 +61,23 @@ def create_heat_client(host_ip):
         auth_url=rc.auth_url
     )
     sess = session.Session(auth=auth)
-    return HeatClient(session=sess, endpoint_override=rc.heat_url)
+    return HeatClient(session=sess, endpoint_override=rc.heat_url, verify=config.server_ca_verify)
 
 
 def create_nova_client(host_ip):
     rc = get_rc(host_ip)
-    return nova_client.Client('2', session=get_session(host_ip), endpoint_override=rc.nova_url)
+    return nova_client.Client('2',
+                              session=get_session(host_ip),
+                              endpoint_override=rc.nova_url,
+                              verify=config.server_ca_verify)
 
 
 def create_glance_client(host_ip):
     rc = get_rc(host_ip)
     asession = get_session(host_ip)
-    return CustomGlanceClient(session=asession, endpoint_override=rc.glance_url)
-
-
-def create_cinder_client(host_ip):
-    rc = get_rc(host_ip)
-    return cinder_client.Client("3", session=get_session(host_ip), endpoint_override=rc.cinder_url)
+    return CustomGlanceClient(session=asession,
+                              endpoint_override=rc.glance_url,
+                              verify=config.server_ca_verify)
 
 
 class RCFile(object):
