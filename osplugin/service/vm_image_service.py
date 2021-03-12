@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""
 
 # -*- coding: utf-8 -*-
 import json
@@ -31,16 +34,38 @@ from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmIma
 
 
 def get_image_name(name):
+    """
+    get_image_name
+    Args:
+        name: name
+    Returns:
+        image_name
+    """
     return name + "-" + time.strftime("%Y%m%d%H%M", time.localtime())
 
 
 def get_chunk_num(size, chunk_size=1024):
+    """
+    get_chunk_num
+    Args:
+        size: name
+        chunk_size
+    Returns:
+        chunk_num
+    """
     if size % chunk_size == 0:
         return size // chunk_size
     return size // chunk_size + 1
 
 
 def validate_input_params_for_upload_cfg(req):
+    """
+    validate_input_params_for_upload_cfg
+    Args:
+        req: req
+    Returns:
+        host_ip
+    """
     access_token = req.accessToken
     host_ip = req.hostIp
     if not utils.validate_access_token(access_token):
@@ -50,13 +75,16 @@ def validate_input_params_for_upload_cfg(req):
     return host_ip
 
 
-# @author wangy1
-
 class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
+    """
+    VmImageService
+    Author: wangy1
+
+    """
 
     @db_session
     def createVmImage(self, request, context):
-        res = CreateVmImageResponse(response=utils.Failure)
+        res = CreateVmImageResponse(response=utils.FAILURE)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
@@ -65,12 +93,12 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return
         heat = create_heat_client(app_ins_mapper.host_ip)
         stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
-        if stack_resp is None and stack_resp.status == utils.Terminated:
+        if stack_resp is None and stack_resp.status == utils.TERMINATED:
             app_ins_mapper.delete()
         nova_client = create_nova_client(host_ip)
-        vmInfo = nova_client.servers.get(request.vmId)
-        logging.info('vm %s: status: %s', vmInfo.id, vmInfo.status)
-        image_name = get_image_name(vmInfo.name)
+        vm_info = nova_client.servers.get(request.vmId)
+        logging.info('vm %s: status: %s', vm_info.id, vm_info.status)
+        image_name = get_image_name(vm_info.name)
         image_id = nova_client.servers.create_image(request.vmId, image_name)
         glance_client = create_glance_client(host_ip)
         image_info = glance_client.images.get(image_id)
@@ -95,7 +123,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def queryVmImage(self, request, context):
-        res = QueryVmImageResponse(response=utils.Failure)
+        res = QueryVmImageResponse(response=utils.FAILURE)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
@@ -118,7 +146,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def deleteVmImage(self, request, context):
-        res = DeleteVmImageResponse(response=utils.Failure)
+        res = DeleteVmImageResponse(response=utils.FAILURE)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
@@ -131,12 +159,12 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         vm_info.delete()
         commit()
         print(image_res)
-        res.response = utils.Success
+        res.response = utils.SUCCESS
         return res
 
     @db_session
     def downloadVmImage(self, request, context):
-        res = DownloadVmImageResponse(content=bytes(utils.Failure, encoding='utf8'))
+        res = DownloadVmImageResponse(content=bytes(utils.FAILURE, encoding='utf8'))
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
@@ -145,10 +173,15 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             logging.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
-        qq, resp = glance_client.images.download_chunk(request.chunkNum, vm_info.image_size, request.imageId, False,
-                                                       chunk_size=int(config.chunk_size))
-        logging.debug("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ", vm_info.image_size,
-                      request.chunkNum, config.chunk_size)
+        iterable_with_length, resp = \
+            glance_client.images.download_chunk(request.chunkNum,
+                                                vm_info.image_size,
+                                                request.imageId, False,
+                                                chunk_size=int(config.chunk_size))
+        logging.debug("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
+                      vm_info.image_size,
+                      request.chunkNum,
+                      config.chunk_size)
         print(len(resp.content))
 
         res = DownloadVmImageResponse(content=resp.content)

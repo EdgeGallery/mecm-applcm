@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""
 
 # -*- coding: utf-8 -*-
 import json
@@ -30,18 +33,29 @@ from core.csar.pkg import get_hot_yaml_path
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest
 from core.openstack_utils import create_heat_client, RC_FILE_DIR
 from internal.lcmservice import lcmservice_pb2_grpc
-from internal.lcmservice.lcmservice_pb2 import TerminateResponse, QueryResponse, UploadCfgResponse, RemoveCfgResponse
+from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
+    QueryResponse, UploadCfgResponse, RemoveCfgResponse
 
 _APP_TMP_PATH = config.base_dir + '/tmp'
 
 
 def start_check_stack_status(app_instance_id):
-    t = threading.Timer(5, check_stack_status, app_instance_id)
-    t.start()
+    """
+    start_check_stack_status
+    Args:
+        app_instance_id:
+    """
+    thread_timer = threading.Timer(5, check_stack_status, app_instance_id)
+    thread_timer.start()
 
 
 @db_session
 def check_stack_status(app_instance_id):
+    """
+    check_stack_status
+    Args:
+        app_instance_id:
+    """
     app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
     if not app_ins_mapper:
         return
@@ -56,32 +70,43 @@ def check_stack_status(app_instance_id):
                      stack_resp.stack_status,
                      stack_resp.stack_status_reason)
         if stack_resp.action == 'CREATE' and stack_resp.stack_status == 'CREATE_COMPLETE':
-            app_ins_mapper.operational_status = utils.Instantiated
+            app_ins_mapper.operational_status = utils.INSTANTIATED
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
         elif stack_resp.action == 'DELETE' and stack_resp.stack_status == 'DELETE_COMPLETE':
             app_ins_mapper.delete()
         else:
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
-            app_ins_mapper.operational_status = utils.Failure
+            app_ins_mapper.operational_status = utils.FAILURE
     else:
         start_check_stack_status(app_instance_id)
 
 
 def validate_input_params(param):
+    """
+    check_stack_status
+    Args:
+        param:
+    Returns:
+        host_ip
+    """
     access_token = param.accessToken
     host_ip = param.hostIp
-    # if not utils.validate_access_token(access_token):
-    #     return None
+    if not utils.validate_access_token(access_token):
+        return None
     if not utils.validate_ipv4_address(host_ip):
         return None
     return host_ip
 
 
 class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
+    """
+    AppLcmService
+    """
+
     @db_session
     def instantiate(self, request_iterator, context):
         logging.debug('receive instantiate msg...')
-        res = TerminateResponse(status=utils.Failure)
+        res = TerminateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request_iterator)
         logging.debug('parameters: %s', parameter)
@@ -123,8 +148,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         hot_yaml_path = get_hot_yaml_path(app_ins_tmp_path)
         logging.debug('hot template path %s', hot_yaml_path)
-        """
-        """
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
@@ -143,18 +166,18 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         AppInsMapper(app_instance_id=app_instance_id,
                      host_ip=host_ip,
                      stack_id=stack_resp['stack']['id'],
-                     operational_status=utils.Instantiating)
+                     operational_status=utils.INSTANTIATING)
         commit()
 
         start_check_stack_status(app_instance_id=app_instance_id)
 
-        res.status = utils.Success
+        res.status = utils.SUCCESS
         return res
 
     @db_session
     def terminate(self, request, context):
         logging.info('receive terminate msg...')
-        res = TerminateResponse(status=utils.Failure)
+        res = TerminateResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
         if not host_ip:
@@ -166,7 +189,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if not app_ins_mapper:
-            res.status = utils.Success
+            res.status = utils.SUCCESS
             return res
 
         heat = create_heat_client(host_ip)
@@ -177,12 +200,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         except Exception as e:
             logging.error(e)
             return res
-        app_ins_mapper.operational_status = utils.Terminating
+        app_ins_mapper.operational_status = utils.TERMINATING
 
         commit()
         start_check_stack_status(app_instance_id=app_instance_id)
 
-        res.status = utils.Success
+        res.status = utils.SUCCESS
         return res
 
     def query(self, request, context):
@@ -230,7 +253,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     def uploadConfig(self, request_iterator, context):
         logging.info('receive uploadConfig msg...')
-        res = UploadCfgResponse(status=utils.Failure)
+        res = UploadCfgResponse(status=utils.FAILURE)
 
         parameter = UploadCfgRequest(request_iterator)
 
@@ -250,7 +273,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         try:
             with open(config_path, 'wb') as new_file:
                 new_file.write(config_file)
-                res.status = utils.Success
+                res.status = utils.SUCCESS
         except Exception as e:
             logging.error(e)
 
@@ -264,7 +287,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :return: Success/Failure
         """
         logging.info('receive removeConfig msg...')
-        res = RemoveCfgResponse(status=utils.Failure)
+        res = RemoveCfgResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
         if not host_ip:
@@ -273,11 +296,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         config_path = RC_FILE_DIR + '/' + host_ip
         try:
             os.remove(config_path)
-            res.status = utils.Success
+            res.status = utils.SUCCESS
         except OSError as e:
             logging.info(e)
             logging.debug('file not exist')
-            res.status = utils.Success
+            res.status = utils.SUCCESS
         except Exception as e:
             logging.error(e)
             return res
@@ -287,7 +310,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     def workloadEvents(self, request, context):
         logging.info('receive workload describe msg...')
-        res = TerminateResponse(status=utils.Failure)
+        res = TerminateResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
         if not host_ip:

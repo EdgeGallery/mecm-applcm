@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+
 import hashlib
 
 from glanceclient.common import utils
@@ -22,8 +25,12 @@ from requests import codes
 from core import custom_http
 
 
-# @author wangy1
 class CustomGlanceClient(client.Client):
+    """
+    @author wangy1
+    CustomGlanceClient
+    """
+
     def __init__(self, endpoint=None, **kwargs):
         super().__init__(**kwargs)
         self.http_client = custom_http.get_http_client(endpoint=endpoint, **kwargs)
@@ -31,21 +38,38 @@ class CustomGlanceClient(client.Client):
 
 
 def get_chunk_start_end(chunk_num, size, chunk_size):
+    """
+    获取 Range 分片开始及结束字节数
+    Args:
+        chunk_num:分片数
+        size: 镜像大小
+        chunk_size
+    Returns:
+        start
+        end
+    """
     if size < chunk_size:
         return 0, size - 1
-    else:
-        start = chunk_size * (chunk_num - 1)
-        if chunk_num == 1:
-            return 0, chunk_size - 1
-        if chunk_num == size // chunk_size + 1:
-            return start, (start + size % chunk_size) - 1
-        if chunk_num > size // chunk_size + 1:
-            raise Exception("chunk_num oversize!")
+    start = chunk_size * (chunk_num - 1)
+    if chunk_num == 1:
+        return 0, chunk_size - 1
+    if chunk_num == size // chunk_size + 1:
+        return start, (start + size % chunk_size) - 1
+    if chunk_num > size // chunk_size + 1:
+        raise Exception("chunk_num oversize!")
     return start, chunk_size * chunk_num - 1
 
 
 class CustomController(Controller):
-    def download_chunk(self, chunk_num, image_size, image_id, do_checksum=True, allow_md5_fallback=False,
+    """
+    重写download 支持分片下载
+    """
+
+    def download_chunk(self, chunk_num,
+                       image_size,
+                       image_id,
+                       do_checksum=True,
+                       allow_md5_fallback=False,
                        chunk_size=1024):
         if do_checksum:
             # doing this first to prevent race condition if image record

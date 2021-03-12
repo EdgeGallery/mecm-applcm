@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,7 @@
 # limitations under the License.
 
 # -*- coding: utf-8 -*-
+"""
 import re
 
 from cinderclient import client as cinder_client
@@ -127,7 +129,7 @@ def _get_flavor(template):
     memory = str(template['capabilities']['virtual_compute']['properties']['virtual_memory'][
                      'virtual_mem_size'])
     sys_disk = str(template['capabilities']['virtual_compute']['properties']['virtual_local_storage'][
-        'size_of_storage'])
+                       'size_of_storage'])
 
     return cpu + 'c-' + memory + 'm-' + sys_disk + 'g'
 

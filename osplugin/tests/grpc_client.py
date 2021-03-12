@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
 
-#!python3
+# !python3
 # -*- coding: utf-8 -*-
-import grpc
-from internal.lcmservice import lcmservice_pb2_grpc
-from internal.lcmservice import lcmservice_pb2
 # !python3
 # -*- coding: utf-8 -*-
 import grpc
@@ -55,10 +54,8 @@ def make_terminate_request(access_token, app_instance_id, host_ip):
     return lcmservice_pb2.TerminateRequest(accessToken=access_token, appInstanceId=app_instance_id, hostIp=host_ip)
 
 
-
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:8234') as channel:
-
         stub2 = lcmservice_pb2_grpc.AppLCMStub(channel)
 
         response = stub2.instantiate(make_instantiate_request(access_token="test_access_token",

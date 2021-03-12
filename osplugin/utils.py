@@ -1,3 +1,4 @@
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+
 # -*- coding: utf-8 -*-
 
 import logging
@@ -20,16 +23,17 @@ import re
 import uuid
 
 import jwt
+from jwt import DecodeError
 
 from config import jwt_public_key
 
-Failure = 'Failure'
-Success = 'Success'
+FAILURE = 'Failure'
+SUCCESS = 'Success'
 
-Instantiating = 'Instantiating'
-Instantiated = 'Instantiated'
-Terminated = 'Terminated'
-Terminating = 'Terminating'
+INSTANTIATING = 'Instantiating'
+INSTANTIATED = 'Instantiated'
+TERMINATED = 'Terminated'
+TERMINATING = 'Terminating'
 
 
 def create_dir(path):
@@ -68,7 +72,7 @@ def validate_access_token(access_token):
         if not payload['user_name']:
             logging.info('Invalid token UN')
             return False
-    except Exception as e:
+    except DecodeError as e:
         logging.error(e)
         return False
     return True
@@ -78,7 +82,8 @@ def validate_ipv4_address(host_ip):
     if not host_ip:
         logging.info('hostIp required')
         return False
-    p = re.compile('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+    p = re.compile('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.)' +
+                   '{3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
     if p.match(host_ip):
         return True
     else:
@@ -90,7 +95,7 @@ def gen_uuid():
 
 
 if __name__ == '__main__':
-    jwt.encode({"user_id": "123", "user_name": "123", "authorities": "123"},)
+    jwt.encode({"user_id": "123", "user_name": "123", "authorities": "123"})
 
 
 def validate_uuid(param):
