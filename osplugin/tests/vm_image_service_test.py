@@ -18,9 +18,12 @@
 # !python3
 # -*- coding: utf-8 -*-
 import grpc
-
+import unittest
 from internal.lcmservice import lcmservice_pb2
 from internal.lcmservice import lcmservice_pb2_grpc
+from service.vm_image_service import VmImageService
+from tests import gen_token
+from core.log import logger
 
 
 def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
@@ -54,37 +57,44 @@ def make_download_image_request(access_token, chunk_num, host_ip, app_instance_i
                                                  imageId=image_id)
 
 
-if __name__ == '__main__':
-    with grpc.insecure_channel('localhost:8234') as channel:
-        stub = lcmservice_pb2_grpc.VmImageStub(channel)
-        response = stub.createVmImage(
-            make_create_image_request(access_token="test_access_token",
-                                      host_ip='10.10.9.75',
-                                      app_instance_id="1",
-                                      vm_id="2fd65cfb-fa1e-4461-bc40-326a55f01803"))
-        """
-        response = stub.deleteVmImage(
-            make_delete_image_request(access_token="test_access_token",
-                                      host_ip=test_host_ip, app_instance_id="1",
-                                      image_id="98920865-8c34-4f32-a166-f7c06775a34a"))
-        response = stub.queryVmImage(
-            make_delete_image_request(access_token="test_access_token",
-                                      host_ip=test_host_ip, app_instance_id="1",
-                                      image_id="bbbcb967-bb32-4185-9b00-6c4b464535a9"))
-        response = stub.downloadVmImage(
-            make_download_image_request(access_token="test_access_token",
-                                        host_ip=test_host_ip, chunk_num=1,
-                                        app_instance_id="1",
-                                        image_id="bbbcb967-bb32-4185-9b00-6c4b464535a9"))
-        for i in range(1, 12975):
-            response = stub.downloadVmImage(
-                make_download_image_request(access_token="test_access_token",
-                                            host_ip=test_host_ip, chunk_num=i,
+class VmImageServiceTest(unittest.TestCase):
+    vm_image_service = VmImageService()
+    access_token = gen_token.test_access_token
+    host_ip = '10.10.9.75'
+
+    def test_create_image(self):
+        request = make_create_image_request(access_token=self.access_token,
+                                            host_ip=self.host_ip,
                                             app_instance_id="1",
-                                            image_id="bbc25da6-47e9-4940-ad75-5e5ddda8a36f"))
+                                            vm_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
+        res = self.vm_image_service.createVmImage(request, None)
+        print(res)
+
+    def test_delete_image(self):
+        request = make_delete_image_request(access_token=self.access_token,
+                                            host_ip=self.host_ip,
+                                            app_instance_id="1",
+                                            image_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
+        res = self.vm_image_service.deleteVmImage(request, None)
+        print(res)
+
+    def test_query_image(self):
+        request = make_delete_image_request(access_token=self.access_token,
+                                            host_ip=self.host_ip,
+                                            app_instance_id="1",
+                                            image_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
+        res = self.vm_image_service.queryVmImage(request, None)
+        print(res)
+
+    def test_download_image(self):
+        request = make_download_image_request(access_token=self.access_token,
+                                              host_ip=self.host_ip,
+                                              app_instance_id="1",
+                                              image_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
+
+        for i in range(1, 100):
+            response = self.vm_image_service.createVmImage(request)
             file = open('image.QCOW2', 'ab')
-        print(response)
-        for res in response:
-            print(res)
-            file.write(res.content)
-        """
+            for res in response:
+                print(res)
+                file.write(res.content)
