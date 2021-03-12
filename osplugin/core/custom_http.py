@@ -15,14 +15,14 @@
 
 """
 
-import logging
-
 from glanceclient import exc
 from glanceclient.common.http import HTTPClient
 from glanceclient.common.http import SessionClient
 from keystoneauth1 import exceptions as ksa_exc
 
-LOG = logging.getLogger(__name__)
+from core.log import logger
+
+LOG = logger
 USER_AGENT = 'python-glanceclient'
 REQ_ID_HEADER = 'X-OpenStack-Request-ID'
 

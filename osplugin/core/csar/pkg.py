@@ -16,7 +16,6 @@
 """
 
 # -*- coding: utf-8 -*-
-import logging
 import os
 import re
 import zipfile
@@ -24,11 +23,14 @@ import zipfile
 import yaml
 
 from core.exceptions import PackageNotValid
+from core.log import logger
 from core.openstack_utils import NovaServer, VirtualStorage, VirtualPort
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
 _APPD_TOSCA_METADATA_PATH = 'TOSCA_VNFD.meta'
 _APPD_R = '^Entry-Definitions: (.*)$'
+
+LOG = logger
 
 
 def get_hot_yaml_path(unzip_pkg_path):
@@ -59,20 +61,20 @@ def _translate(appd, base_path):
         elif template['type'] == 'tosca.nodes.nfv.app.configuration':
             pass
         else:
-            logging.info('skip unknown tosca type %s', template['type'])
+            LOG.info('skip unknown tosca type %s', template['type'])
 
     for name, group in appd['topology_template']['groups'].items():
         if group['type'] == 'tosca.groups.nfv.PlacementGroup':
             pass
         else:
-            logging.info('skip unknown tosca type %s', group['type'])
+            LOG.info('skip unknown tosca type %s', group['type'])
 
     for policy in appd['topology_template']['policies']:
         for key, value in policy.items():
             if value['type'] == 'tosca.policies.nfv.AntiAffinityRule':
                 pass
             else:
-                logging.info('skip unknow tosca type %s', value['type'])
+                LOG.info('skip unknow tosca type %s', value['type'])
 
     with open(base_path + '/hot.yaml', 'w') as file:
         yaml.dump(hot, file)
@@ -105,14 +107,14 @@ class CsarPkg(object):
                     for f in namelist:
                         zip_file.extract(f, appd_file_dir)
             except Exception as e:
-                logging.error(e)
+                LOG.error(e, exc_info=True)
             cmcc_appd = CmccAppD(appd_file_dir)
             self.hot_path = _translate(cmcc_appd.appd, appd_file_dir)
         elif appd_file_path.endswith('.yaml'):
             simple_appd = yaml.load(appd_file_path, Loader=yaml.FullLoader)
             self.hot_path = _translate(simple_appd, appd_file_dir)
         else:
-            logging.error('不支持的appd类型')
+            LOG.error('不支持的appd类型')
 
 
 class CmccAppD(object):

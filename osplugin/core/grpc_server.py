@@ -15,13 +15,13 @@
 
 """
 
-import logging
 from concurrent import futures
 
 # -*- coding: utf-8 -*-
 import grpc
 
 import config
+from core.log import logger
 from internal.lcmservice import lcmservice_pb2_grpc
 from service.app_lcm_service import AppLcmService
 from service.vm_image_service import VmImageService
@@ -29,6 +29,7 @@ from service.vm_image_service import VmImageService
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LISTEN_PORT = 8234
 MAX_MESSAGE_LENGTH = 1024 * 1024 * 50
+LOG = logger
 
 
 def serve():
@@ -54,6 +55,6 @@ def serve():
         server.add_insecure_port(listen_addr)
 
     server.start()
-    logging.info("Starting server on %s", listen_addr)
+    LOG.info("Starting server on %s", listen_addr)
     server.wait_for_termination()
-    logging.info('Server stopped')
+    LOG.info('Server stopped')

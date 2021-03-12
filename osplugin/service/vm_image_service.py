@@ -17,13 +17,13 @@
 
 # -*- coding: utf-8 -*-
 import json
-import logging
 import time
 
 from pony.orm import db_session, commit
 
 import config
 import utils
+from core.log import logger
 from core.models import VmImageInfoMapper, AppInsMapper
 from core.openstack_utils import create_glance_client
 from core.openstack_utils import create_heat_client
@@ -32,6 +32,7 @@ from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
     DownloadVmImageResponse, DeleteVmImageResponse
 
+LOG = logger
 
 def get_image_name(name):
     """
@@ -97,7 +98,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             app_ins_mapper.delete()
         nova_client = create_nova_client(host_ip)
         vm_info = nova_client.servers.get(request.vmId)
-        logging.info('vm %s: status: %s', vm_info.id, vm_info.status)
+        LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
         image_name = get_image_name(vm_info.name)
         image_id = nova_client.servers.create_image(request.vmId, image_name)
         glance_client = create_glance_client(host_ip)
@@ -129,11 +130,11 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return res
         vm_info = VmImageInfoMapper.get(image_id=request.imageId)
         if not vm_info:
-            logging.info("image not found! image_id: %s", request.imageId)
+            LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
         image_info = glance_client.images.get(request.imageId)
-        logging.info("openstack image %s status: %s", image_info.id, image_info.status)
+        LOG.info("openstack image %s status: %s", image_info.id, image_info.status)
         res.response = json.dumps({
             "imageId": vm_info.image_id,
             "imageName": vm_info.image_name,
@@ -152,7 +153,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return res
         vm_info = VmImageInfoMapper.get(image_id=request.imageId)
         if not vm_info:
-            logging.info("image not found! image_id: %s", request.imageId)
+            LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
         image_res = glance_client.images.delete(request.imageId)
@@ -170,7 +171,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return res
         vm_info = VmImageInfoMapper.get(image_id=request.imageId)
         if not vm_info:
-            logging.info("image not found! image_id: %s", request.imageId)
+            LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
         iterable_with_length, resp = \
@@ -178,7 +179,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                                                 vm_info.image_size,
                                                 request.imageId, False,
                                                 chunk_size=int(config.chunk_size))
-        logging.debug("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
+        LOG.debug("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
                       vm_info.image_size,
                       request.chunkNum,
                       config.chunk_size)

@@ -14,15 +14,15 @@
 # limitations under the License.
 
 """
-import logging
 import unittest
 
 import utils
+from core.log import logger
 from internal.lcmservice import lcmservice_pb2
 from service.app_lcm_service import AppLcmService
 from tests import gen_token
 
-LOG = logging
+LOG = logger
 
 
 class AppLcmServiceTest(unittest.TestCase):

@@ -17,7 +17,6 @@
 
 # -*- coding: utf-8 -*-
 
-import logging
 import os
 import re
 import uuid
@@ -26,6 +25,7 @@ import jwt
 from jwt import DecodeError
 
 from config import jwt_public_key
+from core.log import logger
 
 FAILURE = 'Failure'
 SUCCESS = 'Success'
@@ -35,14 +35,16 @@ INSTANTIATED = 'Instantiated'
 TERMINATED = 'Terminated'
 TERMINATING = 'Terminating'
 
+LOG = logger
+
 
 def create_dir(path):
     try:
         os.makedirs(path)
     except OSError:
-        logging.debug('文件加已存在')
+        LOG.debug('文件夹已存在')
     except Exception as e:
-        logging.error(e)
+        LOG.error(e, exc_info=True)
         return False
     return True
 
@@ -59,28 +61,28 @@ def delete_dir(path):
 
 def validate_access_token(access_token):
     if not access_token:
-        logging.info('accessToken required')
+        LOG.info('accessToken required')
         return False
     try:
         payload = jwt.decode(access_token, jwt_public_key, algorithms=['RS256'])
         if not payload['authorities']:
-            logging.info('Invalid token A')
+            LOG.info('Invalid token A')
             return False
         if not payload['userId']:
-            logging.info('Invalid token UI')
+            LOG.info('Invalid token UI')
             return False
         if not payload['user_name']:
-            logging.info('Invalid token UN')
+            LOG.info('Invalid token UN')
             return False
     except DecodeError as e:
-        logging.error(e)
+        LOG.error(e, exc_info=True)
         return False
     return True
 
 
 def validate_ipv4_address(host_ip):
     if not host_ip:
-        logging.info('hostIp required')
+        LOG.info('hostIp required')
         return False
     p = re.compile('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.)' +
                    '{3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
@@ -94,13 +96,9 @@ def gen_uuid():
     return ''.join(str(uuid.uuid4()).split('-'))
 
 
-if __name__ == '__main__':
-    jwt.encode({"user_id": "123", "user_name": "123", "authorities": "123"})
-
-
 def validate_uuid(param):
     if not param:
-        logging.info('param require')
+        LOG.info('param require')
         return False
     p = re.compile('^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
     if p.match(param):

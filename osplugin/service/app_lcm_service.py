@@ -17,7 +17,6 @@
 
 # -*- coding: utf-8 -*-
 import json
-import logging
 import os
 import threading
 import uuid
@@ -30,6 +29,7 @@ from pony.orm import db_session, commit
 import config
 import utils
 from core.csar.pkg import get_hot_yaml_path
+from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest
 from core.openstack_utils import create_heat_client, RC_FILE_DIR
 from internal.lcmservice import lcmservice_pb2_grpc
@@ -37,6 +37,7 @@ from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, RemoveCfgResponse
 
 _APP_TMP_PATH = config.base_dir + '/tmp'
+LOG = logger
 
 
 def start_check_stack_status(app_instance_id):
@@ -65,7 +66,7 @@ def check_stack_status(app_instance_id):
         app_ins_mapper.delete()
         return
     if stack_resp.status == 'COMPLETE' or stack_resp.status == 'FAILED':
-        logging.info('app ins: %s, stack_status: %s, reason: %s',
+        LOG.info('app ins: %s, stack_status: %s, reason: %s',
                      app_instance_id,
                      stack_resp.stack_status,
                      stack_resp.stack_status_reason)
@@ -105,11 +106,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     @db_session
     def instantiate(self, request_iterator, context):
-        logging.debug('receive instantiate msg...')
+        LOG.debug('receive instantiate msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request_iterator)
-        logging.debug('parameters: %s', parameter)
+        LOG.debug('parameters: %s', parameter)
 
         host_ip = validate_input_params(parameter)
         if not host_ip:
@@ -120,47 +121,47 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
-        logging.debug('db data %s', app_ins_mapper)
+        LOG.debug('db data %s', app_ins_mapper)
         if app_ins_mapper is not None:
-            logging.info('app ins %s exist', app_instance_id)
+            LOG.info('app ins %s exist', app_instance_id)
             return res
 
         if parameter.app_package_path is None:
-            logging.info('app package data is none')
+            LOG.info('app package data is none')
             return res
 
-        logging.debug('writing package file')
+        LOG.debug('writing package file')
         app_ins_tmp_path = _APP_TMP_PATH + '/instance/' + app_instance_id
         utils.create_dir(app_ins_tmp_path)
 
         try:
-            logging.debug('unzip package')
+            LOG.debug('unzip package')
             with zipfile.ZipFile(parameter.app_package_path) as zip_file:
                 namelist = zip_file.namelist()
                 for f in namelist:
                     zip_file.extract(f, app_ins_tmp_path)
             parameter.delete_package_tmp()
         except Exception as e:
-            logging.error(e)
+            LOG.error(e, exc_info=True)
             parameter.delete_package_tmp()
             utils.delete_dir(app_ins_tmp_path)
             return res
 
         hot_yaml_path = get_hot_yaml_path(app_ins_tmp_path)
-        logging.debug('hot template path %s', hot_yaml_path)
+        LOG.debug('hot template path %s', hot_yaml_path)
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
             'files': dict(list(tpl_files.items()))
         }
-        logging.debug('init heat client')
+        LOG.debug('init heat client')
         heat = create_heat_client(host_ip)
         try:
             stack_resp = heat.stacks.create(**fields)
             utils.delete_dir(app_ins_tmp_path)
         except Exception as e:
-            logging.error(e)
+            LOG.error(e, exc_info=True)
             utils.delete_dir(app_ins_tmp_path)
             return res
         AppInsMapper(app_instance_id=app_instance_id,
@@ -176,7 +177,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     @db_session
     def terminate(self, request, context):
-        logging.info('receive terminate msg...')
+        LOG.debug('receive terminate msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
@@ -198,7 +199,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         except HTTPNotFound:
             pass
         except Exception as e:
-            logging.error(e)
+            LOG.error(e, exc_info=True)
             return res
         app_ins_mapper.operational_status = utils.TERMINATING
 
@@ -209,7 +210,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def query(self, request, context):
-        logging.info('receive query msg...')
+        LOG.debug('receive query msg...')
         res = QueryResponse(response='{"code": 500, "msg": "server error"}')
 
         host_ip = validate_input_params(request)
@@ -252,7 +253,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def uploadConfig(self, request_iterator, context):
-        logging.info('receive uploadConfig msg...')
+        LOG.debug('receive uploadConfig msg...')
         res = UploadCfgResponse(status=utils.FAILURE)
 
         parameter = UploadCfgRequest(request_iterator)
@@ -275,7 +276,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 new_file.write(config_file)
                 res.status = utils.SUCCESS
         except Exception as e:
-            logging.error(e)
+            LOG.error(e, exc_info=True)
 
         return res
 
@@ -286,7 +287,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context: 上下文信息
         :return: Success/Failure
         """
-        logging.info('receive removeConfig msg...')
+        LOG.debug('receive removeConfig msg...')
         res = RemoveCfgResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
@@ -298,18 +299,17 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             os.remove(config_path)
             res.status = utils.SUCCESS
         except OSError as e:
-            logging.info(e)
-            logging.debug('file not exist')
+            LOG.debug(e)
             res.status = utils.SUCCESS
         except Exception as e:
-            logging.error(e)
+            LOG.error(e, exc_info=True)
             return res
 
-        logging.info('host configuration file deleted successfully')
+        LOG.info('host configuration file deleted successfully')
         return res
 
     def workloadEvents(self, request, context):
-        logging.info('receive workload describe msg...')
+        LOG.debug('receive workload describe msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
@@ -322,7 +322,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if not app_ins_mapper:
-            logging.info('app实例 %s 不存在', app_instance_id)
+            LOG.info('app实例 %s 不存在', app_instance_id)
             return res
 
         heat = create_heat_client(host_ip)
