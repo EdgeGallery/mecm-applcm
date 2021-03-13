@@ -95,6 +95,7 @@ const (
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
 	StatusInternalServerError int = 500
+	StatusConflict            int = 409
 	StatusNotFound            int = 404
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096

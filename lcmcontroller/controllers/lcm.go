@@ -367,7 +367,7 @@ func (c *LcmController) Instantiate() {
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest,
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
 			"App package host record not exists")
 		util.ClearByteArray(bKey)
 		return
@@ -1082,8 +1082,8 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoPara
 	if origin == "" {
 		origin = "MEO"
 	}
-	originVar, err := util.ValidateName(origin, util.NameRegex)
-	if err != nil || !originVar {
+	_, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
 		return err
 	}
@@ -1633,18 +1633,6 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
-	appPkgRecord := &models.AppPackageRecord{
-		AppPkgId: packageId + tenantId,
-	}
-
-	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
-	if readErr == nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"App package record already exists")
-		util.ClearByteArray(bKey)
-		return
-	}
-
 	file, header, err := c.GetFile("package")
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -1817,7 +1805,7 @@ func (c *LcmController) DistributePackage() {
 
 	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
 			"App package does not exist")
 		util.ClearByteArray(bKey)
 		return
