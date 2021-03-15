@@ -27,6 +27,7 @@ import (
 	"lcmcontroller/config"
 	"lcmcontroller/models"
 	"mime/multipart"
+	"path"
 	"path/filepath"
 	"strings"
 	"unsafe"
@@ -73,43 +74,20 @@ func (c *LcmController) UploadConfig() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, vim, file, err := c.getInputParametersForUploadCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	vim, err := c.getVim(clientIp, hostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
+	hostInfoRec := &models.MecHost{
+		MecHostId: hostIp,
 	}
 
-	file, header, err := c.GetFile("configFile")
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest, "Upload config file error")
-		return
-	}
-
-	err = util.ValidateFileExtensionEmpty(header.Filename)
-	if err != nil || len(header.Filename) > util.MaxFileNameSize {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest,
-			"File shouldn't contains any extension or filename is larger than max size")
-		return
-	}
-
-	err = util.ValidateFileSize(header.Size, util.MaxConfigFile)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
-		return
-	}
-
-	err = c.validateYamlFile(clientIp, file)
-	if err != nil {
-		util.ClearByteArray(bKey)
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			util.MecHostRecDoesNotExist)
 		return
 	}
 
@@ -135,6 +113,13 @@ func (c *LcmController) UploadConfig() {
 		}
 		return
 	}
+
+	hostInfoRec.ConfigUploadStatus = "true"
+	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
+		log.Error("Failed to save mec host info record to database.")
+		return
+	}
 	c.handleLoggingForSuccess(clientIp, "Upload config is successful")
 	c.ServeJSON()
 }
@@ -154,6 +139,130 @@ func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) e
 		return err
 	}
 	return nil
+}
+
+// extract CSAR package
+func (c *LcmController) extractCsarPackage(packagePath string) (string, error) {
+	zipReader, _ := zip.OpenReader(packagePath)
+	if len(zipReader.File) > util.TooManyFile {
+		return "", errors.New("Too many files contains in zip file")
+	}
+	var totalWrote int64
+	packageDir := path.Dir(packagePath)
+	err := os.MkdirAll(packageDir, 0750)
+	if err != nil {
+		log.Error(util.FailedToMakeDir)
+		return "" ,errors.New(util.FailedToMakeDir)
+	}
+	for _, file := range zipReader.Reader.File {
+
+		zippedFile, err := file.Open()
+		if err != nil || zippedFile == nil {
+			log.Error("Failed to open zip file")
+			continue
+		}
+		if file.UncompressedSize64 > util.SingleFileTooBig || totalWrote > util.TooBig {
+			log.Error("File size limit is exceeded")
+		}
+
+		defer zippedFile.Close()
+
+		isContinue, wrote := c.extractFiles(file, zippedFile, totalWrote, packageDir)
+		if isContinue {
+			continue
+		}
+		totalWrote = wrote
+	}
+	return packageDir, nil
+}
+
+// Extract files
+func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64, dirName string) (bool, int64) {
+	targetDir := dirName
+	extractedFilePath := filepath.Join(
+		targetDir,
+		file.Name,
+	)
+
+	if file.FileInfo().IsDir() {
+		err := os.MkdirAll(extractedFilePath, 0750)
+		if err != nil {
+			log.Error("Failed to create directory")
+		}
+	} else {
+		outputFile, err := os.OpenFile(
+			extractedFilePath,
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			0750,
+		)
+		if err != nil || outputFile == nil {
+			log.Error("The output file is nil")
+			return true, totalWrote
+		}
+
+		defer outputFile.Close()
+
+		wt, err := io.Copy(outputFile, zippedFile)
+		if err != nil {
+			log.Error("Failed to copy zipped file")
+		}
+		totalWrote += wt
+	}
+	return false, totalWrote
+}
+
+// get file with extension
+func (c *LcmController) getFileContainsExtension(clientIp string, pkgDir string, ext string) (string, error) {
+	d, err := os.Open(pkgDir)
+	if err != nil {
+        log.Error("failed to find application package")
+		return "", errors.New("failed to find  application package")
+	}
+	defer d.Close()
+
+	files, err := d.Readdir(-1)
+	if err != nil {
+		log.Error("failed to read application package")
+		return "", errors.New("failed to read application package")
+	}
+
+	for _, file := range files {
+		if file.Mode().IsRegular() && filepath.Ext(file.Name()) == ext {
+			return pkgDir + "/" + file.Name(), nil
+		}
+	}
+	log.Error(util.FileNameNotFound + ext)
+	return "", errors.New(util.FileNameNotFound + ext)
+}
+
+// Get application package details
+func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
+	packageDir string) (models.AppPkgDetails, error) {
+
+	var pkgDetails models.AppPkgDetails
+	mf, err := c.getFileContainsExtension(clientIp, packageDir, ".mf")
+    if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return pkgDetails, errors.New("failed to find mf file")
+	}
+
+	mfYaml, err := os.Open(mf)
+	if err != nil {
+		log.Error("failed to read mf file")
+		return pkgDetails, errors.New("failed to read mf file")
+	}
+	defer mfYaml.Close()
+
+	mfFileBytes, _ := ioutil.ReadAll(mfYaml)
+
+	data, err := yaml.YAMLToJSON(mfFileBytes)
+	if err != nil {
+		log.Error("failed to convert yaml to json")
+		return pkgDetails, errors.New("failed to convert yaml to json")
+	}
+
+	json.Unmarshal(data, &pkgDetails)
+	return pkgDetails, nil
 }
 
 // @Title Remove Config
@@ -183,18 +292,11 @@ func (c *LcmController) RemoveConfig() {
 		return
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	hostIp, err := c.getHostIP(clientIp)
+	hostIp, vim, hostInfoRec, err := c.getInputParametersForRemoveCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
-
-	vim, err := c.getVim(clientIp, hostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -216,16 +318,21 @@ func (c *LcmController) RemoveConfig() {
 		}
 		return
 	}
+	hostInfoRec.ConfigUploadStatus = "false"
+	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
+		log.Error("Failed to save mec host info record to database.")
+		return
+	}
 	c.handleLoggingForSuccess(clientIp, "Remove config is successful")
 	c.ServeJSON()
 }
 
 // @Title Instantiate application
 // @Description Instantiate application
-// @Param   hostIp          formData 	string	true   "hostIp"
-// @Param   file            formData    file    true   "file"
-// @Param   appName         formData 	string	true   "appName"
-// @Param   packageId       formData 	string	false  "packageId"
+// @Param   hostIp          body 	string	true   "hostIp"
+// @Param   appName         body 	string	true   "appName"
+// @Param   packageId       body 	string	true   "packageId"
 // @Param   tenantId        path 	string	true   "tenantId"
 // @Param   appInstanceId   path 	string	true   "appInstanceId"
 // @Param   access_token    header      string  true   "access token"
@@ -244,23 +351,31 @@ func (c *LcmController) Instantiate() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 
+	var req models.InstantiateRequest
+	json.Unmarshal(c.Ctx.Input.RequestBody, &req)
+
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	hostIp, appInsId, file, header, tenantId, packageId, err := c.validateToken(accessToken, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	appName, err := c.getAppName(clientIp)
+	appInsId, tenantId, hostIp, packageId, appName, err := c.validateToken(accessToken, req, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	err = util.ValidateFileExtensionCsar(header.Filename)
-	if err != nil || len(header.Filename) > util.MaxFileNameSize {
+	appPkgHostRecord := &models.AppPackageHostRecord{
+		PkgHostKey: packageId + tenantId + hostIp,
+	}
+
+	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package host record not exists")
 		util.ClearByteArray(bKey)
+		return
+	}
+	if appPkgHostRecord.DistributionStatus != "Distributed" {
 		c.handleLoggingForError(clientIp, util.BadRequest,
-			"File doesn't contain csar extension or filename is larger than max size")
+			"application package distribution status is:" + appPkgHostRecord.DistributionStatus)
+		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -268,24 +383,11 @@ func (c *LcmController) Instantiate() {
 		AppInsId: appInsId,
 	}
 
-	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
+	readErr = c.Db.ReadData(appInfoRecord, util.AppInsId)
 	if readErr == nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+		c.handleLoggingForError(clientIp, util.BadRequest,
 			"App instance info record already exists")
 		util.ClearByteArray(bKey)
-		return
-	}
-
-	packageName, path, fileName, err := c.getPkgName(clientIp, bKey, header, file)
-	if err != nil {
-		return
-	}
-
-	var mainServiceTemplateMf = PackageFolderPath + path + "/" + fileName
-	deployType, err := c.getApplicationDeploymentType(mainServiceTemplateMf)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
 
@@ -295,10 +397,11 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	artifact, pluginInfo, err := c.getArtifactAndPluginInfo(deployType, path, clientIp, vim)
+	pluginInfo := util.GetPluginInfo(vim)
+	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.removeCsarFiles(packageName, header, clientIp)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 
@@ -306,46 +409,50 @@ func (c *LcmController) Instantiate() {
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
-		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
 
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
-	err = c.insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId, packageId)
+	var appInfoParams models.AppInfoRecord
+	appInfoParams.AppInsId = appInsId
+	appInfoParams.HostIp = hostIp
+
+	appInfoParams.TenantId = tenantId
+	appInfoParams.PackageId = packageId
+	appInfoParams.AppName = appName
+
+	err = c.insertOrUpdateAppInfoRecord(clientIp, appInfoParams)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.removeCsarFiles(packageName, header, clientIp)
 		return
 	}
 
-	err = c.InstantiateApplication(pluginInfo, hostIp, artifact, clientIp, accessToken, appAuthConfig)
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	err, _ = adapter.Instantiate(tenantId, hostIp, packageId, accessToken, appAuthConfig)
 	util.ClearByteArray(bKey)
-	c.removeCsarFiles(packageName, header, clientIp)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
 		return
 	}
 
-	c.handleLoggingForSuccess(clientIp, "Instantiation is successful")
+	c.handleLoggingForSuccess(clientIp, "Application instantiated successfully")
 	c.ServeJSON()
 }
 
-func (c *LcmController) validateToken(accessToken string, clientIp string) (string, string, multipart.File,
-	*multipart.FileHeader, string, string, error) {
+func (c *LcmController) validateToken(accessToken string, req models.InstantiateRequest,  clientIp string) (string, string, string, string, string, error) {
 
 	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
 		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
-		return "", "", nil, nil, "", " ", errors.New(util.RequestBodyTooLarge)
+		return "", "", "", "", "", errors.New(util.RequestBodyTooLarge)
 	}
 
-	hostIp, appInsId, file, header, tenantId, packageId, err := c.getInputParameters(clientIp)
+	appInsId, tenantId, hostIp, packageId, appName, err := c.ValidateInstantiateInputParameters(clientIp, req)
 	if err != nil {
-		return "", "", nil, nil, "", " ", err
+		return "", "", "", "", "", err
 	}
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
@@ -354,9 +461,9 @@ func (c *LcmController) validateToken(accessToken string, clientIp string) (stri
 		} else {
 			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		}
-		return "", "", nil, nil, "", " ", err
+		return "", "", "", "", "", err
 	}
-	return hostIp, appInsId, file, header, tenantId, packageId, nil
+	return appInsId, tenantId, hostIp, packageId, appName, nil
 }
 
 // Process Ak Sk configuration
@@ -375,21 +482,7 @@ func processAkSkConfig(appInsId, appName string) (error, config.AppAuthConfig, c
 	return nil, appAuthConfig, acm
 }
 
-// Remove CSAR files
-func (c *LcmController) removeCsarFiles(packageName string, header *multipart.FileHeader, clientIp string) {
-	err := os.RemoveAll(PackageFolderPath + packageName)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to remove folder")
-		return
-	}
-	err = os.Remove(PackageFolderPath + header.Filename)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Failed to remove csar file")
-		return
-	}
-}
+
 
 // @Title Terminate application
 // @Description Terminate application
@@ -457,6 +550,9 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
+	var origin = appInfoRecord.Origin
+	var syncStatus = appInfoRecord.SyncStatus
+
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -467,6 +563,19 @@ func (c *LcmController) Terminate() {
 	if err != nil {
 		return
 	}
+
+	appInsKeyRec := &models.AppInstanceStaleRec{
+		AppInsId: appInsId,
+		TenantId: tenantId,
+	}
+	if !syncStatus && strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app instance key record to database.")
+			return
+		}
+	}
+
 	c.handleLoggingForSuccess(clientIp, "Termination is successful")
 	c.ServeJSON()
 }
@@ -827,7 +936,7 @@ func (c *LcmController) getApplicationDeploymentType(mainServiceTemplateMf strin
 }
 
 // Opens package
-func (c *LcmController) openPackage(packagePath string) string {
+func (c *LcmController) openPackage(packagePath string) (string, error) {
 	zipReader, _ := zip.OpenReader(packagePath)
 	if len(zipReader.File) > util.TooManyFile {
 		c.writeErrorResponse("Too many files contains in zip file", util.StatusInternalServerError)
@@ -836,8 +945,8 @@ func (c *LcmController) openPackage(packagePath string) string {
 	dirName := util.RandomDirectoryName(10)
 	err := os.MkdirAll(PackageFolderPath+dirName, 0750)
 	if err != nil {
-		c.writeErrorResponse("Failed to make directory", util.StatusInternalServerError)
-		return err.Error()
+		c.writeErrorResponse(util.FailedToMakeDir, util.StatusInternalServerError)
+		return "" ,errors.New(util.FailedToMakeDir)
 	}
 	for _, file := range zipReader.Reader.File {
 
@@ -858,76 +967,16 @@ func (c *LcmController) openPackage(packagePath string) string {
 		}
 		totalWrote = wrote
 	}
-
-	return dirName
-}
-
-// Extract files
-func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64, dirName string) (bool, int64) {
-	targetDir := PackageFolderPath + dirName
-	extractedFilePath := filepath.Join(
-		targetDir,
-		file.Name,
-	)
-
-	if file.FileInfo().IsDir() {
-		err := os.MkdirAll(extractedFilePath, 0750)
-		if err != nil {
-			c.writeErrorResponse("Failed to make directory", util.StatusInternalServerError)
-		}
-	} else {
-		outputFile, err := os.OpenFile(
-			extractedFilePath,
-			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-			0750,
-		)
-		if err != nil || outputFile == nil {
-			c.writeErrorResponse("The output file is nil", util.StatusInternalServerError)
-			return true, totalWrote
-		}
-
-		defer outputFile.Close()
-
-		wt, err := io.Copy(outputFile, zippedFile)
-		if err != nil {
-			c.writeErrorResponse("Failed to copy zipped file", util.StatusInternalServerError)
-		}
-		totalWrote += wt
-	}
-	return false, totalWrote
-}
-
-// Instantiate application
-func (c *LcmController) InstantiateApplication(pluginInfo string, hostIp string,
-	artifact string, clientIp string, accessToken string, akSkAppInfo config.AppAuthConfig) error {
-	client, err := pluginAdapter.GetClient(pluginInfo)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-		return err
-	}
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, _ = adapter.Instantiate(hostIp, artifact, accessToken, akSkAppInfo)
-	if err != nil {
-		errorString := err.Error()
-		if strings.Contains(errorString, util.Forbidden) {
-			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
-			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		} else {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		}
-		return err
-	}
-	return nil
+	return dirName, nil
 }
 
 // Get app name
 func (c *LcmController) getAppName(clientIp string) (string, error) {
 	appName := c.GetString("appName")
-	name, err := util.ValidateName(appName)
+	name, err := util.ValidateName(appName, util.NameRegex)
 	if err != nil || !name {
-		c.handleLoggingForError(clientIp, util.BadRequest, "AppName is invalid")
-		return "", errors.New("AppName is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.AppNameIsNotValid)
+		return "", errors.New(util.AppNameIsNotValid)
 	}
 	return appName, nil
 }
@@ -937,7 +986,19 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	hostIp := c.GetString("hostIp")
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
+		return "", err
+	}
+	return hostIp, nil
+}
+
+
+// Get host IP
+func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
+	hostIp := c.Ctx.Input.Param(":hostIp")
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
 		return "", err
 	}
 	return hostIp, nil
@@ -947,39 +1008,39 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 func (c *LcmController) getPackageId(clientIp string) (string, error) {
 	packageId := c.GetString("packageId")
 	if packageId != "" {
-		uuid, err := util.IsValidUUID(packageId)
-		if err != nil || !uuid {
-			c.handleLoggingForError(clientIp, util.BadRequest, "package id is invalid")
-			return "", err
+		if len(packageId) > 64 {
+			c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
+			return "", errors.New("package id length exceeds max limit")
 		}
 		return packageId, nil
 	}
 	return "", nil
 }
 
+// Get app Id
+func (c *LcmController) getAppId(clientIp string) (string, error) {
+	appId := c.GetString("appId")
+	if appId != "" {
+		if len(appId) > 32 {
+			c.handleLoggingForError(clientIp, util.BadRequest, "app id is invalid")
+			return "", errors.New("app id length exceeds max limit")
+		}
+		return appId, nil
+	}
+	return "", nil
+}
 // Get Package Id from url
 func (c *LcmController) getUrlPackageId(clientIp string) (string, error) {
-	packageId := c.GetString(":packageId")
+	packageId := c.Ctx.Input.Param(":packageId")
 	if packageId != "" {
-		uuid, err := util.IsValidUUID(packageId)
-		if err != nil || !uuid {
-			c.handleLoggingForError(clientIp, util.BadRequest, "package id is invalid")
+		//uuid, err := util.IsValidUUID(packageId)
+		if len(packageId) > 64 {
+			c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
 			return "", errors.New("invalid package id")
 		}
 		return packageId, nil
 	}
 	return "", nil
-}
-
-// Get host IP from url
-func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
-	hostIp := c.Ctx.Input.Param(":hostIp")
-	err := util.ValidateIpv4Address(hostIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid from url")
-		return "", err
-	}
-	return hostIp, nil
 }
 
 // Get mep capability id from url
@@ -1015,39 +1076,44 @@ func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file 
 	return nil
 }
 
-// Get artifact and plugin info
-func (c *LcmController) getArtifactAndPluginInfo(deployType string, packageName string,
-	clientIp string, vim string) (string, string, error) {
-	switch deployType {
-	case "helm":
-		pkgPath := PackageFolderPath + packageName + PackageArtifactPath + "Charts"
-		artifact, err := c.getDeploymentArtifact(pkgPath, ".tar")
-		if artifact == "" {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
-				"Artifact not available in application package.")
-			return "", "", err
-		}
-
-		pluginInfo := util.GetPluginInfo(vim)
-		return artifact, pluginInfo, nil
-	default:
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
-		return "", "", errors.New("deployment type is not helm based")
-	}
-}
-
 // Insert or update application info record
-func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType, clientIp, tenantId,
-	packageId string) error {
-	appInfoRecord := &models.AppInfoRecord{
-		AppInsId:   appInsId,
-		HostIp:     hostIp,
-		DeployType: deployType,
-		TenantId:   tenantId,
-		PackageId:  packageId,
+func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoParams models.AppInfoRecord) error {
+	origin := c.Ctx.Request.Header.Get(util.Origin)
+	if origin == "" {
+		origin = "MEO"
+	}
+	_, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
+		return err
+	}
+	hostInfoRec := &models.MecHost{
+		MecHostId: appInfoParams.HostIp,
 	}
 
-	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return readErr
+	}
+	syncStatus := true
+	if origin == "MEPM" {
+		syncStatus = false
+	}
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId:   appInfoParams.AppInsId,
+		HostIp:     appInfoParams.HostIp,
+
+		TenantId:   appInfoParams.TenantId,
+		PackageId:  appInfoParams.PackageId,
+		AppName:    appInfoParams.AppName,
+		Origin:     origin,
+		SyncStatus: syncStatus,
+		MecHost:    hostInfoRec,
+	}
+
+	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, appInfoParams.TenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -1060,7 +1126,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(appInsId, hostIp, deployType
 	}
 
 	err = c.Db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
-	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save app info record to database.")
 		return err
 	}
@@ -1086,76 +1152,39 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 	}
 
 	err = c.Db.InsertOrUpdateData(tenantRecord, util.TenantId)
-	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save tenant record to database.")
 		return err
 	}
 	return nil
 }
 
-// Delete app info record
-func (c *LcmController) deleteAppInfoRecord(appInsId string) error {
-	appInfoRecord := &models.AppInfoRecord{
-		AppInsId: appInsId,
-	}
-
-	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Delete tenant record
-func (c *LcmController) deleteTenantRecord(clientIp, tenantId string) error {
-	tenantRecord := &models.TenantInfoRecord{
-		TenantId: tenantId,
-	}
-
-	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return err
-	}
-
-	if count == 0 {
-		err = c.Db.DeleteData(tenantRecord, util.TenantId)
-		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-			return err
-		}
-	}
-	return nil
-}
-
 // Get input parameters
-func (c *LcmController) getInputParameters(clientIp string) (string, string, multipart.File,
-	*multipart.FileHeader, string, string, error) {
-	hostIp, err := c.getHostIP(clientIp)
+func (c *LcmController) getInputParameters(clientIp string) (string, string, string, string, error) {
+	hostIp := c.Ctx.Request.Header.Get(util.MecHostIp)
+	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", nil, nil, "", "", err
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
+		return "", "", "", "", err
 	}
 
 	appInsId, err := c.getAppInstId(clientIp)
 	if err != nil {
-		return "", "", nil, nil, "", "", err
+		return "", "", "", "", err
 	}
 
-	file, header, err := c.getFile(clientIp)
-	if err != nil {
-		return "", "", nil, nil, "", "", err
-	}
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
-		return "", "", nil, nil, "", "", err
+		return "", "", "", "", err
 	}
 
-	packageId, err := c.getPackageId(clientIp)
-	if err != nil {
-		return "", "", nil, nil, "", "", err
+	packageId := c.Ctx.Request.Header.Get(util.PackageId)
+	//packageId, err := c.getPackageId(clientIp)
+	if packageId == "" {
+		return "", "", "", "", err
 	}
 
-	return hostIp, appInsId, file, header, tenantId, packageId, nil
+	return hostIp, appInsId, tenantId, packageId, nil
 }
 
 // Returns the utilization details
@@ -1248,16 +1277,6 @@ func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
 	return diskUtilization, nil
 }
 
-func (c *LcmController) handleLoggingK8s(clientIp string, errorString string) {
-	if strings.Contains(errorString, util.Forbidden) {
-		c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-	} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-	} else {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
-	}
-}
-
 func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter,
 	clientIp, appInsId, tenantId string) {
 	err := acm.DeleteAppAuthConfig()
@@ -1277,37 +1296,37 @@ func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter
 	}
 }
 
-func (c *LcmController) getPkgName(clientIp string, bKey []byte,
-	header *multipart.FileHeader, file multipart.File) (string, string, string, error) {
-	var fileName = ""
 
-	pkgPath := PackageFolderPath + header.Filename
-	err := c.createPackagePath(pkgPath, clientIp, file)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return "", "", "", err
-	}
-
-	packageName := c.openPackage(pkgPath)
-	files, err := getFilesFromDir(packageName)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.removeCsarFiles(packageName, header, clientIp)
-		return "", "", "", err
-	}
-
-	path := packageName
-	if len(files) == 1 {
-		path = packageName + "/" + files[0].Name()
-		files, err = getFilesFromDir(packageName + "/" + files[0].Name())
+func createDirectory(dir string) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.MkdirAll(dir, 0755)
 		if err != nil {
-			util.ClearByteArray(bKey)
-			c.removeCsarFiles(packageName, header, clientIp)
-			return "", "", "", err
+			return errors.New("failed to create directory")
 		}
 	}
-	fileName = getManifestFileName(files)
-	return packageName, path, fileName, nil
+	return nil
+}
+
+func (c *LcmController) saveApplicationPackage(clientIp string, tenantId string, packageId string,
+	header *multipart.FileHeader, file multipart.File) (string, error) {
+
+	err := createDirectory(PackageFolderPath + tenantId)
+	if err != nil {
+		return "", err
+	}
+
+	err = createDirectory(PackageFolderPath + tenantId + "/" + packageId)
+	if err != nil {
+		return "", err
+	}
+
+	pkgPath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
+	err = c.createPackagePath(pkgPath, clientIp, file)
+	if err != nil {
+		return "", err
+	}
+
+	return pkgPath, nil
 }
 
 // Get manifest file name
@@ -1411,4 +1430,945 @@ func (c *LcmController) GetWorkloadDescription() {
 		return
 	}
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
+}
+
+// @Title Sync app instances records
+// @Description Sync app instances records
+// @Param   tenantId    path 	string	    true   "tenantId"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/sync_updated [get]
+func (c *LcmController) SynchronizeUpdatedRecord() {
+	log.Info("Sync app instances request received.")
+
+	var appInstances []*models.AppInfoRecord
+	var appInstancesSync []*models.AppInfoRecord
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
+	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).All(&appInstances)
+	for _, appInstance := range appInstances {
+		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
+			appInstancesSync = append(appInstancesSync, appInstance)
+		}
+	}
+
+	res, err := json.Marshal(appInstancesSync)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+
+	for _, appInstance := range appInstancesSync {
+		appInstance.SyncStatus = true
+		err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app info record to database.")
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "AppInstance synchronization is successful")
+}
+
+// @Title Sync app instances stale records
+// @Description Sync app instances stale records
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/sync_deleted [get]
+func (c *LcmController) SynchronizeStaleRecord() {
+	log.Info("Sync app instances stale request received.")
+
+	var appInstStaleRecs []*models.AppInstanceStaleRec
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+	_, _ = c.Db.QueryTable("app_instance_stale_rec").Filter("tenant_id", tenantId).All(&appInstStaleRecs)
+	res, err := json.Marshal(appInstStaleRecs)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	for _, appInstStaleRec := range appInstStaleRecs {
+		err = c.Db.DeleteData(appInstStaleRec, util.AppInsId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Stale appInstance records synchronization is successful")
+}
+
+// Get in put parameters for upload configuration
+func (c *LcmController) getInputParametersForUploadCfg(clientIp string) (hostIp string,
+	vim string, file multipart.File, err error) {
+	hostIp, err = c.getHostIP(clientIp)
+	if err != nil {
+		return hostIp, vim, file, err
+	}
+
+	vim, err = c.getVim(clientIp, hostIp)
+	if err != nil {
+		return hostIp, vim, file, err
+	}
+
+	file, header, err := c.GetFile("configFile")
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Upload config file error")
+		return hostIp, vim, file, err
+	}
+
+	err = util.ValidateFileExtensionEmpty(header.Filename)
+	if err != nil || len(header.Filename) > util.MaxFileNameSize {
+		c.handleLoggingForError(clientIp, util.BadRequest,
+			"File shouldn't contains any extension or filename is larger than max size")
+		return hostIp, vim, file, err
+	}
+
+	err = util.ValidateFileSize(header.Size, util.MaxConfigFile)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
+		return hostIp, vim, file, err
+	}
+
+	err = c.validateYamlFile(clientIp, file)
+	if err != nil {
+		return hostIp, vim, file, err
+	}
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return hostIp, vim, file, err
+	}
+	return hostIp, vim, file, nil
+}
+
+// Get in put parameters for remove configuration
+func (c *LcmController) getInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, error) {
+	hostIp, err := c.getHostIP(clientIp)
+	if err != nil {
+		return "", "", &models.MecHost{}, err
+	}
+
+	hostInfoRec := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			util.MecHostRecDoesNotExist)
+		return "", "", hostInfoRec, err
+	}
+
+	vim, err := c.getVim(clientIp, hostIp)
+	if err != nil {
+		return "", "", hostInfoRec, err
+	}
+
+	return hostIp, vim, hostInfoRec, err
+}
+
+// @Title Upload package
+// @Description Upload Package
+// @Param   access_token  header     string true   "access token"
+// @Param   package       formData   file   true   "package file"
+// @Param   appId         header     string true   "app Id"
+// @Param   packageId     header     string true   "package ID"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /packages [post]
+func (c *LcmController) UploadPackage() {
+	log.Info("Upload application package request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appId, packageId, tenantId, err := c.getInputParametersForUploadPkg(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	file, header, err := c.GetFile("package")
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, "Upload package file error")
+		return
+	}
+
+	err = util.ValidateFileExtensionCsar(header.Filename)
+	if err != nil || len(header.Filename) > util.MaxFileNameSize {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest,
+			"File shouldn't contains any extension or filename is larger than max size")
+		return
+	}
+
+	err = util.ValidateFileSize(header.Size, util.MaxAppPackageFile)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
+		return
+	}
+
+	pkgFilePath, err := c.saveApplicationPackage(clientIp, tenantId, packageId, header, file)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		return
+	}
+	pkgDir, err := c.extractCsarPackage(pkgFilePath)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		return
+	}
+
+	pkgDetails, err := c.getPackageDetailsFromPackage(clientIp, pkgDir)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, "failed to get app package details")
+		return
+	}
+
+	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	err = c.insertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Uploaded application package successfully")
+
+	appPkgResp, _ := json.Marshal(map[string]string{"appId" : appId,
+		                                            "packageId" : packageId})
+	_, _ = c.Ctx.ResponseWriter.Write(appPkgResp)
+}
+
+func (c *LcmController) ValidateDistributeInputParameters(clientIp string, req models.DistributeRequest) (string, error) {
+
+	for _, hostIp := range req.HostIp {
+		err := util.ValidateIpv4Address(hostIp)
+		if err != nil {
+		    return "", errors.New("invalid host IP")
+	    }
+	}
+
+	packageId, err := c.getUrlPackageId(clientIp)
+	if err != nil {
+		return "", errors.New("invalid package ID")
+	}
+	if len(packageId) == 0 {
+		return "", errors.New("invalid package ID length")
+	}
+
+	if len(packageId) > 64 {
+		return "", errors.New("input parameter length exceeded max limit")
+	}
+	return packageId, nil
+}
+
+func (c *LcmController) ValidateInstantiateInputParameters(clientIp string, req models.InstantiateRequest) (string, string, string, string, string, error) {
+
+	hostIp := req.HostIp
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.HostIpIsInvalid)
+		return "", "", "",  "", "", err
+	}
+
+	packageId := req.PackageId
+	if len(packageId) == 0 {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
+		return "", "", "",  "", "", err
+	}
+
+	if len(packageId) > 64 {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
+		return "", "", "", "", "", errors.New("package id length exceeds max limit")
+	}
+
+	appName := req.AppName
+	name, err := util.ValidateName(appName, util.NameRegex)
+	if err != nil || !name {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.AppNameIsNotValid)
+		return "", "", "",  "", "", errors.New(util.AppNameIsNotValid)
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		return "", "", "",  "", "", err
+	}
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", "",  "", "", err
+	}
+
+	return appInsId, tenantId, hostIp, packageId, appName, nil
+}
+
+// @Title Distribute package
+// @Description Distribute Package
+// @Param   access_token  header     string true   "access token"
+// @Param   packageId     header     string true   "package ID"
+// @Param   hostIp        body       string true   "host IP"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /packages/:packageId [post]
+func (c *LcmController) DistributePackage() {
+	log.Info("Distribute application package request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	var hosts models.DistributeRequest
+	json.Unmarshal(c.Ctx.Input.RequestBody, &hosts)
+
+	packageId, err := c.ValidateDistributeInputParameters(clientIp, hosts)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest,
+			"invalid input parameters")
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appPkgRecord := &models.AppPackageRecord{
+		AppPkgId: packageId + tenantId,
+	}
+
+	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package does not exist")
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	for _, hostIp := range hosts.HostIp {
+		vim, err := c.getVim(clientIp, hostIp)
+		if err != nil {
+			util.ClearByteArray(bKey)
+			return
+		}
+
+		pluginInfo := util.GetPluginInfo(vim)
+		client, err := pluginAdapter.GetClient(pluginInfo)
+		if err != nil {
+			util.ClearByteArray(bKey)
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+			return
+		}
+
+		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
+
+		adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+		_, err = adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
+		util.ClearByteArray(bKey)
+		//c.deletePackage(path.Dir(pkgFilePath))
+		if err != nil {
+			errorString := err.Error()
+			if strings.Contains(errorString, util.Forbidden) {
+				c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+			} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+				c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+			} else {
+				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			}
+
+			err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+			if err != nil {
+				util.ClearByteArray(bKey)
+				return
+			}
+
+			err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId, "Error", "")
+			if err != nil {
+				util.ClearByteArray(bKey)
+				return
+			}
+			return
+		}
+
+		err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+		if err != nil {
+			util.ClearByteArray(bKey)
+			return
+		}
+
+		err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId, "Distributed", "")
+		if err != nil {
+			util.ClearByteArray(bKey)
+			return
+		}
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Distributed application package successfully")
+	c.ServeJSON()
+}
+
+// @Title Delete application package on host
+// @Description Delete Package
+// @Param   access_token  header     string true   "access token"
+// @Param   packageId     header     string true   "package ID"
+// @Param   hostIp        header     string true   "host IP"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /packages/:packageId/hosts/:hostIp [delete]
+func (c *LcmController) DeletePackageOnHost() {
+	log.Info("Delete application package on host request received.")
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
+	if err != nil {
+		if err.Error() == util.Forbidden {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
+		return
+	}
+
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
+
+	packageId, err := c.getUrlPackageId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
+
+	hostIp, err := c.getUrlHostIP(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
+
+	appPkgRecord, err := c.getAppPackageRecord(packageId, tenantId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appPkgHostRecord, err := c.getAppPackageHostRecord(hostIp, appPkgRecord.PackageId, appPkgRecord.TenantId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	vim, err := c.getVim(clientIp, appPkgHostRecord.HostIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+
+	pluginInfo := util.GetPluginInfo(vim)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		return
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	_, err = adapter.DeletePackage(tenantId, appPkgHostRecord.HostIp, packageId, accessToken)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		errorString := err.Error()
+		if strings.Contains(errorString, util.Forbidden) {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	err = c.deleteAppPackageHostRecord(hostIp, packageId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = c.deleteTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Deleted host application package successfully")
+	c.ServeJSON()
+}
+
+func (c *LcmController) deletePackage(appPkgPath string) error {
+
+	tenantPath := path.Dir(appPkgPath)
+
+	//remove package directory
+	err := os.RemoveAll(appPkgPath)
+	if err != nil {
+		return errors.New("failed to delete application package file")
+	}
+
+	tenantDir, err := os.Open(tenantPath)
+	if err != nil {
+		return errors.New("failed to delete application package")
+	}
+	defer tenantDir.Close()
+
+	_, err = tenantDir.Readdir(1)
+
+	if err == io.EOF {
+		err := os.Remove(tenantPath)
+		if err != nil {
+			return errors.New("failed to delete application package")
+		}
+		return nil
+	}
+	return nil
+}
+
+func (c *LcmController) handleErrorForUploadAppPkg(clientIp, appPkgId, tenantId string) {
+
+	err := c.deleteAppPackageRecord(appPkgId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = c.deleteTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return
+	}
+}
+
+
+// @Title Delete package
+// @Description Delete package
+// @Param	tenantId	path 	string	true   "tenantId"
+// @Param	packageId   path 	string	true   "packageId"
+// @Param   access_token header  string true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/packages/:packageId [delete]
+func (c *LcmController) DeletePackage() {
+	log.Info("Delete application package request received.")
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
+	if err != nil {
+		if err.Error() == util.Forbidden {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		}
+		return
+	}
+	
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
+
+	packageId, err := c.getUrlPackageId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
+
+	var appPkgRecords []*models.AppPackageRecord
+	_, _ = c.Db.QueryTable(util.AppPackageRecordId).Filter(util.AppPkgId, packageId + tenantId).All(&appPkgRecords)
+
+	for _, appPkgRecord := range appPkgRecords {
+		_, _ = c.Db.LoadRelated(appPkgRecord, "AppPackageHost")
+	}
+
+	for _, appPkgRecord := range appPkgRecords {
+		for _, appPkgHost := range appPkgRecord.AppPackageHost {
+
+			vim, err := c.getVim(clientIp, appPkgHost.HostIp)
+			if err != nil {
+				util.ClearByteArray(bKey)
+				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+				return
+			}
+
+			pluginInfo := util.GetPluginInfo(vim)
+			client, err := pluginAdapter.GetClient(pluginInfo)
+			if err != nil {
+				util.ClearByteArray(bKey)
+				c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+				return
+			}
+			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+			_, err = adapter.DeletePackage(appPkgHost.TenantId, appPkgHost.HostIp, packageId, accessToken)
+			util.ClearByteArray(bKey)
+			if err != nil {
+				errorString := err.Error()
+				if strings.Contains(errorString, util.Forbidden) {
+					c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+				} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+					c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+				} else {
+					c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+				}
+				return
+			}
+		}
+	}
+	pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
+	c.deletePackage(path.Dir(pkgFilePath))
+	err = c.deleteAppPackageRecord(packageId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = c.deleteTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Deleted application package successfully")
+	c.ServeJSON()
+}
+
+// Insert or update application package record
+func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
+	packageId string, pkgDetails models.AppPkgDetails) error {
+
+	origin := c.Ctx.Request.Header.Get("origin")
+	if origin == "" {
+		origin = "MECM"
+	}
+
+	originVar, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
+		return err
+	}
+
+	syncStatus := true
+	if origin == "MEPM" {
+		syncStatus = false
+	}
+
+	appPkgRecord := &models.AppPackageRecord{
+		AppPkgId:      packageId + tenantId,
+		TenantId:      tenantId,
+		PackageId:     packageId,
+		AppId:         appId,
+		AppPkgName:    pkgDetails.App_product_name,
+		AppPkgVersion: pkgDetails.App_package_version,
+		AppProvider:   pkgDetails.App_provider_id,
+		AppPkgDesc:    pkgDetails.App_package_description,
+		CreatedTime:   pkgDetails.App_release_data_time,
+		SyncStatus:    syncStatus,
+	}
+
+	count, err := c.Db.QueryCountForAppPackage("app_package_record", util.TenantId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	if count >= util.MaxNumberOfRecords {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Maximum number of app package records are exceeded for given tenant")
+		return errors.New("maximum number of app package records are exceeded for given tenant")
+	}
+	log.Info("Add app package record: %+v", appPkgRecord)
+	err = c.Db.InsertOrUpdateData(appPkgRecord, util.AppPkgId)
+	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		log.Error("Failed to save app package record to database.")
+		return err
+	}
+	return nil
+}
+
+// Insert or update application package host record
+func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId,
+	packageId, distributionStatus, errorInfo string) error {
+	
+	origin := c.Ctx.Request.Header.Get("origin")
+	if origin == "" {
+		origin = "MECM"
+	}
+
+	originVar, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
+		return err
+	}
+	appPkgRec := &models.AppPackageRecord{
+		AppPkgId: packageId + tenantId,
+	}
+
+	readErr := c.Db.ReadData(appPkgRec, util.AppPkgId)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package record does not exist in database")
+		return readErr
+	}
+	syncStatus := true
+	if origin == "MEPM" {
+		syncStatus = false
+	}
+
+	appPkgHostRecord := &models.AppPackageHostRecord{
+		PkgHostKey:         packageId + tenantId + hostIp,
+		HostIp:             hostIp,
+		AppPkgId:           packageId,
+		DistributionStatus: distributionStatus,
+		TenantId:           tenantId,
+		Error:              errorInfo,
+		SyncStatus:         syncStatus,
+		Origin:             origin,
+		AppPackage:         appPkgRec,
+	}
+
+	count, err := c.Db.QueryCountForAppPackage("app_package_host_record", util.TenantId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	if count >= util.MaxNumberOfRecords {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			"Maximum number of app package records are exceeded for given tenant")
+		return errors.New("maximum number of app package host records are exceeded for given tenant")
+	}
+
+	log.Info("Add app package host record: %+v", appPkgHostRecord)
+	err = c.Db.InsertOrUpdateData(appPkgHostRecord, util.PkgHostKey)
+	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		log.Error("Failed to save app package host record to database.")
+		return err
+	}
+	return nil
+}
+
+// @Title Distribution status
+// @Description Distribute Package
+// @Param   access_token  header     string true   "access token"
+// @Param   packageId     header     string true   "package ID"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /packages/:packageId [get]
+func (c *LcmController) DistributionStatus() {
+	log.Info("Distribute status request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	tenantId, packageId, err := c.getInputParametersForDistributionStatus(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	var appPkgRecords []*models.AppPackageRecord
+	if packageId == "" {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId).Filter(util.TenantId, tenantId).All(&appPkgRecords)
+		if count == 0 {
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			return
+		}
+	} else {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId).Filter(util.AppPkgId, packageId + tenantId).All(&appPkgRecords)
+		if count == 0 {
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			return
+		}
+	}
+
+	for _, appPkgRecord := range appPkgRecords {
+		_, _ = c.Db.LoadRelated(appPkgRecord, "AppPackageHost")
+	}
+
+	var appPkgs []models.AppPackageStatusRecord
+	for _, appPkgRecord := range appPkgRecords {
+
+		var p models.AppPackageStatusRecord
+		p.AppId = appPkgRecord.AppId
+		p.PackageId = appPkgRecord.PackageId
+		p.AppProvider = appPkgRecord.AppProvider
+		p.AppPkgAffinity = appPkgRecord.AppPkgAffinity
+		p.AppPkgDesc = appPkgRecord.AppPkgDesc
+		p.AppPkgName = appPkgRecord.AppPkgName
+		p.AppPkgVersion = appPkgRecord.AppPkgVersion
+		p.CreatedTime = appPkgRecord.CreatedTime
+		p.ModifiedTime = appPkgRecord.ModifiedTime
+
+		for _, appPkgHost := range appPkgRecord.AppPackageHost {
+            //fill app package host info
+			var ph models.AppPackageHostStatusRecord
+			ph.HostIp = appPkgHost.HostIp
+			ph.Error = appPkgHost.Error
+			ph.Status = appPkgHost.DistributionStatus
+			p.MecHostInfo = append(p.MecHostInfo, ph)
+		}
+		appPkgs = append(appPkgs, p)
+	}
+
+	res, err := json.Marshal(appPkgs)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Query app package records successful")
+    return
+}
+
+// Get input parameters for distribution status
+func (c *LcmController) getInputParametersForDistributionStatus(clientIp string) (string, string, error) {
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", err
+	}
+
+	packageId, err := c.getUrlPackageId(clientIp)
+	if err != nil {
+		return "", "", err
+	}
+	return 	tenantId, packageId, err
+}
+
+// Get input parameters for upload package
+func (c *LcmController) getInputParametersForUploadPkg(clientIp string) (string, string, string, error) {
+
+	appId, err := c.getAppId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+	if len(appId) == 0 {
+		appId = util.GenerateUUID()
+	}
+
+	packageId, err := c.getPackageId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if len(packageId) == 0 {
+		packageId = appId +  util.GenerateUUID()
+	}
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", "", err
+	}
+	return appId, packageId, tenantId, nil
 }

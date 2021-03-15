@@ -16,12 +16,16 @@
 package server
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/tap"
 	"io"
+	"io/ioutil"
 	"k8splugin/conf"
 	"k8splugin/internal/lcmservice"
 	"k8splugin/models"
@@ -30,6 +34,8 @@ import (
 	"k8splugin/util"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -42,6 +48,7 @@ import (
 
 var (
 	KubeconfigPath = "/usr/app/config/"
+	appPackagesBasePath = "/usr/app/packages/"
 )
 
 // GRPC server
@@ -297,59 +304,58 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 	return resp, nil
 }
 
-// Instantiate application
-func (s *ServerGRPC) Instantiate(stream lcmservice.AppLCM_InstantiateServer) error {
-	var res lcmservice.InstantiateResponse
-	res.Status = util.Failure
 
-	ctx := stream.Context()
-	err := s.displayReceivedMsg(ctx, util.Instantiate)
+
+func (s *ServerGRPC) Instantiate(ctx context.Context,
+	req *lcmservice.InstantiateRequest) (resp *lcmservice.InstantiateResponse, err error) {
+
+	resp = &lcmservice.InstantiateResponse{
+		Status: util.Failure,
+	}
+
+	err = s.displayReceivedMsg(ctx, util.Instantiate)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToDispRecvMsg)
-		sendInstantiateResponse(stream, &res)
-		return err
+		return resp, err
 	}
 
-	hostIp, appInsId, ak, sk, err := s.validateInputForInstantiation(stream)
+	tenantId, packageId, hostIp, appInsId, ak, sk, err := s.validateInputParamsForInstantiate(req)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToValInputParams)
-		sendInstantiateResponse(stream, &res)
-		return err
+		return resp, err
+	}
+	appPkgRecord := &models.AppPackage{
+		AppPkgId: packageId + tenantId + hostIp,
+	}
+	readErr := s.db.ReadData(appPkgRecord, util.AppPkgId)
+	if readErr != nil {
+		log.Error(util.AppPkgRecordDoesNotExit)
+		s.displayResponseMsg(ctx, util.Instantiate, util.AppPkgRecordDoesNotExit)
+		return resp, err
 	}
 
-	pkg, err := s.getPackage(stream)
-	if err != nil {
-		s.displayResponseMsg(ctx, util.Instantiate, "failed to get package")
-		sendInstantiateResponse(stream, &res)
-		return err
-	}
-
-	// Get client
+	// Get Client
 	client, err := adapter.GetClient(util.DeployType, hostIp)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToGetClient)
-		sendInstantiateResponse(stream, &res)
-		return err
+		return resp, err
 	}
 
-	releaseName, err := client.Deploy(pkg, appInsId, ak, sk, s.db)
+	releaseName, err := client.Deploy(tenantId, hostIp, packageId, appInsId, ak, sk, s.db)
 	if err != nil {
 		log.Info("instantiation failed")
 		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")
-		sendInstantiateResponse(stream, &res)
-		return err
+		return resp, err
 	}
 	err = s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, "failed to insert or update app record")
-		sendInstantiateResponse(stream, &res)
-		return err
+		return resp, err
 	}
 	log.Info("successful instantiation")
-	res.Status = util.Success
-	sendInstantiateResponse(stream, &res)
-	s.handleLoggingForSuccess(ctx, util.Instantiate, "Instantiation is successful")
-	return nil
+	resp.Status = util.Success
+	s.handleLoggingForSuccess(ctx, util.Instantiate, "Application instantiated successfully")
+	return resp, nil
 }
 
 // Upload file configuration
@@ -486,71 +492,6 @@ func (s *ServerGRPC) logError(err error) error {
 	return err
 }
 
-// Validate input parameters for instantiation
-func (s *ServerGRPC) validateInputForInstantiation(stream lcmservice.AppLCM_InstantiateServer) (string, string,
-	string, string, error) {
-	// Receive metadata which is access token
-	req, err := stream.Recv()
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
-	}
-	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
-	if err != nil {
-		if err.Error() == util.Forbidden {
-			return "", "", "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
-		} else {
-			return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
-		}
-	}
-
-	// Receive metadata which is ak
-	req, err = stream.Recv()
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
-	}
-	ak := req.GetAk()
-	err = util.ValidateAk(ak)
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, "ak length is invalid"))
-	}
-
-	// Receive metadata which is sk
-	req, err = stream.Recv()
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
-	}
-	sk := req.GetSk()
-	err = util.ValidateSk(sk)
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, "sk length is invalid"))
-	}
-
-	// Receive metadata which is app instance id
-	req, err = stream.Recv()
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
-	}
-	appInsId := req.GetAppInstanceId()
-	err = util.ValidateUUID(appInsId)
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, "app instance id is invalid"))
-	}
-
-	// Receive metadata which is host ip
-	req, err = stream.Recv()
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
-	}
-	hostIp := req.GetHostIp()
-	err = util.ValidateIpv4Address(hostIp)
-	if err != nil {
-		return "", "", "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
-	}
-
-	return hostIp, appInsId, ak, sk, nil
-}
-
 // Validate input parameters for termination
 func (s *ServerGRPC) validateInputParamsForTerm(
 	req *lcmservice.TerminateRequest) (hostIp string, appInsId string, err error) {
@@ -580,6 +521,62 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	}
 
 	return hostIp, appInsId, nil
+}
+
+// Validate input parameters for termination
+func (s *ServerGRPC) validateInputParamsForInstantiate(
+	req *lcmservice.InstantiateRequest) (tenantId string, packageId string, hostIp string, appInsId string, ak string, sk string, err error) {
+	accessToken := req.GetAccessToken()
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
+	if err != nil {
+		if err.Error() == util.Forbidden {
+			return "", "", "", "",  "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+		} else {
+			return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
+				util.AccssTokenIsInvalid))
+		}
+	}
+
+	hostIp = req.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.HostIpIsInvalid))
+	}
+
+	packageId = req.GetAppPackageId()
+	if packageId == "" {
+		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.PackageIdIsInvalid))
+	}
+
+	tenantId = req.GetTenantId()
+	err = util.ValidateUUID(tenantId)
+	if err != nil {
+		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.TenantIdIsInvalid))
+	}
+
+	ak = req.GetAk()
+	if ak == "" {
+		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.AKIsInvalid))
+	}
+
+	sk = req.GetSk()
+	if sk == "" {
+		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.SKIsInvalid))
+	}
+
+	appInsId = req.GetAppInstanceId()
+	err = util.ValidateUUID(appInsId)
+	if err != nil {
+		return "", "", "", "", "", "", s.logError(status.Error(codes.InvalidArgument,
+			util.AppInsIdValid))
+	}
+
+	return tenantId, packageId, hostIp, appInsId, ak, sk, nil
 }
 
 // Validate input parameters for upload configuration
@@ -668,38 +665,6 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	return hostIp, appInsId, nil
 }
 
-// Get package
-func (s *ServerGRPC) getPackage(stream lcmservice.AppLCM_InstantiateServer) (buf bytes.Buffer, err error) {
-	// Receive package
-	pkg := bytes.Buffer{}
-	for {
-		err := s.contextError(stream.Context())
-		if err != nil {
-			return pkg, err
-		}
-
-		log.Debug("Waiting to receive more data")
-
-		req, err := stream.Recv()
-		if err == io.EOF {
-			log.Debug("No more data")
-			break
-		}
-		if err != nil {
-			return pkg, s.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
-		}
-
-		// Receive chunk and write to package
-		chunk := req.GetPackage()
-
-		_, err = pkg.Write(chunk)
-		if err != nil {
-			return pkg, s.logError(status.Error(codes.Internal, "cannot write chunk data"))
-		}
-	}
-	return pkg, nil
-}
-
 // Get upload configuration file
 func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error) {
 	// Receive upload config file
@@ -747,6 +712,23 @@ func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName st
 	return nil
 }
 
+// Insert or update application package record
+func (s *ServerGRPC) insertOrUpdateAppPkgRecord(packageId string, tenantId string,
+	hostIp string, dockerImages string) (err error) {
+	appPkgRecord := &models.AppPackage{
+		AppPkgId:     packageId + tenantId + hostIp,
+		HostIp:       hostIp,
+		TenantId:     tenantId,
+		DockerImages: dockerImages,
+	}
+	err = s.db.InsertOrUpdateData(appPkgRecord, util.AppPkgId)
+	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
+		return s.logError(status.Error(codes.InvalidArgument,
+			"failed to save app info record to database."))
+	}
+	return nil
+}
+
 // Delete app instance record
 func (s *ServerGRPC) deleteAppInfoRecord(appInsId string) error {
 	appInfoRecord := &models.AppInstanceInfo{
@@ -757,6 +739,20 @@ func (s *ServerGRPC) deleteAppInfoRecord(appInsId string) error {
 	if err != nil {
 		return s.logError(status.Error(codes.InvalidArgument,
 			"failed to delete app info record from database"))
+	}
+	return nil
+}
+
+// Delete app instance record
+func (s *ServerGRPC) deleteAppPackageRecord(appPkgId, tenantId, hostIp string) error {
+	appPkgRecord := &models.AppPackage{
+		AppPkgId: appPkgId + tenantId + hostIp,
+	}
+
+	err := s.db.DeleteData(appPkgRecord, util.AppPkgId)
+	if err != nil {
+		return s.logError(status.Error(codes.InvalidArgument,
+			"failed to delete app package record from database"))
 	}
 	return nil
 }
@@ -808,16 +804,6 @@ func (s *ServerGRPC) getClientAddress(ctx context.Context) (remoteIp string, err
 	return clientIp[0], nil
 }
 
-// Send instantiate response
-func sendInstantiateResponse(stream lcmservice.AppLCM_InstantiateServer,
-	res *lcmservice.InstantiateResponse) {
-	err := stream.SendAndClose(res)
-	if err != nil {
-		log.Errorf("cannot send response: %v", err)
-		return
-	}
-}
-
 // Send upload config response
 func sendUploadCfgResponse(stream lcmservice.AppLCM_UploadConfigServer,
 	res *lcmservice.UploadCfgResponse) {
@@ -827,3 +813,429 @@ func sendUploadCfgResponse(stream lcmservice.AppLCM_UploadConfigServer,
 		return
 	}
 }
+
+// Upload file configuration
+func (s *ServerGRPC) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer) (err error) {
+	var res lcmservice.UploadPackageResponse
+	res.Status = util.Failure
+
+	ctx := stream.Context()
+	err = s.displayReceivedMsg(ctx, util.UploadPackage)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadPackage, util.FailedToDispRecvMsg)
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	hostIp, tenantId, packageId, err := s.validateInputParamsForUploadPackage(stream)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, util.FailedToValInputParams)
+		sendUploadPackageResponse(stream, &res)
+		return
+	}
+
+	file, err := s.getUploadPackageFile(stream)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to get upload package file")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	if !util.CreateDir(appPackagesBasePath + tenantId) {
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to create package directory")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	packagePath := appPackagesBasePath + tenantId + "/" + packageId + hostIp
+	if !util.CreateDir(packagePath) {
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to create config directory")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	packageFilePath := packagePath + "/" + packageId + ".csar"
+	newFile, err := os.Create(packageFilePath)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to create application package path")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	if len(file.Bytes()) > util.MaxPackageFile {
+		s.displayResponseMsg(ctx, util.UploadConfig, "package size is larger than max size")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	defer newFile.Close()
+	_, err = newFile.Write(file.Bytes())
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, "package IO operation error")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	packagePath, err = s.extractCsarPackage(packageFilePath)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to extract csar app package")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	dockerImages, err := s.loadDockerImagesToHost(packagePath)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.UploadConfig, "failed to process SwImageDescr")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	err = s.insertOrUpdateAppPkgRecord(packageId, tenantId, hostIp, dockerImages)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.Instantiate, "failed to insert or update app package record")
+		sendUploadPackageResponse(stream, &res)
+		return err
+	}
+
+	res.Status = util.Success
+	sendUploadPackageResponse(stream, &res)
+	s.handleLoggingForSuccess(ctx, util.UploadConfig, "Uploaded package successfully")
+	return nil
+}
+
+// Send upload config response
+func sendUploadPackageResponse(stream lcmservice.AppLCM_UploadPackageServer,
+	res *lcmservice.UploadPackageResponse) {
+	err := stream.SendAndClose(res)
+	if err != nil {
+		log.Errorf("cannot send response: %v", err)
+		return
+	}
+}
+
+// Validate input parameters for upload configuration
+func (s *ServerGRPC) validateInputParamsForUploadPackage(
+	stream lcmservice.AppLCM_UploadPackageServer) (hostIp, tenantId, packageId string, err error) {
+	// Receive metadata which is accesstoken
+	req, err := stream.Recv()
+	if err != nil {
+		log.Error(util.CannotReceivePackage)
+		return
+	}
+	accessToken := req.GetAccessToken()
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
+	if err != nil {
+		if err.Error() == util.Forbidden {
+			return "", "", "",  s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+		} else {
+			return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		}
+	}
+
+	// Receive metadata which is package ID
+	req, err = stream.Recv()
+	if err != nil {
+		log.Error(util.CannotReceivePackage)
+		return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+	}
+
+	packageId = req.GetAppPackageId()
+	if packageId == "" {
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument, util.PackageIdIsInvalid))
+	}
+
+	// Receive metadata which is host ip
+	req, err = stream.Recv()
+	if err != nil {
+		log.Error(util.CannotReceivePackage)
+		return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+	}
+
+	hostIp = req.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+
+	// Receive metadata which is tenant ID
+	req, err = stream.Recv()
+	if err != nil {
+		log.Error(util.CannotReceivePackage)
+		return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.CannotReceivePackage))
+	}
+	tenantId = req.GetTenantId()
+	err = util.ValidateUUID(tenantId)
+	if err != nil {
+		return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.TenantIsInvalid))
+	}
+
+	return hostIp, tenantId, packageId, nil
+}
+
+// Get upload package file
+func (s *ServerGRPC) getUploadPackageFile(stream lcmservice.AppLCM_UploadPackageServer) (but bytes.Buffer, err error) {
+	// Receive upload package file
+	file := bytes.Buffer{}
+	for {
+		err := s.contextError(stream.Context())
+		if err != nil {
+			return file, err
+		}
+
+		log.Debug("Waiting to receive more data")
+
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Debug("No more data")
+			break
+		}
+		if err != nil {
+			return file, s.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
+		}
+
+		// Receive chunk and write to package
+		chunk := req.GetPackage()
+
+		_, err = file.Write(chunk)
+		if err != nil {
+			return file, s.logError(status.Error(codes.Internal, "cannot write chunk data"))
+		}
+	}
+	return file, nil
+}
+
+// Delete application package
+func (s *ServerGRPC) DeletePackage(ctx context.Context,
+	request *lcmservice.DeletePackageRequest) (*lcmservice.DeletePackageResponse, error) {
+
+	resp := &lcmservice.DeletePackageResponse{
+		Status: util.Failure,
+	}
+
+	err := s.displayReceivedMsg(ctx, util.DeletePackage)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.DeletePackage, util.FailedToDispRecvMsg)
+		return resp, err
+	}
+
+	//tenantId, hostIp, packageId, err := s.validateInputParamsForDeletePackage(request)
+	tenantId, hostIp, packageId, err := s.validateInputParamsForDeletePackage(request)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.DeletePackage, util.FailedToValInputParams)
+		return resp, err
+	}
+
+	appPkgRecord, err := s.getAppPackageRecord(hostIp, packageId, tenantId)
+	if err != nil {
+		log.Error(util.AppPkgRecordDoesNotExit)
+		s.displayResponseMsg(ctx, util.DeletePackage, util.AppPkgRecordDoesNotExit)
+		return resp, err
+	}
+
+	err = s.deleteAppPackageRecord(packageId, tenantId, hostIp)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.Terminate, "failed to delete app package record from database")
+		return resp, err
+	}
+
+	_ = s.deleteDockerImagesFromHost(appPkgRecord.DockerImages)
+
+	packagePath := appPackagesBasePath + tenantId + "/" + packageId + appPkgRecord.HostIp
+	err = s.deletePackage(packagePath)
+	if err != nil {
+		log.Error("failed to delete application package file")
+		s.displayResponseMsg(ctx, util.DeletePackage, "failed to delete application package")
+		return resp, nil
+	}
+	
+	resp = &lcmservice.DeletePackageResponse{
+		Status: util.Success,
+	}
+	s.handleLoggingForSuccess(ctx, util.DeletePackage, "Deleted application package successfully")
+	return resp, nil
+}
+
+func (s *ServerGRPC) deletePackage(appPkgPath string) error {
+
+	tenantPath := path.Dir(appPkgPath)
+
+	//remove package directory
+	err := os.RemoveAll(appPkgPath)
+	if err != nil {
+		return errors.New("failed to delete application package file")
+	}
+
+	tenantDir, err := os.Open(tenantPath)
+	if err != nil {
+		return errors.New("failed to delete application package")
+	}
+	defer tenantDir.Close()
+	
+	_, err = tenantDir.Readdir(1)
+	
+	if err == io.EOF {
+		err := os.Remove(tenantPath)
+		if err != nil {
+            return errors.New("failed to delete application package")
+		}
+		return nil
+	}
+	return nil
+}
+
+// Validate input parameters for remove config
+func (s *ServerGRPC) validateInputParamsForDeletePackage(request *lcmservice.DeletePackageRequest) (string,
+	string, string, error) {
+	accessToken := request.GetAccessToken()
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
+	if err != nil {
+		if err.Error() == util.Forbidden {
+			return "", "", "",  s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+		} else {
+			return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+		}
+	}
+	hostIp := request.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+
+	packageId := request.GetAppPackageId()
+	if packageId == "" {
+		return "", "", "",  s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+
+	tenantId := request.GetTenantId()
+	err = util.ValidateUUID(tenantId)
+	if err != nil {
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+	return tenantId, hostIp, packageId, nil
+}
+
+// extract CSAR package
+func (c *ServerGRPC) extractCsarPackage(packagePath string) (string, error) {
+	zipReader, _ := zip.OpenReader(packagePath)
+	if len(zipReader.File) > util.TooManyFile {
+		return "", errors.New("Too many files contains in zip file")
+	}
+	var totalWrote int64
+	packageDir := path.Dir(packagePath)
+	err := os.MkdirAll(packageDir, 0750)
+	if err != nil {
+		log.Error("Failed to make directory")
+		return "" ,errors.New("Failed to make directory")
+	}
+	for _, file := range zipReader.Reader.File {
+
+		zippedFile, err := file.Open()
+		if err != nil || zippedFile == nil {
+			log.Error("Failed to open zip file")
+			continue
+		}
+		if file.UncompressedSize64 > util.SingleFileTooBig || totalWrote > util.TooBig {
+			log.Error("File size limit is exceeded")
+		}
+
+		defer zippedFile.Close()
+
+		isContinue, wrote := c.extractFiles(file, zippedFile, totalWrote, packageDir)
+		if isContinue {
+			continue
+		}
+		totalWrote = wrote
+	}
+	return packageDir, nil
+}
+
+// Extract files
+func (c *ServerGRPC) extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64, dirName string) (bool, int64) {
+	targetDir := dirName
+	extractedFilePath := filepath.Join(
+		targetDir,
+		file.Name,
+	)
+
+	if file.FileInfo().IsDir() {
+		err := os.MkdirAll(extractedFilePath, 0750)
+		if err != nil {
+			log.Error("Failed to create directory")
+		}
+	} else {
+		outputFile, err := os.OpenFile(
+			extractedFilePath,
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			0750,
+		)
+		if err != nil || outputFile == nil {
+			log.Error("The output file is nil")
+			return true, totalWrote
+		}
+
+		defer outputFile.Close()
+
+		wt, err := io.Copy(outputFile, zippedFile)
+		if err != nil {
+			log.Error("Failed to copy zipped file")
+		}
+		totalWrote += wt
+	}
+	return false, totalWrote
+}
+
+func (s *ServerGRPC) deleteDockerImagesFromHost(dockerImages string) error {
+    log.Info("Delete docker images")
+	dockers := strings.Split(dockerImages, ",")
+	for i := range dockers {
+		log.WithFields(log.Fields{
+			"delete docker image": dockers[i],
+		}).Info("delete docker images")
+
+		//TODO: delete docker images form host machine using docker client
+	}
+	return nil
+}
+
+// get sw image descriptors
+func (c *ServerGRPC) loadDockerImagesToHost(packagePath string) (string, error) {
+
+	var imageDescriptors []models.SwImageDescriptor
+
+	jsonFile, err := os.Open(packagePath + "/Image/SwImageDesc.json")
+	if err != nil {
+		return "", errors.New("failed to get SwImageDesc.json")
+	}
+	defer jsonFile.Close()
+
+	imageDescrBytes, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(imageDescrBytes, &imageDescriptors)
+
+	dockerImages := make([]string, 0)
+	for i := range imageDescriptors {
+		log.WithFields(log.Fields{
+			"loading docker image": imageDescriptors[i].SwImage,
+		}).Info("load docker images")
+
+		dockerImages = append(dockerImages, imageDescriptors[i].SwImage)
+
+		//TODO: load docker image to docker host using docker client
+	}
+
+	return strings.Join(dockerImages,", "), nil
+}
+
+// Get app package record
+func (c *ServerGRPC) getAppPackageRecord(hostIp, appPkgId, tenantId string) (*models.AppPackage, error) {
+	appPkgRecord := &models.AppPackage{
+		AppPkgId: appPkgId + tenantId + hostIp,
+	}
+
+	readErr := c.db.ReadData(appPkgRecord, util.AppPkgId)
+	if readErr != nil {
+		log.Error(util.AppPkgRecordDoesNotExit)
+		return nil, readErr
+	}
+	return appPkgRecord, nil
+}
+

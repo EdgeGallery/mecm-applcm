@@ -17,7 +17,7 @@
 package test
 
 import (
-	"bytes"
+	"fmt"
 	"github.com/agiledragon/gomonkey"
 	"github.com/stretchr/testify/assert"
 	"helm.sh/helm/v3/pkg/action"
@@ -27,12 +27,26 @@ import (
 	"k8splugin/config"
 	"k8splugin/models"
 	"k8splugin/pkg/adapter"
+	"k8splugin/util"
+	"math/rand"
 	"os"
 	"reflect"
 	"testing"
 )
+    var (
+		ipAddFormatter = "%d.%d.%d.%d"
+		fwdIp          = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
+			rand.Intn(util.MaxIPVal))
+
+		tenantIdentifier      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+		packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
+		appName               = "postioning-service"
+		queryFailed           = "Query failed"
+    )
+
 
 func TestDeploySuccess(t *testing.T) {
+
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
 		// do nothing
 		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: "/usr/app/config/" + ipAddress}, nil
@@ -72,9 +86,8 @@ func TestDeploySuccess(t *testing.T) {
 	if err != nil {
 		return
 	}
-	pkg := bytes.Buffer{}
-	result, err := client.Deploy(pkg, "69d01999-dc53-4f59-a7f4-229b254340c2",
-	"OzXpsJXuuNuyz301Hfc=", "DyaLraRyrNvSIIMaoQngvzHvQLkps8TXTCDq29FF1tW3hWtW+S1QDjVHAvlE70h/",
+
+	result, err := client.Deploy(tenantIdentifier, hostIpAddress,  packageId,  appInstanceIdentifier,  ak,  sk,
 	&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }

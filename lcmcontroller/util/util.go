@@ -24,6 +24,7 @@ import (
 	"github.com/astaxie/beego/context"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
+	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/ulule/limiter/v3"
 	"io/ioutil"
@@ -43,6 +44,9 @@ var (
 
 const (
 	AccessToken              string = "access_token"
+	MecHostIp                string = "hostIp"
+	AppName                  string = "appName"
+	PackageId                string = "packageId"
 	PluginSuffix             string = "_PLUGIN"
 	PluginPortSuffix         string = "_PORT"
 	MepServer                string = "MEP_SERVER"
@@ -52,35 +56,54 @@ const (
 	Failure                  string = "Failure"
 	ClientIpaddressInvalid          = "clientIp address is invalid"
 	FailedToSendMetadataInfo string = "failed to send metadata information"
+	FailedToUnmarshal        string = "failed to unmarshal request"
+	FailedToMarshal          string = "failed to marshal request"
+	LastInsertIdNotSupported string = "LastInsertId is not supported by this driver"
+	MecHostRecDoesNotExist   string = "Mec host info record does not exist in database"
 	FailedToCreateClient     string = "failed to create client: %v"
-	DeployTypeIsNotHelmBased        = "deployment type is not helm based"
 	InvalidToken             string = "invalid token"
 	Forbidden                string = "forbidden"
 	IllegalTenantId          string = "Illegal TenantId"
 	AppInsId                        = "app_ins_id"
+	AppPkgId                        = "app_pkg_id"
+	AppPackageRecordId              = "app_package_record"
+	PkgHostKey                      = "pkg_host_key"
 	TenantId                        = "tenant_id"
+	HostIp                          = "mec_host_id"
+	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
-	FailedToGetPluginInfo           = "Failed to get plugin info"
-	MepCapabilityIsNotValid         = "MEP capability id is not valid"
+    FailedToMakeDir                 = "failed to make directory"
+    FileNameNotFound                = "file name not found with "
+    AppNameIsNotValid               = "AppName is invalid"
+    HostIpIsInvalid                 = "HostIp address is invalid"
+    PackageIdIsInvalid              = "package id is invalid"
+    Origin                          = "origin"
+    OriginIsInvalid                 = "Origin is invalid"
+    RecordDoesNotExist              = "Records does not exist"
 	RequestBodyTooLarge             = "request body too large"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30
 	MaxConfigFile            int64  = 5242880
+	MaxAppPackageFile        int64  = 536870912
 	Timeout                         = 180
 	MaxNumberOfRecords              = 50
 	MaxNumberOfTenantRecords        = 20
-	MaxFileNameSize                 = 64
+	MaxNumberOfHostRecords          = 20
+	MaxFileNameSize                 = 128
 
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
 	StatusInternalServerError int = 500
+	StatusConflict            int = 409
 	StatusNotFound            int = 404
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
 
-	UuidRegex = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
-	NameRegex = `^[\w-]{4,128}$`
+	UuidRegex     = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
+	NameRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-]*[\\d\\p{L}]$"
+	CityRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}\\/\\s]*[\\d\\p{L}]$"
+	AffinityRegex = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-\\,]*[\\d\\p{L}]$"
 
 	minPasswordSize         = 8
 	maxPasswordSize         = 16
@@ -117,6 +140,9 @@ const (
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
+	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
+	Hosts                = "/hosts"
+	DELETE               = "delete"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
 	TEMP_FILE            = "/usr/app/temp"
@@ -274,7 +300,7 @@ func ValidateDbParams(dbPwd string) (bool, error) {
 // Validate access token
 func ValidateAccessToken(accessToken string, allowedRoles []string, tenantId string) error {
 	if accessToken == "" {
-		return errors.New("require token")
+		return nil
 	}
 
 	claims := jwt.MapClaims{}
@@ -510,7 +536,7 @@ func GetMepPort() string {
 // Get plugin address
 func GetPluginAddress(plugin string) string {
 	pluginAddr := os.Getenv(plugin)
-	if pluginAddr != "" {
+	if pluginAddr == "" {
 		log.Error("Plugin address couldn't be found for : " + plugin)
 	}
 	return pluginAddr
@@ -601,9 +627,12 @@ func GetHostInfo(url string) (string, int, error) {
 	return "", resp.StatusCode, errors.New("created failed, status is " + strconv.Itoa(resp.StatusCode))
 }
 
-// Validate name
-func ValidateName(appName string) (bool, error) {
-	return regexp.MatchString(NameRegex, appName)
+// Validate app name
+func ValidateName(name string, regex string) (bool, error) {
+	if len(name) > 128 {
+		return false, errors.New("name length is larger than max size")
+	}
+	return regexp.MatchString(regex, name)
 }
 
 // Handle number of REST requests per second
@@ -662,4 +691,9 @@ func RandomDirectoryName(n int) string {
 		s[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(s)
+}
+
+func GenerateUUID() string {
+	uuId := uuid.NewV4()
+	return strings.Replace(uuId.String(), "-", "", -1)
 }

@@ -83,150 +83,23 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 }
 
 // Instantiate application
-func (c *ClientGRPC) Instantiate(ctx context.Context, deployArtifact string, hostIP string,
+func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, host string, packageId string,
 	accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
-	var (
-		writing = true
-		buf     []byte
-		n       int
-		file    *os.File
-	)
-
-	// Get a file handle for the file we want to upload
-	file, err := os.Open(deployArtifact)
-	if err != nil {
-		log.Error("failed to open package file")
-		return util.Failure, err
-	}
-	defer file.Close()
-
-	// Open a stream-based connection with the
-	// gRPC server
-	stream, err := c.client.Instantiate(ctx)
-
-	if err != nil {
-		log.Error("failed to upload stream")
-		return util.Failure, err
-	}
-	defer stream.CloseSend()
-
-	//send metadata information
 	req := &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_AccessToken{
-			AccessToken: accessToken,
-		},
+		HostIp:        host,
+		TenantId:      tenantId,
+		AppPackageId:  packageId,
+		AccessToken:   accessToken,
+		AppInstanceId: akSkAppInfo.AppInsId,
+		Ak: akSkAppInfo.Ak,
+		Sk: akSkAppInfo.Sk,
 	}
-
-	err = stream.Send(req)
+	resp, err := c.client.Instantiate(ctx, req)
 	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
-		return util.Failure, err
+		return "", err
 	}
-
-	err = sendAkSkAppInsId(stream, akSkAppInfo)
-	if err != nil {
-		return util.Failure, err
-	}
-
-	//send metadata information
-	req = &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_HostIp{
-			HostIp: hostIP,
-		},
-	}
-
-	err = stream.Send(req)
-	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
-		return util.Failure, err
-	}
-
-	// Allocate a buffer with `chunkSize` as the capacity
-	// and length (making a 0 array of the size of `chunkSize`)
-	buf = make([]byte, c.chunkSize)
-	for writing {
-		// put as many bytes as `chunkSize` into the
-		// buf array.
-		n, err = file.Read(buf)
-		if err != nil {
-			// ... if `eof` --> `writing=false`...
-			if err == io.EOF {
-				writing = false
-				continue
-			}
-			log.Error("failed while copying from file to buf")
-			return util.Failure, err
-		}
-
-		req := &lcmservice.InstantiateRequest{
-			Data: &lcmservice.InstantiateRequest_Package{
-				Package: buf[:n],
-			},
-		}
-
-		err = stream.Send(req)
-
-		if err != nil {
-			log.Error("failed to send chunk via stream")
-			return util.Failure, err
-		}
-	}
-
-	res, err := stream.CloseAndRecv()
-	if err != nil {
-		log.Error("received upstream status response", err)
-		return util.Failure, err
-	}
-	return res.GetStatus(), err
-}
-
-// Send ak, sk and appInsId values
-func sendAkSkAppInsId(stream lcmservice.AppLCM_InstantiateClient, akSkAppInfo config.AppAuthConfig) error {
-	//send metadata information
-	req := &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_Ak{
-			Ak: akSkAppInfo.Ak,
-		},
-	}
-
-	err := stream.Send(req)
-	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
-		return err
-	}
-
-	//send metadata information
-	req = &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_Sk{
-			Sk: akSkAppInfo.Sk,
-		},
-	}
-
-	err = stream.Send(req)
-	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
-		return err
-	}
-
-	//send metadata information
-	req = &lcmservice.InstantiateRequest{
-
-		Data: &lcmservice.InstantiateRequest_AppInstanceId{
-			AppInstanceId: akSkAppInfo.AppInsId,
-		},
-	}
-
-	err = stream.Send(req)
-	if err != nil {
-		log.Error(util.FailedToSendMetadataInfo)
-		return err
-	}
-
-	return nil
+	return resp.Status, err
+	return "", nil
 }
 
 // Query application
@@ -496,3 +369,146 @@ func (c *ClientGRPC) logError(err error) error {
 	return err
 }
 
+// Upload application package
+func (c *ClientGRPC) UploadPackage(ctx context.Context, tenantId string, appPkg string,
+	hostIP string, packageId string, accessToken string) (status string, error error) {
+	var (
+		writing = true
+		buf     []byte
+		n       int
+		file    *os.File
+	)
+
+	// Open a stream-based connection with the
+	// gRPC server
+	stream, err := c.client.UploadPackage(ctx)
+	if err != nil {
+		log.Error("failed to upload stream")
+		return util.Failure, err
+	}
+	defer stream.CloseSend()
+
+	// Get a file handle for the file we want to upload
+	file, err = os.Open(appPkg)
+	if err != nil {
+		log.Error("failed to open package file")
+		return util.Failure, err
+	}
+	defer file.Close()
+
+	//send metadata information
+	req := &lcmservice.UploadPackageRequest{
+
+		Data: &lcmservice.UploadPackageRequest_AccessToken{
+			AccessToken: accessToken,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return util.Failure, err
+	}
+
+	//send metadata information
+	req = &lcmservice.UploadPackageRequest{
+
+		Data: &lcmservice.UploadPackageRequest_AppPackageId{
+			AppPackageId: packageId,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return util.Failure, err
+	}
+
+	//send metadata information
+	req = &lcmservice.UploadPackageRequest{
+
+		Data: &lcmservice.UploadPackageRequest_HostIp{
+			HostIp: hostIP,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return util.Failure, err
+	}
+
+	//send metadata information
+	req = &lcmservice.UploadPackageRequest{
+
+		Data: &lcmservice.UploadPackageRequest_TenantId{
+			TenantId: tenantId,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return util.Failure, err
+	}
+
+	// Allocate a buffer with `chunkSize` as the capacity
+	// and length (making a 0 array of the size of `chunkSize`)
+	buf = make([]byte, c.chunkSize)
+	for writing {
+		// put as many bytes as `chunkSize` into the
+		// buf array.
+		n, err = file.Read(buf)
+		if err != nil {
+			// ... if `eof` --> `writing=false`...
+			if err == io.EOF {
+				writing = false
+				continue
+			}
+			log.Error("failed while copying from file to buf")
+			return util.Failure, err
+		}
+
+		req := &lcmservice.UploadPackageRequest{
+			Data: &lcmservice.UploadPackageRequest_Package{
+				Package: buf[:n],
+			},
+		}
+
+		err = stream.Send(req)
+
+		if err != nil {
+			log.Error("failed to send chunk via stream")
+			return util.Failure, err
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Error("received upstream status response")
+		return util.Failure, err
+	}
+	return res.GetStatus(), err
+}
+
+// Remove configuration
+func (c *ClientGRPC) DeletePackage(ctx context.Context, tenantId string, hostIP string, packageId string, accessToken string) (status string, error error) {
+	req := &lcmservice.DeletePackageRequest{
+		HostIp:       hostIP,
+		TenantId:     tenantId,
+		AppPackageId: packageId,
+		AccessToken:  accessToken,
+	}
+
+	log.WithFields(log.Fields{
+		"tenant":     tenantId,
+		"hostIp":     hostIP,
+		"packageId":  packageId,
+	}).Info("Delete Package!")
+
+	resp, err := c.client.DeletePackage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Status, err
+}

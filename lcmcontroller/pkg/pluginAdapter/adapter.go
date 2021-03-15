@@ -38,13 +38,13 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 }
 
 // Instantiate application
-func (c *PluginAdapter) Instantiate(host string, deployArtifact string,
+func (c *PluginAdapter) Instantiate(tenantId string, host string, packageId string,
 	accessToken string, akSkAppInfo config.AppAuthConfig) (error error, status string) {
 	log.Info("Instantiation started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.Instantiate(ctx, deployArtifact, host, accessToken, akSkAppInfo)
+	status, err := c.client.Instantiate(ctx, tenantId, host, packageId, accessToken, akSkAppInfo)
 	if err != nil {
 		log.Error("failed to instantiate application")
 		return err, util.Failure
@@ -205,4 +205,38 @@ func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsI
 
 	log.Info("VM image chunk download completed with response: ", response)
 	return response, nil
+}
+
+// Upload configuration
+func (c *PluginAdapter) UploadPackage(tenantId string, appPkg string, host string, packageId string,
+	accessToken string) (status string, error error) {
+	log.Info("Distribute package started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.UploadPackage(ctx, tenantId, appPkg, host, packageId, accessToken)
+	if err != nil {
+		log.Error("failed to upload configuration")
+		return util.Failure, err
+	}
+
+	log.Info("Package distribution is success with status: ", status)
+	return status, nil
+}
+
+// Remove configuration
+func (c *PluginAdapter) DeletePackage(tenantId string, host string, packageId string, accessToken string) (status string, error error) {
+	log.Info("Delete package started")
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.DeletePackage(ctx, tenantId, host, packageId, accessToken)
+	if err != nil {
+		log.Error("failed to remove configuration")
+		return util.Failure, err
+	}
+
+	log.Info("remove configuration is success with status: ", status)
+	return status, nil
 }

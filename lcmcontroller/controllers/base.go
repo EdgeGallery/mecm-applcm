@@ -24,6 +24,7 @@ import (
 	"lcmcontroller/pkg/dbAdapter"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
+	"strings"
 )
 
 // Base Controller
@@ -128,11 +129,46 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 	return appInfoRecord, nil
 }
 
+// Get app package record
+func (c *BaseController) getAppPackageRecord(appPkgId string, tenantId string, clientIp string) (*models.AppPackageRecord, error) {
+	appPkgRecord := &models.AppPackageRecord{
+		AppPkgId: appPkgId + tenantId,
+	}
+
+	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package record does not exist in database")
+		return nil, readErr
+	}
+	return appPkgRecord, nil
+}
+
+// Get app package host record
+func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, clientIp string) (*models.AppPackageHostRecord, error) {
+	appPkgHostRecord := &models.AppPackageHostRecord{
+		PkgHostKey: appPkgId + tenantId + hostIp,
+	}
+
+	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package host record does not exist in database")
+		return nil, readErr
+	}
+	return appPkgHostRecord, nil
+}
+
 // Get vim name
 func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) {
 
-	// Get VIM from host table based on hostIp, TBD
-	vim := ""
+	mecHostInfoRec, err := c.getMecHostInfoRecord(hostIp, clientIp)
+	if err != nil {
+		return "", err
+	}
+
+	// Get VIM from host table based on hostIp
+	vim := mecHostInfoRec.Vim
 
 	// Default to k8s for backward compatibility
 	if vim == "" {
@@ -142,17 +178,11 @@ func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) 
 	return vim, nil
 }
 
-func (c *BaseController) getPluginAdapter(deployType, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+func (c *BaseController) getPluginAdapter(_, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
 	error) {
 	var pluginInfo string
 
-	switch deployType {
-	case "helm":
-		pluginInfo = util.GetPluginInfo(vim)
-	default:
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.DeployTypeIsNotHelmBased)
-		return nil, errors.New(util.DeployTypeIsNotHelmBased)
-	}
+	pluginInfo = util.GetPluginInfo(vim)
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
@@ -167,4 +197,102 @@ func (c *BaseController) getPluginAdapter(deployType, clientIp string, vim strin
 func (c *BaseController) handleLoggingForSuccess(clientIp string, msg string) {
 	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
+}
+
+// Get host IP from url
+func (c *BaseController) getUrlHostIP(clientIp string) (string, error) {
+	hostIp := c.Ctx.Input.Param(":hostIp")
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid from url")
+		return "", err
+	}
+	return hostIp, nil
+}
+
+// Handle logging for k8s
+func (c *BaseController) handleLoggingK8s(clientIp string, errorString string) {
+	if strings.Contains(errorString, util.Forbidden) {
+		c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+	} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+	} else {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
+	}
+}
+
+// Delete app info record
+func (c *BaseController) deleteAppInfoRecord(appInsId string) error {
+	appInfoRecord := &models.AppInfoRecord{
+		AppInsId: appInsId,
+	}
+
+	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete app package record
+func (c *BaseController) deleteAppPackageRecord(appPkgId string, tenantId string) error {
+	appPkgRecord := &models.AppPackageRecord{
+		AppPkgId: appPkgId + tenantId,
+	}
+
+	err := c.Db.DeleteData(appPkgRecord, util.AppPkgId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete app package host record
+func (c *BaseController) deleteAppPackageHostRecord(hostIp, appPkgId, tenantId string) error {
+	appPkgHostRecord := &models.AppPackageHostRecord{
+		PkgHostKey: appPkgId + tenantId + hostIp,
+	}
+
+	err := c.Db.DeleteData(appPkgHostRecord, util.PkgHostKey)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete tenant record
+func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
+	tenantRecord := &models.TenantInfoRecord{
+		TenantId: tenantId,
+	}
+
+	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	if count == 0 {
+		err = c.Db.DeleteData(tenantRecord, util.TenantId)
+		if err != nil {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return err
+		}
+	}
+	return nil
+}
+
+// Get mec host info record
+func (c *BaseController) getMecHostInfoRecord(hostIp string, clientIp string) (*models.MecHost, error) {
+	mecHostInfoRecord := &models.MecHost{
+		MecHostId: hostIp,
+	}
+
+	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"Mec host info record does not exist in database")
+		return nil, readErr
+	}
+	return mecHostInfoRecord, nil
 }

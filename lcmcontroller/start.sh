@@ -198,6 +198,28 @@ else
   export K8S_PLUGIN_PORT=8095
 fi
 
+if [ ! -z "$OPENSTACK_PLUGIN" ]; then
+  validate_host_name "$OPENSTACK_PLUGIN"
+  valid_openstack_plugin_host_name="$?"
+  if [ ! "$valid_openstack_plugin_host_name" -eq "0" ]; then
+    echo "invalid openstack plugin host name"
+    exit 1
+  fi
+else
+  export OPENSTACK_PLUGIN=mecm-mepm-osplugin
+fi
+
+if [ ! -z "$OPENSTACK_PLUGIN_PORT" ]; then
+  validate_port_num "$OPENSTACK_PLUGIN_PORT"
+  valid_openstack_plugin_port="$?"
+  if [ ! "$valid_openstack_plugin_port" -eq "0" ]; then
+    echo "invalid OPENSTACK plugin port number"
+    exit 1
+  fi
+else
+  export OPENSTACK_PLUGIN_PORT=8234
+fi
+
 if [ ! -z "$API_GW_ADDR" ]; then
   validate_host_name "$API_GW_ADDR"
   valid_api_gw_addr="$?"

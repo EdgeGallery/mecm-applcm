@@ -85,12 +85,25 @@ func doTest(t *testing.T) {
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{
-		"hostIp":  hostIpAddress,
+		"hostIp":  "1.1.1.1",
 		"appName": "postioning-service",
+		"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
+		"appId": "e261211d80d04cb6aed00e5cd1f2cd11",
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
-		tenantRecords: make(map[string]models.TenantInfoRecord)}
+		tenantRecords: make(map[string]models.TenantInfoRecord),
+		appPackageRecords: make(map[string]models.AppPackageRecord),
+		mecHostRecords: make(map[string]models.MecHost),
+		appPackageHostRecords: make(map[string]models.AppPackageHostRecord)}
+
+	//Upload package
+	testUploadPackage(t, extraParams, path, testDb)
+
+	testAddMecHost(t, extraParams, path, testDb)
+
+	//Distribute package
+	testDistributePackage(t, extraParams, path, testDb)
 
 	// Test instantiate
 	testInstantiate(t, extraParams, path, testDb)
@@ -98,18 +111,18 @@ func doTest(t *testing.T) {
 	// Test query
 	testQuery(t, nil, "", testDb, "{\"Output\":\"Success\"}")
 
-	// Test terminate
-	testTerminate(t, nil, "", testDb)
-
 	// Update path to config file
 	path, _ = os.Getwd()
 	path += "/config"
 
 	// Test upload
-	testUpload(t, extraParams, path)
+	testUpload(t, extraParams, path, testDb)
 
 	// Test removal
-	testRemoval(t, extraParams, path)
+	testRemoval(t, extraParams, path, testDb)
+
+	// Test terminate
+	testTerminate(t, nil, "", testDb)
 
 	// Common cleaning state
 	// Clear the created artifacts

@@ -17,11 +17,9 @@
 package test
 
 import (
-	"fmt"
 	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -60,8 +58,7 @@ var (
 	serveJson = "ServeJSON"
 	csar      = "/positioning_with_mepagent_new.csar"
 	hostIp    = "hostIp"
-	ipAddress = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
-		rand.Intn(util.MaxIPVal))
+	ipAddress = "1.1.1.1"
 	hosts = "/hosts/"
 )
 
@@ -112,7 +109,7 @@ func TestKpi(t *testing.T) {
 
 		// Get Request
 		kpiRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/"+tenantIdentifier+
-			hosts+localIp+"/kpi", extraParams, "file", path, "GET")
+			hosts+localIp+"/kpi", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		kpiInput := &context.BeegoInput{Context: &context.Context{Request: kpiRequest}}
@@ -169,7 +166,7 @@ func TestMepCapabilities(t *testing.T) {
 
 		// Get Request
 		capabilityRequest, _ := getHttpRequest(queryUrl+tenantIdentifier+
-			hosts+localIp+"/mep_capabilities", extraParams, "file", path, "GET")
+			hosts+localIp+"/mep_capabilities", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		capabilityInput := &context.BeegoInput{Context: &context.Context{Request: capabilityRequest}}
@@ -226,7 +223,7 @@ func TestMepCapabilitiesId(t *testing.T) {
 
 		// Get Request
 		capabilityRequest, _ := getHttpRequest(queryUrl+tenantIdentifier+
-			hosts+localIp+"/mep_capabilities"+"/1", extraParams, "file", path, "GET")
+			hosts+localIp+"/mep_capabilities"+"/1", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		capabilityInput := &context.BeegoInput{Context: &context.Context{Request: capabilityRequest}}
@@ -286,7 +283,7 @@ func TestAppDeploymentStatus(t *testing.T) {
 		// Get Request
 		appDeployStatusRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/"+
 			"hosts/"+ipAddress+"/packages/e921ce5482c84532b5c68516cf75f7a4/status",
-			extraParams, "file", path, "GET")
+			extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		appDeployStatusInput := &context.BeegoInput{Context: &context.Context{Request: appDeployStatusRequest}}
