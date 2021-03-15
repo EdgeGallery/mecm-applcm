@@ -18,18 +18,19 @@
 # -*- coding: utf-8 -*-
 import os
 
-enable_ssl = False
-if os.getenv('ENABLE_SSL', 'false') == 'true':
-    enable_ssl = True
+enable_ssl = True
+if os.getenv('ENABLE_SSL', 'true') == 'false':
+    enable_ssl = False
 
 listen_ip = os.getenv('LISTEN_IP', '[::]')
 
-private_key_certificate_chain_pairs = [
-    '/usr/app/ssl/server_tls.crt',
-    '/usr/app/ssl/server_tls.key'
-]
-root_certificates = ['/usr/app/ssl/ca.crt']
-require_client_auth = False
+base_dir = os.getenv('BASE_DIR', '/usr/app')
+log_dir = os.getenv("LOG_DIR", base_dir + '/log')
+private_key_certificate_chain_pairs = (
+    base_dir + '/ssl/server_tls.key',
+    base_dir + '/ssl/server_tls.crt',
+)
+root_certificates = base_dir + '/ssl/ca.crt'
 
 _JWT_PUBLIC_KEY_DEF = '-----BEGIN PUBLIC KEY-----\n' \
                  'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmesVPVWJmsRIzitiu6rs\n' \
@@ -49,12 +50,12 @@ db_host = os.getenv('DB_HOST', 'mepm-postgres')
 db_port = int(os.getenv('DB_PORT', '5432'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
 
-base_dir = os.getenv('BASE_DIR', 'target')
-log_dir = os.getenv("LOG_DIR", base_dir + '/log')
 # default chunk_size 1M
 chunk_size = os.getenv("IMAGE_CHUNK_SIZE", 1024 * 1024 * 1)
 
 _SERVER_CA_VERIFY = os.getenv('SERVER_CA_VERIFY_DIR', 'false')
 if _SERVER_CA_VERIFY == 'false':
     _SERVER_CA_VERIFY = False
+elif _SERVER_CA_VERIFY == 'true':
+    _SERVER_CA_VERIFY = True
 server_ca_verify = _SERVER_CA_VERIFY

@@ -45,10 +45,16 @@ def serve():
     listen_addr = config.listen_ip + ":" + str(_LISTEN_PORT)
 
     if config.enable_ssl:
+        with open(config.private_key_certificate_chain_pairs[0], 'rb') as f:
+            private_key = f.read()
+        with open(config.private_key_certificate_chain_pairs[1], 'rb') as f:
+            certificate_chain = f.read()
+        with open(config.root_certificates, 'rb') as f:
+            root_certificates = f.read()
         cert_config = grpc.ssl_server_credentials(
-            private_key_certificate_chain_pairs=config.private_key_certificate_chain_pairs,
-            root_certificates=config.root_certificates,
-            require_client_auth=config.require_client_auth
+            private_key_certificate_chain_pairs=((private_key, certificate_chain), ),
+            root_certificates=root_certificates,
+            require_client_auth=False
         )
         server.add_secure_port(listen_addr, cert_config)
     else:

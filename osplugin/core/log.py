@@ -1,5 +1,6 @@
 import datetime
 import logging.handlers
+import os
 
 import config
 
@@ -9,6 +10,10 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 
 log_path = config.log_dir
+try:
+    os.makedirs(log_path)
+except OSError:
+    pass
 
 debug_file = log_path + '/debug.log'
 fh = logging.handlers.TimedRotatingFileHandler(debug_file,
