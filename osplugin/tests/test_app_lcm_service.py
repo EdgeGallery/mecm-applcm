@@ -28,7 +28,7 @@ LOG = logger
 class AppLcmServiceTest(unittest.TestCase):
     app_lcm_service = AppLcmService()
     access_token = gen_token.test_access_token
-    host_ip = '10.10.9.75'
+    host_ip = '159.138.23.91'
 
     def test_upload_package(self):
         with open('tests/resources/ht-package.zip', 'rb') as f:

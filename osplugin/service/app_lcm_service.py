@@ -26,7 +26,6 @@ from heatclient.common import template_utils
 from heatclient.exc import HTTPNotFound
 from pony.orm import db_session, commit
 
-import config
 import utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
@@ -103,6 +102,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
     AppLcmService
     """
     def uploadPackage(self, request_iterator, context):
+        """
+        上传app包
+        :param request_iterator:
+        :param context:
+        :return:
+        """
         LOG.debug('receive upload package msg...')
         res = UploadPackageResponse(status=utils.FAILURE)
 
@@ -119,7 +124,9 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('appPackageId is required')
             return res
         app_package_path = utils.APP_PACKAGE_DIR + '/' + parameters.app_package_id
-        utils.delete_dir(app_package_path)
+        if utils.exists_path(app_package_path):
+            LOG.info('app package exist')
+            return res
         utils.create_dir(app_package_path)
         try:
             LOG.debug('unzip package')
@@ -140,6 +147,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def deletePackage(self, request, context):
+        """
+        删除app包
+        :param request:
+        :param context:
+        :return:
+        """
         LOG.debug('receive delete package msg...')
         res = DeletePackageResponse(status=utils.FAILURE)
 
@@ -161,6 +174,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     @db_session
     def instantiate(self, request, context):
+        """
+        app 实例化
+        :param request:
+        :param context:
+        :return:
+        """
         LOG.debug('receive instantiate msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
@@ -209,6 +228,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     @db_session
     def terminate(self, request, context):
+        """
+        销毁实例
+        :param request:
+        :param context:
+        :return:
+        """
         LOG.debug('receive terminate msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
@@ -242,6 +267,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def query(self, request, context):
+        """
+        实例信息查询
+        :param request:
+        :param context:
+        :return:
+        """
         LOG.debug('receive query msg...')
         res = QueryResponse(response='{"code": 500, "msg": "server error"}')
 
@@ -285,6 +316,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def workloadEvents(self, request, context):
+        """
+        工作负载事件查询
+        :param request:
+        :param context:
+        :return:
+        """
         LOG.debug('receive workload describe msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
@@ -308,6 +345,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     def uploadConfig(self, request_iterator, context):
+        """
+        上传openstack配置文件
+        :param request_iterator: 流式传输
+        :param context:
+        :return:
+        """
         LOG.debug('receive uploadConfig msg...')
         res = UploadCfgResponse(status=utils.FAILURE)
 

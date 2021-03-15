@@ -20,6 +20,7 @@
 import os
 import re
 import uuid
+from pathlib import Path
 
 import jwt
 from jwt import DecodeError
@@ -49,6 +50,11 @@ def create_dir(path):
         LOG.error(e, exc_info=True)
         return False
     return True
+
+
+def exists_path(path):
+    file = Path(path)
+    return file.exists()
 
 
 def delete_dir(path):
