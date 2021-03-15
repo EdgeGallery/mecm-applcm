@@ -115,6 +115,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(parameters)
         if not host_ip:
+            parameters.delete_tmp()
             return res
 
         # TODO: 预加载镜像
@@ -122,10 +123,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         app_package_id = parameters.app_package_id
         if app_package_id is None:
             LOG.info('appPackageId is required')
+            parameters.delete_tmp()
             return res
         app_package_path = utils.APP_PACKAGE_DIR + '/' + parameters.app_package_id
         if utils.exists_path(app_package_path):
             LOG.info('app package exist')
+            parameters.delete_tmp()
             return res
         utils.create_dir(app_package_path)
         try:
@@ -137,6 +140,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         except Exception as e:
             LOG.error(e, exc_info=True)
             utils.delete_dir(app_package_path)
+            parameters.delete_tmp()
             return res
         parameters.delete_tmp()
 
