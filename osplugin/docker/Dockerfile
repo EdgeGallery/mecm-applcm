@@ -12,22 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# 构建ubuntu python3基础镜像
 FROM ubuntu:20.04 AS base
 
-RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv python3-dev gcc libpq-dev
+RUN apt-get update && \
+    apt-get install -y python3 python3-venv
 
+# 构建pip3依赖镜像并下载依赖
+FROM base AS developement
 
-FROM base AS builder
+RUN apt-get update && \
+    apt-get install -y python3-pip python3-dev gcc libpq-dev && \
+    python3 -m venv /venv && \
+    /venv/bin/pip3 install --upgrade pip
 
-RUN python3 -m venv /venv && \
-/venv/bin/pip3 install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple
 COPY requirements.txt /requirements.txt
 
-RUN /venv/bin/pip3 install -r /requirements.txt -i https://mirrors.aliyun.com/pypi/simple
+RUN /venv/bin/pip3 install -r /requirements.txt
 
-
+# 构建运行时镜像
 FROM base
 
 WORKDIR /usr/app
@@ -37,6 +40,6 @@ COPY internal ./internal
 COPY service ./service
 COPY *.py ./
 
-COPY --from=builder /venv ./venv
+COPY --from=developement /venv ./venv
 
 CMD ./venv/bin/python3 run.py
