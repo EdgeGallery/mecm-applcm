@@ -32,6 +32,6 @@ eh.setFormatter(formatter)
 logger.addHandler(eh)
 
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
