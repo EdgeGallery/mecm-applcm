@@ -24,7 +24,7 @@ import uuid
 import jwt
 from jwt import DecodeError
 
-from config import jwt_public_key
+from config import jwt_public_key, base_dir
 from core.log import logger
 
 FAILURE = 'Failure'
@@ -34,6 +34,8 @@ INSTANTIATING = 'Instantiating'
 INSTANTIATED = 'Instantiated'
 TERMINATED = 'Terminated'
 TERMINATING = 'Terminating'
+
+APP_PACKAGE_DIR = base_dir + '/package'
 
 LOG = logger
 
