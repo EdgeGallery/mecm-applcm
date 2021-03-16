@@ -20,11 +20,12 @@
 import os
 import re
 import uuid
+from pathlib import Path
 
 import jwt
 from jwt import DecodeError
 
-from config import jwt_public_key
+from config import jwt_public_key, base_dir
 from core.log import logger
 
 FAILURE = 'Failure'
@@ -34,6 +35,8 @@ INSTANTIATING = 'Instantiating'
 INSTANTIATED = 'Instantiated'
 TERMINATED = 'Terminated'
 TERMINATING = 'Terminating'
+
+APP_PACKAGE_DIR = base_dir + '/package'
 
 LOG = logger
 
@@ -47,6 +50,11 @@ def create_dir(path):
         LOG.error(e, exc_info=True)
         return False
     return True
+
+
+def exists_path(path):
+    file = Path(path)
+    return file.exists()
 
 
 def delete_dir(path):

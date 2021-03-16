@@ -14,48 +14,67 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
+import zipfile
 
 from pony.orm import PrimaryKey, Required, Optional
 
 import config
 import utils
+from core.csar.pkg import get_hot_yaml_path
+from core.exceptions import ParamNotValid
+from core.log import logger
 from core.orm.adapter import db
 
 _APP_TASK_PATH = config.base_dir + '/tmp/tasks'
+LOG = logger
+
+
+class UploadPackageRequest(object):
+    accessToken = None
+    hostIp = None
+    app_package_id = None
+    tenant_id = None
+
+    def __init__(self, request_iterator):
+        task_id = utils.gen_uuid()
+        self._tmp_package_dir = _APP_TASK_PATH + '/' + task_id
+        utils.create_dir(self._tmp_package_dir)
+        self.tmp_package_file_path = self._tmp_package_dir + '/package.zip'
+        for request in request_iterator:
+            if request.accessToken:
+                self.accessToken = request.accessToken
+            elif request.appPackageId:
+                self.app_package_id = request.appPackageId
+            elif request.hostIp:
+                self.hostIp = request.hostIp
+            elif request.tenantId:
+                self.tenant_id = request.tenantId
+            elif request.package:
+                with open(self.tmp_package_file_path, 'ab') as f:
+                    f.write(request.package)
+
+    def delete_tmp(self):
+        utils.delete_dir(self._tmp_package_dir)
 
 
 class InstantiateRequest(object):
     accessToken = None
-    app_instance_id = None
     hostIp = None
+    app_instance_id = None
+    app_package_id = None
     ak = None
     sk = None
     app_package_path = None
 
-    def __init__(self, request_iterator):
-        self._task_path = _APP_TASK_PATH + '/' + utils.gen_uuid()
-        utils.create_dir(self._task_path)
-        for request in request_iterator:
-            if request.accessToken:
-                self.accessToken = request.accessToken
-            elif request.appInstanceId:
-                self.app_instance_id = request.appInstanceId
-            elif request.hostIp:
-                self.hostIp = request.hostIp
-            elif request.package:
-                self.app_package_path = self._task_path + '/package.zip'
-                with open(self.app_package_path, 'ab') as package_file:
-                    package_file.write(request.package)
-            elif request.ak:
-                self.ak = request.ak
-            elif request.sk:
-                self.sk = request.sk
-
-    def delete_package_tmp(self):
-        utils.delete_dir(self._task_path)
-        self.app_package_path = None
+    def __init__(self, request):
+        self.accessToken = request.accessToken
+        self.app_instance_id = request.appInstanceId
+        self.hostIp = request.hostIp
+        self.app_package_id = request.appPackageId
+        self.app_package_path = config.base_dir + '/package/' + request.appPackageId
+        self.ak = request.ak
+        self.sk = request.sk
 
 
 class UploadCfgRequest(object):

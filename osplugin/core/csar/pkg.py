@@ -34,52 +34,12 @@ LOG = logger
 
 
 def get_hot_yaml_path(unzip_pkg_path):
-    csar_pkg = CsarPkg(unzip_pkg_path)
+    try:
+        csar_pkg = CsarPkg(unzip_pkg_path)
+    except FileNotFoundError:
+        LOG.info('%s 文件不存在', unzip_pkg_path)
+        return None
     return csar_pkg.hot_path
-
-
-def _translate(appd, base_path):
-    hot = {
-        'heat_template_version': '2015-04-30',
-        'description': 'this is an example',
-        'resources': {},
-        'parameters': appd['topology_template']['inputs'],
-        'outputs': {}
-    }
-    for name, template in appd['topology_template']['node_templates'].items():
-        if template['type'] == 'tosca.nodes.nfv.VNF':
-            pass
-        elif template['type'] == 'tosca.nodes.nfv.Vdu.Compute':
-            NovaServer(name, template, hot, appd['topology_template']['node_templates'])
-        elif template['type'] == 'tosca.nodes.nfv.VduCp':
-            VirtualPort(name, template, hot, appd['topology_template']['node_templates'])
-        elif template['type'] == 'tosca.nodes.nfv.VnfVirtualLink':
-            # VirtualLink(name, template, hot)
-            pass
-        elif template['type'] == 'tosca.nodes.nfv.Vdu.VirtualBlockStorage':
-            VirtualStorage(name, template, hot)
-        elif template['type'] == 'tosca.nodes.nfv.app.configuration':
-            pass
-        else:
-            LOG.info('skip unknown tosca type %s', template['type'])
-
-    for name, group in appd['topology_template']['groups'].items():
-        if group['type'] == 'tosca.groups.nfv.PlacementGroup':
-            pass
-        else:
-            LOG.info('skip unknown tosca type %s', group['type'])
-
-    for policy in appd['topology_template']['policies']:
-        for key, value in policy.items():
-            if value['type'] == 'tosca.policies.nfv.AntiAffinityRule':
-                pass
-            else:
-                LOG.info('skip unknow tosca type %s', value['type'])
-
-    with open(base_path + '/hot.yaml', 'w') as file:
-        yaml.dump(hot, file)
-
-    return base_path + '/hot.yaml'
 
 
 class CsarPkg(object):
@@ -98,23 +58,68 @@ class CsarPkg(object):
                     break
         if self._APPD_PATH is None:
             raise PackageNotValid('entry definitions not exist')
-        appd_file_path = self.base_dir + '/' + self._APPD_PATH
-        appd_file_dir = os.path.dirname(appd_file_path)
-        if appd_file_path.endswith('.zip'):
-            try:
-                with zipfile.ZipFile(appd_file_path) as zip_file:
-                    namelist = zip_file.namelist()
-                    for f in namelist:
-                        zip_file.extract(f, appd_file_dir)
-            except Exception as e:
-                LOG.error(e, exc_info=True)
-            cmcc_appd = CmccAppD(appd_file_dir)
-            self.hot_path = _translate(cmcc_appd.appd, appd_file_dir)
-        elif appd_file_path.endswith('.yaml'):
-            simple_appd = yaml.load(appd_file_path, Loader=yaml.FullLoader)
-            self.hot_path = _translate(simple_appd, appd_file_dir)
+        self.appd_file_path = self.base_dir + '/' + self._APPD_PATH
+        self.appd_file_dir = os.path.dirname(self.appd_file_path)
+        self.hot_path = self.appd_file_dir + '/hot.yaml'
+
+    def _unzip(self):
+        try:
+            with zipfile.ZipFile(self.appd_file_path) as zip_file:
+                namelist = zip_file.namelist()
+                for f in namelist:
+                    zip_file.extract(f, self.appd_file_dir)
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+
+    def translate(self):
+        self._unzip()
+        if self.appd_file_path.endswith('.zip'):
+            cmcc_appd = CmccAppD(self.appd_file_dir)
+            appd = cmcc_appd.appd
+        elif self.appd_file_path.endswith('.yaml'):
+            appd = yaml.load(self.appd_file_path, Loader=yaml.FullLoader)
         else:
-            LOG.error('不支持的appd类型')
+            raise PackageNotValid('不支持的appd类型')
+
+        hot = {
+            'heat_template_version': '2015-04-30',
+            'description': 'this is an example',
+            'resources': {},
+            'parameters': appd['topology_template']['inputs'],
+            'outputs': {}
+        }
+        for name, template in appd['topology_template']['node_templates'].items():
+            if template['type'] == 'tosca.nodes.nfv.VNF':
+                pass
+            elif template['type'] == 'tosca.nodes.nfv.Vdu.Compute':
+                NovaServer(name, template, hot, appd['topology_template']['node_templates'])
+            elif template['type'] == 'tosca.nodes.nfv.VduCp':
+                VirtualPort(name, template, hot, appd['topology_template']['node_templates'])
+            elif template['type'] == 'tosca.nodes.nfv.VnfVirtualLink':
+                # VirtualLink(name, template, hot)
+                pass
+            elif template['type'] == 'tosca.nodes.nfv.Vdu.VirtualBlockStorage':
+                VirtualStorage(name, template, hot)
+            elif template['type'] == 'tosca.nodes.nfv.app.configuration':
+                pass
+            else:
+                LOG.info('skip unknown tosca type %s', template['type'])
+
+        for name, group in appd['topology_template']['groups'].items():
+            if group['type'] == 'tosca.groups.nfv.PlacementGroup':
+                pass
+            else:
+                LOG.info('skip unknown tosca type %s', group['type'])
+
+        for policy in appd['topology_template']['policies']:
+            for key, value in policy.items():
+                if value['type'] == 'tosca.policies.nfv.AntiAffinityRule':
+                    pass
+                else:
+                    LOG.info('skip unknow tosca type %s', value['type'])
+
+        with open(self.hot_path, 'w') as file:
+            yaml.dump(hot, file)
 
 
 class CmccAppD(object):

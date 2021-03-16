@@ -26,3 +26,8 @@ class PackageNotValid(RuntimeError):
 class DownloadChunkException(RuntimeError):
     def __init__(self, msg):
         self.message = msg
+
+
+class ParamNotValid(RuntimeError):
+    def __init__(self, msg):
+        self.message = msg

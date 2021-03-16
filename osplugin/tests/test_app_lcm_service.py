@@ -28,19 +28,41 @@ LOG = logger
 class AppLcmServiceTest(unittest.TestCase):
     app_lcm_service = AppLcmService()
     access_token = gen_token.test_access_token
-    host_ip = '19.3.44.22'
+    host_ip = '159.138.23.91'
 
-    def test_instantiate(self):
-        with open('tests/resources/simple-package-fs.zip', 'rb') as f:
+    def test_upload_package(self):
+        with open('tests/resources/ht-package.zip', 'rb') as f:
             package_data = f.read()
         data = [
-            lcmservice_pb2.InstantiateRequest(accessToken=self.access_token),
-            lcmservice_pb2.InstantiateRequest(hostIp=self.host_ip),
-            lcmservice_pb2.InstantiateRequest(appInstanceId='test001'),
-            lcmservice_pb2.InstantiateRequest(package=package_data),
-            lcmservice_pb2.InstantiateRequest(ak='ak'),
-            lcmservice_pb2.InstantiateRequest(sk='sk')
+            lcmservice_pb2.UploadPackageRequest(accessToken=self.access_token),
+            lcmservice_pb2.UploadPackageRequest(hostIp=self.host_ip),
+            lcmservice_pb2.UploadPackageRequest(tenantId='tenant001'),
+            lcmservice_pb2.UploadPackageRequest(appPackageId='pkg001'),
+            lcmservice_pb2.UploadPackageRequest(package=package_data)
         ]
+        response = self.app_lcm_service.uploadPackage(data, None)
+        self.assertEqual(response.status, utils.SUCCESS)
+
+    def test_delete_package(self):
+        data = lcmservice_pb2.DeletePackageRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId='tenant001',
+            appPackageId='pkg001'
+        )
+        response = self.app_lcm_service.deletePackage(data, None)
+        self.assertEqual(response.status, utils.SUCCESS)
+
+    def test_instantiate(self):
+        data = lcmservice_pb2.InstantiateRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId='tenant001',
+            appInstanceId='test001',
+            appPackageId='pkg001',
+            ak='ak',
+            sk='sk',
+        )
         response = self.app_lcm_service.instantiate(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
 

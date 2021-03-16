@@ -16,7 +16,7 @@
 FROM ubuntu:20.04 AS base
 
 RUN apt-get update && \
-    apt-get install -y python3 python3-venv
+    apt-get install -y python3 python3-venv libpq5
 
 # 构建pip3依赖镜像并下载依赖
 FROM base AS developement

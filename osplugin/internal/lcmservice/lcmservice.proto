@@ -17,14 +17,13 @@ syntax = "proto3";
 package lcmservice;
 
 message InstantiateRequest {
-  oneof data {
-    string accessToken = 1;
-    string appInstanceId = 2;
-    string hostIp = 3;
-    bytes package = 4;
-    string ak     = 5;
-    string sk     = 6;
-  };
+  string accessToken = 1;
+  string tenantId = 2;
+  string appInstanceId = 3;
+  string appPackageId = 4;
+  string hostIp = 5;
+  string ak     = 6;
+  string sk     = 7;
 }
 
 message InstantiateResponse {
@@ -146,13 +145,40 @@ message DownloadVmImageResponse {
   bytes content = 1;
 }
 
+message UploadPackageRequest {
+  oneof data {
+    string accessToken = 1;
+    string appPackageId = 2;
+    string hostIp = 3;
+    string tenantId = 4;
+    bytes package = 5;
+  };
+}
+
+message UploadPackageResponse {
+  string status = 1;
+}
+
+message DeletePackageRequest {
+  string accessToken = 1;
+  string tenantId = 2;
+  string hostIp = 3;
+  string appPackageId = 4;
+}
+
+message DeletePackageResponse {
+  string status = 1;
+}
+
 service AppLCM {
-  rpc instantiate (stream InstantiateRequest) returns (InstantiateResponse) {}
+  rpc instantiate (InstantiateRequest) returns (InstantiateResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc query (QueryRequest) returns (QueryResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
   rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}
+  rpc uploadPackage (stream UploadPackageRequest) returns (UploadPackageResponse) {}
+  rpc deletePackage (DeletePackageRequest) returns (DeletePackageResponse) {}
 }
 
 service VmImage {
