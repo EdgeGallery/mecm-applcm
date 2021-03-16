@@ -30,7 +30,7 @@ import utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest
-from core.openstack_utils import create_heat_client, RC_FILE_DIR
+from core.openstack_utils import create_heat_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse
@@ -116,7 +116,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         parameters = UploadPackageRequest(request_iterator)
 
         host_ip = validate_input_params(parameters)
-        if not host_ip:
+        if host_ip is None:
             parameters.delete_tmp()
             return res
 
@@ -163,7 +163,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res = DeletePackageResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
-        if not host_ip:
+        if host_ip is None:
             return res
 
         app_package_id = request.appPackageId
@@ -194,12 +194,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         LOG.debug('%s: 校验access token, host ip', req_id)
         host_ip = validate_input_params(parameter)
-        if not host_ip:
+        if host_ip is None:
             return res
 
         LOG.debug('%s: 获取实例ID', req_id)
         app_instance_id = parameter.app_instance_id
-        if not app_instance_id:
+        if app_instance_id is None:
             return res
 
         LOG.debug('%s: 查询数据库是否存在相同记录', req_id)
@@ -256,17 +256,17 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         LOG.debug('%s: 校验token, host ip', req_id)
         host_ip = validate_input_params(request)
-        if not host_ip:
+        if host_ip is None:
             return res
 
         LOG.debug('%s: 获取实例ID', req_id)
         app_instance_id = request.appInstanceId
-        if not app_instance_id:
+        if app_instance_id is None:
             return res
 
         LOG.debug('%s: 查询数据库', req_id)
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
-        if not app_ins_mapper:
+        if app_ins_mapper is None:
             res.status = utils.SUCCESS
             return res
 
@@ -305,15 +305,15 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res = QueryResponse(response='{"code": 500, "msg": "server error"}')
 
         host_ip = validate_input_params(request)
-        if not host_ip:
+        if host_ip is None:
             return res
 
         app_instance_id = request.appInstanceId
-        if not app_instance_id:
+        if app_instance_id is None:
             return res
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
-        if not app_ins_mapper:
+        if app_ins_mapper is None:
             return res
 
         heat = create_heat_client(host_ip)
@@ -355,15 +355,15 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res = TerminateResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
-        if not host_ip:
+        if host_ip is None:
             return res
 
         app_instance_id = request.appInstanceId
-        if not app_instance_id:
+        if app_instance_id is None:
             return res
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
-        if not app_ins_mapper:
+        if app_ins_mapper is None:
             LOG.info('app实例 %s 不存在', app_instance_id)
             return res
 
@@ -386,17 +386,14 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         parameter = UploadCfgRequest(request_iterator)
 
         host_ip = validate_input_params(parameter)
-        if not host_ip:
+        if host_ip is None:
             return res
 
         config_file = parameter.config_file
         if config_file is None:
             return res
 
-        if utils.create_dir(RC_FILE_DIR) is None:
-            return res
-
-        config_path = RC_FILE_DIR + '/' + host_ip
+        config_path = utils.RC_FILE_DIR + '/' + host_ip
 
         try:
             with open(config_path, 'wb') as new_file:
@@ -421,7 +418,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if not host_ip:
             return res
 
-        config_path = RC_FILE_DIR + '/' + host_ip
+        config_path = utils.RC_FILE_DIR + '/' + host_ip
         try:
             os.remove(config_path)
             res.status = utils.SUCCESS

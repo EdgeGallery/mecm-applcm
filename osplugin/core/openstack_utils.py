@@ -22,14 +22,13 @@ from keystoneauth1 import identity, session
 from novaclient import client as nova_client
 
 import config
+import utils
 from core.custom_glance_client import CustomGlanceClient
 from core.exceptions import PackageNotValid
 
-RC_FILE_DIR = config.base_dir + '/config'
-
 
 def get_rc(host_ip):
-    rc_file_path = RC_FILE_DIR + '/' + host_ip
+    rc_file_path = utils.RC_FILE_DIR + '/' + host_ip
     return RCFile(rc_file_path)
 
 
