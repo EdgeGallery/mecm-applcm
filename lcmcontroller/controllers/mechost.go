@@ -294,7 +294,6 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		return readErr
 	}
 	var origin = hostInfoRecord.Origin
-	var syncStatus = hostInfoRecord.SyncStatus
 
 	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
 	if err != nil {
@@ -306,7 +305,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		MecHostId: hostIp,
 	}
 
-	if !syncStatus && strings.EqualFold(origin, "mepm") {
+	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
