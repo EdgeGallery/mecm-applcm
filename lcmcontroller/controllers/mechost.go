@@ -542,6 +542,8 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 		return
 	}
 
+	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
 	_, err = c.Ctx.ResponseWriter.Write(response)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
