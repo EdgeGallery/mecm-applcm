@@ -551,7 +551,6 @@ func (c *LcmController) Terminate() {
 	}
 
 	var origin = appInfoRecord.Origin
-	var syncStatus = appInfoRecord.SyncStatus
 
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
@@ -568,7 +567,7 @@ func (c *LcmController) Terminate() {
 		AppInsId: appInsId,
 		TenantId: tenantId,
 	}
-	if !syncStatus && strings.EqualFold(origin, "mepm") {
+	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app instance key record to database.")
