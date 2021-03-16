@@ -270,6 +270,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res.status = utils.SUCCESS
         return res
 
+    @db_session
     def query(self, request, context):
         """
         实例信息查询
@@ -319,6 +320,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res.response = json.dumps(response)
         return res
 
+    @db_session
     def workloadEvents(self, request, context):
         """
         工作负载事件查询
