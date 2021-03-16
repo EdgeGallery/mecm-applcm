@@ -349,7 +349,6 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 	}
 
 	var origin = appInfoRecord.Origin
-	var syncStatus = appInfoRecord.SyncStatus
 	var tenantId = appInfoRecord.TenantId
 	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
 	if err != nil {
@@ -367,7 +366,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		TenantId: tenantId,
 	}
 
-	if !syncStatus && strings.EqualFold(origin, "mepm") {
+	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app instance key record to database.")
