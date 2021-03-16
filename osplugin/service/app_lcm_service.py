@@ -90,6 +90,8 @@ def validate_input_params(param):
     """
     access_token = param.accessToken
     host_ip = param.hostIp
+    LOG.debug('param hostIp: {}', host_ip)
+    LOG.debug('param accessToken: {}', access_token)
     if not utils.validate_access_token(access_token):
         return None
     if not utils.validate_ipv4_address(host_ip):
@@ -184,37 +186,44 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive instantiate msg...')
+        req_id = utils.gen_uuid()
+        LOG.debug('%s: receive instantiate msg...', req_id)
         res = TerminateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request)
 
+        LOG.debug('%s: 校验access token, host ip', req_id)
         host_ip = validate_input_params(parameter)
         if not host_ip:
             return res
 
+        LOG.debug('%s: 获取实例ID', req_id)
         app_instance_id = parameter.app_instance_id
         if not app_instance_id:
             return res
 
+        LOG.debug('%s: 查询数据库是否存在相同记录', req_id)
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if app_ins_mapper is not None:
             LOG.info('app ins %s exist', app_instance_id)
             return res
 
+        LOG.debug('%s: 读取包的hot文件', req_id)
         hot_yaml_path = get_hot_yaml_path(parameter.app_package_path)
         if hot_yaml_path is None:
             return res
 
+        LOG.debug('%s: 构建heat参数', req_id)
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
             'files': dict(list(tpl_files.items()))
         }
-        LOG.debug('init heat client')
+        LOG.debug('%s: init heat client', req_id)
         heat = create_heat_client(host_ip)
         try:
+            LOG.debug('%s: 发送创建stack请求', req_id)
             stack_resp = heat.stacks.create(**fields)
         except Exception as e:
             LOG.error(e, exc_info=True)
@@ -223,11 +232,14 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                      host_ip=host_ip,
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
+        LOG.debug('%s: 更新数据库', req_id)
         commit()
 
+        LOG.debug('%s: 开始更新状态定时任务', req_id)
         start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.SUCCESS
+        LOG.debug('%s: 消息处理完成', req_id)
         return res
 
     @db_session
@@ -238,36 +250,47 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive terminate msg...')
+        req_id = utils.gen_uuid()
+        LOG.debug('%s: receive terminate msg...', req_id)
         res = TerminateResponse(status=utils.FAILURE)
 
+        LOG.debug('%s: 校验token, host ip', req_id)
         host_ip = validate_input_params(request)
         if not host_ip:
             return res
 
+        LOG.debug('%s: 获取实例ID', req_id)
         app_instance_id = request.appInstanceId
         if not app_instance_id:
             return res
 
+        LOG.debug('%s: 查询数据库', req_id)
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if not app_ins_mapper:
             res.status = utils.SUCCESS
             return res
 
+        LOG.debug('%s: 初始化openstack客户端', req_id)
         heat = create_heat_client(host_ip)
         try:
+            LOG.debug('%s: 发送删除请求', req_id)
             heat.stacks.delete(app_ins_mapper.stack_id)
         except HTTPNotFound:
+            LOG.debug('%s: stack不存在', req_id)
             pass
         except Exception as e:
             LOG.error(e, exc_info=True)
             return res
-        app_ins_mapper.operational_status = utils.TERMINATING
 
+        app_ins_mapper.operational_status = utils.TERMINATING
+        LOG.debug('%s: 更新数据库状态', req_id)
         commit()
+
+        LOG.debug('%s: 开始状态更新定时任务', req_id)
         start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.SUCCESS
+        LOG.debug('%s: 处理请求完成', req_id)
         return res
 
     @db_session
