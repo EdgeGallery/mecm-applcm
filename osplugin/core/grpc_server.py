@@ -62,7 +62,7 @@ def serve():
 
     try:
         server.start()
-        LOG.info("Starting server on %s", listen_addr)
+        LOG.info("Started server on %s", listen_addr)
         server.wait_for_termination()
     except KeyboardInterrupt:
         LOG.info('Server stopped')
