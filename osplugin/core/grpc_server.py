@@ -60,7 +60,9 @@ def serve():
     else:
         server.add_insecure_port(listen_addr)
 
-    server.start()
-    LOG.info("Starting server on %s", listen_addr)
-    server.wait_for_termination()
-    LOG.info('Server stopped')
+    try:
+        server.start()
+        LOG.info("Starting server on %s", listen_addr)
+        server.wait_for_termination()
+    except KeyboardInterrupt:
+        LOG.info('Server stopped')
