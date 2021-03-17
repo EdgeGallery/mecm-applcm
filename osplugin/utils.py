@@ -38,6 +38,8 @@ TERMINATING = 'Terminating'
 
 APP_PACKAGE_DIR = base_dir + '/package'
 
+RC_FILE_DIR = base_dir + '/config'
+
 LOG = logger
 
 
