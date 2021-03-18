@@ -90,8 +90,8 @@ def validate_input_params(param):
     """
     access_token = param.accessToken
     host_ip = param.hostIp
-    LOG.debug('param hostIp: {}', host_ip)
-    LOG.debug('param accessToken: {}', access_token)
+    LOG.debug('param hostIp: %s', host_ip)
+    LOG.debug('param accessToken: %s', access_token)
     if not utils.validate_access_token(access_token):
         return None
     if not utils.validate_ipv4_address(host_ip):
@@ -139,18 +139,15 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 namelist = zip_file.namelist()
                 for f in namelist:
                     zip_file.extract(f, app_package_path)
+            pkg = CsarPkg(app_package_path)
+            pkg.translate()
+            res.status = utils.SUCCESS
         except Exception as e:
             LOG.error(e, exc_info=True)
             utils.delete_dir(app_package_path)
+        finally:
             parameters.delete_tmp()
             return res
-        parameters.delete_tmp()
-
-        pkg = CsarPkg(app_package_path)
-        pkg.translate()
-
-        res.status = utils.SUCCESS
-        return res
 
     def deletePackage(self, request, context):
         """

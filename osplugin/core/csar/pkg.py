@@ -63,13 +63,10 @@ class CsarPkg(object):
         self.hot_path = self.appd_file_dir + '/hot.yaml'
 
     def _unzip(self):
-        try:
-            with zipfile.ZipFile(self.appd_file_path) as zip_file:
-                namelist = zip_file.namelist()
-                for f in namelist:
-                    zip_file.extract(f, self.appd_file_dir)
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        with zipfile.ZipFile(self.appd_file_path) as zip_file:
+            namelist = zip_file.namelist()
+            for f in namelist:
+                zip_file.extract(f, self.appd_file_dir)
 
     def translate(self):
         self._unzip()

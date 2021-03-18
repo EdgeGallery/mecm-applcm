@@ -173,16 +173,19 @@ class NovaServer(HOTBase):
         # user data
         if 'bootdata' in template['properties']:
             if 'user_data' in template['properties']['bootdata']:
-                params = {}
-                for key, param in template['properties']['bootdata']['user_data']['params'].items():
-                    params['$' + key + '$'] = param
+                if 'params' in template['properties']['bootdata']['user_data']:
+                    params = {}
+                    for key, param in template['properties']['bootdata']['user_data']['params'].items():
+                        params['$' + key + '$'] = param
                     user_data = {
                         'str_replace': {
                             'template': template['properties']['bootdata']['user_data']['contents'],
                             'params': params
                         }
                     }
-                    self.properties['user_data'] = user_data
+                else:
+                    user_data = template['properties']['bootdata']['user_data']['contents']
+                self.properties['user_data'] = user_data
             if 'config_drive' in template['properties']['bootdata']:
                 self.properties['config_drive'] = template['properties']['bootdata']['config_drive']
 
