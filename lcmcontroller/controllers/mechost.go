@@ -35,7 +35,6 @@ type MecHostController struct {
 // @Title Add MEC host
 // @Description Add mec host information
 // @Param   body        body    models.MecHostInfo   true      "The mec host information"
-// @Param   origin      header  string               true   "origin information"
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /hosts [post]
@@ -56,19 +55,12 @@ func (c *MecHostController) AddMecHost() {
 		return
 	}
 
-	origin := c.Ctx.Request.Header.Get("origin")
-	originVar, err := util.ValidateName(origin, util.NameRegex)
-	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
-		return
-	}
-
 	err = c.ValidateAddMecHostRequest(clientIp, request)
 	if err != nil {
 		return
 	}
 
-	err = c.InsertorUpdateMecHostRecord(clientIp, request, origin)
+	err = c.InsertorUpdateMecHostRecord(clientIp, request)
 	if err != nil {
 		return
 	}
@@ -80,7 +72,6 @@ func (c *MecHostController) AddMecHost() {
 // @Title Update MEC host
 // @Description Add mec host information
 // @Param   body        body    models.MecHostInfo   true      "The mec host information"
-// @Param   origin      header  string               true   "origin information"
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /hosts [put]
@@ -101,19 +92,12 @@ func (c *MecHostController) UpdateMecHost() {
 		return
 	}
 
-	origin := c.Ctx.Request.Header.Get("origin")
-	originVar, err := util.ValidateName(origin, util.NameRegex)
-	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
-		return
-	}
-
 	err = c.ValidateAddMecHostRequest(clientIp, request)
 	if err != nil {
 		return
 	}
 
-	err = c.InsertorUpdateMecHostRecord(clientIp, request, origin)
+	err = c.InsertorUpdateMecHostRecord(clientIp, request)
 	if err != nil {
 		return
 	}
@@ -177,14 +161,24 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 		return err
 	}
 
+	originVar, err := util.ValidateName(request.Origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		return err
+	}
+
 	return nil
 }
 
 // Insert or update mec host record
-func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo, origin string) error {
+func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo) error {
+
+	if request.Origin == "" {
+		request.Origin = "MEO"
+	}
 
 	syncStatus := true
-	if origin == "MEPM" {
+	if request.Origin == "MEPM" {
 		syncStatus = false
 	}
 	// Insert or update host info record
@@ -200,7 +194,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		ConfigUploadStatus: "false",
 		Coordinates:        request.Coordinates,
 		Vim:                request.Vim,
-		Origin:             origin,
+		Origin:             request.Origin,
 		SyncStatus:         syncStatus,
 	}
 
