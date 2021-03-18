@@ -294,7 +294,6 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		return readErr
 	}
 	var origin = hostInfoRecord.Origin
-	var syncStatus = hostInfoRecord.SyncStatus
 
 	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
 	if err != nil {
@@ -306,7 +305,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		MecHostId: hostIp,
 	}
 
-	if !syncStatus && strings.EqualFold(origin, "mepm") {
+	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -349,7 +348,6 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 	}
 
 	var origin = appInfoRecord.Origin
-	var syncStatus = appInfoRecord.SyncStatus
 	var tenantId = appInfoRecord.TenantId
 	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
 	if err != nil {
@@ -367,7 +365,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		TenantId: tenantId,
 	}
 
-	if !syncStatus && strings.EqualFold(origin, "mepm") {
+	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app instance key record to database.")
@@ -542,6 +540,8 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 		return
 	}
 
+	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
 	_, err = c.Ctx.ResponseWriter.Write(response)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
@@ -586,6 +586,8 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 		return
 	}
 
+	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
