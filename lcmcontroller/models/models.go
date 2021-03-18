@@ -65,16 +65,40 @@ type MecHwCapability struct {
 
 // Application info record
 type AppInfoRecord struct {
-	AppInsId   string    `orm:"pk"`
-	CreateTime time.Time `orm:"auto_now_add;type(datetime)"`
-	HostIp     string
-	DeployType string
-	TenantId   string
-	PackageId  string
-	AppName    string
-	Origin     string
-	SyncStatus bool
-	MecHost    *MecHost `orm:"rel(fk)"` // RelForeignKey relation
+	AppInstanceId string    `orm:"pk"`
+	CreateTime    time.Time `orm:"auto_now_add;type(datetime)"`
+	MecHost       string
+	DeployType    string
+	TenantId      string
+	AppPackageId  string
+	AppName       string
+	Origin        string
+	SyncStatus    bool
+	MecHostRec    *MecHost `orm:"rel(fk)"` // RelForeignKey relation
+}
+
+
+// Application info record
+type AppInfoRec struct {
+	AppInstanceId string    `orm:"pk" json:"appInstanceId"`
+	CreateTime    time.Time `orm:"auto_now_add;type(datetime)" json:"createTime"`
+	MecHost        string    `json:"mecHost"`
+	DeployType    string	`json:"deployType"`
+	TenantId      string	`json:"tenantId"`
+	AppPackageId  string	`json:"appPackageId"`
+	AppName       string	`json:"appName"`
+	Origin        string	`json:"origin"`
+	SyncStatus    bool      `json:"syncStatus"`
+}
+
+// App instance updated records
+type AppInfoUpdatedRecords struct {
+	AppInfoUpdatedRecs []AppInfoRec `json:"appInstanceUpdatedRecs"`
+}
+
+// App instance stale records
+type AppInstanceStaleRecords struct {
+	AppInstanceStaleRecs []AppInstanceStaleRec `json:"appInstanceDeletedRecs"`
 }
 
 // Application package record
@@ -196,8 +220,8 @@ type AppInstancesInfo struct {
 
 // App instances key information
 type AppInstanceStaleRec struct {
-	AppInsId string `orm:"pk"`
-	TenantId string
+	AppInstanceId string `orm:"pk" json:"appInstanceId"`
+	TenantId      string `json:"tenantId"`
 }
 
 // Mec host stale records

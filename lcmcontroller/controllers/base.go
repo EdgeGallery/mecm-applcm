@@ -117,7 +117,7 @@ func (c *BaseController) getAppInstId(clientIp string) (string, error) {
 // Get app info record
 func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {
 	appInfoRecord := &models.AppInfoRecord{
-		AppInsId: appInsId,
+		AppInstanceId: appInsId,
 	}
 
 	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
@@ -204,7 +204,7 @@ func (c *BaseController) getUrlHostIP(clientIp string) (string, error) {
 	hostIp := c.Ctx.Input.Param(":hostIp")
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid from url")
+		c.handleLoggingForError(clientIp, util.BadRequest, "MecHost address is invalid from url")
 		return "", err
 	}
 	return hostIp, nil
@@ -224,7 +224,7 @@ func (c *BaseController) handleLoggingK8s(clientIp string, errorString string) {
 // Delete app info record
 func (c *BaseController) deleteAppInfoRecord(appInsId string) error {
 	appInfoRecord := &models.AppInfoRecord{
-		AppInsId: appInsId,
+		AppInstanceId: appInsId,
 	}
 
 	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)

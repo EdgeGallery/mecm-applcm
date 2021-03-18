@@ -41,7 +41,7 @@ func (db *mockDb) InsertOrUpdateData(data interface{}, cols ...string) (err erro
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
-			db.appInstanceRecords[appInstance.AppInsId] = *appInstance
+			db.appInstanceRecords[appInstance.AppInstanceId] = *appInstance
 		}
 	}
 	if cols[0] == util.TenantId {
@@ -78,12 +78,12 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
-			readAppInstance := db.appInstanceRecords[appInstance.AppInsId]
+			readAppInstance := db.appInstanceRecords[appInstance.AppInstanceId]
 			if (readAppInstance == models.AppInfoRecord{}) {
 				return errors.New("App Instance record not found")
 			}
 			appInstance.TenantId = readAppInstance.TenantId
-			appInstance.HostIp = readAppInstance.HostIp
+			appInstance.MecHost = readAppInstance.MecHost
 			appInstance.DeployType = readAppInstance.DeployType
 		}
 	}
@@ -143,11 +143,11 @@ func (db *mockDb) DeleteData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
-			readAppInstance := db.appInstanceRecords[appInstance.AppInsId]
+			readAppInstance := db.appInstanceRecords[appInstance.AppInstanceId]
 			if (readAppInstance == models.AppInfoRecord{}) {
 				return errors.New("App Instance record not found")
 			}
-			delete(db.appInstanceRecords, readAppInstance.AppInsId)
+			delete(db.appInstanceRecords, readAppInstance.AppInstanceId)
 		}
 	}
 	if cols[0] == util.TenantId {
