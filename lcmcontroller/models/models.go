@@ -178,6 +178,7 @@ type MecHostInfo struct {
 	ConfigUploadStatus string              `json:"configUploadStatus"`
 	Coordinates        string              `json:"coordinates"`
 	Vim                string              `json:"vim"`
+	Origin             string              `json:"origin"`
 	Hwcapabilities     []MecHwCapabilities `json:"hwcapabilities"`
 }
 
@@ -212,6 +213,7 @@ type MecHostStaleRec struct {
 // Application package distribute request
 type DistributeRequest struct {
 	HostIp []string `json:"hostIp"`
+	Origin string `json:"origin"`
 }
 
 // Application package instantiation request
@@ -219,6 +221,7 @@ type InstantiateRequest struct {
 	HostIp string `json:"hostIp"`
 	PackageId string `json:"packageId"`
 	AppName string `json:"appName"`
+	Origin string `json:"origin"`
 }
 
 // Mec hardware capabilities

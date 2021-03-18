@@ -361,6 +361,13 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
+	originVar, err := util.ValidateName(req.Origin, util.NameRegex)
+	if err != nil || !originVar {
+		util.ClearByteArray(bKey)
+		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
+		return
+	}
+
 	appPkgHostRecord := &models.AppPackageHostRecord{
 		PkgHostKey: packageId + tenantId + hostIp,
 	}
@@ -424,6 +431,7 @@ func (c *LcmController) Instantiate() {
 	appInfoParams.TenantId = tenantId
 	appInfoParams.PackageId = packageId
 	appInfoParams.AppName = appName
+	appInfoParams.Origin = req.Origin
 
 	err = c.insertOrUpdateAppInfoRecord(clientIp, appInfoParams)
 	if err != nil {
@@ -991,6 +999,16 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 	return hostIp, nil
 }
 
+// Get origin
+func (c *LcmController) getOrigin(clientIp string) (string, error) {
+	origin := c.GetString("origin")
+	originVar, err := util.ValidateName(origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		return "", errors.New(util.OriginIsInvalid)
+	}
+	return origin, nil
+}
 
 // Get host IP
 func (c *LcmController) getUrlHostIP(clientIp string) (string, error) {
@@ -1077,14 +1095,9 @@ func (c *LcmController) createPackagePath(pkgPath string, clientIp string, file 
 
 // Insert or update application info record
 func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoParams models.AppInfoRecord) error {
-	origin := c.Ctx.Request.Header.Get(util.Origin)
+	origin := appInfoParams.Origin
 	if origin == "" {
 		origin = "MEO"
-	}
-	_, err := util.ValidateName(origin, util.NameRegex)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
-		return err
 	}
 	hostInfoRec := &models.MecHost{
 		MecHostId: appInfoParams.HostIp,
@@ -1636,6 +1649,12 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
+	origin, err := c.getOrigin(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	file, header, err := c.GetFile("package")
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -1684,7 +1703,7 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
-	err = c.insertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails)
+	err = c.insertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails, origin)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1716,6 +1735,11 @@ func (c *LcmController) ValidateDistributeInputParameters(clientIp string, req m
 
 	if len(packageId) > 64 {
 		return "", errors.New("input parameter length exceeded max limit")
+	}
+
+	originVar, err := util.ValidateName(req.Origin, util.NameRegex)
+	if err != nil || !originVar {
+		return "", errors.New(util.OriginIsInvalid)
 	}
 	return packageId, nil
 }
@@ -1851,7 +1875,8 @@ func (c *LcmController) DistributePackage() {
 				return
 			}
 
-			err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId, "Error", "")
+			err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
+				"Error", "", hosts.Origin)
 			if err != nil {
 				util.ClearByteArray(bKey)
 				return
@@ -1865,7 +1890,8 @@ func (c *LcmController) DistributePackage() {
 			return
 		}
 
-		err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId, "Distributed", "")
+		err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
+			"Distributed", "", hosts.Origin)
 		if err != nil {
 			util.ClearByteArray(bKey)
 			return
@@ -2131,18 +2157,7 @@ func (c *LcmController) DeletePackage() {
 
 // Insert or update application package record
 func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
-	packageId string, pkgDetails models.AppPkgDetails) error {
-
-	origin := c.Ctx.Request.Header.Get("origin")
-	if origin == "" {
-		origin = "MECM"
-	}
-
-	originVar, err := util.ValidateName(origin, util.NameRegex)
-	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
-		return err
-	}
+	packageId string, pkgDetails models.AppPkgDetails, origin string) error {
 
 	syncStatus := true
 	if origin == "MEPM" {
@@ -2160,6 +2175,7 @@ func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 		AppPkgDesc:    pkgDetails.App_package_description,
 		CreatedTime:   pkgDetails.App_release_data_time,
 		SyncStatus:    syncStatus,
+		Origin:        origin,
 	}
 
 	count, err := c.Db.QueryCountForAppPackage("app_package_record", util.TenantId, tenantId)
@@ -2184,9 +2200,8 @@ func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 
 // Insert or update application package host record
 func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId,
-	packageId, distributionStatus, errorInfo string) error {
-	
-	origin := c.Ctx.Request.Header.Get("origin")
+	packageId, distributionStatus, errorInfo string, origin string) error {
+
 	if origin == "" {
 		origin = "MECM"
 	}
