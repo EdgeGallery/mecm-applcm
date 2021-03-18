@@ -111,7 +111,7 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 
 	err := util.ValidateIpv4Address(request.MechostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		c.handleLoggingForError(clientIp, util.BadRequest, "MecHost address is invalid")
 		return err
 	}
 
@@ -271,7 +271,7 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 	var appInstances []*models.AppInfoRecord
 	_, _ = c.Db.QueryTable("app_info_record").Filter("host_ip", hostIp).All(&appInstances)
 	for _, appInstance := range appInstances {
-		err := c.TerminateApplication(clientIp, appInstance.AppInsId)
+		err := c.TerminateApplication(clientIp, appInstance.AppInstanceId)
 		if err != nil {
 			return err
 		}
@@ -317,7 +317,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		return err
 	}
@@ -327,14 +327,14 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.HostIp, "", appInfoRecord.AppInsId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId)
 	if err != nil {
 		errorString := err.Error()
 		c.handleLoggingK8s(clientIp, errorString)
 		return err
 	}
 
-	acm := config.NewAppConfigMgr(appInfoRecord.AppInsId, "", config.AppAuthConfig{})
+	acm := config.NewAppConfigMgr(appInfoRecord.AppInstanceId, "", config.AppAuthConfig{})
 	err = acm.DeleteAppAuthConfig()
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -343,7 +343,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 
 	var origin = appInfoRecord.Origin
 	var tenantId = appInfoRecord.TenantId
-	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
+	err = c.deleteAppInfoRecord(appInfoRecord.AppInstanceId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -355,8 +355,8 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 	}
 
 	appInsKeyRec := &models.AppInstanceStaleRec{
-		AppInsId: appInsId,
-		TenantId: tenantId,
+		AppInstanceId: appInsId,
+		TenantId:      tenantId,
 	}
 
 	if strings.EqualFold(origin, "mepm") {

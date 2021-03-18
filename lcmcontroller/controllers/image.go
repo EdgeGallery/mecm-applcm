@@ -71,7 +71,7 @@ func (c *ImageController) CreateImage() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -91,7 +91,7 @@ func (c *ImageController) CreateImage() {
 		return
 	}
 
-	response, err := adapter.CreateVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, request.VmId)
+	response, err := adapter.CreateVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, request.VmId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		// To check if any more error code needs to be returned.
@@ -148,7 +148,7 @@ func (c *ImageController) DeleteImage() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -166,7 +166,7 @@ func (c *ImageController) DeleteImage() {
 		return
 	}
 
-	_, err = adapter.DeleteVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId)
+	_, err = adapter.DeleteVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		// To check if any more error code needs to be returned.
@@ -217,7 +217,7 @@ func (c *ImageController) GetImage() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -235,7 +235,7 @@ func (c *ImageController) GetImage() {
 		return
 	}
 
-	response, err := adapter.QueryVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId)
+	response, err := adapter.QueryVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		// To check if any more error code needs to be returned.
@@ -291,7 +291,7 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -324,7 +324,7 @@ func (c *ImageController) GetImageFile() {
 	}
 	defer os.Remove(util.TEMP_FILE)
 
-	buf, err := adapter.DownloadVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId,
+	buf, err := adapter.DownloadVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
 		chunkNum)
 	util.ClearByteArray(bKey)
 	if err != nil {

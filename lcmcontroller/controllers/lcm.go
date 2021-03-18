@@ -387,7 +387,7 @@ func (c *LcmController) Instantiate() {
 	}
 
 	appInfoRecord := &models.AppInfoRecord{
-		AppInsId: appInsId,
+		AppInstanceId: appInsId,
 	}
 
 	readErr = c.Db.ReadData(appInfoRecord, util.AppInsId)
@@ -425,11 +425,11 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 	var appInfoParams models.AppInfoRecord
-	appInfoParams.AppInsId = appInsId
-	appInfoParams.HostIp = hostIp
+	appInfoParams.AppInstanceId = appInsId
+	appInfoParams.MecHost = hostIp
 
 	appInfoParams.TenantId = tenantId
-	appInfoParams.PackageId = packageId
+	appInfoParams.AppPackageId = packageId
 	appInfoParams.AppName = appName
 	appInfoParams.Origin = req.Origin
 
@@ -444,6 +444,7 @@ func (c *LcmController) Instantiate() {
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -531,7 +532,7 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -543,7 +544,7 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		errorString := err.Error()
@@ -572,8 +573,8 @@ func (c *LcmController) Terminate() {
 	}
 
 	appInsKeyRec := &models.AppInstanceStaleRec{
-		AppInsId: appInsId,
-		TenantId: tenantId,
+		AppInstanceId: appInsId,
+		TenantId:      tenantId,
 	}
 	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
@@ -626,8 +627,8 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 
 	appInfoRecord := &models.AppInfoRecord{
-		HostIp:    hostIp,
-		PackageId: packageId,
+		MecHost:      hostIp,
+		AppPackageId: packageId,
 	}
 
 	response := map[string]bool{"package_deployed": true}
@@ -702,7 +703,7 @@ func (c *LcmController) Query() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -714,7 +715,7 @@ func (c *LcmController) Query() {
 		return
 	}
 
-	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.HostIp)
+	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
@@ -1100,7 +1101,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoPara
 		origin = "MEO"
 	}
 	hostInfoRec := &models.MecHost{
-		MecHostId: appInfoParams.HostIp,
+		MecHostId: appInfoParams.MecHost,
 	}
 
 	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
@@ -1114,15 +1115,15 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoPara
 		syncStatus = false
 	}
 	appInfoRecord := &models.AppInfoRecord{
-		AppInsId:   appInfoParams.AppInsId,
-		HostIp:     appInfoParams.HostIp,
+		AppInstanceId: appInfoParams.AppInstanceId,
+		MecHost:       appInfoParams.MecHost,
 
-		TenantId:   appInfoParams.TenantId,
-		PackageId:  appInfoParams.PackageId,
-		AppName:    appInfoParams.AppName,
-		Origin:     origin,
-		SyncStatus: syncStatus,
-		MecHost:    hostInfoRec,
+		TenantId:     appInfoParams.TenantId,
+		AppPackageId: appInfoParams.AppPackageId,
+		AppName:      appInfoParams.AppName,
+		Origin:       origin,
+		SyncStatus:   syncStatus,
+		MecHostRec:      hostInfoRec,
 	}
 
 	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, appInfoParams.TenantId)
@@ -1414,7 +1415,7 @@ func (c *LcmController) GetWorkloadDescription() {
 		return
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1425,7 +1426,7 @@ func (c *LcmController) GetWorkloadDescription() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.HostIp, appInsId)
+	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
@@ -1453,8 +1454,10 @@ func (c *LcmController) GetWorkloadDescription() {
 func (c *LcmController) SynchronizeUpdatedRecord() {
 	log.Info("Sync app instances request received.")
 
-	var appInstances []*models.AppInfoRecord
-	var appInstancesSync []*models.AppInfoRecord
+	var appInstances []models.AppInfoRecord
+	var appInstancesSync []models.AppInfoRecord
+	var appInstanceSyncRecords models.AppInfoUpdatedRecords
+	var appInstanceRes []models.AppInfoRec
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -1481,6 +1484,19 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
+	err = json.Unmarshal(res, &appInstanceRes)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return
+	}
+
+	appInstanceSyncRecords.AppInfoUpdatedRecs = append(appInstanceSyncRecords.AppInfoUpdatedRecs, appInstanceRes...)
+
+	res, err = json.Marshal(appInstanceSyncRecords)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
 
 	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
 	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
@@ -1492,7 +1508,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 
 	for _, appInstance := range appInstancesSync {
 		appInstance.SyncStatus = true
-		err = c.Db.InsertOrUpdateData(appInstance, util.AppInsId)
+		err = c.Db.InsertOrUpdateData(&appInstance, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app info record to database.")
 			return
@@ -1509,7 +1525,8 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 func (c *LcmController) SynchronizeStaleRecord() {
 	log.Info("Sync app instances stale request received.")
 
-	var appInstStaleRecs []*models.AppInstanceStaleRec
+	var appInstStaleRecs []models.AppInstanceStaleRec
+	var appInstanceStaleRecords models.AppInstanceStaleRecords
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -1524,7 +1541,9 @@ func (c *LcmController) SynchronizeStaleRecord() {
 		return
 	}
 	_, _ = c.Db.QueryTable("app_instance_stale_rec").Filter("tenant_id", tenantId).All(&appInstStaleRecs)
-	res, err := json.Marshal(appInstStaleRecs)
+
+	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
+	res, err := json.Marshal(appInstanceStaleRecords)
 	if err != nil {
 		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
@@ -1538,7 +1557,7 @@ func (c *LcmController) SynchronizeStaleRecord() {
 		return
 	}
 	for _, appInstStaleRec := range appInstStaleRecs {
-		err = c.Db.DeleteData(appInstStaleRec, util.AppInsId)
+		err = c.Db.DeleteData(&appInstStaleRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return
