@@ -33,7 +33,8 @@ from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, Uplo
 from core.openstack_utils import create_heat_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
-    QueryResponse, UploadCfgResponse, RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse
+    QueryResponse, UploadCfgResponse, RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
+    WorkloadEventsResponse
 
 LOG = logger
 
@@ -321,18 +322,20 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'msg': 'ok',
             'data': []
         }
-        for key, value in output_list.items():
+        for item in output_list['outputs']:
+            output = heat.stacks.output_show(app_ins_mapper.stack_id, item['output_key'])
+            output_value = output['output']['output_value']
             item = {
-                'vmId': value['vmId'],
-                'vncUrl': value['vncUrl'],
+                'vmId': output_value['vmId'],
+                'vncUrl': output_value['vncUrl'],
                 'networks': []
             }
-            for net_name, ip_data in value['networks']:
+            for net_name, ip_data in output_value['networks'].items():
                 if utils.validate_uuid(net_name):
                     continue
                 network = {
                     'name': net_name,
-                    'ip': ip_data['addr']
+                    'ip': ip_data[0]['addr']
                 }
                 item['networks'].append(network)
             response['data'].append(item)
@@ -349,7 +352,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :return:
         """
         LOG.debug('receive workload describe msg...')
-        res = TerminateResponse(status=utils.FAILURE)
+        res = WorkloadEventsResponse(response='{"code":500}')
 
         host_ip = validate_input_params(request)
         if host_ip is None:
@@ -367,7 +370,31 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         heat = create_heat_client(host_ip)
 
         events = heat.events.list(stack_id=app_ins_mapper.stack_id)
-        res.response = json.dumps(events)
+        vm_describe_info = {}
+        for event in events:
+            if event.resource_name in vm_describe_info:
+                vm_describe_info[event.resource_name]['events'].append({
+                    'eventTime': event.event_time,
+                    'resourceStatus': event.resource_status,
+                    'resourceStatusReason': event.resource_status_reason
+                })
+            else:
+                vm_describe_info[event.resource_name] = {
+                    'resourceName': event.resource_name,
+                    'logicalResourceId': event.logical_resource_id,
+                    'physicalResourceId': event.physical_resource_id,
+                    'events': [
+                        {
+                            'eventTime': event.event_time,
+                            'resourceStatus': event.resource_status,
+                            'resourceStatusReason': event.resource_status_reason
+                        }
+                    ]
+                }
+        response_data = []
+        for key, value in vm_describe_info.items():
+            response_data.append(value)
+        res.response = json.dumps(response_data)
         return res
 
     def uploadConfig(self, request_iterator, context):

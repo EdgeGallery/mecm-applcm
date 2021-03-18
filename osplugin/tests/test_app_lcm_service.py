@@ -31,13 +31,13 @@ class AppLcmServiceTest(unittest.TestCase):
     host_ip = '159.138.23.91'
 
     def test_upload_package(self):
-        with open('tests/resources/ht-package.zip', 'rb') as f:
+        with open('tests/resources/vm_csar.csar', 'rb') as f:
             package_data = f.read()
         data = [
             lcmservice_pb2.UploadPackageRequest(accessToken=self.access_token),
             lcmservice_pb2.UploadPackageRequest(hostIp=self.host_ip),
             lcmservice_pb2.UploadPackageRequest(tenantId='tenant001'),
-            lcmservice_pb2.UploadPackageRequest(appPackageId='pkg001'),
+            lcmservice_pb2.UploadPackageRequest(appPackageId='pkg002'),
             lcmservice_pb2.UploadPackageRequest(package=package_data)
         ]
         response = self.app_lcm_service.uploadPackage(data, None)
@@ -79,7 +79,7 @@ class AppLcmServiceTest(unittest.TestCase):
         data = lcmservice_pb2.QueryRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
-            appInstanceId='test001'
+            appInstanceId='25e32a5c-e00f-4edf-b42d-6dd4b610c2db'
         )
         response = self.app_lcm_service.query(data, None)
         LOG.info(response.response)
@@ -105,7 +105,7 @@ class AppLcmServiceTest(unittest.TestCase):
         data = lcmservice_pb2.WorkloadEventsRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
-            appInstanceId='test001'
+            appInstanceId='25e32a5c-e00f-4edf-b42d-6dd4b610c2db'
         )
         response = self.app_lcm_service.workloadEvents(data, None)
         LOG.info(response.response)
