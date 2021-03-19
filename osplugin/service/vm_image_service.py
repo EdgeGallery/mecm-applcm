@@ -93,7 +93,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return res
         app_ins_mapper = AppInsMapper.get(app_instance_id=request.appInstanceId)
         if not app_ins_mapper:
-            return
+            return res
         heat = create_heat_client(app_ins_mapper.host_ip)
         stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
         if stack_resp is None and stack_resp.status == utils.TERMINATED:

@@ -9,7 +9,7 @@ from tests import gen_token
 
 class GrpcServerTest(unittest.TestCase):
     access_token = gen_token.test_access_token
-    host_ip = '192.168.100.29'
+    host_ip = '159.138.23.91'
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
@@ -19,9 +19,19 @@ class GrpcServerTest(unittest.TestCase):
         options = (
             ('grpc.ssl_target_name_override', 'edgegallery.org',),
         )
-        channel = grpc.secure_channel(target='mecm-mepm-osplugin:30207', credentials=credentials, options=options)
+        channel = grpc.secure_channel(target='mecm-mepm-osplugin:8234', credentials=credentials, options=options)
         self.app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
         self.vm_image_stub = lcmservice_pb2_grpc.VmImageStub(channel)
+
+    def test_create_image(self):
+        request = lcmservice_pb2.CreateVmImageRequest(
+            accessToken=self.access_token,
+            appInstanceId='ins001',
+            hostIp=self.host_ip,
+            vmId='caf83c05-56dc-4f7c-b417-40d9acbf166c'
+        )
+        response = self.vm_image_stub.createVmImage(request)
+        self.assertEqual(response.response, utils.SUCCESS)
 
     def test_upload_package(self):
         with open('tests/resources/ht-package.zip', 'rb') as f:
