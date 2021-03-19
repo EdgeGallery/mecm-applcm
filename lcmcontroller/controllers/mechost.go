@@ -269,7 +269,7 @@ func (c *MecHostController) DeleteMecHost() {
 func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error {
 
 	var appInstances []*models.AppInfoRecord
-	_, _ = c.Db.QueryTable("app_info_record").Filter("host_ip", hostIp).All(&appInstances)
+	_, _ = c.Db.QueryTable("app_info_record").Filter("mec_host", hostIp).All(&appInstances)
 	for _, appInstance := range appInstances {
 		err := c.TerminateApplication(clientIp, appInstance.AppInstanceId)
 		if err != nil {
