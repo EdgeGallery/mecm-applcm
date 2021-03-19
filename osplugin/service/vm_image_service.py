@@ -87,24 +87,15 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def createVmImage(self, request, context):
-        res = CreateVmImageResponse(response=utils.FAILURE)
+        res = CreateVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
-        app_ins_mapper = AppInsMapper.get(app_instance_id=request.appInstanceId)
-        if not app_ins_mapper:
-            return res
-        heat = create_heat_client(app_ins_mapper.host_ip)
-        stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
-        if stack_resp is None and stack_resp.status == utils.TERMINATED:
-            app_ins_mapper.delete()
         nova_client = create_nova_client(host_ip)
         vm_info = nova_client.servers.get(request.vmId)
         LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
         image_name = get_image_name(vm_info.name)
         image_id = nova_client.servers.create_image(request.vmId, image_name)
-        glance_client = create_glance_client(host_ip)
-        image_info = glance_client.images.get(image_id)
 
         # 虚机从卷启动时，创建镜像后镜像大小为0 需要从卷上传打包成镜像才可以下载, 调用update_to_image 需要删除虚机
         # block_device_mapping = json.loads(image_info.block_device_mapping)
@@ -116,17 +107,17 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
         VmImageInfoMapper(image_id=image_id,
                           image_name=image_name,
-                          image_size=image_info.size,
+                          image_size=0,
                           vm_id=request.vmId,
                           app_instance_id=request.appInstanceId,
                           host_ip=request.hostIp)
         commit()
-        res.response = image_id
+        res.response = '{"imageId": "%s"}' % image_id
         return res
 
     @db_session
     def queryVmImage(self, request, context):
-        res = QueryVmImageResponse(response=utils.FAILURE)
+        res = QueryVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
@@ -142,14 +133,15 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             "imageName": vm_info.image_name,
             "appInstanceId": vm_info.app_instance_id,
             "status": image_info.status,
-            "sumChunkNum": get_chunk_num(vm_info.image_size),
+            "sumChunkNum": get_chunk_num(image_info.size),
             "chunkSize": config.chunk_size
         })
+
         return res
 
     @db_session
     def deleteVmImage(self, request, context):
-        res = DeleteVmImageResponse(response=utils.FAILURE)
+        res = DeleteVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
@@ -161,13 +153,12 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         image_res = glance_client.images.delete(request.imageId)
         vm_info.delete()
         commit()
-        print(image_res)
-        res.response = utils.SUCCESS
+        res.response = '{"code": 200, "msg": "Ok"}'
         return res
 
     @db_session
     def downloadVmImage(self, request, context):
-        res = DownloadVmImageResponse(content=bytes(utils.FAILURE, encoding='utf8'))
+        res = DownloadVmImageResponse(content=bytes(utils.FAILURE_JSON, encoding='utf8'))
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
@@ -176,20 +167,22 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
+        image_info = glance_client.images.get(request.imageId)
+        if image_info.status == 'active':
+            return DownloadVmImageResponse(content=bytes("image status is not active!", encoding='utf8'))
         try:
             iterable_with_length, resp = \
-                glance_client.images.download_chunk(request.chunkNum,
-                                                    vm_info.image_size,
-                                                    request.imageId, False,
+                glance_client.images.download_chunk(chunk_num=request.chunkNum,
+                                                    image_size=image_info.size,
+                                                    image_id=request.imageId, do_checksum=False,
                                                     chunk_size=int(config.chunk_size))
         except DownloadChunkException as e:
             return res
 
-        LOG.debug("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
-                  vm_info.image_size,
-                  request.chunkNum,
-                  config.chunk_size)
-        print(len(resp.content))
+        LOG.info("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
+                 vm_info.image_size,
+                 request.chunkNum,
+                 config.chunk_size)
 
         res = DownloadVmImageResponse(content=resp.content)
         yield res

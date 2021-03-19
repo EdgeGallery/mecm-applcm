@@ -86,3 +86,17 @@ class GrpcServerTest(unittest.TestCase):
         )
         response = self.app_lcm_stub.query(request)
         print(response.response)
+
+    def test_download_image(self):
+        for i in range(0, 100):
+            request = lcmservice_pb2.DownloadVmImageRequest(accessToken=self.access_token,
+                                                            hostIp=self.host_ip,
+                                                            chunkNum=1,
+                                                            appInstanceId='app_instance_id',
+                                                            imageId='f95bcbb1-e1e2-4aaf-872c-f0c7657862c1')
+            response = self.vm_image_stub.downloadVmImage(request)
+
+            file = open('image.QCOW2', 'ab')
+            for res in response:
+                print(res)
+                file.write(res.content)

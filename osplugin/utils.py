@@ -30,6 +30,8 @@ from core.log import logger
 
 FAILURE = 'Failure'
 SUCCESS = 'Success'
+FAILURE_JSON = '{"code": 500}'
+
 
 INSTANTIATING = 'Instantiating'
 INSTANTIATED = 'Instantiated'
