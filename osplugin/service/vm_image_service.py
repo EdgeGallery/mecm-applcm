@@ -172,20 +172,19 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     def downloadVmImage(self, request, context):
         LOG.debug("download image chunk %s starting...", request.chunkNum)
-        res = DownloadVmImageResponse(content=bytes(utils.FAILURE_JSON, encoding='utf8'))
+
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
-            return res
+            raise Exception("host ip is null...")
         try:
             glance_client = create_glance_client(host_ip)
             image_info = glance_client.images.get(request.imageId)
         except Exception as e:
             LOG.error(e, exc_info=True)
-            return res
+            raise e
         if image_info.status != 'active':
             LOG.error("image status %s", image_info.status)
-            return DownloadVmImageResponse(
-                content=bytes('{"code": 500, "msg":"image status is not active!" }', encoding='utf8'))
+            raise Exception("image status is not active...")
         try:
             iterable_with_length, resp = \
                 glance_client.images.download_chunk(chunk_num=request.chunkNum,
@@ -194,7 +193,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                                                     chunk_size=int(config.chunk_size))
         except DownloadChunkException as e:
             LOG.error(e, exc_info=True)
-            return res
+            raise e
 
         LOG.info("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
                  image_info.size,
