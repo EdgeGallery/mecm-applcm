@@ -60,13 +60,13 @@ def make_download_image_request(access_token, chunk_num, host_ip, app_instance_i
 class VmImageServiceTest(unittest.TestCase):
     vm_image_service = VmImageService()
     access_token = gen_token.test_access_token
-    host_ip = '10.10.9.75'
+    host_ip = '159.138.23.91'
 
     def test_create_image(self):
         request = make_create_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
-                                            vm_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
+                                            vm_id="caf83c05-56dc-4f7c-b417-40d9acbf166c")
         res = self.vm_image_service.createVmImage(request, None)
         print(res)
 
@@ -82,7 +82,7 @@ class VmImageServiceTest(unittest.TestCase):
         request = make_delete_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
-                                            image_id="f95bcbb1-e1e2-4aaf-872c-f0c7657862c1")
+                                            image_id="7258b4b1-c358-47e4-9863-dc181532b2bb")
         res = self.vm_image_service.queryVmImage(request, None)
         print(res)
 
