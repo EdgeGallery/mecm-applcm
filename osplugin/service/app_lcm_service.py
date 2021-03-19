@@ -128,7 +128,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('appPackageId is required')
             parameters.delete_tmp()
             return res
-        app_package_path = utils.APP_PACKAGE_DIR + '/' + parameters.app_package_id
+        app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         if utils.exists_path(app_package_path):
             LOG.info('app package exist')
             parameters.delete_tmp()
@@ -170,7 +170,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         # TODO: 销毁加载的镜像
 
-        app_package_path = utils.APP_PACKAGE_DIR + '/' + app_package_id
+        app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         utils.delete_dir(app_package_path)
 
         res.status = utils.SUCCESS

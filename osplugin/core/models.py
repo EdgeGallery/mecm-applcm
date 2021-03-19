@@ -72,7 +72,7 @@ class InstantiateRequest(object):
         self.app_instance_id = request.appInstanceId
         self.hostIp = request.hostIp
         self.app_package_id = request.appPackageId
-        self.app_package_path = config.base_dir + '/package/' + request.appPackageId
+        self.app_package_path = config.base_dir + '/package/' + request.hostIp + '/' + request.appPackageId
         self.ak = request.ak
         self.sk = request.sk
 

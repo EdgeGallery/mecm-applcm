@@ -86,6 +86,8 @@ class RCFile(object):
     project_name = None
     auth_url = None
     heat_url = None
+    nova_url = None
+    glance_url = None
 
     def __init__(self, rc_path):
         with open(rc_path, 'r') as file:
