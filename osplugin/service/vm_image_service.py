@@ -129,7 +129,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return res
         glance_client = create_glance_client(host_ip)
         try:
-            image_info = glance_client.images.get(request.imageId3)
+            image_info = glance_client.images.get(request.imageId)
         except Exception as e:
             LOG.error(e, exc_info=True)
             return res
