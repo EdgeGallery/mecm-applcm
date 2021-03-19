@@ -181,7 +181,7 @@ service AppLCM {
   rpc deletePackage (DeletePackageRequest) returns (DeletePackageResponse) {}
 }
 
-service VmImageService {
+service VmImage {
   rpc createVmImage(CreateVmImageRequest) returns (CreateVmImageResponse) {}
   rpc queryVmImage(QueryVmImageRequest) returns (QueryVmImageResponse) {}
   rpc deleteVmImage(DeleteVmImageRequest) returns (DeleteVmImageResponse) {}

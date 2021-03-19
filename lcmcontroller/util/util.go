@@ -112,7 +112,7 @@ const (
 	lowerCaseRegex   string = `[a-z]`
 	upperCaseRegex   string = `[A-Z]`
 	maxPasswordCount        = 2
-	MaxIdLength             = 32
+	MaxIdLength             = 36
 
 	TooManyFile      = 1024
 	TooBig           = 0x6400000

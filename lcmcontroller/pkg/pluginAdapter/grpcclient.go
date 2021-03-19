@@ -38,7 +38,7 @@ import (
 type ClientGRPC struct {
 	conn        *grpc.ClientConn
 	client      lcmservice.AppLCMClient
-	imageClient lcmservice.VmImageServiceClient
+	imageClient lcmservice.VmImageClient
 	chunkSize   int
 }
 
@@ -79,7 +79,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 	}
 
 	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn),
-		imageClient: lcmservice.NewVmImageServiceClient(conn)}, nil
+		imageClient: lcmservice.NewVmImageClient(conn)}, nil
 }
 
 // Instantiate application
@@ -99,7 +99,6 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, host stri
 		return "", err
 	}
 	return resp.Status, err
-	return "", nil
 }
 
 // Query application
