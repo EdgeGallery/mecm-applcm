@@ -168,22 +168,26 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def downloadVmImage(self, request, context):
+        LOG.debug("download image chunk %s starting...", request.chunkNum)
         res = DownloadVmImageResponse(content=bytes(utils.FAILURE_JSON, encoding='utf8'))
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
-        vm_info = VmImageInfoMapper.get(image_id=request.imageId)
-        if not vm_info:
-            LOG.info("image not found! image_id: %s", request.imageId)
-            return res
-        glance_client = create_glance_client(host_ip)
         try:
+            vm_info = VmImageInfoMapper.get(image_id=request.imageId)
+            if not vm_info:
+                LOG.info("image not found! image_id: %s", request.imageId)
+                return res
+            glance_client = create_glance_client(host_ip)
+
             image_info = glance_client.images.get(request.imageId)
         except Exception as e:
             LOG.error(e, exc_info=True)
             return res
         if image_info.status != 'active':
-            return DownloadVmImageResponse(content=bytes("image status is not active!", encoding='utf8'))
+            LOG.error("image status %s", image_info.status)
+            return DownloadVmImageResponse(
+                content=bytes('{"code": 500, "msg":"image status is not active!" }', encoding='utf8'))
         try:
             iterable_with_length, resp = \
                 glance_client.images.download_chunk(chunk_num=request.chunkNum,
@@ -198,6 +202,6 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                  vm_info.image_size,
                  request.chunkNum,
                  config.chunk_size)
-
+        LOG.debug("download image chunk %s end...", request.chunkNum)
         res = DownloadVmImageResponse(content=resp.content)
         yield res
