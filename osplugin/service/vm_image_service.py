@@ -23,15 +23,14 @@ from pony.orm import db_session, commit
 
 import config
 import utils
+from core.exceptions import DownloadChunkException
 from core.log import logger
-from core.models import VmImageInfoMapper, AppInsMapper
+from core.models import VmImageInfoMapper
 from core.openstack_utils import create_glance_client
-from core.openstack_utils import create_heat_client
 from core.openstack_utils import create_nova_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
     DownloadVmImageResponse, DeleteVmImageResponse
-from core.exceptions import DownloadChunkException
 
 LOG = logger
 
@@ -95,8 +94,11 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         vm_info = nova_client.servers.get(request.vmId)
         LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
         image_name = get_image_name(vm_info.name)
-        image_id = nova_client.servers.create_image(request.vmId, image_name)
-
+        try:
+            image_id = nova_client.servers.create_image(request.vmId, image_name)
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            return res
         # 虚机从卷启动时，创建镜像后镜像大小为0 需要从卷上传打包成镜像才可以下载, 调用update_to_image 需要删除虚机
         # block_device_mapping = json.loads(image_info.block_device_mapping)
         # cinder_client = create_cinder_client(host_ip)
@@ -126,7 +128,11 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
-        image_info = glance_client.images.get(request.imageId)
+        try:
+            image_info = glance_client.images.get(request.imageId3)
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            return res
         LOG.info("openstack image %s status: %s", image_info.id, image_info.status)
         res.response = json.dumps({
             "imageId": vm_info.image_id,
@@ -150,7 +156,11 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
-        image_res = glance_client.images.delete(request.imageId)
+        try:
+            glance_client.images.delete(request.imageId)
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            return res
         vm_info.delete()
         commit()
         res.response = '{"code": 200, "msg": "Ok"}'
@@ -167,8 +177,12 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
-        image_info = glance_client.images.get(request.imageId)
-        if image_info.status == 'active':
+        try:
+            image_info = glance_client.images.get(request.imageId)
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            return res
+        if image_info.status != 'active':
             return DownloadVmImageResponse(content=bytes("image status is not active!", encoding='utf8'))
         try:
             iterable_with_length, resp = \
@@ -177,6 +191,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                                                     image_id=request.imageId, do_checksum=False,
                                                     chunk_size=int(config.chunk_size))
         except DownloadChunkException as e:
+            LOG.error(e, exc_info=True)
             return res
 
         LOG.info("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",

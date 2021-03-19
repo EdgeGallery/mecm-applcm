@@ -20,6 +20,7 @@ class GrpcServerTest(unittest.TestCase):
             ('grpc.ssl_target_name_override', 'edgegallery.org',),
         )
         channel = grpc.secure_channel(target='mecm-mepm-osplugin:8234', credentials=credentials, options=options)
+        # channel = grpc.insecure_channel(target='127.0.0.1:8234')
         self.app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
         self.vm_image_stub = lcmservice_pb2_grpc.VmImageStub(channel)
 

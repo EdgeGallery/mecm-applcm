@@ -82,7 +82,7 @@ class VmImageServiceTest(unittest.TestCase):
         request = make_delete_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
-                                            image_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
+                                            image_id="f95bcbb1-e1e2-4aaf-872c-f0c7657862c1")
         res = self.vm_image_service.queryVmImage(request, None)
         print(res)
 
@@ -90,10 +90,11 @@ class VmImageServiceTest(unittest.TestCase):
         request = make_download_image_request(access_token=self.access_token,
                                               host_ip=self.host_ip,
                                               app_instance_id="1",
-                                              image_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
+                                              chunk_num=1,
+                                              image_id="f95bcbb1-e1e2-4aaf-872c-f0c7657862c1")
 
         for i in range(1, 100):
-            response = self.vm_image_service.createVmImage(request)
+            response = self.vm_image_service.downloadVmImage(request, None)
             file = open('image.QCOW2', 'ab')
             for res in response:
                 print(res)
