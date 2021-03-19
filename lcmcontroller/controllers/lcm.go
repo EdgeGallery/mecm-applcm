@@ -379,9 +379,9 @@ func (c *LcmController) Instantiate() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	if appPkgHostRecord.DistributionStatus != "Distributed" {
+	if appPkgHostRecord.Status != "Distributed" {
 		c.handleLoggingForError(clientIp, util.BadRequest,
-			"application package distribution status is:" + appPkgHostRecord.DistributionStatus)
+			"application package distribution status is:" + appPkgHostRecord.Status)
 		util.ClearByteArray(bKey)
 		return
 	}
@@ -2014,6 +2014,18 @@ func (c *LcmController) DeletePackageOnHost() {
 		return
 	}
 
+	appPkgHostRec := &models.AppPackageHostRecord{
+		PkgHostKey: packageId + tenantId + hostIp,
+	}
+
+	readErr := c.Db.ReadData(appPkgHostRec, util.PkgHostKey)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package record does not exist in database")
+		return
+	}
+	var origin = appPkgHostRec.Origin
+
 	err = c.deleteAppPackageHostRecord(hostIp, packageId, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -2023,6 +2035,20 @@ func (c *LcmController) DeletePackageOnHost() {
 	err = c.deleteTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return
+	}
+
+	appPackageHostStaleRec := &models.AppPackageHostStaleRec{
+		PackageId: packageId,
+		TenantId: tenantId,
+		HostIp:   hostIp,
+	}
+
+	if strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(appPackageHostStaleRec, "package_id")
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	c.handleLoggingForSuccess(clientIp, "Deleted host application package successfully")
@@ -2121,11 +2147,11 @@ func (c *LcmController) DeletePackage() {
 	_, _ = c.Db.QueryTable(util.AppPackageRecordId).Filter(util.AppPkgId, packageId + tenantId).All(&appPkgRecords)
 
 	for _, appPkgRecord := range appPkgRecords {
-		_, _ = c.Db.LoadRelated(appPkgRecord, "AppPackageHost")
+		_, _ = c.Db.LoadRelated(appPkgRecord, "MecHostInfo")
 	}
 
 	for _, appPkgRecord := range appPkgRecords {
-		for _, appPkgHost := range appPkgRecord.AppPackageHost {
+		for _, appPkgHost := range appPkgRecord.MecHostInfo {
 
 			vim, err := c.getVim(clientIp, appPkgHost.HostIp)
 			if err != nil {
@@ -2159,6 +2185,19 @@ func (c *LcmController) DeletePackage() {
 	}
 	pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
 	c.deletePackage(path.Dir(pkgFilePath))
+
+	appPkgRec := &models.AppPackageRecord{
+		AppPkgId: packageId + tenantId,
+	}
+
+	readErr := c.Db.ReadData(appPkgRec, util.AppPkgId)
+	if readErr != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			"App package record does not exist in database")
+		return
+	}
+	var origin = appPkgRec.Origin
+
 	err = c.deleteAppPackageRecord(packageId, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -2168,6 +2207,19 @@ func (c *LcmController) DeletePackage() {
 	err = c.deleteTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return
+	}
+
+	appPackageStaleRec := &models.AppPackageStaleRec{
+		AppPkgId: packageId,
+		TenantId: tenantId,
+	}
+
+	if strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(appPackageStaleRec, util.AppPkgId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	c.handleLoggingForSuccess(clientIp, "Deleted application package successfully")
@@ -2246,15 +2298,15 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 	}
 
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey:         packageId + tenantId + hostIp,
-		HostIp:             hostIp,
-		AppPkgId:           packageId,
-		DistributionStatus: distributionStatus,
-		TenantId:           tenantId,
-		Error:              errorInfo,
-		SyncStatus:         syncStatus,
-		Origin:             origin,
-		AppPackage:         appPkgRec,
+		PkgHostKey: packageId + tenantId + hostIp,
+		HostIp:     hostIp,
+		AppPkgId:   packageId,
+		Status:     distributionStatus,
+		TenantId:   tenantId,
+		Error:      errorInfo,
+		SyncStatus: syncStatus,
+		Origin:     origin,
+		AppPackage: appPkgRec,
 	}
 
 	count, err := c.Db.QueryCountForAppPackage("app_package_host_record", util.TenantId, tenantId)
@@ -2325,7 +2377,7 @@ func (c *LcmController) DistributionStatus() {
 	}
 
 	for _, appPkgRecord := range appPkgRecords {
-		_, _ = c.Db.LoadRelated(appPkgRecord, "AppPackageHost")
+		_, _ = c.Db.LoadRelated(appPkgRecord, "MecHostInfo")
 	}
 
 	var appPkgs []models.AppPackageStatusRecord
@@ -2342,12 +2394,12 @@ func (c *LcmController) DistributionStatus() {
 		p.CreatedTime = appPkgRecord.CreatedTime
 		p.ModifiedTime = appPkgRecord.ModifiedTime
 
-		for _, appPkgHost := range appPkgRecord.AppPackageHost {
+		for _, appPkgHost := range appPkgRecord.MecHostInfo {
             //fill app package host info
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
 			ph.Error = appPkgHost.Error
-			ph.Status = appPkgHost.DistributionStatus
+			ph.Status = appPkgHost.Status
 			p.MecHostInfo = append(p.MecHostInfo, ph)
 		}
 		appPkgs = append(appPkgs, p)
@@ -2408,4 +2460,155 @@ func (c *LcmController) getInputParametersForUploadPkg(clientIp string) (string,
 		return "", "", "", err
 	}
 	return appId, packageId, tenantId, nil
+}
+
+// @Title Sync app package records
+// @Description Sync app package records
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/packages/sync_updated [get]
+func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
+	log.Info("Sync app package request received.")
+
+	var appPackages []*models.AppPackageRecord
+	var appPackagesSync []*models.AppPackageRecord
+	var appPackageRec []models.AppPackageRecordInfo
+	var appPackageSyncRecords models.AppPackagesUpdatedRecords
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
+	_, _ = c.Db.QueryTable("app_package_record").Filter("tenant_id", tenantId).All(&appPackages)
+	for _, appPackage := range appPackages {
+		if strings.EqualFold(appPackage.Origin, "mepm") {
+			_, _ = c.Db.LoadRelated(appPackage, "MecHostInfo")
+			for _, appPkgMecHostInfo := range appPackage.MecHostInfo {
+				if !appPkgMecHostInfo.SyncStatus {
+					appPackagesSync = append(appPackagesSync, appPackage)
+				}
+			}
+/*			if len(appPackage.MecHostInfo) == 0 && !appPackage.SyncStatus {
+				appPackagesSync = append(appPackagesSync, appPackage)
+			}*/
+		}
+	}
+
+	res, err := json.Marshal(appPackagesSync)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+	err = json.Unmarshal(res, &appPackageRec)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return
+	}
+
+	appPackageSyncRecords.AppPackagesUpdatedRecs = append(appPackageSyncRecords.AppPackagesUpdatedRecs, appPackageRec...)
+
+	response, err := json.Marshal(appPackageSyncRecords)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+
+	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	_, err = c.Ctx.ResponseWriter.Write(response)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+
+	for _, appPackage := range appPackagesSync {
+		for _, appPkgMecHostInfo := range appPackage.MecHostInfo {
+			appPkgMecHostInfo.SyncStatus = true
+			err = c.Db.InsertOrUpdateData(appPkgMecHostInfo, util.PkgHostKey)
+			if err != nil && err.Error() != util.LastInsertIdNotSupported {
+				log.Error("Failed to save app package mec host record to database.")
+				return
+			}
+		}
+
+		appPackage.SyncStatus = true
+		err = c.Db.InsertOrUpdateData(appPackage, util.AppPkgId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app package host record to database.")
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Application packages synchronization is successful")
+}
+
+// @Title Sync app package stale records
+// @Description Sync mec host stale records
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/packages/sync_deleted [get]
+func (c *LcmController) SynchronizeAppPackageStaleRecord() {
+	log.Info("Sync mec host stale request received.")
+
+	var appPackageStaleRecs []models.AppPackageStaleRec
+	var appPkgHostStaleRecs []models.AppPackageHostStaleRec
+	var appDistPkgHostStaleRecords models.AppDistPkgHostStaleRecords
+
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return
+	}
+	_, _ = c.Db.QueryTable("app_package_stale_rec").Filter("tenant_id", tenantId).All(&appPackageStaleRecs)
+	_, _ = c.Db.QueryTable("app_package_host_stale_rec").Filter("tenant_id", tenantId).All(&appPkgHostStaleRecs)
+
+	appDistPkgHostStaleRecords.AppPackageStaleRecs = append(appDistPkgHostStaleRecords.AppPackageStaleRecs, appPackageStaleRecs...)
+	appDistPkgHostStaleRecords.AppPackageHostStaleRec = append(appDistPkgHostStaleRecords.AppPackageHostStaleRec, appPkgHostStaleRecs...)
+
+	res, err := json.Marshal(appDistPkgHostStaleRecords)
+	if err != nil {
+		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		return
+	}
+
+	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+	for _, appPackageStaleRec := range appPackageStaleRecs {
+		err = c.Db.DeleteData(&appPackageStaleRec, util.AppPkgId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	for _, appPkgHostStaleRec := range appPkgHostStaleRecs {
+		err = c.Db.DeleteData(&appPkgHostStaleRec, "package_id")
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	c.handleLoggingForSuccess(clientIp, "Stale app package records synchronization is successful")
 }

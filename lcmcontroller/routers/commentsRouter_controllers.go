@@ -279,4 +279,22 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
+
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
+		beego.ControllerComments{
+			Method:           "SynchronizeAppPackageUpdatedRecord",
+			Router:           "/tenants/:tenantId/packages/sync_updated",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
+		beego.ControllerComments{
+			Method:           "SynchronizeAppPackageStaleRecord",
+			Router:           "/tenants/:tenantId/packages/sync_deleted",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
 }

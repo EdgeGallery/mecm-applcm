@@ -31,6 +31,8 @@ func init() {
 	orm.RegisterModel(new(MecHostStaleRec))
 	orm.RegisterModel(new(AppPackageRecord))
 	orm.RegisterModel(new(AppPackageHostRecord))
+	orm.RegisterModel(new(AppPackageStaleRec))
+	orm.RegisterModel(new(AppPackageHostStaleRec))
 }
 
 // MEC host record
@@ -102,6 +104,38 @@ type AppInstanceStaleRecords struct {
 }
 
 // Application package record
+type AppPackageRecordInfo struct {
+	AppPkgId       string   `json:"appPkgId"`
+	AppPkgName     string   `json:"appPkgName"`
+	AppPkgVersion  string   `json:"appPkgVersion"`
+	AppPkgPath     string   `json:"appPkgPath"`
+	AppProvider    string   `json:"appProvider"`
+	AppPkgDesc     string   `json:"appPkgDesc"`
+	AppPkgAffinity string   `json:"appPkgAffinity"`
+	AppIconUrl     string   `json:"appIconUrl"`
+	CreatedTime    string   `json:"createdTime"`
+	ModifiedTime   string   `json:"modifiedTime"`
+	AppId          string   `json:"appId"`
+	TenantId       string   `json:"tenantId"`
+	PackageId      string   `json:"packageId"`
+	Origin         string   `json:"origin"`
+	SyncStatus     bool     `json:"syncStatus"`
+	MecHostInfo []AppPackageHostRecordInfo       `json:"mecHostInfo"`
+}
+
+// App package host record
+type AppPackageHostRecordInfo struct {
+	PkgHostKey             string    `json:"pkgHostKey"`
+	HostIp                 string    `json:"hostIp"`
+	AppPkgId               string    `json:"appPkgId"`
+	Status                 string    `json:"status"`
+	TenantId               string    `json:"tenantId"`
+	Error                  string    `json:"error"`
+	Origin                 string    `json:"origin"`
+	SyncStatus             bool      `json:"syncStatus"`
+}
+
+// Application package record
 type AppPackageRecord struct {
 	AppPkgId       string `orm:"pk"`
 	AppPkgName     string
@@ -118,20 +152,45 @@ type AppPackageRecord struct {
 	PackageId      string
 	Origin         string
 	SyncStatus     bool
-	AppPackageHost []*AppPackageHostRecord `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
+	MecHostInfo    []*AppPackageHostRecord `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
 }
 
 // App package host record
 type AppPackageHostRecord struct {
-	PkgHostKey             string `orm:"pk"`
-	HostIp                 string
-	AppPkgId               string
-	DistributionStatus     string
-	TenantId               string
-	Error                  string
-	Origin                 string
-	SyncStatus             bool
+	PkgHostKey string `orm:"pk"`
+	HostIp     string
+	AppPkgId   string
+	Status     string
+	TenantId   string
+	Error      string
+	Origin     string
+	SyncStatus bool
 	AppPackage *AppPackageRecord `orm:"rel(fk)"` // RelForeignKey relation
+}
+
+// Mec host updated records
+type AppPackagesUpdatedRecords struct {
+	AppPackagesUpdatedRecs []AppPackageRecordInfo `json:"appPackageRecord"`
+}
+
+// App package host stale records
+type AppDistPkgHostStaleRecords struct {
+	AppPackageStaleRecs []AppPackageStaleRec `json:"appPackageStaleRec"`
+	AppPackageHostStaleRec []AppPackageHostStaleRec `json:"appPackageHostStaleRec"`
+}
+
+
+// App package key information
+type AppPackageHostStaleRec struct {
+	PackageId      string `orm:"pk" json:"packageId"`
+	TenantId        string `json:"tenantId"`
+	HostIp          string `json:"hostIp"`
+}
+
+// App package key information
+type AppPackageStaleRec struct {
+	AppPkgId      string `orm:"pk" json:"appPackageId"`
+	TenantId      string `json:"tenantId"`
 }
 
 // Application package status record
