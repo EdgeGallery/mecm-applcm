@@ -71,7 +71,7 @@ class CustomController(Controller):
                        image_id,
                        do_checksum=True,
                        allow_md5_fallback=False,
-                       chunk_size=1024):
+                       chunk_size=1048576):
         if do_checksum:
             # doing this first to prevent race condition if image record
             # is deleted during the image download

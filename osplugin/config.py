@@ -51,7 +51,7 @@ db_port = int(os.getenv('DB_PORT', '5432'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
 
 # default chunk_size 1M
-chunk_size = os.getenv("IMAGE_CHUNK_SIZE", 1024 * 1024 * 1)
+chunk_size = os.getenv("IMAGE_CHUNK_SIZE", 1024 * 1024 * 2)
 
 _SERVER_CA_VERIFY = os.getenv('SERVER_CA_VERIFY_DIR', 'false')
 if _SERVER_CA_VERIFY == 'false':
