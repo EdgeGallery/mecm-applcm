@@ -25,8 +25,7 @@ type Database interface {
 	ReadData(data interface{}, cols ...string) (err error)
 	DeleteData(data interface{}, cols ...string) (err error)
 	QueryCount(tableName string) (int64, error)
-	QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error)
+	QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error)
 	QueryTable(query string) orm.QuerySeter
 	LoadRelated(md interface{}, name string) (int64, error)
-	QueryCountForAppPackage(tableName, fieldName, fieldValue string) (int64, error)
 }

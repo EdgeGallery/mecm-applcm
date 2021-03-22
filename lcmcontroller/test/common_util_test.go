@@ -35,6 +35,7 @@ var (
 	ipAddFormatter = "%d.%d.%d.%d"
 	fwdIp          = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
 		rand.Intn(util.MaxIPVal))
+	noMoreData     = 	"No more data"
 )
 
 // Creates a new file upload http request with optional extra params

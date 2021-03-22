@@ -238,7 +238,7 @@ func init() {
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "DeletePackage",
-			Router:           "/tenants/:tenantId/packages/:packageId",
+			Router:           util.PkgUrlPath,
 			AllowHTTPMethods: []string{"delete"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
@@ -256,7 +256,7 @@ func init() {
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "DistributePackage",
-			Router:           "/tenants/:tenantId/packages/:packageId",
+			Router:           util.PkgUrlPath,
 			AllowHTTPMethods: []string{"post"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
@@ -265,7 +265,7 @@ func init() {
 	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
 		beego.ControllerComments{
 			Method:           "DistributionStatus",
-			Router:           "/tenants/:tenantId/packages/:packageId",
+			Router:           util.PkgUrlPath,
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,

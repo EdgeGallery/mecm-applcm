@@ -266,7 +266,7 @@ func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
 		TenantId: tenantId,
 	}
 
-	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, tenantId)
+	count, err := c.Db.QueryCountForTable("app_info_record", util.TenantId, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err

@@ -1126,7 +1126,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoPara
 		MecHostRec:      hostInfoRec,
 	}
 
-	count, err := c.Db.QueryCountForAppInfo("app_info_record", util.TenantId, appInfoParams.TenantId)
+	count, err := c.Db.QueryCountForTable("app_info_record", util.TenantId, appInfoParams.TenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -2077,7 +2077,7 @@ func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 		Origin:        origin,
 	}
 
-	count, err := c.Db.QueryCountForAppPackage("app_package_record", util.TenantId, tenantId)
+	count, err := c.Db.QueryCountForTable("app_package_record", util.TenantId, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -2136,7 +2136,7 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 		AppPackage: appPkgRec,
 	}
 
-	count, err := c.Db.QueryCountForAppPackage("app_package_host_record", util.TenantId, tenantId)
+	count, err := c.Db.QueryCountForTable("app_package_host_record", util.TenantId, tenantId)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
