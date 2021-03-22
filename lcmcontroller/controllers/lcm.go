@@ -2360,8 +2360,6 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 
 	var appPackages []*models.AppPackageRecord
 	var appPackagesSync []*models.AppPackageRecord
-	var appPackageRec []models.AppPackageRecordInfo
-	var appPackageSyncRecords models.AppPackagesUpdatedRecords
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -2385,56 +2383,19 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 					appPackagesSync = append(appPackagesSync, appPackage)
 				}
 			}
-/*			if len(appPackage.MecHostInfo) == 0 && !appPackage.SyncStatus {
-				appPackagesSync = append(appPackagesSync, appPackage)
-			}*/
 		}
 	}
 
-	res, err := json.Marshal(appPackagesSync)
+	err = c.sendAppPkgSyncRecords(appPackagesSync, clientIp)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
-		return
-	}
-	err = json.Unmarshal(res, &appPackageRec)
-	if err != nil {
-		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
 
-	appPackageSyncRecords.AppPackagesUpdatedRecs = append(appPackageSyncRecords.AppPackagesUpdatedRecs, appPackageRec...)
-
-	response, err := json.Marshal(appPackageSyncRecords)
+	err = c.insertAppPackageRec(appPackagesSync)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 
-	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
-	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
-	_, err = c.Ctx.ResponseWriter.Write(response)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
-
-	for _, appPackage := range appPackagesSync {
-		for _, appPkgMecHostInfo := range appPackage.MecHostInfo {
-			appPkgMecHostInfo.SyncStatus = true
-			err = c.Db.InsertOrUpdateData(appPkgMecHostInfo, util.PkgHostKey)
-			if err != nil && err.Error() != util.LastInsertIdNotSupported {
-				log.Error("Failed to save app package mec host record to database.")
-				return
-			}
-		}
-
-		appPackage.SyncStatus = true
-		err = c.Db.InsertOrUpdateData(appPackage, util.AppPkgId)
-		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			log.Error("Failed to save app package host record to database.")
-			return
-		}
-	}
 	c.handleLoggingForSuccess(clientIp, "Application packages synchronization is successful")
 }
 
@@ -2560,7 +2521,7 @@ func (c *LcmController) updateAppPkgRecord(hosts models.DistributeRequest,
 	return nil
 }
 
-// Get input parameters for delete package on host 
+// Get input parameters for delete package on host
 func (c *LcmController) getInputParametersForDelPkgOnHost(clientIp string) (string, string, string, error) {
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
@@ -2640,6 +2601,62 @@ func (c *LcmController) delAppPkgRecords(clientIp, packageId, tenantId, hostIp s
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
 		}
+	}
+	return nil
+}
+
+// Insert app package records
+func (c *LcmController) insertAppPackageRec(appPackagesSync []*models.AppPackageRecord) error {
+	for _, appPackage := range appPackagesSync {
+		for _, appPkgMecHostInfo := range appPackage.MecHostInfo {
+			appPkgMecHostInfo.SyncStatus = true
+			err := c.Db.InsertOrUpdateData(appPkgMecHostInfo, util.PkgHostKey)
+			if err != nil && err.Error() != util.LastInsertIdNotSupported {
+				log.Error("Failed to save app package mec host record to database.")
+				return err
+			}
+		}
+
+		appPackage.SyncStatus = true
+		err := c.Db.InsertOrUpdateData(appPackage, util.AppPkgId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			log.Error("Failed to save app package host record to database.")
+			return err
+		}
+	}
+	return nil
+}
+
+// Send application package records
+func (c *LcmController) sendAppPkgSyncRecords(appPackagesSync []*models.AppPackageRecord, clientIp string) error {
+	var appPackageRec []models.AppPackageRecordInfo
+	var appPackageSyncRecords models.AppPackagesUpdatedRecords
+
+	res, err := json.Marshal(appPackagesSync)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return err
+	}
+	err = json.Unmarshal(res, &appPackageRec)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return err
+	}
+
+	appPackageSyncRecords.AppPackagesUpdatedRecs = append(appPackageSyncRecords.AppPackagesUpdatedRecs, appPackageRec...)
+
+	response, err := json.Marshal(appPackageSyncRecords)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return err
+	}
+
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
+	_, err = c.Ctx.ResponseWriter.Write(response)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return err
 	}
 	return nil
 }
