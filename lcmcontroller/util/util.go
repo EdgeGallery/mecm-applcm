@@ -149,7 +149,8 @@ const (
 	ApplicationJson      = "application/json"
 	ContentType          = "Content-Type"
 	Accept               = "Accept"
-
+	MecHostInfo          = "MecHostInfo"
+	PkgId                = "package_id"
 )
 
 var cipherSuiteMap = map[string]uint16{

@@ -632,7 +632,7 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 
 	response := map[string]bool{"package_deployed": true}
-	readErr := c.Db.ReadData(appInfoRecord, "package_id", "host_ip")
+	readErr := c.Db.ReadData(appInfoRecord, util.PkgId, "host_ip")
 	if readErr != nil {
 		response["package_deployed"] = false
 	}
@@ -1472,7 +1472,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 		return
 	}
 
-	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).All(&appInstances)
+	_, _ = c.Db.QueryTable("app_info_record").Filter(util.TenantId, tenantId).All(&appInstances)
 	for _, appInstance := range appInstances {
 		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
 			appInstancesSync = append(appInstancesSync, appInstance)
@@ -1540,7 +1540,7 @@ func (c *LcmController) SynchronizeStaleRecord() {
 	if err != nil {
 		return
 	}
-	_, _ = c.Db.QueryTable("app_instance_stale_rec").Filter("tenant_id", tenantId).All(&appInstStaleRecs)
+	_, _ = c.Db.QueryTable("app_instance_stale_rec").Filter(util.TenantId, tenantId).All(&appInstStaleRecs)
 
 	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
 	res, err := json.Marshal(appInstanceStaleRecords)
@@ -1972,7 +1972,7 @@ func (c *LcmController) DeletePackageOnHost() {
 	readErr := c.Db.ReadData(appPkgHostRec, util.PkgHostKey)
 	if readErr != nil {
 		c.handleLoggingForError(clientIp, util.StatusNotFound,
-			"App package record does not exist in database")
+			util.RecordDoesNotExist)
 		return
 	}
 	var origin = appPkgHostRec.Origin
@@ -1995,7 +1995,7 @@ func (c *LcmController) DeletePackageOnHost() {
 	}
 
 	if strings.EqualFold(origin, "mepm") {
-		err = c.Db.InsertOrUpdateData(appPackageHostStaleRec, "package_id")
+		err = c.Db.InsertOrUpdateData(appPackageHostStaleRec, util.PkgId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return
@@ -2098,7 +2098,7 @@ func (c *LcmController) DeletePackage() {
 	_, _ = c.Db.QueryTable(util.AppPackageRecordId).Filter(util.AppPkgId, packageId + tenantId).All(&appPkgRecords)
 
 	for _, appPkgRecord := range appPkgRecords {
-		_, _ = c.Db.LoadRelated(appPkgRecord, "MecHostInfo")
+		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
 	}
 
 	for _, appPkgRecord := range appPkgRecords {
@@ -2143,8 +2143,7 @@ func (c *LcmController) DeletePackage() {
 
 	readErr := c.Db.ReadData(appPkgRec, util.AppPkgId)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
-			"App package record does not exist in database")
+		c.handleLoggingForError(clientIp, util.StatusNotFound, util.RecordDoesNotExist)
 		return
 	}
 	var origin = appPkgRec.Origin
@@ -2222,7 +2221,7 @@ func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 
 // Insert or update application package host record
 func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId,
-	packageId, distributionStatus, errorInfo string, origin string) error {
+	packageId, distributionStatus, origin string) error {
 
 	if origin == "" {
 		origin = "MECM"
@@ -2239,8 +2238,7 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 
 	readErr := c.Db.ReadData(appPkgRec, util.AppPkgId)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
-			"App package record does not exist in database")
+		c.handleLoggingForError(clientIp, util.StatusNotFound, util.RecordDoesNotExist)
 		return readErr
 	}
 	syncStatus := true
@@ -2254,7 +2252,7 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 		AppPkgId:   packageId,
 		Status:     distributionStatus,
 		TenantId:   tenantId,
-		Error:      errorInfo,
+		Error:      "",
 		SyncStatus: syncStatus,
 		Origin:     origin,
 		AppPackage: appPkgRec,
@@ -2328,7 +2326,7 @@ func (c *LcmController) DistributionStatus() {
 	}
 
 	for _, appPkgRecord := range appPkgRecords {
-		_, _ = c.Db.LoadRelated(appPkgRecord, "MecHostInfo")
+		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
 	}
 
 	var appPkgs []models.AppPackageStatusRecord
@@ -2439,10 +2437,10 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 		return
 	}
 
-	_, _ = c.Db.QueryTable("app_package_record").Filter("tenant_id", tenantId).All(&appPackages)
+	_, _ = c.Db.QueryTable("app_package_record").Filter(util.TenantId, tenantId).All(&appPackages)
 	for _, appPackage := range appPackages {
 		if strings.EqualFold(appPackage.Origin, "mepm") {
-			_, _ = c.Db.LoadRelated(appPackage, "MecHostInfo")
+			_, _ = c.Db.LoadRelated(appPackage, util.MecHostInfo)
 			for _, appPkgMecHostInfo := range appPackage.MecHostInfo {
 				if !appPkgMecHostInfo.SyncStatus {
 					appPackagesSync = append(appPackagesSync, appPackage)
@@ -2526,8 +2524,8 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 	if err != nil {
 		return
 	}
-	_, _ = c.Db.QueryTable("app_package_stale_rec").Filter("tenant_id", tenantId).All(&appPackageStaleRecs)
-	_, _ = c.Db.QueryTable("app_package_host_stale_rec").Filter("tenant_id", tenantId).All(&appPkgHostStaleRecs)
+	_, _ = c.Db.QueryTable("app_package_stale_rec").Filter(util.TenantId, tenantId).All(&appPackageStaleRecs)
+	_, _ = c.Db.QueryTable("app_package_host_stale_rec").Filter(util.TenantId, tenantId).All(&appPkgHostStaleRecs)
 
 	appDistPkgHostStaleRecords.AppPackageStaleRecs = append(appDistPkgHostStaleRecords.AppPackageStaleRecs, appPackageStaleRecs...)
 	appDistPkgHostStaleRecords.AppPackageHostStaleRec = append(appDistPkgHostStaleRecords.AppPackageHostStaleRec, appPkgHostStaleRecs...)
@@ -2554,7 +2552,7 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 	}
 
 	for _, appPkgHostStaleRec := range appPkgHostStaleRecs {
-		err = c.Db.DeleteData(&appPkgHostStaleRec, "package_id")
+		err = c.Db.DeleteData(&appPkgHostStaleRec, util.PkgId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return
@@ -2616,7 +2614,7 @@ func (c *LcmController) updateAppPkgRecord(hosts models.DistributeRequest,
 	}
 
 	err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
-		status, "", hosts.Origin)
+		status, hosts.Origin)
 	if err != nil {
 		return err
 	}
