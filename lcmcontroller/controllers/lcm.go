@@ -2033,82 +2033,21 @@ func (c *LcmController) DeletePackage() {
 		return
 	}
 
-	var appPkgRecords []*models.AppPackageRecord
-	_, _ = c.Db.QueryTable(util.AppPackageRecordId).Filter(util.AppPkgId, packageId + tenantId).All(&appPkgRecords)
-
-	for _, appPkgRecord := range appPkgRecords {
-		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
+	err = c.processDeletePackage(clientIp, packageId, tenantId, accessToken)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		return
 	}
 
-	for _, appPkgRecord := range appPkgRecords {
-		for _, appPkgHost := range appPkgRecord.MecHostInfo {
-
-			vim, err := c.getVim(clientIp, appPkgHost.HostIp)
-			if err != nil {
-				util.ClearByteArray(bKey)
-				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-				return
-			}
-
-			pluginInfo := util.GetPluginInfo(vim)
-			client, err := pluginAdapter.GetClient(pluginInfo)
-			if err != nil {
-				util.ClearByteArray(bKey)
-				c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-				return
-			}
-			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-			_, err = adapter.DeletePackage(appPkgHost.TenantId, appPkgHost.HostIp, packageId, accessToken)
-			util.ClearByteArray(bKey)
-			if err != nil {
-				errorString := err.Error()
-				if strings.Contains(errorString, util.Forbidden) {
-					c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-				} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
-					c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-				} else {
-					c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-				}
-				return
-			}
-		}
-	}
 	pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
-	c.deletePackage(path.Dir(pkgFilePath))
-
-	appPkgRec := &models.AppPackageRecord{
-		AppPkgId: packageId + tenantId,
-	}
-
-	readErr := c.Db.ReadData(appPkgRec, util.AppPkgId)
-	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound, util.RecordDoesNotExist)
-		return
-	}
-	var origin = appPkgRec.Origin
-
-	err = c.deleteAppPackageRecord(packageId, tenantId)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-
-	err = c.deleteTenantRecord(clientIp, tenantId)
+	err = c.deletePackage(path.Dir(pkgFilePath))
 	if err != nil {
 		return
 	}
 
-	appPackageStaleRec := &models.AppPackageStaleRec{
-		AppPkgId: packageId,
-		TenantId: tenantId,
-	}
-
-	if strings.EqualFold(origin, "mepm") {
-		err = c.Db.InsertOrUpdateData(appPackageStaleRec, util.AppPkgId)
-		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-			return
-		}
+	err =c.deleteAppPkgRecords(packageId, tenantId, clientIp)
+	if err != nil {
+		return
 	}
 
 	c.handleLoggingForSuccess(clientIp, "Deleted application package successfully")
@@ -2657,6 +2596,87 @@ func (c *LcmController) sendAppPkgSyncRecords(appPackagesSync []*models.AppPacka
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return err
+	}
+	return nil
+}
+
+// Process delete packages
+func (c *LcmController) processDeletePackage(clientIp, packageId, tenantId, accessToken string) error {
+	var appPkgRecords []*models.AppPackageRecord
+	_, _ = c.Db.QueryTable(util.AppPackageRecordId).Filter(util.AppPkgId, packageId + tenantId).All(&appPkgRecords)
+
+	for _, appPkgRecord := range appPkgRecords {
+		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
+	}
+
+	for _, appPkgRecord := range appPkgRecords {
+		for _, appPkgHost := range appPkgRecord.MecHostInfo {
+
+			vim, err := c.getVim(clientIp, appPkgHost.HostIp)
+			if err != nil {
+				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+				return err
+			}
+
+			pluginInfo := util.GetPluginInfo(vim)
+			client, err := pluginAdapter.GetClient(pluginInfo)
+			if err != nil {
+				c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+				return err
+			}
+			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+			_, err = adapter.DeletePackage(appPkgHost.TenantId, appPkgHost.HostIp, packageId, accessToken)
+			if err != nil {
+				errorString := err.Error()
+				if strings.Contains(errorString, util.Forbidden) {
+					c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+				} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+					c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+				} else {
+					c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+				}
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Delete application package records
+func (c *LcmController) deleteAppPkgRecords(packageId, tenantId, clientIp string) error {
+	appPkgRec := &models.AppPackageRecord{
+		AppPkgId: packageId + tenantId,
+	}
+
+	err := c.Db.ReadData(appPkgRec, util.AppPkgId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound, util.RecordDoesNotExist)
+		return err
+	}
+	var origin = appPkgRec.Origin
+
+	err = c.deleteAppPackageRecord(packageId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	err = c.deleteTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return err
+	}
+
+	appPackageStaleRec := &models.AppPackageStaleRec{
+		AppPkgId: packageId,
+		TenantId: tenantId,
+	}
+
+	if strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(appPackageStaleRec, util.AppPkgId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return err
+		}
 	}
 	return nil
 }
