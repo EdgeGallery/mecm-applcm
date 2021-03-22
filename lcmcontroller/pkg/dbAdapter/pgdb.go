@@ -77,7 +77,7 @@ func (db *PgDb) QueryCount(tableName string) (int64, error) {
 }
 
 // Query count based on fieldname and fieldvalue
-func (db *PgDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
+func (db *PgDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
 	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
 	return num, err
 }

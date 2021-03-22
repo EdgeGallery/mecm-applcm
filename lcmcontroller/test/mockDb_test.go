@@ -199,7 +199,7 @@ func (db *mockDb) QueryCount(tableName string) (int64, error) {
 	return 0, nil
 }
 
-func (db *mockDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
+func (db *mockDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
 	return 0, nil
 }
 
@@ -210,9 +210,4 @@ func (db *mockDb) QueryTable(tableName string) orm.QuerySeter {
 func (db *mockDb) LoadRelated(md interface{}, name string) (int64, error) {
 	return 0, nil
 }
-
-func (db *mockDb) QueryCountForAppPackage(tableName, fieldName, fieldValue string) (int64, error) {
-	return 0, nil
-}
-
 

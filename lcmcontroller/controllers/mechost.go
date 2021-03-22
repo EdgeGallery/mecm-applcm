@@ -115,21 +115,8 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 		return err
 	}
 
-	hostName, err := util.ValidateName(request.MechostName, util.NameRegex)
-	if err != nil || !hostName {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Mec host name is invalid")
-		return err
-	}
-
-	zipcode, err := util.ValidateName(request.ZipCode, util.NameRegex)
-	if err != nil || !zipcode {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Zipcode is invalid")
-		return err
-	}
-
-	city, err := util.ValidateName(request.City, util.CityRegex)
-	if err != nil || !city {
-		c.handleLoggingForError(clientIp, util.BadRequest, "City is invalid")
+	err = c.validateMecHostZipCodeCity(request, clientIp)
+	if err != nil {
 		return err
 	}
 
@@ -534,8 +521,8 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 		return
 	}
 
-	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(response)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
@@ -580,8 +567,8 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 		return
 	}
 
-	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
@@ -595,4 +582,26 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "Stale mec host records synchronization is successful")
+}
+
+// Validate mec host, zip code and city
+func (c *MecHostController) validateMecHostZipCodeCity(request models.MecHostInfo, clientIp string) error {
+	hostName, err := util.ValidateName(request.MechostName, util.NameRegex)
+	if err != nil || !hostName {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Mec host name is invalid")
+		return err
+	}
+
+	zipcode, err := util.ValidateName(request.ZipCode, util.NameRegex)
+	if err != nil || !zipcode {
+		c.handleLoggingForError(clientIp, util.BadRequest, "Zipcode is invalid")
+		return err
+	}
+
+	city, err := util.ValidateName(request.City, util.CityRegex)
+	if err != nil || !city {
+		c.handleLoggingForError(clientIp, util.BadRequest, "City is invalid")
+		return err
+	}
+	return nil
 }

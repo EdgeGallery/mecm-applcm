@@ -151,6 +151,7 @@ const (
 	Accept               = "Accept"
 	MecHostInfo          = "MecHostInfo"
 	PkgId                = "package_id"
+	PkgUrlPath           = "/tenants/:tenantId/packages/:packageId"
 )
 
 var cipherSuiteMap = map[string]uint16{
