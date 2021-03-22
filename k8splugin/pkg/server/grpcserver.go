@@ -1044,7 +1044,7 @@ func (s *ServerGRPC) DeletePackage(ctx context.Context,
 	err = s.deletePackage(packagePath)
 	if err != nil {
 		log.Error("failed to delete application package file")
-		s.displayResponseMsg(ctx, util.DeletePackage, "failed to delete application package")
+		s.displayResponseMsg(ctx, util.DeletePackage, util.FailedToDelAppPkg)
 		return resp, nil
 	}
 	
@@ -1067,7 +1067,7 @@ func (s *ServerGRPC) deletePackage(appPkgPath string) error {
 
 	tenantDir, err := os.Open(tenantPath)
 	if err != nil {
-		return errors.New("failed to delete application package")
+		return errors.New(util.FailedToDelAppPkg)
 	}
 	defer tenantDir.Close()
 	
@@ -1076,7 +1076,7 @@ func (s *ServerGRPC) deletePackage(appPkgPath string) error {
 	if err == io.EOF {
 		err := os.Remove(tenantPath)
 		if err != nil {
-            return errors.New("failed to delete application package")
+            return errors.New(util.FailedToDelAppPkg)
 		}
 		return nil
 	}
@@ -1192,7 +1192,7 @@ func (s *ServerGRPC) deleteDockerImagesFromHost(dockerImages string) error {
 			"delete docker image": dockers[i],
 		}).Info("delete docker images")
 
-		//TODO: delete docker images form host machine using docker client
+		//delete docker images form host machine using docker client
 	}
 	return nil
 }
@@ -1219,7 +1219,7 @@ func (c *ServerGRPC) loadDockerImagesToHost(packagePath string) (string, error) 
 
 		dockerImages = append(dockerImages, imageDescriptors[i].SwImage)
 
-		//TODO: load docker image to docker host using docker client
+		//load docker image to docker host using docker client
 	}
 
 	return strings.Join(dockerImages,", "), nil

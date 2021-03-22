@@ -49,7 +49,6 @@ const (
 	InvalidToken string = "invalid token"
 	CannotReceivePackage = "Cannot receive package metadata."
 	FilePerm = 0750
-	TempFile = "temp.tar.gz"
 	HostIpIsInvalid = "hostIp is invalid"
 	TenantIdIsInvalid = "tenantId is invalid"
 	AKIsInvalid = "ak is invalid"
@@ -98,6 +97,7 @@ const (
 	Deployment = "Deployment"
 	FailedToJsonMarshal = "Failed to json marshal"
 	AppInsIdValid = "appInsId is invalid"
+	FailedToDelAppPkg = "failed to delete application package"
 )
 
 var cipherSuiteMap = map[string]uint16{
