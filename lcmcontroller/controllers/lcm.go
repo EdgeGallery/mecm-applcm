@@ -1903,43 +1903,15 @@ func (c *LcmController) DeletePackageOnHost() {
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
-		return
-	}
-
-	packageId, err := c.getUrlPackageId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
-		return
-	}
-
-	hostIp, err := c.getUrlHostIP(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
-		return
-	}
-
-	appPkgRecord, err := c.getAppPackageRecord(packageId, tenantId, clientIp)
+	tenantId, packageId, hostIp, err := c.getInputParametersForDelPkgOnHost(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	appPkgHostRecord, err := c.getAppPackageHostRecord(hostIp, appPkgRecord.PackageId, appPkgRecord.TenantId, clientIp)
+	pkgRecHostIp, vim, err := c.getVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		return
-	}
-
-	vim, err := c.getVim(clientIp, appPkgHostRecord.HostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -1951,7 +1923,7 @@ func (c *LcmController) DeletePackageOnHost() {
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	_, err = adapter.DeletePackage(tenantId, appPkgHostRecord.HostIp, packageId, accessToken)
+	_, err = adapter.DeletePackage(tenantId, pkgRecHostIp, packageId, accessToken)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		errorString := err.Error()
@@ -1964,42 +1936,9 @@ func (c *LcmController) DeletePackageOnHost() {
 		}
 		return
 	}
-
-	appPkgHostRec := &models.AppPackageHostRecord{
-		PkgHostKey: packageId + tenantId + hostIp,
-	}
-
-	readErr := c.Db.ReadData(appPkgHostRec, util.PkgHostKey)
-	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
-			util.RecordDoesNotExist)
-		return
-	}
-	var origin = appPkgHostRec.Origin
-
-	err = c.deleteAppPackageHostRecord(hostIp, packageId, tenantId)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-
-	err = c.deleteTenantRecord(clientIp, tenantId)
+	err = c.delAppPkgRecords(clientIp, packageId, tenantId, hostIp)
 	if err != nil {
 		return
-	}
-
-	appPackageHostStaleRec := &models.AppPackageHostStaleRec{
-		PackageId: packageId,
-		TenantId: tenantId,
-		HostIp:   hostIp,
-	}
-
-	if strings.EqualFold(origin, "mepm") {
-		err = c.Db.InsertOrUpdateData(appPackageHostStaleRec, util.PkgId)
-		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-			return
-		}
 	}
 
 	c.handleLoggingForSuccess(clientIp, "Deleted host application package successfully")
@@ -2617,6 +2556,90 @@ func (c *LcmController) updateAppPkgRecord(hosts models.DistributeRequest,
 		status, hosts.Origin)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+// Get input parameters for delete package on host 
+func (c *LcmController) getInputParametersForDelPkgOnHost(clientIp string) (string, string, string, error) {
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return "", "", "", err
+	}
+
+	packageId, err := c.getUrlPackageId(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return "", "", "", err
+	}
+
+	hostIp, err := c.getUrlHostIP(clientIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return "", "", "", err
+	}
+
+	return tenantId, packageId, hostIp, nil
+}
+
+// Get vim and host ip from package host record
+func (c *LcmController) getVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, hostIp string) (string, string, error) {
+	appPkgRecord, err := c.getAppPackageRecord(packageId, tenantId, clientIp)
+	if err != nil {
+		return "", "", err
+	}
+
+	appPkgHostRecord, err := c.getAppPackageHostRecord(hostIp, appPkgRecord.PackageId, appPkgRecord.TenantId, clientIp)
+	if err != nil {
+		return "", "", err
+	}
+
+	vim, err := c.getVim(clientIp, appPkgHostRecord.HostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return "", "", err
+	}
+	return appPkgHostRecord.HostIp, vim, err
+}
+
+// Delete application pacakge records
+func (c *LcmController) delAppPkgRecords(clientIp, packageId, tenantId, hostIp string) error {
+	appPkgHostRec := &models.AppPackageHostRecord{
+		PkgHostKey: packageId + tenantId + hostIp,
+	}
+
+	err := c.Db.ReadData(appPkgHostRec, util.PkgHostKey)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusNotFound,
+			util.RecordDoesNotExist)
+		return err
+	}
+	var origin = appPkgHostRec.Origin
+
+	err = c.deleteAppPackageHostRecord(hostIp, packageId, tenantId)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	err = c.deleteTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return err
+	}
+
+	appPackageHostStaleRec := &models.AppPackageHostStaleRec{
+		PackageId: packageId,
+		TenantId: tenantId,
+		HostIp:   hostIp,
+	}
+
+	if strings.EqualFold(origin, "mepm") {
+		err = c.Db.InsertOrUpdateData(appPackageHostStaleRec, util.PkgId)
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			return err
+		}
 	}
 	return nil
 }
