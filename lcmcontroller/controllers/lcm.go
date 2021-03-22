@@ -1945,7 +1945,7 @@ func (c *LcmController) DeletePackageOnHost() {
 	c.ServeJSON()
 }
 
-func (c *LcmController) deletePackage(appPkgPath string) error {
+func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 
 	tenantPath := path.Dir(appPkgPath)
 
@@ -2040,7 +2040,7 @@ func (c *LcmController) DeletePackage() {
 	}
 
 	pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
-	err = c.deletePackage(path.Dir(pkgFilePath))
+	err = c.deletePackageFromDir(path.Dir(pkgFilePath))
 	if err != nil {
 		return
 	}
@@ -2612,29 +2612,8 @@ func (c *LcmController) processDeletePackage(clientIp, packageId, tenantId, acce
 	for _, appPkgRecord := range appPkgRecords {
 		for _, appPkgHost := range appPkgRecord.MecHostInfo {
 
-			vim, err := c.getVim(clientIp, appPkgHost.HostIp)
+			err := c.deletePackage(appPkgHost, clientIp, packageId, accessToken)
 			if err != nil {
-				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-				return err
-			}
-
-			pluginInfo := util.GetPluginInfo(vim)
-			client, err := pluginAdapter.GetClient(pluginInfo)
-			if err != nil {
-				c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-				return err
-			}
-			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-			_, err = adapter.DeletePackage(appPkgHost.TenantId, appPkgHost.HostIp, packageId, accessToken)
-			if err != nil {
-				errorString := err.Error()
-				if strings.Contains(errorString, util.Forbidden) {
-					c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-				} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
-					c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-				} else {
-					c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-				}
 				return err
 			}
 		}
@@ -2677,6 +2656,37 @@ func (c *LcmController) deleteAppPkgRecords(packageId, tenantId, clientIp string
 			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
 		}
+	}
+	return nil
+}
+
+// Send delete package
+func (c *LcmController) deletePackage(appPkgHost *models.AppPackageHostRecord,
+	clientIp, packageId, accessToken string) error {
+	vim, err := c.getVim(clientIp, appPkgHost.HostIp)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return err
+	}
+
+	pluginInfo := util.GetPluginInfo(vim)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		return err
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	_, err = adapter.DeletePackage(appPkgHost.TenantId, appPkgHost.HostIp, packageId, accessToken)
+	if err != nil {
+		errorString := err.Error()
+		if strings.Contains(errorString, util.Forbidden) {
+			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		} else {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		}
+		return err
 	}
 	return nil
 }
