@@ -66,7 +66,7 @@ func (a AppLCMServer) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) 
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Debug(noMoreData)
 			break
 		}
 
@@ -104,7 +104,7 @@ func (a AppLCMServer) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Debug(noMoreData)
 			break
 		}
 
@@ -186,24 +186,6 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 
 // Instantiate HELM Chart
 func (s *ServerGRPC) Instantiate() (err error) {
-	/*for {
-		req, err := stream.Recv()
-		if err == io.EOF {
-			log.Debug("No more data")
-			break
-		}
-		// Receive chunk and write to helm package
-		_ = req.GetPackage()
-	}
-
-	var res lcmservice.InstantiateResponse
-	res.Status = SUCCESS_RETURN
-	log.Info("Successful Instantiation")
-	err = stream.SendAndClose(&res)
-	if err != nil {
-		log.Info("Failed Instantiation")
-		return errors.New("Failed Instantiation")
-	} */
 	return nil
 }
 
@@ -213,7 +195,7 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Debug(noMoreData)
 			break
 		}
 
