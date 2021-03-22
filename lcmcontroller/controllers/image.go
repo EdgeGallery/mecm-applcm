@@ -316,13 +316,13 @@ func (c *ImageController) GetImageFile() {
 	}
 
 	// Create temporary file to hold helm chart
-	file, err := os.Create(util.TEMP_FILE)
+	file, err := os.Create(util.TempFile)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
 		return
 	}
-	defer os.Remove(util.TEMP_FILE)
+	defer os.Remove(util.TempFile)
 
 	buf, err := adapter.DownloadVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
 		chunkNum)
@@ -333,14 +333,14 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	// Write input bytes to temp file
+	//Write input bytes to temp file
 	_, err = buf.WriteTo(file)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Ctx.Output.Download(util.TEMP_FILE)
+	c.Ctx.Output.Download(util.TempFile)
 	c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
 }
 

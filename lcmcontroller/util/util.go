@@ -145,7 +145,11 @@ const (
 	DELETE               = "delete"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
-	TEMP_FILE            = "/usr/app/temp"
+	TempFile             = "/usr/app/temp"
+	ApplicationJson      = "application/json"
+	ContentType          = "Content-Type"
+	Accept               = "Accept"
+
 )
 
 var cipherSuiteMap = map[string]uint16{

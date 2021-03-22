@@ -1498,8 +1498,8 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 		return
 	}
 
-	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
@@ -1549,8 +1549,8 @@ func (c *LcmController) SynchronizeStaleRecord() {
 		return
 	}
 
-	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
@@ -1829,7 +1829,12 @@ func (c *LcmController) DistributePackage() {
 	}
 
 	var hosts models.DistributeRequest
-	json.Unmarshal(c.Ctx.Input.RequestBody, &hosts)
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &hosts)
+	if err != nil {
+		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		util.ClearByteArray(bKey)
+		return
+	}
 
 	packageId, err := c.ValidateDistributeInputParameters(clientIp, hosts)
 	if err != nil {
@@ -1857,64 +1862,10 @@ func (c *LcmController) DistributePackage() {
 		return
 	}
 
-	for _, hostIp := range hosts.HostIp {
-		vim, err := c.getVim(clientIp, hostIp)
-		if err != nil {
-			util.ClearByteArray(bKey)
-			return
-		}
-
-		pluginInfo := util.GetPluginInfo(vim)
-		client, err := pluginAdapter.GetClient(pluginInfo)
-		if err != nil {
-			util.ClearByteArray(bKey)
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-			return
-		}
-
-		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
-
-		adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-		_, err = adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
-		util.ClearByteArray(bKey)
-		//c.deletePackage(path.Dir(pkgFilePath))
-		if err != nil {
-			errorString := err.Error()
-			if strings.Contains(errorString, util.Forbidden) {
-				c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-			} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
-				c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-			} else {
-				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-			}
-
-			err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
-			if err != nil {
-				util.ClearByteArray(bKey)
-				return
-			}
-
-			err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
-				"Error", "", hosts.Origin)
-			if err != nil {
-				util.ClearByteArray(bKey)
-				return
-			}
-			return
-		}
-
-		err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
-		if err != nil {
-			util.ClearByteArray(bKey)
-			return
-		}
-
-		err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
-			"Distributed", "", hosts.Origin)
-		if err != nil {
-			util.ClearByteArray(bKey)
-			return
-		}
+	err = c.processUploadPackage(hosts, clientIp, tenantId, packageId, accessToken)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		return
 	}
 
 	c.handleLoggingForSuccess(clientIp, "Distributed application package successfully")
@@ -2522,8 +2473,8 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 		return
 	}
 
-	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(response)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
@@ -2587,8 +2538,8 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 		return
 	}
 
-	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-	c.Ctx.ResponseWriter.Header().Set("Accept", "application/json")
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
 		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
@@ -2611,4 +2562,62 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 	}
 
 	c.handleLoggingForSuccess(clientIp, "Stale app package records synchronization is successful")
+}
+
+// Process upload package
+func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
+	clientIp, tenantId, packageId, accessToken string) error {
+	for _, hostIp := range hosts.HostIp {
+		vim, err := c.getVim(clientIp, hostIp)
+		if err != nil {
+			return err
+		}
+
+		pluginInfo := util.GetPluginInfo(vim)
+		client, err := pluginAdapter.GetClient(pluginInfo)
+		if err != nil {
+			c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+			return err
+		}
+
+		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
+
+		adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+		_, err = adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
+		//c.deletePackage(path.Dir(pkgFilePath))
+		if err != nil {
+			errorString := err.Error()
+			if strings.Contains(errorString, util.Forbidden) {
+				c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+			} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
+				c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+			} else {
+				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			}
+
+			err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+			if err != nil {
+				return err
+			}
+
+			err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
+				"Error", "", hosts.Origin)
+			if err != nil {
+				return err
+			}
+			return err
+		}
+
+		err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+		if err != nil {
+			return err
+		}
+
+		err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
+			"Distributed", "", hosts.Origin)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
