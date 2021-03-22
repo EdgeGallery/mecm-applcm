@@ -2595,29 +2595,30 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 				c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			}
 
-			err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
-			if err != nil {
-				return err
-			}
-
-			err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
-				"Error", "", hosts.Origin)
-			if err != nil {
-				return err
-			}
+			err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")
 			return err
 		}
 
-		err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+		err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Distributed")
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
 
-		err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
-			"Distributed", "", hosts.Origin)
-		if err != nil {
-			return err
-		}
+// Update app package records
+func (c *LcmController) updateAppPkgRecord(hosts models.DistributeRequest,
+	clientIp, tenantId, packageId, hostIp, status string) error {
+	err := c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	if err != nil {
+		return err
+	}
+
+	err = c.insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId, packageId,
+		status, "", hosts.Origin)
+	if err != nil {
+		return err
 	}
 	return nil
 }
