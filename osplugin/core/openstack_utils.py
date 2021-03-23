@@ -88,11 +88,22 @@ def create_nova_client(host_ip):
                               endpoint_override=rc.nova_url)
 
 
+_GLANCE_CLIENT_MAP = {}
+
+
 def create_glance_client(host_ip):
+    if host_ip in _GLANCE_CLIENT_MAP:
+        return _GLANCE_CLIENT_MAP[host_ip]
     rc = get_rc(host_ip)
     asession = get_session(host_ip)
-    return CustomGlanceClient(session=asession,
-                              endpoint_override=rc.glance_url)
+    client = CustomGlanceClient(session=asession, endpoint_override=rc.glance_url)
+    _GLANCE_CLIENT_MAP[host_ip] = client
+    return client
+
+
+def clear_glance_client(host_ip):
+    if host_ip in _GLANCE_CLIENT_MAP:
+        _GLANCE_CLIENT_MAP.pop(host_ip)
 
 
 class RCFile(object):
