@@ -27,7 +27,6 @@ import utils
 from core.custom_glance_client import CustomGlanceClient
 from core.exceptions import PackageNotValid
 
-
 _RC_MAP = {}
 
 
@@ -145,6 +144,9 @@ class RCFile(object):
                     self.nova_url = group2
                 elif group1 == 'CINDER_URL':
                     self.cinder_url = group2
+
+
+_init_rc_map()
 
 
 class HOTBase(object):

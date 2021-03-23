@@ -112,10 +112,10 @@ class GrpcServerTest(unittest.TestCase):
                                                             hostIp=self.host_ip,
                                                             chunkNum=1,
                                                             appInstanceId='app_instance_id',
-                                                            imageId='f95bcbb1-e1e2-4aaf-872c-f0c7657862c1')
+                                                            imageId='79414ac9-610b-4243-90f6-e830e2e7d97c')
             response = self.vm_image_stub.downloadVmImage(request)
 
-            file = open('image.QCOW2', 'ab')
+            file = open('../target/image.qcow2', 'ab')
             for res in response:
                 print(res)
                 file.write(res.content)
