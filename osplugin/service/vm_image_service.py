@@ -203,4 +203,4 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                  config.chunk_size)
         LOG.debug("download image chunk %s end...", request.chunkNum)
         res = DownloadVmImageResponse(content=content)
-        return res
+        yield res
