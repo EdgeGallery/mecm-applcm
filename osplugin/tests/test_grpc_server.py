@@ -2,7 +2,6 @@ import unittest
 
 import grpc
 
-import utils
 from internal.lcmservice import lcmservice_pb2_grpc, lcmservice_pb2
 from tests import gen_token
 
@@ -13,7 +12,7 @@ class GrpcServerTest(unittest.TestCase):
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
-        with open('target/ssl/server_tls.crt', 'rb') as f:
+        with open('../target/ssl/server_tls.crt', 'rb') as f:
             root_certificates = f.read()
         credentials = grpc.ssl_channel_credentials(root_certificates=root_certificates)
         options = (
@@ -32,10 +31,10 @@ class GrpcServerTest(unittest.TestCase):
             vmId='caf83c05-56dc-4f7c-b417-40d9acbf166c'
         )
         response = self.vm_image_stub.createVmImage(request)
-        self.assertEqual(response.response, utils.SUCCESS)
+        self.assertEqual(response.response, 'SUCCESS')
 
     def test_upload_package(self):
-        with open('tests/resources/ht-package.zip', 'rb') as f:
+        with open('resources/ht-package.zip', 'rb') as f:
             package = f.read()
         request = iter([
             lcmservice_pb2.UploadPackageRequest(accessToken=self.access_token),
@@ -45,7 +44,7 @@ class GrpcServerTest(unittest.TestCase):
             lcmservice_pb2.UploadPackageRequest(package=package)
         ])
         response = self.app_lcm_stub.uploadPackage(request)
-        self.assertEqual(response.status, utils.SUCCESS)
+        self.assertEqual(response.status, 'SUCCESS')
 
     def test_delete_package(self):
         request = lcmservice_pb2.DeletePackageRequest(
@@ -55,7 +54,26 @@ class GrpcServerTest(unittest.TestCase):
             tenantId='tenant001',
         )
         response = self.app_lcm_stub.deletePackage(request)
-        self.assertEqual(response.status, utils.SUCCESS)
+        self.assertEqual(response.status, 'SUCCESS')
+
+    def test_upload_cfg(self):
+        with open('resources/10.10.10.10', 'rb') as f:
+            data = f.read()
+        request = iter([
+            lcmservice_pb2.UploadCfgRequest(accessToken=self.access_token),
+            lcmservice_pb2.UploadCfgRequest(hostIp='10.10.10.10'),
+            lcmservice_pb2.UploadCfgRequest(configFile=data)
+        ])
+        response = self.app_lcm_stub.uploadConfig(request)
+        self.assertEqual(response.status, 'SUCCESS')
+
+    def test_delete_cfg(self):
+        request = lcmservice_pb2.RemoveCfgRequest(
+            accessToken=self.access_token,
+            hostIp='10.10.10.10'
+        )
+        response = self.app_lcm_stub.removeConfig(request)
+        self.assertEqual(response.status, 'SUCCESS')
 
     def test_instantiate(self):
         request = lcmservice_pb2.InstantiateRequest(
@@ -68,7 +86,7 @@ class GrpcServerTest(unittest.TestCase):
             sk='sk001'
         )
         response = self.app_lcm_stub.instantiate(request)
-        self.assertEqual(response.status, utils.SUCCESS)
+        self.assertEqual(response.status, 'SUCCESS')
 
     def test_terminate(self):
         request = lcmservice_pb2.TerminateRequest(
@@ -77,7 +95,7 @@ class GrpcServerTest(unittest.TestCase):
             hostIp=self.host_ip,
         )
         response = self.app_lcm_stub.terminate(request)
-        self.assertEqual(response.status, utils.SUCCESS)
+        self.assertEqual(response.status, 'SUCCESS')
 
     def test_query(self):
         request = lcmservice_pb2.QueryRequest(
