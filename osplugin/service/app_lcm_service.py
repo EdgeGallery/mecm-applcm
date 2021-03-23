@@ -423,6 +423,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             with open(config_path, 'wb') as new_file:
                 new_file.write(config_file)
             openstack_utils.set_rc(host_ip)
+            openstack_utils.clear_glance_client(host_ip)
             res.status = utils.SUCCESS
         except Exception as e:
             LOG.error(e, exc_info=True)
@@ -447,6 +448,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         try:
             os.remove(config_path)
             openstack_utils.del_rc(host_ip)
+            openstack_utils.clear_glance_client(host_ip)
             res.status = utils.SUCCESS
         except OSError as e:
             LOG.debug(e)
