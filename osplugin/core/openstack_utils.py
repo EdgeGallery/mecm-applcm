@@ -15,6 +15,7 @@
 
 # -*- coding: utf-8 -*-
 """
+import os
 import re
 
 from heatclient.v1.client import Client as HeatClient
@@ -27,9 +28,27 @@ from core.custom_glance_client import CustomGlanceClient
 from core.exceptions import PackageNotValid
 
 
+_RC_MAP = {}
+
+
+def _init_rc_map():
+    rc_file_dir = utils.RC_FILE_DIR + '/'
+    for rc in os.listdir(rc_file_dir):
+        _RC_MAP[rc] = RCFile(rc_file_dir + rc)
+
+
+def set_rc(host_ip):
+    _RC_MAP[host_ip] = RCFile(utils.RC_FILE_DIR + '/' + host_ip)
+
+
+def del_rc(host_ip):
+    _RC_MAP.pop(host_ip)
+
+
 def get_rc(host_ip):
-    rc_file_path = utils.RC_FILE_DIR + '/' + host_ip
-    return RCFile(rc_file_path)
+    if host_ip in _RC_MAP:
+        return _RC_MAP[host_ip]
+    raise FileNotFoundError(utils.RC_FILE_DIR + '/' + host_ip)
 
 
 def get_auth(host_ip):

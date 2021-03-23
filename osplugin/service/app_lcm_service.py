@@ -27,10 +27,10 @@ from heatclient.exc import HTTPNotFound
 from pony.orm import db_session, commit
 
 import utils
+from core import openstack_utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest
-from core.openstack_utils import create_heat_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
@@ -59,7 +59,7 @@ def check_stack_status(app_instance_id):
     app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
     if not app_ins_mapper:
         return
-    heat = create_heat_client(app_ins_mapper.host_ip)
+    heat = openstack_utils.create_heat_client(app_ins_mapper.host_ip)
     stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
     if stack_resp is None and app_ins_mapper.operational_status == 'Terminating':
         app_ins_mapper.delete()
@@ -219,7 +219,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'files': dict(list(tpl_files.items()))
         }
         LOG.debug('%s: init heat client', req_id)
-        heat = create_heat_client(host_ip)
+        heat = openstack_utils.create_heat_client(host_ip)
         try:
             LOG.debug('%s: 发送创建stack请求', req_id)
             stack_resp = heat.stacks.create(**fields)
@@ -269,7 +269,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         LOG.debug('%s: 初始化openstack客户端', req_id)
-        heat = create_heat_client(host_ip)
+        heat = openstack_utils.create_heat_client(host_ip)
         try:
             LOG.debug('%s: 发送删除请求', req_id)
             heat.stacks.delete(app_ins_mapper.stack_id)
@@ -314,7 +314,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if app_ins_mapper is None:
             return res
 
-        heat = create_heat_client(host_ip)
+        heat = openstack_utils.create_heat_client(host_ip)
         output_list = heat.stacks.output_list(app_ins_mapper.stack_id)
 
         response = {
@@ -367,7 +367,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('app实例 %s 不存在', app_instance_id)
             return res
 
-        heat = create_heat_client(host_ip)
+        heat = openstack_utils.create_heat_client(host_ip)
 
         events = heat.events.list(stack_id=app_ins_mapper.stack_id)
         vm_describe_info = {}
@@ -422,7 +422,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         try:
             with open(config_path, 'wb') as new_file:
                 new_file.write(config_file)
-                res.status = utils.SUCCESS
+            openstack_utils.set_rc(host_ip)
+            res.status = utils.SUCCESS
         except Exception as e:
             LOG.error(e, exc_info=True)
 
@@ -445,6 +446,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         config_path = utils.RC_FILE_DIR + '/' + host_ip
         try:
             os.remove(config_path)
+            openstack_utils.del_rc(host_ip)
             res.status = utils.SUCCESS
         except OSError as e:
             LOG.debug(e)
