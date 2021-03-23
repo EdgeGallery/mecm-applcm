@@ -191,6 +191,8 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                                                     image_size=image_info.size,
                                                     image_id=request.imageId, do_checksum=False,
                                                     chunk_size=int(config.chunk_size))
+            content = resp.content
+            resp.close()
         except DownloadChunkException as e:
             LOG.error(e, exc_info=True)
             raise e
@@ -200,5 +202,5 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                  request.chunkNum,
                  config.chunk_size)
         LOG.debug("download image chunk %s end...", request.chunkNum)
-        res = DownloadVmImageResponse(content=resp.content)
-        yield res
+        res = DownloadVmImageResponse(content=content)
+        return res
