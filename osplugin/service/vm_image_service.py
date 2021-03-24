@@ -77,6 +77,24 @@ def validate_input_params_for_upload_cfg(req):
     return host_ip
 
 
+_IMAGE_INFO_TMP_ = {}
+
+
+def _get_image_info(image_id, glance_client):
+    if image_id in _IMAGE_INFO_TMP_:
+        return _IMAGE_INFO_TMP_[image_id]
+    image_info = glance_client.images.get(image_id)
+    if image_info.status != 'active':
+        LOG.error("image status %s", image_info.status)
+        raise Exception("image status is not active...")
+    _IMAGE_INFO_TMP_[image_id] = image_info
+    return image_info
+
+
+def _del_image_info(image_id):
+    _IMAGE_INFO_TMP_.pop(image_id)
+
+
 class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
     """
     VmImageService
@@ -178,13 +196,11 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             raise Exception("host ip is null...")
         try:
             glance_client = create_glance_client(host_ip)
-            image_info = glance_client.images.get(request.imageId)
+            image_info = _get_image_info(request.imageId, glance_client)
         except Exception as e:
             LOG.error(e, exc_info=True)
             raise e
-        if image_info.status != 'active':
-            LOG.error("image status %s", image_info.status)
-            raise Exception("image status is not active...")
+
         try:
             iterable_with_length, resp = \
                 glance_client.images.download_chunk(chunk_num=request.chunkNum,
@@ -192,15 +208,9 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                                                     image_id=request.imageId, do_checksum=False,
                                                     chunk_size=int(config.chunk_size))
             content = resp.content
-            resp.close()
         except DownloadChunkException as e:
             LOG.error(e, exc_info=True)
             raise e
 
-        LOG.info("download image: image_size: %s, chunk_num: %s ,chunk_size: %s ",
-                 image_info.size,
-                 request.chunkNum,
-                 config.chunk_size)
-        LOG.debug("download image chunk %s end...", request.chunkNum)
-        res = DownloadVmImageResponse(content=content)
-        yield res
+        LOG.info("download image chunk %s end...", request.chunkNum)
+        return iter([DownloadVmImageResponse(content=content)])
