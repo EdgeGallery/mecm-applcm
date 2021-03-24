@@ -260,8 +260,7 @@ func testSyncUpdatedAppInstRec(t *testing.T, extraParams map[string]string, path
 	t.Run("TestSyncUpdatedAppInstRec", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances/sync_updated", extraParams, "file", path, "GET", []byte(""))
+		queryRequest, _ := getHttpRequest(appUrlPath + "sync_updated", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -290,8 +289,7 @@ func testSynchronizeAppPackageStaleRecord(t *testing.T, extraParams map[string]s
 	t.Run("TestSynchronizeAppPackageStaleRecord", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/packages/sync_deleted", extraParams, "file", path, "GET", []byte(""))
+		queryRequest, _ := getHttpRequest(tenantsPath + tenantIdentifier + "/packages/sync_deleted", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -321,8 +319,8 @@ func testSynchronizeAppPackageUpdatedRecord(t *testing.T, extraParams map[string
 	t.Run("TestSynchronizeAppPackageUpdatedRecord", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/packages/sync_updated", extraParams, "file", path, "GET", []byte(""))
+		queryRequest, _ := getHttpRequest(tenantsPath + tenantIdentifier +  "/packages/sync_updated", extraParams,
+			"file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -704,8 +702,7 @@ func testGetAppInstance(t *testing.T, extraParams map[string]string, path string
 	t.Run("TestAppInstanceQuery", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances", extraParams, "file", path, "GET", []byte(""))
+		queryRequest, _ := getHttpRequest(appUrlPath, extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
