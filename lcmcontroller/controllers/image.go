@@ -190,6 +190,7 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 	defer os.Remove(util.TempFile)
+	defer file.Close()
 
 	buf, err := adapter.DownloadVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
 		chunkNum)
