@@ -40,7 +40,7 @@ func (c *BaseController) displayReceivedMsg(clientIp string) {
 }
 
 // Handled logging for error case
-func (c *BaseController) handleLoggingForError(clientIp string, code int, errMsg string) {
+func (c *BaseController) HandleLoggingForError(clientIp string, code int, errMsg string) {
 	c.writeErrorResponse(errMsg, code)
 	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
@@ -64,7 +64,7 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 	var err error
 
 	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)
 		return "", errors.New(util.RequestBodyTooLarge)
 	}
 
@@ -76,11 +76,7 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 	}
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
-		if err.Error() == util.Forbidden {
-			c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
-		} else {
-			c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		}
+		c.HandleLoggingForTokenFailure(clientIp, err.Error())
 		return tenantId, err
 	}
 	return tenantId, nil
@@ -91,7 +87,7 @@ func (c *BaseController) getTenantId(clientIp string) (string, error) {
 	tenantId := c.Ctx.Input.Param(":tenantId")
 	err := util.ValidateUUID(tenantId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Tenant id is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Tenant id is invalid")
 		return "", err
 	}
 	return tenantId, nil
@@ -108,7 +104,7 @@ func (c *BaseController) getAppInstId(clientIp string) (string, error) {
 	appInsId := c.Ctx.Input.Param(":appInstanceId")
 	err := util.ValidateUUID(appInsId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "App instance is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "App instance is invalid")
 		return "", err
 	}
 	return appInsId, nil
@@ -122,7 +118,7 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 
 	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
+		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"App info record does not exist in database")
 		return nil, readErr
 	}
@@ -137,7 +133,7 @@ func (c *BaseController) getAppPackageRecord(appPkgId string, tenantId string, c
 
 	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
+		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"App package record does not exist in database")
 		return nil, readErr
 	}
@@ -152,7 +148,7 @@ func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, cli
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
+		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"App package host record does not exist in database")
 		return nil, readErr
 	}
@@ -186,7 +182,7 @@ func (c *BaseController) getPluginAdapter(_, clientIp string, vim string) (*plug
 
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return nil, err
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -204,20 +200,20 @@ func (c *BaseController) getUrlHostIP(clientIp string) (string, error) {
 	hostIp := c.Ctx.Input.Param(":hostIp")
 	err := util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "MecHost address is invalid from url")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "MecHost address is invalid from url")
 		return "", err
 	}
 	return hostIp, nil
 }
 
-// Handle logging for k8s
-func (c *BaseController) handleLoggingK8s(clientIp string, errorString string) {
+// Handle logging
+func (c *BaseController) HandleLoggingForFailure(clientIp string, errorString string) {
 	if strings.Contains(errorString, util.Forbidden) {
-		c.handleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+		c.HandleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
 	} else if strings.Contains(errorString, util.AccessTokenIsInvalid) {
-		c.handleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 	} else {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, errorString)
 	}
 }
 
@@ -268,14 +264,14 @@ func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
 
 	count, err := c.Db.QueryCountForTable("app_info_record", util.TenantId, tenantId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
 	if count == 0 {
 		err = c.Db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
 		}
 	}
@@ -290,9 +286,18 @@ func (c *BaseController) getMecHostInfoRecord(hostIp string, clientIp string) (*
 
 	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
+		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"Mec host info record does not exist in database")
 		return nil, readErr
 	}
 	return mecHostInfoRecord, nil
+}
+
+// Handled logging for token failure
+func (c *BaseController) HandleLoggingForTokenFailure(clientIp, errorString string) {
+	if errorString == util.Forbidden {
+		c.HandleLoggingForError(clientIp, util.StatusForbidden, util.Forbidden)
+	} else {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+	}
 }
