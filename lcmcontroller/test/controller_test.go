@@ -53,6 +53,13 @@ var (
 	packageName           = "package"
 	packages              = "/packages"
 	tenantsPath           = "https://edgegallery:8094/lcmcontroller/v1/tenants/"
+	appUrlPath            = tenantsPath + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/"
+	appUrlPathId          = tenantsPath + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/" + appInstanceIdentifier
+	originKey             = "origin"
+	originVal             = "MEPM"
+	appNameKey            = "appName"
+	packageIdKey          = "packageId"
+	hostIpKey             = "hostIp"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -86,10 +93,10 @@ func TestLcmOperation(t *testing.T) {
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{
-		"hostIp":    "1.1.1.1",
-		"packageId": packageId,
-		"appName":   appName,
-		"origin": "MEPM",
+		hostIpKey:    ipAddress,
+		packageIdKey: packageId,
+		appNameKey:   appName,
+		originKey: originVal,
 	}
 
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
@@ -117,7 +124,7 @@ func TestLcmOperation(t *testing.T) {
 	testDistributePackage(t, extraParams, testDb)
 
 	// Test Distribution status
-	testDistributionStatus(t, extraParams, path, testDb)
+	testDistributionStatus(t, extraParams, testDb)
 
 	// Test instantiate
 	testInstantiate(t, extraParams, testDb)
@@ -192,8 +199,8 @@ func TestConfigOperation(t *testing.T) {
 	path += "/config"
 	// Setting extra parameters
 	extraParams := map[string]string{
-		"hostIp":  "1.1.1.1",
-		"appName": appName,
+		hostIpKey:  ipAddress,
+		appNameKey: appName,
 	}
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
 		tenantRecords: make(map[string]models.TenantInfoRecord),
@@ -223,8 +230,7 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 	t.Run("TestAppInstanceQuery", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4", extraParams, "file", path, "GET", []byte(""))
+		queryRequest, _ := getHttpRequest(appUrlPathId, extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -342,7 +348,7 @@ func testSynchronizeAppPackageUpdatedRecord(t *testing.T, extraParams map[string
 
 func testSyncUpdatedMecHostRec(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
-	t.Run("TestSyncUpdatedAppInstRec", func(t *testing.T) {
+	t.Run("TestSyncUpdatedMecHostRec", func(t *testing.T) {
 
 		// Get Request
 		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/hosts/sync_updated",
@@ -402,7 +408,7 @@ func testSynchronizeStaleRecord(t *testing.T, extraParams map[string]string, pat
 
 func testSyncMecHostStaleRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
-	t.Run("TestSyncUpdatedAppInstRec", func(t *testing.T) {
+	t.Run("TestSyncMecHostStaleRecord", func(t *testing.T) {
 
 		// Get Request
 		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/hosts/sync_deleted",
@@ -436,8 +442,7 @@ func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string
 	t.Run("TestWorkloadEventsQuery", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-b5c6-"+
-			"8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/workload/events", extraParams, "file", path, "GET", []byte(""))
+		queryRequest, _ := getHttpRequest(appUrlPathId + "workload/events", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -466,8 +471,7 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 	t.Run("TestAppInstanceTerminate", func(t *testing.T) {
 
 		// Terminate Request
-		terminateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-4532-"+
-			"b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/terminate", extraParams, "file",
+		terminateRequest, _ := getHttpRequest(appUrlPathId + "terminate", extraParams, "file",
 			path, "POST", []byte(""))
 
 		// Prepare Input
@@ -494,12 +498,11 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 func testBatchTerminate(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 	t.Run("TestBatchTerminate", func(t *testing.T) {
 		// POST Request
-		batchTerminateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/batchTerminate", extraParams,
+		batchTerminateRequest, _ := getHttpRequest(appUrlPath + "batchTerminate", extraParams,
 			"file", "", "POST", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
-			"appInstances": "e921ce54-82c8-4532-b5c6-8516cf75f7a4",
+			"appInstances": appInstanceIdentifier,
 		})
 
 		// Prepare Input
@@ -528,15 +531,14 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 	t.Run("TestAppInstanceInstantiate", func(t *testing.T) {
 
 		// POST Request
-		instantiateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams,
+		instantiateRequest, _ := getHttpRequest(appUrlPath + "instantiate", extraParams,
 			"file", "", "POST", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
-			"hostIp": "1.1.1.1",
-			"packageId": packageId,
-			"appName": "testApplication",
-			"origin": "MEPM",
+			hostIpKey: ipAddress,
+			packageIdKey: packageId,
+			appNameKey: "testApplication",
+			originKey: originVal,
 		})
 
 		// Prepare Input
@@ -565,14 +567,13 @@ func testCreateImage(t *testing.T, extraParams map[string]string, testDb dbAdapt
 	t.Run("TestCreateImage", func(t *testing.T) {
 
 		// POST Request
-		createImageRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images", extraParams,
+		createImageRequest, _ := getHttpRequest(appUrlPath + "images", extraParams,
 			"file", "", "POST", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
-			"hostIp": "1.1.1.1",
-			"packageId": packageId,
-			"origin": "MEPM",
+			hostIpKey: ipAddress,
+			packageIdKey: packageId,
+			originKey: originVal,
 		})
 
 		// Prepare Input
@@ -601,14 +602,13 @@ func testGetImage(t *testing.T, extraParams map[string]string, testDb dbAdapter.
 	t.Run("TestGetImage", func(t *testing.T) {
 
 		// POST Request
-		getImageRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images/1", extraParams,
+		getImageRequest, _ := getHttpRequest(appUrlPath + "images/1", extraParams,
 			"file", "", "GET", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
-			"hostIp": "1.1.1.1",
-			"packageId": packageId,
-			"origin": "MEPM",
+			hostIpKey: ipAddress,
+			packageIdKey: packageId,
+			originKey: originVal,
 		})
 
 		// Prepare Input
@@ -637,14 +637,13 @@ func testGetImageFile(t *testing.T, extraParams map[string]string, testDb dbAdap
 	t.Run("TestGetImageFile", func(t *testing.T) {
 
 		// POST Request
-		getImageFileRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images/1/file", extraParams,
+		getImageFileRequest, _ := getHttpRequest(appUrlPath + "images/1/file", extraParams,
 			"file", "", "GET", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
-			"hostIp": "1.1.1.1",
-			"packageId": packageId,
-			"origin": "MEPM",
+			hostIpKey: ipAddress,
+			packageIdKey: packageId,
+			originKey: originVal,
 		})
 
 		// Prepare Input
@@ -676,8 +675,7 @@ func testDeleteImage(t *testing.T, extraParams map[string]string, testDb dbAdapt
 	t.Run("TestDeleteImage", func(t *testing.T) {
 
 		// POST Request
-		delImageRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images/1", extraParams,
+		delImageRequest, _ := getHttpRequest(appUrlPath + "images/1", extraParams,
 			"file", "", "GET", []byte(""))
 
 		// Prepare Input
@@ -776,7 +774,7 @@ func testAddMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapte
 	t.Run("TestAddMecHost", func(t *testing.T) {
 
 		requestBody, _ := json.Marshal(map[string]string{
-			"mechostIp": "1.1.1.1",
+			"mechostIp": ipAddress,
 			"mechostName": "edgegallery",
 			"zipCode": "560048",
 			"city": "xian",
@@ -784,7 +782,7 @@ func testAddMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapte
 			"affinity": "shenzhen",
 			"userName": "root",
 			"coordinates":"1,2",
-			"origin": "MEPM",
+			originKey: originVal,
 		})
 
 		// Get Request
@@ -817,7 +815,7 @@ func testUpdateMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 	t.Run("TestUpdateMecHost", func(t *testing.T) {
 
 		requestBody, _ := json.Marshal(map[string]string{
-			"mechostIp": "1.1.1.1",
+			"mechostIp": ipAddress,
 			"mechostName": "edgegallery",
 			"zipCode": "560048",
 			"city": "xian",
@@ -826,7 +824,7 @@ func testUpdateMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 			"userName": "root1",
 			"coordinates":"1,2",
 			"vim": "k8s",
-			"origin": "MEPM",
+			originKey: originVal,
 		})
 
 		// Get Request
@@ -1060,11 +1058,8 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, testDb d
 
 	t.Run("TestDistributePackage", func(t *testing.T) {
 
-		/*requestBody := map[string][]string{
-			"hostIp": []string{"1.1.1.1", "2.2.2.2"},
-		}*/
 		requestBody, _ := json.Marshal(map[string][]string{
-			"hostIp": []string{"1.1.1.1"},
+			hostIpKey: {ipAddress},
 		})
 		// Get Request
 		url := tenantsPath + tenantIdentifier + packages + packageId
@@ -1093,12 +1088,12 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, testDb d
 	})
 }
 
-func testDistributionStatus(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testDistributionStatus(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestDistributionStatus", func(t *testing.T) {
 
 		requestBody, _ := json.Marshal(map[string][]string{
-			"hostIp": []string{"1.1.1.1"},
+			hostIpKey: {ipAddress},
 		})
 		// Get Request
 		url := tenantsPath + tenantIdentifier + packages + packageId
@@ -1187,5 +1182,5 @@ func setParam(ctx *context.BeegoInput) {
 	ctx.SetParam(":tenantId", tenantIdentifier)
 	ctx.SetParam(":appInstanceId", appInstanceIdentifier)
 	ctx.SetParam(":packageId", packageId)
-	ctx.SetParam(":hostIp", "1.1.1.1")
+	ctx.SetParam(":hostIp", ipAddress)
 }
