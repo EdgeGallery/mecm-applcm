@@ -135,7 +135,7 @@ func TestLcmOperation(t *testing.T) {
 	// Test get image
 	testGetImage(t, extraParams, testDb)
 
-	// Test get image
+	// Test get image file
 	testGetImageFile(t, extraParams, testDb)
 
 	// Test delete image file
@@ -156,7 +156,7 @@ func TestLcmOperation(t *testing.T) {
 	// Test query
 	testQuery(t, nil, "", testDb, "Success")
 
-	// Test query
+	// Test workload events
 	testWorkloadEvents(t, nil, "", testDb, "Success")
 
 	// Test terminate
