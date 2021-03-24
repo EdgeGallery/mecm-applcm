@@ -1,9 +1,18 @@
+import logging
 import unittest
 
 import grpc
 
 from internal.lcmservice import lcmservice_pb2_grpc, lcmservice_pb2
 from tests import gen_token
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 
 class GrpcServerTest(unittest.TestCase):
@@ -12,14 +21,7 @@ class GrpcServerTest(unittest.TestCase):
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
-        with open('../target/ssl/server_tls.crt', 'rb') as f:
-            root_certificates = f.read()
-        credentials = grpc.ssl_channel_credentials(root_certificates=root_certificates)
-        options = (
-            ('grpc.ssl_target_name_override', 'edgegallery.org',),
-        )
-        channel = grpc.secure_channel(target='mecm-mepm-osplugin:8234', credentials=credentials, options=options)
-        # channel = grpc.insecure_channel(target='127.0.0.1:8234')
+        channel = grpc.insecure_channel(target='127.0.0.1:8234')
         self.app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
         self.vm_image_stub = lcmservice_pb2_grpc.VmImageStub(channel)
 
@@ -106,16 +108,26 @@ class GrpcServerTest(unittest.TestCase):
         response = self.app_lcm_stub.query(request)
         print(response.response)
 
+    def test_query_image(self):
+        request = lcmservice_pb2.QueryVmImageRequest(
+            accessToken=self.access_token,
+            appInstanceId='app_instance_id',
+            hostIp=self.host_ip,
+            imageId='79414ac9-610b-4243-90f6-e830e2e7d97c'
+        )
+
+        response = self.vm_image_stub.queryVmImage(request)
+        logger.info(response.response)
+
     def test_download_image(self):
-        for i in range(0, 100):
+        for i in range(1, 423):
             request = lcmservice_pb2.DownloadVmImageRequest(accessToken=self.access_token,
                                                             hostIp=self.host_ip,
-                                                            chunkNum=1,
+                                                            chunkNum=i,
                                                             appInstanceId='app_instance_id',
                                                             imageId='79414ac9-610b-4243-90f6-e830e2e7d97c')
             response = self.vm_image_stub.downloadVmImage(request)
 
-            file = open('../target/image.qcow2', 'ab')
-            for res in response:
-                print(res)
-                file.write(res.content)
+            with open('../target/image.qcow2', 'ab') as f:
+                for res in response:
+                    f.write(res.content)
