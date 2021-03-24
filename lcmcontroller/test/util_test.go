@@ -175,15 +175,15 @@ func TestGetAppConfig(_ *testing.T) {
 }
 
 func TestInvalidPwd(t *testing.T) {
-	pwd := "invalidpwd"
-	_, err := util.ValidateDbParams(pwd)
+	testVar := "invalidpwd"
+	_, err := util.ValidateDbParams(testVar)
 	assert.Error(t,  err, "Test invalid password")
 }
 
 
 func TestValidPwd(t *testing.T) {
-	pwd := "sa1Znv&srs"
-	_, err := util.ValidateDbParams(pwd)
+	testVar := "sa1Znv&srs"
+	_, err := util.ValidateDbParams(testVar)
 	assert.Nil(t, err, "Test valid password")
 }
 
