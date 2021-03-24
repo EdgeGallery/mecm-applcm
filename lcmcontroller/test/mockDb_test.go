@@ -18,7 +18,6 @@ package test
 
 import (
 	"errors"
-	"github.com/astaxie/beego/orm"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"reflect"
@@ -85,6 +84,7 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 			appInstance.TenantId = readAppInstance.TenantId
 			appInstance.MecHost = readAppInstance.MecHost
 			appInstance.DeployType = readAppInstance.DeployType
+			appInstance.Origin     = readAppInstance.Origin
 		}
 	}
 	if cols[0] == util.TenantId {
@@ -106,6 +106,7 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 			appPackage.TenantId = readAppPackage.TenantId
 			appPackage.AppId = readAppPackage.AppId
 			appPackage.PackageId = readAppPackage.PackageId
+			appPackage.Origin = readAppPackage.Origin
 		}
 	}
 
@@ -134,6 +135,7 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 			mecHost.MechostIp = readMecHost.MechostIp
 			mecHost.MechostName = readMecHost.MechostName
 			mecHost.Vim = readMecHost.Vim
+			mecHost.Origin     = readMecHost.Origin
 		}
 	}
 	return nil
@@ -200,11 +202,32 @@ func (db *mockDb) QueryCount(tableName string) (int64, error) {
 }
 
 func (db *mockDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
+	if tableName == "app_info_record" {
+		var count int64
+		for _, _ = range db.appInstanceRecords {
+			count++
+		}
+		return count, nil
+	}
 	return 0, nil
 }
 
-func (db *mockDb) QueryTable(tableName string) orm.QuerySeter {
-	return nil
+func (db *mockDb) QueryTable(tableName string, container interface{}, field string, container1 ...interface{}) (int64, error) {
+	if tableName == "app_info_record" {
+		for _, appInfoRec := range db.appInstanceRecords {
+			container = appInfoRec
+		}
+
+		return 1, nil
+	}
+
+	if tableName == util.AppPackageRecordId {
+		for _, appPkgRec := range db.appPackageRecords {
+			container = appPkgRec
+		}
+		return 1, nil
+	}
+	return 0, nil
 }
 
 func (db *mockDb) LoadRelated(md interface{}, name string) (int64, error) {
