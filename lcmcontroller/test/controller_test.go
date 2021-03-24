@@ -46,6 +46,13 @@ var (
 	packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
 	appName               = "postioning-service"
 	queryFailed           = "Query failed"
+	handleLoggingFailure  = "Handle logging failure is success"
+	deleteMecHostSuccess  = "Delete mec host is successful"
+	deleteOper            = "DELETE"
+	hostsPath             = "https://edgegallery:8094/lcmcontroller/v1/hosts"
+	packageName           = "package"
+	packages              = "/packages"
+	tenantsPath           = "https://edgegallery:8094/lcmcontroller/v1/tenants/"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -95,49 +102,49 @@ func TestLcmOperation(t *testing.T) {
 	testUploadPackage(t, extraParams, path, testDb)
 
 	// Test Add mec host
-	testAddMecHost(t, extraParams, path, testDb)
+	testAddMecHost(t, extraParams, testDb)
 
 	// Test update mec host
-	testUpdateMecHost(t, extraParams, path, testDb)
+	testUpdateMecHost(t, extraParams, testDb)
 
 	// Test get mec host
-	testGetMecHost(t, nil, "", testDb, "Success")
+	testGetMecHost(t, nil, "", testDb)
 
 	// Test sync updated mec host record
-	testSyncUpdatedMecHostRec(t, nil, "", testDb, "Success")
+	testSyncUpdatedMecHostRec(t, nil, "", testDb)
 
 	// Test Distribute package
-	testDistributePackage(t, extraParams, path, testDb)
+	testDistributePackage(t, extraParams, testDb)
 
 	// Test Distribution status
 	testDistributionStatus(t, extraParams, path, testDb)
 
 	// Test instantiate
-	testInstantiate(t, extraParams, path, testDb)
+	testInstantiate(t, extraParams, testDb)
 
 	// Test create image
-	testCreateImage(t, extraParams, path, testDb)
+	testCreateImage(t, extraParams, testDb)
 
 	// Test get image
-	testGetImage(t, extraParams, path, testDb)
+	testGetImage(t, extraParams, testDb)
 
 	// Test get image
-	testGetImageFile(t, extraParams, path, testDb)
+	testGetImageFile(t, extraParams, testDb)
 
 	// Test delete image file
-	testDeleteImage(t, extraParams, path, testDb)
+	testDeleteImage(t, extraParams, testDb)
 
 	// Test get app instance
-	testGetAppInstance(t, nil, "", testDb, "Success")
+	testGetAppInstance(t, nil, "", testDb)
 
 	// Test sync updated app instances record
-	testSyncUpdatedAppInstRec(t, nil, "", testDb, "Success")
+	testSyncUpdatedAppInstRec(t, nil, "", testDb)
 
 	// Test sync updated app package updated record
-	testSynchronizeAppPackageUpdatedRecord(t, nil, "", testDb, "Success")
+	testSynchronizeAppPackageUpdatedRecord(t, nil, "", testDb)
 
 	// Test sync stale app package updated record
-	testSynchronizeAppPackageStaleRecord(t, nil, "", testDb, "Success")
+	testSynchronizeAppPackageStaleRecord(t, nil, "", testDb)
 
 	// Test query
 	testQuery(t, nil, "", testDb, "Success")
@@ -149,28 +156,28 @@ func TestLcmOperation(t *testing.T) {
 	testTerminate(t, nil, "", testDb)
 
 	//Test sync stale app information records
-	testSynchronizeStaleRecord(t, nil, "", testDb, "Success")
+	testSynchronizeStaleRecord(t, nil, "", testDb)
 
 	// Test sync updated mec host record
-	testSyncMecHostStaleRecord(t, nil, "", testDb, "Success")
+	testSyncMecHostStaleRecord(t, nil, "", testDb)
 
 	// Test instantiate
-	testInstantiate(t, extraParams, path, testDb)
+	testInstantiate(t, extraParams, testDb)
 
 	// Test delete package on host
-	testDeletePackageOnHost(t, extraParams, path, testDb)
+	testDeletePackageOnHost(t, extraParams, testDb)
 
 	// Test delete package
-	testDeletePackage(t, extraParams, path, testDb)
+	testDeletePackage(t, extraParams, testDb)
 
 	// Test Batch terminate
-	testBatchTerminate(t, nil, "", testDb)
+	testBatchTerminate(t, nil, testDb)
 
 	// Test delete mec host
-	testDeleteMecHost(t, extraParams, path, testDb)
+	testDeleteMecHost(t, extraParams, testDb)
 
 	// Test error scenarios
-	testErrorScenarios(t, extraParams, path, testDb)
+	testErrorScenarios(t, extraParams, testDb)
 
 	// Common cleaning state
 	// Clear the created artifacts
@@ -202,7 +209,7 @@ func TestConfigOperation(t *testing.T) {
 	})
 	defer patch1.Reset()
 
-	testAddMecHost(t, extraParams, path, testDb)
+	testAddMecHost(t, extraParams, testDb)
 
 	// Test upload
 	testUpload(t, extraParams, path, testDb)
@@ -242,7 +249,7 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 	})
 }
 
-func testSyncUpdatedAppInstRec(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testSyncUpdatedAppInstRec(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestSyncUpdatedAppInstRec", func(t *testing.T) {
 
@@ -272,7 +279,7 @@ func testSyncUpdatedAppInstRec(t *testing.T, extraParams map[string]string, path
 	})
 }
 
-func testSynchronizeAppPackageStaleRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testSynchronizeAppPackageStaleRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestSynchronizeAppPackageStaleRecord", func(t *testing.T) {
 
@@ -303,7 +310,7 @@ func testSynchronizeAppPackageStaleRecord(t *testing.T, extraParams map[string]s
 }
 
 
-func testSynchronizeAppPackageUpdatedRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testSynchronizeAppPackageUpdatedRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestSynchronizeAppPackageUpdatedRecord", func(t *testing.T) {
 
@@ -333,7 +340,7 @@ func testSynchronizeAppPackageUpdatedRecord(t *testing.T, extraParams map[string
 	})
 }
 
-func testSyncUpdatedMecHostRec(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testSyncUpdatedMecHostRec(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestSyncUpdatedAppInstRec", func(t *testing.T) {
 
@@ -363,7 +370,7 @@ func testSyncUpdatedMecHostRec(t *testing.T, extraParams map[string]string, path
 	})
 }
 
-func testSynchronizeStaleRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testSynchronizeStaleRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestSynchronizeStaleRecord", func(t *testing.T) {
 
@@ -393,7 +400,7 @@ func testSynchronizeStaleRecord(t *testing.T, extraParams map[string]string, pat
 	})
 }
 
-func testSyncMecHostStaleRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testSyncMecHostStaleRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestSyncUpdatedAppInstRec", func(t *testing.T) {
 
@@ -484,7 +491,7 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 	})
 }
 
-func testBatchTerminate(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testBatchTerminate(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 	t.Run("TestBatchTerminate", func(t *testing.T) {
 		// POST Request
 		batchTerminateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
@@ -516,7 +523,7 @@ func testBatchTerminate(t *testing.T, extraParams map[string]string, path string
 	})
 }
 
-func testInstantiate(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestAppInstanceInstantiate", func(t *testing.T) {
 
@@ -527,7 +534,7 @@ func testInstantiate(t *testing.T, extraParams map[string]string, path string, t
 
 		requestBody, _ := json.Marshal(map[string]string{
 			"hostIp": "1.1.1.1",
-			"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
+			"packageId": packageId,
 			"appName": "testApplication",
 			"origin": "MEPM",
 		})
@@ -553,19 +560,18 @@ func testInstantiate(t *testing.T, extraParams map[string]string, path string, t
 	})
 }
 
-func testCreateImage(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testCreateImage(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestCreateImage", func(t *testing.T) {
 
 		// POST Request
 		createImageRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams,
+			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images", extraParams,
 			"file", "", "POST", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
 			"hostIp": "1.1.1.1",
-			"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
-			"appName": "testApplication",
+			"packageId": packageId,
 			"origin": "MEPM",
 		})
 
@@ -590,19 +596,18 @@ func testCreateImage(t *testing.T, extraParams map[string]string, path string, t
 	})
 }
 
-func testGetImage(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testGetImage(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestGetImage", func(t *testing.T) {
 
 		// POST Request
 		getImageRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams,
+			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images/1", extraParams,
 			"file", "", "GET", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
 			"hostIp": "1.1.1.1",
-			"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
-			"appName": "testApplication",
+			"packageId": packageId,
 			"origin": "MEPM",
 		})
 
@@ -627,19 +632,18 @@ func testGetImage(t *testing.T, extraParams map[string]string, path string, test
 	})
 }
 
-func testGetImageFile(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testGetImageFile(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestGetImageFile", func(t *testing.T) {
 
 		// POST Request
 		getImageFileRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams,
+			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images/1/file", extraParams,
 			"file", "", "GET", []byte(""))
 
 		requestBody, _ := json.Marshal(map[string]string{
 			"hostIp": "1.1.1.1",
-			"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
-			"appName": "testApplication",
+			"packageId": packageId,
 			"origin": "MEPM",
 		})
 
@@ -667,24 +671,17 @@ func testGetImageFile(t *testing.T, extraParams map[string]string, path string, 
 }
 
 
-func testDeleteImage(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testDeleteImage(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestDeleteImage", func(t *testing.T) {
 
 		// POST Request
 		delImageRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/e921ce54-82c8-"+
-			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/instantiate", extraParams,
+			"4532-b5c6-8516cf75f7a6/app_instances/e921ce54-82c8-4532-b5c6-8516cf75f7a4/images/1", extraParams,
 			"file", "", "GET", []byte(""))
 
-		requestBody, _ := json.Marshal(map[string]string{
-			"hostIp": "1.1.1.1",
-			"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
-			"appName": "testApplication",
-			"origin": "MEPM",
-		})
-
 		// Prepare Input
-		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: delImageRequest}, RequestBody: requestBody}
+		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: delImageRequest}, RequestBody: []byte("")}
 		setParam(instantiateInput)
 
 		// Prepare beego controller
@@ -704,7 +701,7 @@ func testDeleteImage(t *testing.T, extraParams map[string]string, path string, t
 	})
 }
 
-func testGetAppInstance(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testGetAppInstance(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestAppInstanceQuery", func(t *testing.T) {
 
@@ -740,9 +737,9 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 	t.Run("TestUploadPackage", func(t *testing.T) {
 
 		// Get Request
-		url := "https://edgegallery:8094/lcmcontroller/v1/tenants/" + tenantIdentifier + "/packages"
+		url := tenantsPath + tenantIdentifier + packages
 		uploadPkgRequest, _ := getHttpRequest(url, extraParams,
-			"package", path, "POST", []byte(""))
+			packageName, path, "POST", []byte(""))
 
 		// Prepare Input
 		uploadPkgInput := &context.BeegoInput{Context: &context.Context{Request: uploadPkgRequest}}
@@ -774,7 +771,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 	})
 }
 
-func testAddMecHost(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testAddMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestAddMecHost", func(t *testing.T) {
 
@@ -791,8 +788,8 @@ func testAddMecHost(t *testing.T, extraParams map[string]string, path string, te
 		})
 
 		// Get Request
-		mecHostRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/hosts", extraParams,
-			"package", "", "POST", requestBody)
+		mecHostRequest, _ := getHttpRequest(hostsPath, extraParams,
+			packageName, "", "POST", requestBody)
 
 		// Prepare Input
 		mecHostInput := &context.BeegoInput{Context: &context.Context{Request: mecHostRequest}, RequestBody: requestBody}
@@ -815,7 +812,7 @@ func testAddMecHost(t *testing.T, extraParams map[string]string, path string, te
 	})
 }
 
-func testUpdateMecHost(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testUpdateMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestUpdateMecHost", func(t *testing.T) {
 
@@ -833,8 +830,8 @@ func testUpdateMecHost(t *testing.T, extraParams map[string]string, path string,
 		})
 
 		// Get Request
-		mecHostRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/hosts", extraParams,
-			"package", "", "POST", requestBody)
+		mecHostRequest, _ := getHttpRequest(hostsPath, extraParams,
+			packageName, "", "POST", requestBody)
 
 		// Prepare Input
 		mecHostInput := &context.BeegoInput{Context: &context.Context{Request: mecHostRequest}, RequestBody: requestBody}
@@ -857,12 +854,12 @@ func testUpdateMecHost(t *testing.T, extraParams map[string]string, path string,
 	})
 }
 
-func testGetMecHost(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+func testGetMecHost(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestGetMecHost", func(t *testing.T) {
 
 		// Get Request
-		mecHostRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/hosts",
+		mecHostRequest, _ := getHttpRequest(hostsPath,
 			extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
@@ -888,13 +885,13 @@ func testGetMecHost(t *testing.T, extraParams map[string]string, path string, te
 	})
 }
 
-func testDeleteMecHost(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestDeleteMecHost", func(t *testing.T) {
 
 		// POST Request
 		instantiateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/hosts/1.1.1.1", extraParams,
-			"file", "", "DELETE", []byte(""))
+			"file", "", deleteOper, []byte(""))
 
 
 		// Prepare Input
@@ -916,17 +913,17 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, path string,
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
-			"Delete mec host is successful")
+			deleteMecHostSuccess)
 	})
 }
 
-func testErrorScenarios(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testErrorScenarios(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestErrorScenarios", func(t *testing.T) {
 
 		// POST Request
 		instantiateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/hosts/1.1.1.1", extraParams,
-			"file", "", "DELETE", []byte(""))
+			"file", "", deleteOper, []byte(""))
 
 
 		// Prepare Input
@@ -955,21 +952,21 @@ func testErrorScenarios(t *testing.T, extraParams map[string]string, path string
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 400, instantiateController.Ctx.ResponseWriter.Status,
-			"Handle logging failure is success")
+			handleLoggingFailure)
 
 		// Test handle logging for error
 		instantiateController.HandleLoggingForFailure(ipAddress, util.AccessTokenIsInvalid)
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 400, instantiateController.Ctx.ResponseWriter.Status,
-			"Handle logging failure is success")
+			handleLoggingFailure)
 
 		// Test handle logging for error
 		instantiateController.HandleLoggingForFailure(ipAddress, "Failed to Instantiate")
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 400, instantiateController.Ctx.ResponseWriter.Status,
-			"Handle logging failure is success")
+			handleLoggingFailure)
 
 		// Test handle logging for error
 		instantiateController.HandleLoggingForTokenFailure(ipAddress, util.Forbidden)
@@ -992,14 +989,14 @@ func testErrorScenarios(t *testing.T, extraParams map[string]string, path string
 	})
 }
 
-func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestDeletePackageOnHost", func(t *testing.T) {
 
 		// POST Request
 		instantiateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/packages/" +
 			 packageId + "/hosts/" + ipAddress, extraParams,
-			"file", "", "DELETE", []byte(""))
+			"file", "", deleteOper, []byte(""))
 
 
 		// Prepare Input
@@ -1021,19 +1018,19 @@ func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, path s
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
-			"Delete mec host is successful")
+			deleteMecHostSuccess)
 	})
 }
 
-func testDeletePackage(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestDeletePackage", func(t *testing.T) {
 
 		// POST Request
-		instantiateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/tenants/" +
+		instantiateRequest, _ := getHttpRequest(tenantsPath +
 			tenantIdentifier + "/packages/" +
 			packageId + "/hosts/" + ipAddress, extraParams,
-			"file", "", "DELETE", []byte(""))
+			"file", "", deleteOper, []byte(""))
 
 
 		// Prepare Input
@@ -1055,11 +1052,11 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, path string,
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
-			"Delete mec host is successful")
+			deleteMecHostSuccess)
 	})
 }
 
-func testDistributePackage(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+func testDistributePackage(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestDistributePackage", func(t *testing.T) {
 
@@ -1070,9 +1067,9 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, path str
 			"hostIp": []string{"1.1.1.1"},
 		})
 		// Get Request
-		url := "https://edgegallery:8094/lcmcontroller/v1/tenants/" + tenantIdentifier + "/packages" + packageId
+		url := tenantsPath + tenantIdentifier + packages + packageId
 		distributePkgRequest, _ := getHttpRequest(url, extraParams,
-			"package", "", "POST", []byte(""))
+			packageName, "", "POST", []byte(""))
 
 		// Prepare Input
 		distributePkgInput := &context.BeegoInput{Context: &context.Context{Request: distributePkgRequest}, RequestBody: requestBody}
@@ -1104,9 +1101,9 @@ func testDistributionStatus(t *testing.T, extraParams map[string]string, path st
 			"hostIp": []string{"1.1.1.1"},
 		})
 		// Get Request
-		url := "https://edgegallery:8094/lcmcontroller/v1/tenants/" + tenantIdentifier + "/packages" + packageId
+		url := tenantsPath + tenantIdentifier + packages + packageId
 		distributePkgRequest, _ := getHttpRequest(url, extraParams,
-			"package", "", "POST", []byte(""))
+			packageName, "", "POST", []byte(""))
 
 		// Prepare Input
 		distributePkgInput := &context.BeegoInput{Context: &context.Context{Request: distributePkgRequest}, RequestBody: requestBody}
@@ -1163,7 +1160,7 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string, testD
 	t.Run("TestConfigRemoval", func(t *testing.T) {
 		// Get Request
 		removeRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/configuration", extraParams,
-			"configFile", path, "DELETE", []byte(""))
+			"configFile", path, deleteOper, []byte(""))
 
 		// Prepare Input
 		removeInput := &context.BeegoInput{Context: &context.Context{Request: removeRequest}}

@@ -100,13 +100,13 @@ func doTest(t *testing.T) {
 	//Upload package
 	testUploadPackage(t, extraParams, path, testDb)
 
-	testAddMecHost(t, extraParams, path, testDb)
+	testAddMecHost(t, extraParams, testDb)
 
 	//Distribute package
-	testDistributePackage(t, extraParams, path, testDb)
+	testDistributePackage(t, extraParams, testDb)
 
 	// Test instantiate
-	testInstantiate(t, extraParams, path, testDb)
+	testInstantiate(t, extraParams, testDb)
 
 	// Test query
 	testQuery(t, nil, "", testDb, "{\"Output\":\"Success\"}")
