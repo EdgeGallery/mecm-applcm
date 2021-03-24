@@ -203,7 +203,7 @@ func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsI
 		return response, err
 	}
 
-	log.Info("VM image chunk download completed with response: ", response)
+	log.Info("VM image chunk download completed successfully")
 	return response, nil
 }
 
