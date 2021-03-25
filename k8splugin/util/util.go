@@ -298,11 +298,8 @@ func ValidateIpv4Address(ipAddress string) error {
 	if ipAddress == "" {
 		return errors.New("require ipAddress")
 	}
-	if len(ipAddress) != 0 {
-		validate := validator.New()
-		return validate.Var(ipAddress, "required,ipv4")
-	}
-	return nil
+	validate := validator.New()
+	return validate.Var(ipAddress, "required,ipv4")
 }
 
 // Create directory
