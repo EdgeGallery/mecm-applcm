@@ -18,6 +18,7 @@
 # -*- coding: utf-8 -*-
 import json
 import time
+from io import BytesIO
 
 from pony.orm import db_session, commit
 
@@ -201,5 +202,16 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             raise e
 
         iterable = glance_client.images.data(image_id=request.imageId, do_checksum=False)
+
+        buf = BytesIO()
+        buf_size = 8 * 1024 * 1024
         for body in iterable:
-            yield DownloadVmImageResponse(content=body)
+            buf.write(body)
+            if buf.tell() > buf_size:
+                yield DownloadVmImageResponse(content=buf.getvalue())
+                buf.close()
+                buf = BytesIO()
+
+        if buf.tell() > 0:
+            yield DownloadVmImageResponse(content=buf.getvalue())
+        buf.close()

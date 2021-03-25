@@ -19,12 +19,12 @@ import os
 import re
 
 from heatclient.v1.client import Client as HeatClient
+from glanceclient.v2.client import Client as GlanceClient
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
 
 import config
 import utils
-from core.custom_glance_client import CustomGlanceClient
 from core.exceptions import PackageNotValid
 
 _RC_MAP = {}
@@ -95,7 +95,7 @@ def create_glance_client(host_ip):
         return _GLANCE_CLIENT_MAP[host_ip]
     rc = get_rc(host_ip)
     asession = get_session(host_ip)
-    client = CustomGlanceClient(session=asession, endpoint_override=rc.glance_url)
+    client = GlanceClient(session=asession, endpoint_override=rc.glance_url)
     _GLANCE_CLIENT_MAP[host_ip] = client
     return client
 
