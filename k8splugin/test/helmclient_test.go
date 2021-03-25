@@ -85,7 +85,12 @@ func testDeploySuccess(t *testing.T) {
 	defer patch4.Reset()
 
 	client, _ := adapter.NewHelmClient(hostIpAddress)
-	result, _ := client.Deploy(tenantIdentifier, hostIpAddress,  packageId,  appInstanceIdentifier,  ak,  sk,
+	appPkgRecord := &models.AppPackage{
+		TenantId: tenantIdentifier,
+		HostIp: hostIpAddress,
+		PackageId: packageId,
+	}
+	result, _ := client.Deploy(appPkgRecord,  appInstanceIdentifier,  ak,  sk,
 		&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }
@@ -127,7 +132,12 @@ func testDeployFailure(t *testing.T) {
 	defer patch4.Reset()
 
 	client, _ := adapter.NewHelmClient(hostIpAddress)
-	result, _ := client.Deploy(tenantIdentifier, hostIpAddress,  packageId,  appInstanceIdentifier,  ak,  sk,
+	appPkgRec := &models.AppPackage{
+		TenantId: tenantIdentifier,
+		HostIp: hostIpAddress,
+		PackageId: packageId,
+	}
+	result, _ := client.Deploy(appPkgRec,  appInstanceIdentifier,  ak,  sk,
 		&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }

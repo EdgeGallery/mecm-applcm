@@ -138,10 +138,10 @@ func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, e
 }
 
 // Install a given helm chart
-func (hc *HelmClient) Deploy(tenantId, hostIp, packageId, appInsId, ak, sk string, db pgdb.Database) (string, error) {
+func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk string, db pgdb.Database) (string, error) {
 	log.Info("Inside helm client")
 
-	helmChart, err := hc.getHelmChart(tenantId, hostIp, packageId)
+	helmChart, err := hc.getHelmChart(appPkgRecord.TenantId, appPkgRecord.HostIp, appPkgRecord.PackageId)
 	tarFile, err := os.Open(helmChart)
 	if err != nil {
 		log.Error("Failed to open helm chart tar file")
