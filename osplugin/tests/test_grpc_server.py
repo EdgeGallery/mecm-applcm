@@ -15,12 +15,23 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
+def _get_secure_channel():
+    with open('../target/ssl/server_tls.crt', 'rb') as f:
+        root_certificates = f.read()
+    credentials = grpc.ssl_channel_credentials(root_certificates=root_certificates)
+    options = (
+        ('grpc.ssl_target_name_override', 'edgegallery.org',),
+    )
+    return grpc.secure_channel(target='mecm-mepm-osplugin:8234', credentials=credentials, options=options)
+
+
 class GrpcServerTest(unittest.TestCase):
     access_token = gen_token.test_access_token
-    host_ip = '159.138.23.91'
+    host_ip = '159.138.58.41'
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
+        # channel = _get_secure_channel()
         channel = grpc.insecure_channel(target='127.0.0.1:8234')
         self.app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
         self.vm_image_stub = lcmservice_pb2_grpc.VmImageStub(channel)
@@ -120,14 +131,12 @@ class GrpcServerTest(unittest.TestCase):
         logger.info(response.response)
 
     def test_download_image(self):
-        for i in range(1, 423):
+        with open('../target/image.qcow2', 'ab') as f:
             request = lcmservice_pb2.DownloadVmImageRequest(accessToken=self.access_token,
                                                             hostIp=self.host_ip,
-                                                            chunkNum=i,
+                                                            chunkNum=1,
                                                             appInstanceId='app_instance_id',
-                                                            imageId='79414ac9-610b-4243-90f6-e830e2e7d97c')
+                                                            imageId='23b9b551-e07a-4e93-a2af-499c12ecc09d')
             response = self.vm_image_stub.downloadVmImage(request)
-
-            with open('../target/image.qcow2', 'ab') as f:
-                for res in response:
-                    f.write(res.content)
+            for res in response:
+                f.write(res.content)
