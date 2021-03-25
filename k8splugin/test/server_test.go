@@ -72,27 +72,50 @@ func TestServer(t *testing.T) {
 	grpcServer := server.NewServerGRPC(serverConfig)
 	go startServer(grpcServer)
 	time.Sleep(1000 * time.Millisecond)
-	testInstantiate(t, dir, config)
-	testQuery(t, config)
-	testPodDescribe(t, config)
-	testTerminate(t, config)
-
 	// Pre steps
 	baseDir, _ := os.Getwd()
 	server.KubeconfigPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
 
 	testUpload(t, dir, config)
+
+	testUploadPkg(t, dir, config)
+	testDeploySuccess(t)
+	testDeployFailure(t)
+	testWorkloadEvents(t)
+	testQueryInfo(t)
+	testUnDeploySuccess(t)
+	testDeletePkg(t, config)
+	testInstantiate(t, dir, config)
+	testQuery(t, config)
+	testPodDescribe(t, config)
+	testTerminate(t, config)
+
+
 	testRemoval(t, config)
 
 	// Cleanup
 	_ = os.RemoveAll(baseDir + directory)
 }
 
+func testUploadPkg(t *testing.T, dir string, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
+	status, _ := client.UploadPkg(dir+"/"+"positioning_with_mepagent_new.csar", hostIpAddress, token)
+	assert.Equal(t, util.Success, status, "Upload Package failed")
+}
+
+func testDeletePkg(t *testing.T, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
+	status, _ := client.DeletePkg()
+	assert.Equal(t, util.Success, status, "Instantiation failed")
+}
+
 func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
-	status, _ := client.Instantiate(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz", hostIpAddress, token,
+	status, _ := client.Instantiate(dir+"/"+"positioning_with_mepagent_new.csar", hostIpAddress, token,
 		appInstanceIdentifier, ak, sk)
 	assert.Equal(t, util.Success, status, "Instantiation failed")
 }
@@ -121,7 +144,7 @@ func testTerminate(t *testing.T, config *conf.Configurations) {
 func testUpload(t *testing.T, dir string, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
-	status, _ := client.UploadConfig(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04c.tgz", hostIpAddress, token)
+	status, _ := client.UploadConfig(dir+"/"+"configFile", hostIpAddress, token)
 	assert.Equal(t, util.Success, status, "Upload failed")
 }
 

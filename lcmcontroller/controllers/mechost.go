@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/config"
 	"lcmcontroller/models"
@@ -389,13 +388,22 @@ func (c *MecHostController) GetAppInstance() {
 		return
 	}
 
-	var maps []orm.Params
-	_, _ = c.Db.QueryTable("app_info_record", &maps, util.TenantId, tenantId)
-	res, err := json.Marshal(maps)
+	var appInfoRecords []*models.AppInfoRecord
+	var appInfoRec []*models.AppInfoRec
+	_, _ = c.Db.QueryTable("app_info_record", &appInfoRecords, util.TenantId, tenantId)
+	res, err := json.Marshal(appInfoRecords)
 	if err != nil {
 		return
 	}
-	_, _ = c.Ctx.ResponseWriter.Write(res)
+	err = json.Unmarshal(res, &appInfoRec)
+	if err != nil {
+		return
+	}
+	response, err := json.Marshal(appInfoRec)
+	if err != nil {
+		return
+	}
+	_, _ = c.Ctx.ResponseWriter.Write(response)
 	c.handleLoggingForSuccess(clientIp, "Query App Instance info is successful")
 }
 

@@ -41,3 +41,4 @@ func (hc *mockedHelmClient) WorkloadEvents(relName string) (string, error) {
 	// Output to be checked
 	return "{\"Output\":\"Success\"}", nil
 }
+
