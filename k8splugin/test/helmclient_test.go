@@ -44,17 +44,20 @@ var (
 
 	tenantIdentifier      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
 	packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
+	relName               = "example"
+	addValues             = "AddValues"
+	configFile                = "/usr/app/config/"
 )
 
 func testDeploySuccess(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: "/usr/app/config/" + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
 	var c *config.AppAuthConfigBuilder
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), "AddValues",
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), addValues,
 		func(*config.AppAuthConfigBuilder, *os.File) (string, error) {
 		go func() {
 			// do nothing
@@ -91,12 +94,12 @@ func testDeploySuccess(t *testing.T) {
 func testDeployFailure(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: "/usr/app/config/" + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
 	var c *config.AppAuthConfigBuilder
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), "AddValues",
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), addValues,
 		func(*config.AppAuthConfigBuilder, *os.File) (string, error) {
 			go func() {
 				// do nothing
@@ -133,12 +136,12 @@ func testUnDeploySuccess(t *testing.T) {
 
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: "/usr/app/config/" + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
 	var c *config.AppAuthConfigBuilder
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), "AddValues",
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), addValues,
 		func(*config.AppAuthConfigBuilder, *os.File) (string, error) {
 			go func() {
 				// do nothing
@@ -168,14 +171,14 @@ func testUnDeploySuccess(t *testing.T) {
 
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 
-	result := client.UnDeploy("example")
+	result := client.UnDeploy(relName)
 	assert.Nil(t, result, "TestUnDeploySuccess execution result")
 }
 
 func testWorkloadEvents(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: "/usr/app/config/" + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -208,14 +211,14 @@ func testWorkloadEvents(t *testing.T) {
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	result, _ := client.WorkloadEvents("example")
+	result, _ := client.WorkloadEvents(relName)
 	assert.Equal(t, "{\"pods\":null}", result, "Test workload events execution result")
 }
 
 func testQueryInfo(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: "/usr/app/config/" + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -248,6 +251,6 @@ func testQueryInfo(t *testing.T) {
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	result, _ := client.Query("example")
+	result, _ := client.Query(relName)
 	assert.Equal(t, "{\"pods\":null}", result, "Test query info execution result")
 }

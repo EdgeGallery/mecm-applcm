@@ -85,7 +85,7 @@ func TestServer(t *testing.T) {
 	testWorkloadEvents(t)
 	testQueryInfo(t)
 	testUnDeploySuccess(t)
-	testDeletePkg(t, dir, config)
+	testDeletePkg(t, config)
 	testInstantiate(t, dir, config)
 	testQuery(t, config)
 	testPodDescribe(t, config)
@@ -105,7 +105,7 @@ func testUploadPkg(t *testing.T, dir string, config *conf.Configurations) {
 	assert.Equal(t, util.Success, status, "Upload Package failed")
 }
 
-func testDeletePkg(t *testing.T, dir string, config *conf.Configurations) {
+func testDeletePkg(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
 	status, _ := client.DeletePkg()
