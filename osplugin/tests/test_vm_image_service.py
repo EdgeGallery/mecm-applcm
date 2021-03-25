@@ -20,10 +20,8 @@
 import grpc
 import unittest
 from internal.lcmservice import lcmservice_pb2
-from internal.lcmservice import lcmservice_pb2_grpc
 from service.vm_image_service import VmImageService
 from tests import gen_token
-from core.log import logger
 
 
 def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
@@ -93,9 +91,8 @@ class VmImageServiceTest(unittest.TestCase):
                                               chunk_num=1,
                                               image_id="f95bcbb1-e1e2-4aaf-872c-f0c7657862c1")
 
-        for i in range(1, 100):
-            response = self.vm_image_service.downloadVmImage(request, None)
-            file = open('image.QCOW2', 'ab')
+        response = self.vm_image_service.downloadVmImage(request, None)
+        with open('image.qcow2', 'ab') as file:
             for res in response:
-                print(res)
-                file.write(res.content)
+                print(len(res) / (1024 * 1024))
+                # file.write(res.content)

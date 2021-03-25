@@ -18,6 +18,7 @@
 # -*- coding: utf-8 -*-
 import json
 import time
+from io import BytesIO
 
 from pony.orm import db_session, commit
 
@@ -196,21 +197,21 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             raise Exception("host ip is null...")
         try:
             glance_client = create_glance_client(host_ip)
-            image_info = _get_image_info(request.imageId, glance_client)
         except Exception as e:
             LOG.error(e, exc_info=True)
             raise e
 
-        try:
-            iterable_with_length, resp = \
-                glance_client.images.download_chunk(chunk_num=request.chunkNum,
-                                                    image_size=image_info.size,
-                                                    image_id=request.imageId, do_checksum=False,
-                                                    chunk_size=int(config.chunk_size))
-            content = resp.content
-        except DownloadChunkException as e:
-            LOG.error(e, exc_info=True)
-            raise e
+        iterable = glance_client.images.data(image_id=request.imageId, do_checksum=False)
 
-        LOG.info("download image chunk %s end...", request.chunkNum)
-        return iter([DownloadVmImageResponse(content=content)])
+        buf = BytesIO()
+        buf_size = 8 * 1024 * 1024
+        for body in iterable:
+            buf.write(body)
+            if buf.tell() > buf_size:
+                yield DownloadVmImageResponse(content=buf.getvalue())
+                buf.close()
+                buf = BytesIO()
+
+        if buf.tell() > 0:
+            yield DownloadVmImageResponse(content=buf.getvalue())
+        buf.close()
