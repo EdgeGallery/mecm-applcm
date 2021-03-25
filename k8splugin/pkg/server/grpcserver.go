@@ -341,7 +341,7 @@ func (s *ServerGRPC) Instantiate(ctx context.Context,
 		return resp, err
 	}
 
-	releaseName, err := client.Deploy(tenantId, hostIp, packageId, appInsId, ak, sk, s.db)
+	releaseName, err := client.Deploy(appPkgRecord, appInsId, ak, sk, s.db)
 	if err != nil {
 		log.Info("instantiation failed")
 		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")
