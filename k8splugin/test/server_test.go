@@ -101,7 +101,7 @@ func TestServer(t *testing.T) {
 func testUploadPkg(t *testing.T, dir string, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
-	status, _ := client.UploadPkg(dir+"/"+"positioning_with_mepagent_new.csar", hostIpAddress, token)
+	status, _ := client.UploadPkg(dir+"/"+"e17d23de-e562-4c81-b242-0d3926a2255f.csar", hostIpAddress, token)
 	assert.Equal(t, util.Success, status, "Upload Package failed")
 }
 
@@ -115,7 +115,7 @@ func testDeletePkg(t *testing.T, config *conf.Configurations) {
 func testInstantiate(t *testing.T, dir string, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.Httpsaddr + ":" + config.Server.Serverport)
-	status, _ := client.Instantiate(dir+"/"+"positioning_with_mepagent_new.csar", hostIpAddress, token,
+	status, _ := client.Instantiate(dir+"/"+"e17d23de-e562-4c81-b242-0d3926a2255f.csar", hostIpAddress, token,
 		appInstanceIdentifier, ak, sk)
 	assert.Equal(t, util.Success, status, "Instantiation failed")
 }
