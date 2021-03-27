@@ -18,6 +18,7 @@ package test
 
 import (
 	"bytes"
+	beegoCtx "github.com/astaxie/beego/context"
 	"context"
 	"lcmcontroller/config"
 	"mime/multipart"
@@ -46,9 +47,9 @@ func (mc *mockClient) DeleteVmImage(ctx context.Context, accessToken string, app
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32) (response bytes.Buffer, error error) {
-	return bytes.Buffer{}, nil
+func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
+	imageId string, chunkNum int32, imgCtrlr *beegoCtx.Response) (buf *bytes.Buffer, error error) {
+	return &bytes.Buffer{}, nil
 }
 
 

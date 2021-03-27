@@ -18,6 +18,7 @@ package pluginAdapter
 
 import (
 	"bytes"
+	beegoCtx "github.com/astaxie/beego/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
@@ -297,7 +298,7 @@ func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appI
 
 // Download VM Image
 func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32) (buf bytes.Buffer, error error) {
+	hostIP string, imageId string, chunkNum int32, imgCtrlr *beegoCtx.Response) (buf *bytes.Buffer, error error) {
 	req := &lcmservice.DownloadVmImageRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
@@ -306,7 +307,6 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 		ChunkNum:      chunkNum,
 	}
 
-	buf = bytes.Buffer{}
 
 	stream, err := c.imageClient.DownloadVmImage(ctx, req)
 	if err != nil {
@@ -321,9 +321,9 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 
 		log.Debug("Waiting to receive more data")
 
-		req, err := stream.Recv()
+		res, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Info("No more data")
 			break
 		}
 		if err != nil {
@@ -331,13 +331,15 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 		}
 
 		// Receive chunk and write to package
-		chunk := req.GetContent()
+		chunk := res.GetContent()
+		_, _ = imgCtrlr.Write(chunk)
 
 		_, err = buf.Write(chunk)
 		if err != nil {
 			return buf, c.logError(status.Error(codes.Internal, "cannot write chunk data"))
 		}
 	}
+	_ = stream.CloseSend()
 	return buf, nil
 }
 

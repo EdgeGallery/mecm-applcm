@@ -18,6 +18,7 @@ package pluginAdapter
 import (
 	"bytes"
 	"context"
+	beegoCtx "github.com/astaxie/beego/context"
 	"lcmcontroller/config"
 	"lcmcontroller/util"
 	"mime/multipart"
@@ -190,14 +191,14 @@ func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId s
 }
 
 // Query VM Image
-func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsId string, imageId string,
-	chunkNum int32) (buf bytes.Buffer, error error) {
+func (c *PluginAdapter) DownloadVmImage(imgCtrlr *beegoCtx.Response, host string, accessToken string, appInsId string, imageId string,
+	chunkNum int32) (buf *bytes.Buffer, error error) {
 	log.Info("Download VM Image chunk started")
 
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Hour)
 	defer cancel()
 
-	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum)
+	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum, imgCtrlr)
 	if err != nil {
 		log.Error("failed to download VM image chunk")
 		return response, err
