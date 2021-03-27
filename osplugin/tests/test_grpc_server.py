@@ -1,4 +1,5 @@
 import logging
+import time
 import unittest
 
 import grpc
@@ -19,7 +20,7 @@ def _get_secure_channel(options):
     with open('../target/ssl/server_tls.crt', 'rb') as f:
         root_certificates = f.read()
     credentials = grpc.ssl_channel_credentials(root_certificates=root_certificates)
-    return grpc.secure_channel(target='mecm-mepm-osplugin:8234', credentials=credentials, options=options)
+    return grpc.secure_channel(target='mecm-mepm-osplugin:38234', credentials=credentials, options=options)
 
 
 class GrpcServerTest(unittest.TestCase):
@@ -32,8 +33,8 @@ class GrpcServerTest(unittest.TestCase):
             ('grpc.ssl_target_name_override', 'edgegallery.org',),
             ('grpc.max_send_message_length', 50 * 1024 * 1024),
             ('grpc.max_receive_message_length', 50 * 1024 * 1024)]
-        # channel = _get_secure_channel(options)
-        channel = grpc.insecure_channel(target='127.0.0.1:8234', options=options)
+        channel = _get_secure_channel(options)
+        # channel = grpc.insecure_channel(target='127.0.0.1:8234', options=options)
         self.app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
         self.vm_image_stub = lcmservice_pb2_grpc.VmImageStub(channel)
 
@@ -132,12 +133,14 @@ class GrpcServerTest(unittest.TestCase):
         logger.info(response.response)
 
     def test_download_image(self):
-        with open('../target/image.qcow2', 'ab') as f:
+        receive_size = 0
+        with open('../target/image.qcow2', 'wb') as f:
             request = lcmservice_pb2.DownloadVmImageRequest(accessToken=self.access_token,
                                                             hostIp=self.host_ip,
                                                             appInstanceId='app_instance_id',
-                                                            imageId='23b9b551-e07a-4e93-a2af-499c12ecc09d')
+                                                            imageId='887731bd-3ffc-4f6b-a9f1-962d4fd6276b')
             response = self.vm_image_stub.downloadVmImage(request)
             for res in response:
-                # f.write(res.content)
-                logger.info(len(res.content) / (1024 * 1024))
+                receive_size += len(res.content)
+                logger.info('receive size %s' % receive_size)
+                f.write(res.content)

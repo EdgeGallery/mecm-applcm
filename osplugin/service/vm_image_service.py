@@ -204,14 +204,19 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         iterable = glance_client.images.data(image_id=request.imageId, do_checksum=False)
 
         buf = BytesIO()
-        buf_size = 8 * 1024 * 1024
+        buf_size = config.chunk_size
+        send_size = 0
         for body in iterable:
             buf.write(body)
-            if buf.tell() > buf_size:
+            if buf.tell() >= buf_size:
                 yield DownloadVmImageResponse(content=buf.getvalue())
+                send_size += buf.tell()
+                LOG.debug('%s bytes send' % send_size)
                 buf.close()
                 buf = BytesIO()
 
         if buf.tell() > 0:
             yield DownloadVmImageResponse(content=buf.getvalue())
+            send_size += buf.tell()
+            LOG.debug('all bytes send, size %s' % send_size)
         buf.close()
