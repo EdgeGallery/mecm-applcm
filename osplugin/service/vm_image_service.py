@@ -201,7 +201,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.error(e, exc_info=True)
             raise e
 
-        iterable = glance_client.images.data(image_id=request.imageId, do_checksum=False)
+        iterable = glance_client.images.data(image_id=request.imageId)
 
         buf = BytesIO()
         buf_size = config.chunk_size
