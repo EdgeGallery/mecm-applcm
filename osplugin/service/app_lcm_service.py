@@ -330,15 +330,16 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 'vncUrl': output_value['vncUrl'],
                 'networks': []
             }
-            for net_name, ip_data in output_value['networks'].items():
-                if utils.validate_uuid(net_name):
-                    continue
-                network = {
-                    'name': net_name,
-                    'ip': ip_data[0]['addr']
-                }
-                item['networks'].append(network)
-            response['data'].append(item)
+            if 'networks' in output_value:
+                for net_name, ip_data in output_value['networks'].items():
+                    if utils.validate_uuid(net_name):
+                        continue
+                    network = {
+                        'name': net_name,
+                        'ip': ip_data[0]['addr']
+                    }
+                    item['networks'].append(network)
+                response['data'].append(item)
 
         res.response = json.dumps(response)
         return res
