@@ -148,7 +148,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             utils.delete_dir(app_package_path)
         finally:
             parameters.delete_tmp()
-            return res
+        return res
 
     def deletePackage(self, request, context):
         """
