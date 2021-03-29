@@ -17,6 +17,7 @@ package pluginAdapter
 
 import (
 	"bytes"
+	beegoCtx "github.com/astaxie/beego/context"
 	"lcmcontroller/config"
 	"mime/multipart"
 
@@ -49,5 +50,5 @@ type ClientIntf interface {
 	DeleteVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
 		imageId string) (status string, error error)
 	DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
-		imageId string, chunkNum int32) (buf bytes.Buffer, error error)
+		imageId string, chunkNum int32, imgCtrlr *beegoCtx.Response) (buf *bytes.Buffer, error error)
 }

@@ -24,7 +24,6 @@ import (
 	"lcmcontroller/models"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
-	"os"
 	"strconv"
 	"unsafe"
 )
@@ -176,23 +175,16 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	chunkNum, err := c.getChunkNum(clientIp)
+/*	chunkNum, err := c.getChunkNum(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
-	}
+	} */
+	var chunkNum int32 = 1
 
-	// Create temporary file to hold helm chart
-	file, err := os.Create(util.TempFile)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		util.ClearByteArray(bKey)
-		return
-	}
-	defer os.Remove(util.TempFile)
-	defer file.Close()
 
-	buf, err := adapter.DownloadVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
+	responseWriter := c.Ctx.ResponseWriter
+	_, err = adapter.DownloadVmImage(responseWriter, appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
 		chunkNum)
 	util.ClearByteArray(bKey)
 	if err != nil {
@@ -201,14 +193,7 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	//Write input bytes to temp file
-	_, err = buf.WriteTo(file)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
 
-	c.Ctx.Output.Download(util.TempFile)
 	c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
 }
 
