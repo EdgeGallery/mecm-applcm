@@ -19,15 +19,27 @@
 # -*- coding: utf-8 -*-
 
 class PackageNotValid(RuntimeError):
+    """
+    包校验错误
+    """
     def __init__(self, msg):
+        self.__init__(msg)
         self.message = msg
 
 
 class DownloadChunkException(RuntimeError):
+    """
+    下载分片错误
+    """
     def __init__(self, msg):
+        self.__init__(msg)
         self.message = msg
 
 
 class ParamNotValid(RuntimeError):
+    """
+    参数校验错误
+    """
     def __init__(self, msg):
+        self.__init__(msg)
         self.message = msg

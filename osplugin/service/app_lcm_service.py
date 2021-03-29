@@ -16,6 +16,7 @@
 """
 
 # -*- coding: utf-8 -*-
+
 import json
 import os
 import threading
@@ -33,7 +34,8 @@ from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
-    QueryResponse, UploadCfgResponse, RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
+    QueryResponse, UploadCfgResponse, \
+    RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
     WorkloadEventsResponse
 
 LOG = logger
@@ -100,6 +102,36 @@ def validate_input_params(param):
     return host_ip
 
 
+def _get_output_data(output_list, heat, stack_id):
+    """
+    获取output数据
+    """
+    response = {
+        'code': 200,
+        'msg': 'ok',
+        'data': []
+    }
+    for item in output_list['outputs']:
+        output = heat.stacks.output_show(stack_id, item['output_key'])
+        output_value = output['output']['output_value']
+        item = {
+            'vmId': output_value['vmId'],
+            'vncUrl': output_value['vncUrl'],
+            'networks': []
+        }
+        if 'networks' in output_value:
+            for net_name, ip_data in output_value['networks'].items():
+                if utils.validate_uuid(net_name):
+                    continue
+                network = {
+                    'name': net_name,
+                    'ip': ip_data[0]['addr']
+                }
+                item['networks'].append(network)
+            response['data'].append(item)
+    return response
+
+
 class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
     """
     AppLcmService
@@ -121,8 +153,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             parameters.delete_tmp()
             return res
 
-        # TODO: 预加载镜像
-
         app_package_id = parameters.app_package_id
         if app_package_id is None:
             LOG.info('appPackageId is required')
@@ -138,13 +168,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.debug('unzip package')
             with zipfile.ZipFile(parameters.tmp_package_file_path) as zip_file:
                 namelist = zip_file.namelist()
-                for f in namelist:
-                    zip_file.extract(f, app_package_path)
+                for file in namelist:
+                    zip_file.extract(file, app_package_path)
             pkg = CsarPkg(app_package_path)
             pkg.translate()
             res.status = utils.SUCCESS
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
             utils.delete_dir(app_package_path)
         finally:
             parameters.delete_tmp()
@@ -168,8 +198,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if not app_package_id:
             return res
 
-        # TODO: 销毁加载的镜像
-
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         utils.delete_dir(app_package_path)
 
@@ -184,60 +212,59 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        req_id = utils.gen_uuid()
-        LOG.debug('%s: receive instantiate msg...', req_id)
+        LOG.debug('receive instantiate msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request)
 
-        LOG.debug('%s: 校验access token, host ip', req_id)
+        LOG.debug('校验access token, host ip')
         host_ip = validate_input_params(parameter)
         if host_ip is None:
             return res
 
-        LOG.debug('%s: 获取实例ID', req_id)
+        LOG.debug('获取实例ID')
         app_instance_id = parameter.app_instance_id
         if app_instance_id is None:
             return res
 
-        LOG.debug('%s: 查询数据库是否存在相同记录', req_id)
+        LOG.debug('查询数据库是否存在相同记录')
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if app_ins_mapper is not None:
             LOG.info('app ins %s exist', app_instance_id)
             return res
 
-        LOG.debug('%s: 读取包的hot文件', req_id)
+        LOG.debug('读取包的hot文件')
         hot_yaml_path = get_hot_yaml_path(parameter.app_package_path)
         if hot_yaml_path is None:
             return res
 
-        LOG.debug('%s: 构建heat参数', req_id)
+        LOG.debug('构建heat参数')
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
             'files': dict(list(tpl_files.items()))
         }
-        LOG.debug('%s: init heat client', req_id)
+        LOG.debug('init heat client')
         heat = openstack_utils.create_heat_client(host_ip)
         try:
-            LOG.debug('%s: 发送创建stack请求', req_id)
+            LOG.debug('发送创建stack请求')
             stack_resp = heat.stacks.create(**fields)
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
             return res
         AppInsMapper(app_instance_id=app_instance_id,
                      host_ip=host_ip,
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
-        LOG.debug('%s: 更新数据库', req_id)
+        LOG.debug('更新数据库')
         commit()
 
-        LOG.debug('%s: 开始更新状态定时任务', req_id)
+        LOG.debug('开始更新状态定时任务')
         start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.SUCCESS
-        LOG.debug('%s: 消息处理完成', req_id)
+        LOG.debug('消息处理完成')
         return res
 
     @db_session
@@ -275,9 +302,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             heat.stacks.delete(app_ins_mapper.stack_id)
         except HTTPNotFound:
             LOG.debug('%s: stack不存在', req_id)
-            pass
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
             return res
 
         app_ins_mapper.operational_status = utils.TERMINATING
@@ -317,29 +343,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         heat = openstack_utils.create_heat_client(host_ip)
         output_list = heat.stacks.output_list(app_ins_mapper.stack_id)
 
-        response = {
-            'code': 200,
-            'msg': 'ok',
-            'data': []
-        }
-        for item in output_list['outputs']:
-            output = heat.stacks.output_show(app_ins_mapper.stack_id, item['output_key'])
-            output_value = output['output']['output_value']
-            item = {
-                'vmId': output_value['vmId'],
-                'vncUrl': output_value['vncUrl'],
-                'networks': []
-            }
-            if 'networks' in output_value:
-                for net_name, ip_data in output_value['networks'].items():
-                    if utils.validate_uuid(net_name):
-                        continue
-                    network = {
-                        'name': net_name,
-                        'ip': ip_data[0]['addr']
-                    }
-                    item['networks'].append(network)
-                response['data'].append(item)
+        response = _get_output_data(output_list, heat, app_ins_mapper.stack_id)
 
         res.response = json.dumps(response)
         return res
@@ -426,8 +430,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             openstack_utils.set_rc(host_ip)
             openstack_utils.clear_glance_client(host_ip)
             res.status = utils.SUCCESS
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
 
         return res
 
@@ -451,11 +455,10 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             openstack_utils.del_rc(host_ip)
             openstack_utils.clear_glance_client(host_ip)
             res.status = utils.SUCCESS
-        except OSError as e:
-            LOG.debug(e)
+        except OSError:
             res.status = utils.SUCCESS
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
             return res
 
         LOG.info('host configuration file deleted successfully')

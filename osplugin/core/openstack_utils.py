@@ -30,57 +30,73 @@ from core.exceptions import PackageNotValid
 _RC_MAP = {}
 
 
-def _init_rc_map():
-    rc_file_dir = utils.RC_FILE_DIR + '/'
-    for rc in os.listdir(rc_file_dir):
-        _RC_MAP[rc] = RCFile(rc_file_dir + rc)
-
-
 def set_rc(host_ip):
+    """
+    缓存rc表
+    """
     _RC_MAP[host_ip] = RCFile(utils.RC_FILE_DIR + '/' + host_ip)
 
 
 def del_rc(host_ip):
+    """
+    删除rc表
+    """
     _RC_MAP.pop(host_ip)
 
 
 def get_rc(host_ip):
-    if host_ip in _RC_MAP:
-        return _RC_MAP[host_ip]
-    raise FileNotFoundError(utils.RC_FILE_DIR + '/' + host_ip)
+    """
+    获取rc表
+    """
+    if host_ip not in _RC_MAP:
+        rc_file_dir = utils.RC_FILE_DIR + '/' + host_ip
+        _RC_MAP[host_ip] = RCFile(rc_file_dir)
+    return _RC_MAP[host_ip]
 
 
 def get_auth(host_ip):
-    rc = get_rc(host_ip)
+    """
+    初始化auth
+    """
+    rc_data = get_rc(host_ip)
     return identity.Password(
-        user_domain_name=rc.user_domain_name,
-        username=rc.username,
-        password=rc.password,
-        project_domain_name=rc.project_domain_name,
-        project_name=rc.project_name,
-        auth_url=rc.auth_url
+        user_domain_name=rc_data.user_domain_name,
+        username=rc_data.username,
+        password=rc_data.password,
+        project_domain_name=rc_data.project_domain_name,
+        project_name=rc_data.project_name,
+        auth_url=rc_data.auth_url
     )
 
 
 def get_session(host_ip):
+    """
+    创建Openstack session
+    """
     return session.Session(auth=get_auth(host_ip), verify=config.server_ca_verify)
 
 
 def create_heat_client(host_ip):
-    rc = get_rc(host_ip)
+    """
+    创建heat客户端
+    """
+    rc_data = get_rc(host_ip)
     auth = identity.Password(
-        user_domain_name=rc.user_domain_name,
-        username=rc.username,
-        password=rc.password,
-        project_domain_name=rc.project_domain_name,
-        project_name=rc.project_name,
-        auth_url=rc.auth_url
+        user_domain_name=rc_data.user_domain_name,
+        username=rc_data.username,
+        password=rc_data.password,
+        project_domain_name=rc_data.project_domain_name,
+        project_name=rc_data.project_name,
+        auth_url=rc_data.auth_url
     )
     sess = session.Session(auth=auth, verify=config.server_ca_verify)
-    return HeatClient(session=sess, endpoint_override=rc.heat_url)
+    return HeatClient(session=sess, endpoint_override=rc_data.heat_url)
 
 
 def create_nova_client(host_ip):
+    """
+    创建nova客户端
+    """
     rc = get_rc(host_ip)
     return nova_client.Client('2',
                               session=get_session(host_ip),
@@ -91,21 +107,29 @@ _GLANCE_CLIENT_MAP = {}
 
 
 def create_glance_client(host_ip):
+    """
+    创建glance客户端
+    """
     if host_ip in _GLANCE_CLIENT_MAP:
         return _GLANCE_CLIENT_MAP[host_ip]
-    rc = get_rc(host_ip)
-    asession = get_session(host_ip)
-    client = GlanceClient(session=asession, endpoint_override=rc.glance_url)
+    rc_data = get_rc(host_ip)
+    client = GlanceClient(session=get_session(host_ip), endpoint_override=rc_data.glance_url)
     _GLANCE_CLIENT_MAP[host_ip] = client
     return client
 
 
 def clear_glance_client(host_ip):
+    """
+    删除glance客户端
+    """
     if host_ip in _GLANCE_CLIENT_MAP:
         _GLANCE_CLIENT_MAP.pop(host_ip)
 
 
 class RCFile(object):
+    """
+    rc文件解析类
+    """
     _PATTERN = r'^export (.+)=(.+)$'
 
     user_domain_name = 'Default'
@@ -146,25 +170,53 @@ class RCFile(object):
                     self.cinder_url = group2
 
 
-_init_rc_map()
-
-
-class HOTBase(object):
+class HOTBase:
+    """
+    hot模板基础类型
+    """
     def __init__(self, hot_type):
+        self.type = hot_type
+
+    def get_hot_type(self):
+        """
+        获取hot类型
+        """
+        return self.type
+
+    def set_hot_type(self, hot_type):
+        """
+        设置hot类型
+        """
         self.type = hot_type
 
 
 def _get_flavor(template):
-    cpu = str(template['capabilities']['virtual_compute']['properties']['virtual_cpu']['num_virtual_cpu'])
-    memory = str(template['capabilities']['virtual_compute']['properties']['virtual_memory'][
-                     'virtual_mem_size'])
-    sys_disk = str(template['capabilities']['virtual_compute']['properties']['virtual_local_storage'][
-                       'size_of_storage'])
+    """
+    生成flavor名称
+    """
+    cpu = str(template['capabilities']
+              ['virtual_compute']
+              ['properties']
+              ['virtual_cpu']
+              ['num_virtual_cpu'])
+    memory = str(template['capabilities']
+                 ['virtual_compute']
+                 ['properties']
+                 ['virtual_memory']
+                 ['virtual_mem_size'])
+    sys_disk = str(template['capabilities']
+                   ['virtual_compute']
+                   ['properties']
+                   ['virtual_local_storage']
+                   ['size_of_storage'])
 
     return cpu + 'c-' + memory + 'm-' + sys_disk + 'g'
 
 
 def _change_input_to_param(properties):
+    """
+    把tosca input转换为hot param
+    """
     if isinstance(properties, dict):
         if 'get_input' in properties:
             properties['get_param'] = properties.pop('get_input')
@@ -174,11 +226,12 @@ def _change_input_to_param(properties):
     elif isinstance(properties, list):
         for item in properties:
             _change_input_to_param(item)
-    else:
-        pass
 
 
 class NovaServer(HOTBase):
+    """
+    hot nova类型
+    """
     _TOSCA_TYPE = 'tosca.nodes.nfv.Vdu.Compute'
 
     def __init__(self, name, template, hot_file, node_templates):
@@ -196,68 +249,16 @@ class NovaServer(HOTBase):
             'user_data_format': 'RAW'
         }
 
-        if 'vdu_profile' in template['properties']:
-            # TODO 亲和性配置
-            if 'flavor_extra_specs' in template['properties']['vdu_profile']:
-                pass
-
-        if 'nfvi_constraints' in template['properties']:
-            self.properties['availability_zone'] = template['properties']['nfvi_constraints']
+        self.check_availability_zone(template)
 
         # user data
-        if 'bootdata' in template['properties']:
-            if 'user_data' in template['properties']['bootdata']:
-                if 'params' in template['properties']['bootdata']['user_data']:
-                    params = {}
-                    for key, param in template['properties']['bootdata']['user_data']['params'].items():
-                        params['$' + key + '$'] = param
-                    user_data = {
-                        'str_replace': {
-                            'template': template['properties']['bootdata']['user_data']['contents'],
-                            'params': params
-                        }
-                    }
-                else:
-                    user_data = template['properties']['bootdata']['user_data']['contents']
-                self.properties['user_data'] = user_data
-            if 'config_drive' in template['properties']['bootdata']:
-                self.properties['config_drive'] = template['properties']['bootdata']['config_drive']
+        self.check_user_data(template)
 
         # network
-        for node_name, node_template in node_templates.items():
-            if node_template['type'] == 'tosca.nodes.nfv.VduCp':
-                for requirement in node_template['requirements']:
-                    if 'virtual_binding' in requirement and requirement['virtual_binding'] == name:
-                        self.properties['networks'].append({
-                            'port': {
-                                'get_resource': node_name
-                            }
-                        })
-
-        """
-        # sys disk
-        self.properties['block_device_mapping_v2'].append({
-            'volume_id': {
-                'get_resource': 'VirtualLocalStorage1'
-            },
-            'delete_on_termination': True
-        })
-        sys_disk = template['capabilities']['virtual_compute']['properties']['virtual_local_storage'][
-            'size_of_storage']
-        image = template['properties']['sw_image_data']['name']
-        LocalStorage(sys_disk, image, hot_file)
-        """
+        self.check_network(name, node_templates)
 
         # data disk
-        if 'requirements' in template:
-            for requirement in template['requirements']:
-                if 'virtual_storage' in requirement:
-                    self.properties['block_device_mapping_v2'].append({
-                        'volume_id': {
-                            'get_resource': requirement['virtual_storage']
-                        },
-                        'delete_on_termination': True
-                    })
+        self.check_data_disk(template)
 
         _change_input_to_param(self.properties)
         hot_file['resources'][name] = {
@@ -278,26 +279,72 @@ class NovaServer(HOTBase):
             }
         }
 
+    def check_availability_zone(self, template):
+        """
+        转换可用区
+        """
+        if 'nfvi_constraints' in template['properties']:
+            self.properties['availability_zone'] = template['properties']['nfvi_constraints']
 
-"""
-class LocalStorage(HOTBase):
-    def __init__(self, size, image, hot_file):
-        super().__init__('OS::Cinder::Volume')
-        self.properties = {
-            'image': image,
-            'size': size
-        }
-        hot_file['resources']['VirtualLocalStorage1'] = {
-            'type': self.type,
-            'properties': self.properties
-        }
-"""
+    def check_user_data(self, template):
+        """
+        转换user data
+        """
+        if 'bootdata' in template['properties']:
+            if 'user_data' in template['properties']['bootdata']:
+                if 'params' in template['properties']['bootdata']['user_data']:
+                    params = {}
+                    for key, param in template['properties']['bootdata']['user_data']['params']\
+                            .items():
+                        params['$' + key + '$'] = param
+                    user_data = {
+                        'str_replace': {
+                            'template': template['properties']['bootdata']['user_data']['contents'],
+                            'params': params
+                        }
+                    }
+                else:
+                    user_data = template['properties']['bootdata']['user_data']['contents']
+                self.properties['user_data'] = user_data
+            if 'config_drive' in template['properties']['bootdata']:
+                self.properties['config_drive'] = template['properties']['bootdata']['config_drive']
+
+    def check_network(self, name, node_templates):
+        """
+        转换网络
+        """
+        for node_name, node_template in node_templates.items():
+            if node_template['type'] == 'tosca.nodes.nfv.VduCp':
+                for requirement in node_template['requirements']:
+                    if 'virtual_binding' in requirement and requirement['virtual_binding'] == name:
+                        self.properties['networks'].append({
+                            'port': {
+                                'get_resource': node_name
+                            }
+                        })
+
+    def check_data_disk(self, template):
+        """
+        转换数据盘
+        """
+        if 'requirements' in template:
+            for requirement in template['requirements']:
+                if 'virtual_storage' in requirement:
+                    self.properties['block_device_mapping_v2'].append({
+                        'volume_id': {
+                            'get_resource': requirement['virtual_storage']
+                        },
+                        'delete_on_termination': True
+                    })
 
 
 class VirtualStorage(HOTBase):
+    """
+    hot volume类型
+    """
     _TOSCA_TYPE = 'tosca.nodes.nfv.Vdu.VirtualBlockStorage'
 
-    def __init__(self, name, template, hot_file):
+    def __init__(self, name, template, hot_file, node_templates=None):
         super(VirtualStorage, self).__init__('OS::Cinder::Volume')
         self.template = template
 
@@ -313,37 +360,18 @@ class VirtualStorage(HOTBase):
         }
 
 
-"""
-class VirtualLink(HOTBase):
-    def __init__(self, name, template, hot_file):
-        super().__init__('OS::Neutron::ProviderNet')
-        self.properties = {
-            'name': template['properties']['vl_profile']['network_name']
-        }
-        if 'network_type' in template['properties']['vl_profile']:
-            self.properties['network_type'] = template['properties']['vl_profile']['network_type']
-        if 'physical_network' in template['properties']['vl_profile']:
-            self.properties['physical_network'] = template['properties']['vl_profile']['physical_network']
-        if 'provider_segmentation_id' in template['properties']['vl_profile']:
-            self.properties['segmentation_id'] = template['properties']['vl_profile']['provider_segmentation_id']
-
-        _change_input_to_param(self.properties)
-        hot_file['resources'][name] = {
-            'type': self.type,
-            'properties': self.properties
-        }
-"""
-
-
 class VirtualPort(HOTBase):
+    """
+    hot port类型
+    """
     def __init__(self, name, template, hot_file, node_templates):
         super().__init__('OS::Neutron::Port')
         network = None
         for requirement in template['requirements']:
-            if 'virtual_binding' in requirement:
-                pass
             if 'virtual_link' in requirement:
-                network = node_templates[requirement['virtual_link']]['properties']['vl_profile']['network_name']
+                network = \
+                    node_templates[requirement['virtual_link']][
+                        'properties']['vl_profile']['network_name']
         if network is None:
             raise PackageNotValid('network未定义')
 
@@ -353,9 +381,17 @@ class VirtualPort(HOTBase):
         if 'vnic_type' in template['properties']:
             self.properties['binding:vnic_type'] = template['properties']['vnic_type']
         if 'port_security_enabled' in template['properties']:
-            self.properties['port_security_enabled'] = template['properties']['port_security_enabled']
+            self.properties['port_security_enabled'] = \
+                template['properties']['port_security_enabled']
         _change_input_to_param(self.properties)
         hot_file['resources'][name] = {
             'type': self.type,
             'properties': self.properties
         }
+
+
+TOSCA_TYPE_CLASS = {
+    'tosca.nodes.nfv.Vdu.Compute': NovaServer,
+    'tosca.nodes.nfv.VduCp': VirtualPort,
+    'tosca.nodes.nfv.Vdu.VirtualBlockStorage': VirtualStorage,
+}
