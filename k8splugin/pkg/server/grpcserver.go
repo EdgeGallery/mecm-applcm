@@ -720,6 +720,7 @@ func (s *ServerGRPC) insertOrUpdateAppPkgRecord(packageId string, tenantId strin
 		HostIp:       hostIp,
 		TenantId:     tenantId,
 		DockerImages: dockerImages,
+		PackageId: packageId,
 	}
 	err = s.db.InsertOrUpdateData(appPkgRecord, util.AppPkgId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
