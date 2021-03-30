@@ -66,8 +66,11 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 			return nil, err
 		}
 		creds := credentials.NewTLS(tlsConfig)
+		size := 1024 * 1024 * 24
+		grpcOpts = append(grpcOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(size)))
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(creds))
 		// Create a connection with the TLS credentials
-		conn, err = grpc.Dial(cfg.Address, grpc.WithTransportCredentials(creds))
+		conn, err = grpc.Dial(cfg.Address, grpcOpts...)
 	} else {
 		// Create non TLS connection
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
@@ -298,7 +301,7 @@ func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appI
 
 // Download VM Image
 func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32, imgCtrlr *beegoCtx.Response) (buf *bytes.Buffer, error error) {
+	hostIP string, imageId string, chunkNum int32, _ *beegoCtx.Response) (buf *bytes.Buffer, error error) {
 	req := &lcmservice.DownloadVmImageRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
@@ -312,7 +315,7 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 	if err != nil {
 		return buf, err
 	}
-
+	var count int32 = 0
 	for {
 		err := c.contextError(stream.Context())
 		if err != nil {
@@ -332,12 +335,8 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 
 		// Receive chunk and write to package
 		chunk := res.GetContent()
-		_, _ = imgCtrlr.Write(chunk)
-
-		_, err = buf.Write(chunk)
-		if err != nil {
-			return buf, c.logError(status.Error(codes.Internal, "cannot write chunk data"))
-		}
+		util.VmImageMap[count] = chunk
+		count++
 	}
 	_ = stream.CloseSend()
 	return buf, nil

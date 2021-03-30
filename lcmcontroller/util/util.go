@@ -149,6 +149,7 @@ const (
 	PkgId                = "package_id"
 	PkgUrlPath           = "/tenants/:tenantId/packages/:packageId"
 )
+var VmImageMap       = make(map[int32][]byte, 150000)
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
