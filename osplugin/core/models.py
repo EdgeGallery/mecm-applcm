@@ -94,6 +94,22 @@ class InstantiateRequest:
         self.ak = request.ak
         self.sk = request.sk
 
+    def get_app_package_path(self):
+        """
+        get app package path
+        Returns:
+
+        """
+        return self.app_package_path
+
+    def get_host_ip(self):
+        """
+        get host ip
+        Returns:
+
+        """
+        return self.hostIp
+
 
 class UploadCfgRequest:
     """
@@ -111,6 +127,22 @@ class UploadCfgRequest:
                 self.hostIp = request.hostIp
             elif request.configFile:
                 self.config_file = request.configFile
+
+    def get_config_file(self):
+        """
+        get config file
+        Returns:
+
+        """
+        return self.config_file
+
+    def get_host_ip(self):
+        """
+        get host ip
+        Returns:
+
+        """
+        return self.hostIp
 
 
 """
