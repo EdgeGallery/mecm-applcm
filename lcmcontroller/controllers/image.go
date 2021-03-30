@@ -175,26 +175,34 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-/*	chunkNum, err := c.getChunkNum(clientIp)
+	chunkNum, err := c.getChunkNum(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
-	} */
-	var chunkNum int32 = 1
-
-
-	responseWriter := c.Ctx.ResponseWriter
-	_, err = adapter.DownloadVmImage(responseWriter, appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
-		chunkNum)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		// To check if any more error code needs to be returned.
-		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
-		return
 	}
 
+	if chunkNum == 0 {
+		responseWriter := c.Ctx.ResponseWriter
+		_, err = adapter.DownloadVmImage(responseWriter, appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
+			chunkNum)
+		util.ClearByteArray(bKey)
+		if err != nil {
+			// To check if any more error code needs to be returned.
+			c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
+			return
+		}
+	}
+	util.ClearByteArray(bKey)
+	_, ok := util.VmImageMap[chunkNum]
+	if ok {
+		_, _ = c.Ctx.ResponseWriter.Write(util.VmImageMap[chunkNum])
+		delete(util.VmImageMap, chunkNum)
+		c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
+	} else {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
+			"data is not exist for given chunk number")
+	}
 
-	c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
 }
 
 // Get Image Id

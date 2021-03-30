@@ -663,7 +663,7 @@ func testGetImageFile(t *testing.T, extraParams map[string]string, testDb dbAdap
 		getImageFileController.GetImageFile()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, getImageFileController.Ctx.ResponseWriter.Status, "Get image file failed")
+		assert.Equal(t, 500, getImageFileController.Ctx.ResponseWriter.Status, "Get image file failed")
 	})
 }
 

@@ -91,7 +91,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 	req.Header.Set("appId", "e261211d80d04cb6aed00e5cd1f2cd1")
 	req.Header.Set("packageId", packageId)
 	req.Header.Set("X-Forwarded-For", fwdIp)
-	req.Header.Set("chunk_num", "1")
+	req.Header.Set("chunk_num", "0")
 
 
 	// Parse and create multipart form
