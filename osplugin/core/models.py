@@ -67,7 +67,7 @@ class UploadPackageRequest:
         return self.tmp_package_file_path
 
 
-_APP_PACKAGE_PATH_FORMATTER = '%s/package/%s/%s'
+_APP_PACKAGE_PATH_FORMATTER = '{base_dir}/package/{host_ip}/{app_package_id}'
 
 
 class InstantiateRequest:
@@ -87,9 +87,9 @@ class InstantiateRequest:
         self.app_instance_id = request.appInstanceId
         self.hostIp = request.hostIp
         self.app_package_id = request.appPackageId
-        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER.format(config.base_dir,
-                                                                   request.hostIp,
-                                                                   request.appPackageId)
+        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER.format(base_dir=config.base_dir,
+                                                                   host_ip=request.hostIp,
+                                                                   app_package_id=request.appPackageId)
 
         self.ak = request.ak
         self.sk = request.sk

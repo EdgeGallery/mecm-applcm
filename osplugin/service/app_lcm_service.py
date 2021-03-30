@@ -60,11 +60,13 @@ def check_stack_status(app_instance_id):
     """
     app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
     if not app_ins_mapper:
+        LOG.debug('app ins: %s db record not found', app_instance_id)
         return
     heat = openstack_utils.create_heat_client(app_ins_mapper.host_ip)
     stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
     if stack_resp is None and app_ins_mapper.operational_status == 'Terminating':
         app_ins_mapper.delete()
+        LOG.debug('finish terminate app ins %s', app_instance_id)
         return
     if stack_resp.status == 'COMPLETE' or stack_resp.status == 'FAILED':
         LOG.debug('app ins: %s, stack_status: %s, reason: %s',
@@ -74,12 +76,16 @@ def check_stack_status(app_instance_id):
         if stack_resp.action == 'CREATE' and stack_resp.stack_status == 'CREATE_COMPLETE':
             app_ins_mapper.operational_status = utils.INSTANTIATED
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
+            LOG.debug('finish instantiate app ins %s', app_instance_id)
         elif stack_resp.action == 'DELETE' and stack_resp.stack_status == 'DELETE_COMPLETE':
             app_ins_mapper.delete()
+            LOG.debug('finish terminate app ins %s', app_instance_id)
         else:
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
             app_ins_mapper.operational_status = utils.FAILURE
+            LOG.debug('failed action %s app ins %s', stack_resp.action, app_instance_id)
     else:
+        LOG.debug('app ins %s status not updated, waite next...')
         start_check_stack_status(app_instance_id)
 
 
@@ -143,7 +149,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive upload package msg...')
+        LOG.info('receive upload package msg...')
         res = UploadPackageResponse(status=utils.FAILURE)
 
         parameters = UploadPackageRequest(request_iterator)
@@ -155,12 +161,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_package_id = parameters.app_package_id
         if app_package_id is None:
-            LOG.info('appPackageId is required')
+            LOG.debug('appPackageId is required')
             parameters.delete_tmp()
             return res
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         if utils.exists_path(app_package_path):
-            LOG.info('app package exist')
+            LOG.debug('app package exist')
             parameters.delete_tmp()
             return res
         utils.create_dir(app_package_path)
@@ -187,7 +193,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive delete package msg...')
+        LOG.info('receive delete package msg...')
         res = DeletePackageResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
@@ -212,7 +218,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive instantiate msg...')
+        LOG.info('receive instantiate msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request)
@@ -275,46 +281,45 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        req_id = utils.gen_uuid()
-        LOG.debug('%s: receive terminate msg...', req_id)
+        LOG.info('receive terminate msg...')
         res = TerminateResponse(status=utils.FAILURE)
 
-        LOG.debug('%s: 校验token, host ip', req_id)
+        LOG.debug('校验token, host ip')
         host_ip = validate_input_params(request)
         if host_ip is None:
             return res
 
-        LOG.debug('%s: 获取实例ID', req_id)
+        LOG.debug('获取实例ID')
         app_instance_id = request.appInstanceId
         if app_instance_id is None:
             return res
 
-        LOG.debug('%s: 查询数据库', req_id)
+        LOG.debug('查询数据库')
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if app_ins_mapper is None:
             res.status = utils.SUCCESS
             return res
 
-        LOG.debug('%s: 初始化openstack客户端', req_id)
+        LOG.debug('初始化openstack客户端')
         heat = openstack_utils.create_heat_client(host_ip)
         try:
-            LOG.debug('%s: 发送删除请求', req_id)
+            LOG.debug('发送删除请求')
             heat.stacks.delete(app_ins_mapper.stack_id)
         except HTTPNotFound:
-            LOG.debug('%s: stack不存在', req_id)
+            LOG.debug('stack不存在')
         except Exception as exception:
             LOG.error(exception, exc_info=True)
             return res
 
         app_ins_mapper.operational_status = utils.TERMINATING
-        LOG.debug('%s: 更新数据库状态', req_id)
+        LOG.debug('更新数据库状态')
         commit()
 
-        LOG.debug('%s: 开始状态更新定时任务', req_id)
+        LOG.debug('开始状态更新定时任务')
         start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.SUCCESS
-        LOG.debug('%s: 处理请求完成', req_id)
+        LOG.debug('处理请求完成')
         return res
 
     @db_session
@@ -325,19 +330,22 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive query msg...')
+        LOG.info('receive query msg...')
         res = QueryResponse(response='{"code": 500, "msg": "server error"}')
 
         host_ip = validate_input_params(request)
         if host_ip is None:
+            res.response = '{"code":400}'
             return res
 
         app_instance_id = request.appInstanceId
         if app_instance_id is None:
+            res.response = '{"code":400}'
             return res
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if app_ins_mapper is None:
+            res.response = '{"code":404}'
             return res
 
         heat = openstack_utils.create_heat_client(host_ip)
@@ -356,7 +364,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive workload describe msg...')
+        LOG.info('receive workload describe msg...')
         res = WorkloadEventsResponse(response='{"code":500}')
 
         host_ip = validate_input_params(request)
@@ -369,7 +377,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
         if app_ins_mapper is None:
-            LOG.info('app实例 %s 不存在', app_instance_id)
+            LOG.debug('app实例 %s 不存在', app_instance_id)
+            res.response = '{"code":404}'
             return res
 
         heat = openstack_utils.create_heat_client(host_ip)
@@ -409,7 +418,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context:
         :return:
         """
-        LOG.debug('receive uploadConfig msg...')
+        LOG.info('receive uploadConfig msg...')
         res = UploadCfgResponse(status=utils.FAILURE)
 
         parameter = UploadCfgRequest(request_iterator)
@@ -442,7 +451,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :param context: 上下文信息
         :return: Success/Failure
         """
-        LOG.debug('receive removeConfig msg...')
+        LOG.info('receive removeConfig msg...')
         res = RemoveCfgResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(request)
@@ -461,5 +470,5 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.error(exception, exc_info=True)
             return res
 
-        LOG.info('host configuration file deleted successfully')
+        LOG.debug('host configuration file deleted successfully')
         return res

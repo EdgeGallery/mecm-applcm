@@ -57,7 +57,8 @@ class GrpcServerTest(unittest.TestCase):
             ('grpc.ssl_target_name_override', 'edgegallery.org',),
             ('grpc.max_send_message_length', 50 * 1024 * 1024),
             ('grpc.max_receive_message_length', 50 * 1024 * 1024)]
-        channel = _get_secure_channel(options)
+        # channel = _get_secure_channel(options)
+        channel = grpc.insecure_channel(target='127.0.0.1:8234', options=options)
         """
         channel = grpc.insecure_channel(target='127.0.0.1:8234', options=options)
         """
@@ -75,7 +76,7 @@ class GrpcServerTest(unittest.TestCase):
             vmId='caf83c05-56dc-4f7c-b417-40d9acbf166c'
         )
         response = self.vm_image_stub.createVmImage(request)
-        self.assertEqual(response.response, 'SUCCESS')
+        self.assertEqual(response.response, 'Success')
 
     def test_upload_package(self):
         """
@@ -91,7 +92,7 @@ class GrpcServerTest(unittest.TestCase):
             lcmservice_pb2.UploadPackageRequest(package=package)
         ])
         response = self.app_lcm_stub.uploadPackage(request)
-        self.assertEqual(response.status, 'SUCCESS')
+        self.assertEqual(response.status, 'Success')
 
     def test_delete_package(self):
         """
@@ -104,7 +105,7 @@ class GrpcServerTest(unittest.TestCase):
             tenantId='tenant001',
         )
         response = self.app_lcm_stub.deletePackage(request)
-        self.assertEqual(response.status, 'SUCCESS')
+        self.assertEqual(response.status, 'Success')
 
     def test_upload_cfg(self):
         """
@@ -118,7 +119,7 @@ class GrpcServerTest(unittest.TestCase):
             lcmservice_pb2.UploadCfgRequest(configFile=data)
         ])
         response = self.app_lcm_stub.uploadConfig(request)
-        self.assertEqual(response.status, 'SUCCESS')
+        self.assertEqual(response.status, 'Success')
 
     def test_delete_cfg(self):
         """
@@ -129,7 +130,7 @@ class GrpcServerTest(unittest.TestCase):
             hostIp='10.10.10.10'
         )
         response = self.app_lcm_stub.removeConfig(request)
-        self.assertEqual(response.status, 'SUCCESS')
+        self.assertEqual(response.status, 'Success')
 
     def test_instantiate(self):
         """
@@ -145,7 +146,7 @@ class GrpcServerTest(unittest.TestCase):
             sk='sk001'
         )
         response = self.app_lcm_stub.instantiate(request)
-        self.assertEqual(response.status, 'SUCCESS')
+        self.assertEqual(response.status, 'Success')
 
     def test_terminate(self):
         """
@@ -157,7 +158,7 @@ class GrpcServerTest(unittest.TestCase):
             hostIp=self.host_ip,
         )
         response = self.app_lcm_stub.terminate(request)
-        self.assertEqual(response.status, 'SUCCESS')
+        self.assertEqual(response.status, 'Success')
 
     def test_query(self):
         """
