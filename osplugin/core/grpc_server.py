@@ -33,24 +33,27 @@ LOG = logger
 
 
 def serve():
+    """
+    启动grpc服务
+    """
     options = [
         ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
-        ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)]
+        ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
+    ]
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=200, thread_name_prefix='grpc-thread-'),
-                         options=options)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=200), options=options)
     lcmservice_pb2_grpc.add_AppLCMServicer_to_server(AppLcmService(), server)
     lcmservice_pb2_grpc.add_VmImageServicer_to_server(VmImageService(), server)
 
     listen_addr = config.listen_ip + ":" + str(_LISTEN_PORT)
 
-    if config.enable_ssl:
-        with open(config.private_key_certificate_chain_pairs[0], 'rb') as f:
-            private_key = f.read()
-        with open(config.private_key_certificate_chain_pairs[1], 'rb') as f:
-            certificate_chain = f.read()
-        with open(config.root_certificates, 'rb') as f:
-            root_certificates = f.read()
+    if config.ssl_enabled:
+        with open(config.private_key_certificate_chain_pairs[0], 'rb') as file:
+            private_key = file.read()
+        with open(config.private_key_certificate_chain_pairs[1], 'rb') as file:
+            certificate_chain = file.read()
+        with open(config.root_certificates, 'rb') as file:
+            root_certificates = file.read()
         cert_config = grpc.ssl_server_credentials(
             private_key_certificate_chain_pairs=((private_key, certificate_chain), ),
             root_certificates=root_certificates,

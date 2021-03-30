@@ -24,7 +24,7 @@ from pony.orm import db_session, commit
 
 import config
 import utils
-from core.exceptions import DownloadChunkException
+from core.exceptions import ParamNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
 from core.openstack_utils import create_glance_client
@@ -82,6 +82,9 @@ _IMAGE_INFO_TMP_ = {}
 
 
 def _get_image_info(image_id, glance_client):
+    """
+    获取镜像信息
+    """
     if image_id in _IMAGE_INFO_TMP_:
         return _IMAGE_INFO_TMP_[image_id]
     image_info = glance_client.images.get(image_id)
@@ -93,6 +96,9 @@ def _get_image_info(image_id, glance_client):
 
 
 def _del_image_info(image_id):
+    """
+    删除镜像信息
+    """
     _IMAGE_INFO_TMP_.pop(image_id)
 
 
@@ -105,6 +111,9 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def createVmImage(self, request, context):
+        """
+        创建虚拟机快照
+        """
         res = CreateVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
@@ -115,16 +124,9 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         image_name = get_image_name(vm_info.name)
         try:
             image_id = nova_client.servers.create_image(request.vmId, image_name)
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
             return res
-        # 虚机从卷启动时，创建镜像后镜像大小为0 需要从卷上传打包成镜像才可以下载, 调用update_to_image 需要删除虚机
-        # block_device_mapping = json.loads(image_info.block_device_mapping)
-        # cinder_client = create_cinder_client(host_ip)
-        # snap = cinder_client.volume_snapshots.get(block_device_mapping[0]["snapshot_id"])
-        # image = cinder_client.volumes.upload_to_image(snap.volume_id,
-        #                                               image_name="test--1", disk_format="qcow2",
-        #                                               container_format="bare", force=False)
 
         VmImageInfoMapper(image_id=image_id,
                           image_name=image_name,
@@ -138,6 +140,9 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def queryVmImage(self, request, context):
+        """
+        查询镜像信息
+        """
         res = QueryVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
@@ -149,8 +154,8 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         glance_client = create_glance_client(host_ip)
         try:
             image_info = glance_client.images.get(request.imageId)
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
             return res
         LOG.info("openstack image %s status: %s", image_info.id, image_info.status)
         if image_info.status == 'active' and vm_info.image_size == 0:
@@ -170,6 +175,9 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
     @db_session
     def deleteVmImage(self, request, context):
+        """
+        删除镜像
+        """
         res = DeleteVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
@@ -181,8 +189,8 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         glance_client = create_glance_client(host_ip)
         try:
             glance_client.images.delete(request.imageId)
-        except Exception as e:
-            LOG.error(e, exc_info=True)
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
             return res
         vm_info.delete()
         commit()
@@ -190,28 +198,36 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         return res
 
     def downloadVmImage(self, request, context):
+        """
+        下载镜像
+        """
         LOG.debug("download image chunk %s starting...", request.chunkNum)
 
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
-            raise Exception("host ip is null...")
+            raise ParamNotValid("host ip is null...")
         try:
             glance_client = create_glance_client(host_ip)
-        except Exception as e:
-            LOG.error(e, exc_info=True)
-            raise e
+        except Exception as exception:
+            LOG.error(exception, exc_info=True)
+            raise exception
 
         iterable = glance_client.images.data(image_id=request.imageId)
 
         buf = BytesIO()
-        buf_size = 8 * 1024 * 1024
+        buf_size = config.chunk_size
+        send_size = 0
         for body in iterable:
             buf.write(body)
-            if buf.tell() > buf_size:
+            if buf.tell() >= buf_size:
                 yield DownloadVmImageResponse(content=buf.getvalue())
+                send_size += buf.tell()
+                LOG.debug('%s bytes send' % send_size)
                 buf.close()
                 buf = BytesIO()
 
         if buf.tell() > 0:
             yield DownloadVmImageResponse(content=buf.getvalue())
+            send_size += buf.tell()
+            LOG.debug('all bytes send, size %s' % send_size)
         buf.close()

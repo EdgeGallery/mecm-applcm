@@ -17,7 +17,7 @@
 
 # !python3
 # -*- coding: utf-8 -*-
-import grpc
+
 import unittest
 from internal.lcmservice import lcmservice_pb2
 from service.vm_image_service import VmImageService
@@ -46,7 +46,7 @@ def make_delete_image_request(access_token, host_ip, app_instance_id, image_id):
 
 def make_download_image_request(access_token, chunk_num, host_ip, app_instance_id, image_id):
     """
-   make_download_image_request
+    make_download_image_request
     """
     return lcmservice_pb2.DownloadVmImageRequest(accessToken=access_token,
                                                  hostIp=host_ip,
@@ -56,11 +56,17 @@ def make_download_image_request(access_token, chunk_num, host_ip, app_instance_i
 
 
 class VmImageServiceTest(unittest.TestCase):
+    """
+    测试镜像service
+    """
     vm_image_service = VmImageService()
     access_token = gen_token.test_access_token
     host_ip = '159.138.23.91'
 
     def test_create_image(self):
+        """
+        test_create_image
+        """
         request = make_create_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
@@ -69,6 +75,9 @@ class VmImageServiceTest(unittest.TestCase):
         print(res)
 
     def test_delete_image(self):
+        """
+        test_delete_image
+        """
         request = make_delete_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
@@ -77,6 +86,9 @@ class VmImageServiceTest(unittest.TestCase):
         print(res)
 
     def test_query_image(self):
+        """
+        test_query_image
+        """
         request = make_delete_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
@@ -85,6 +97,9 @@ class VmImageServiceTest(unittest.TestCase):
         print(res)
 
     def test_download_image(self):
+        """
+        test_download_image
+        """
         request = make_download_image_request(access_token=self.access_token,
                                               host_ip=self.host_ip,
                                               app_instance_id="1",
@@ -95,4 +110,4 @@ class VmImageServiceTest(unittest.TestCase):
         with open('image.qcow2', 'ab') as file:
             for res in response:
                 print(len(res) / (1024 * 1024))
-                # file.write(res.content)
+                file.write(res.content)

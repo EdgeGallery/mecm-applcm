@@ -23,7 +23,6 @@ import uuid
 from pathlib import Path
 
 import jwt
-from jwt import DecodeError
 
 from config import jwt_public_key, base_dir
 from core.log import logger
@@ -44,24 +43,38 @@ RC_FILE_DIR = base_dir + '/config'
 
 LOG = logger
 
+_IPV4_PATTERN = '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}' \
+                '(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+
+_UUID_PATTERN = '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'
+
 
 def create_dir(path):
+    """
+    创建目录
+    """
     try:
         os.makedirs(path)
     except OSError:
         LOG.debug('文件夹已存在')
-    except Exception as e:
-        LOG.error(e, exc_info=True)
+    except Exception as exception:
+        LOG.error(exception, exc_info=True)
         return False
     return True
 
 
 def exists_path(path):
+    """
+    判断目录是否存在
+    """
     file = Path(path)
     return file.exists()
 
 
 def delete_dir(path):
+    """
+    删除目录
+    """
     for i in os.listdir(path):
         file_data = path + '/' + i
         if os.path.isfile(file_data):
@@ -72,49 +85,53 @@ def delete_dir(path):
 
 
 def validate_access_token(access_token):
-    return True
-    if not access_token:
+    """
+    校验token
+    """
+    if access_token is None:
         LOG.info('accessToken required')
         return False
     try:
         payload = jwt.decode(access_token, jwt_public_key, algorithms=['RS256'])
-        if not payload['authorities']:
+        if 'authorities' not in payload:
             LOG.info('Invalid token A')
             return False
-        if not payload['userId']:
+        if 'userId' not in payload:
             LOG.info('Invalid token UI')
             return False
-        if not payload['user_name']:
+        if 'user_name' not in payload:
             LOG.info('Invalid token UN')
             return False
-    except DecodeError as e:
-        LOG.error(e, exc_info=True)
+    except jwt.DecodeError as exception:
+        LOG.error(exception, exc_info=True)
         return False
     return True
 
 
 def validate_ipv4_address(host_ip):
-    if not host_ip:
+    """
+    验证ipv4格式
+    """
+    if host_ip is None:
         LOG.info('hostIp required')
         return False
-    p = re.compile('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.)' +
-                   '{3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
-    if p.match(host_ip):
-        return True
-    else:
-        return False
+    pattern = re.compile(_IPV4_PATTERN)
+    return pattern.match(host_ip)
 
 
 def gen_uuid():
+    """
+    生产uuid
+    """
     return ''.join(str(uuid.uuid4()).split('-'))
 
 
 def validate_uuid(param):
-    if not param:
+    """
+    校验uuid格式
+    """
+    if param is None:
         LOG.info('param require')
         return False
-    p = re.compile('^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
-    if p.match(param):
-        return True
-    else:
-        return False
+    pattern = re.compile(_UUID_PATTERN)
+    return pattern.match(param)

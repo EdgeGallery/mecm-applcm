@@ -24,7 +24,7 @@ import yaml
 
 from core.exceptions import PackageNotValid
 from core.log import logger
-from core.openstack_utils import NovaServer, VirtualStorage, VirtualPort
+from core.openstack_utils import TOSCA_TYPE_CLASS
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
 _APPD_TOSCA_METADATA_PATH = 'TOSCA_VNFD.meta'
@@ -34,6 +34,11 @@ LOG = logger
 
 
 def get_hot_yaml_path(unzip_pkg_path):
+    """
+    获取hot模板路径
+    :param unzip_pkg_path: 包解压路径
+    :return: hot模板路径
+    """
     try:
         csar_pkg = CsarPkg(unzip_pkg_path)
     except FileNotFoundError:
@@ -42,7 +47,10 @@ def get_hot_yaml_path(unzip_pkg_path):
     return csar_pkg.hot_path
 
 
-class CsarPkg(object):
+class CsarPkg:
+    """
+    csar包
+    """
 
     def __init__(self, pkg_path):
         dirs = os.listdir(pkg_path)
@@ -54,22 +62,28 @@ class CsarPkg(object):
             for line in meta.readlines():
                 if line.startswith('Entry-Definitions: '):
                     match = re.match(_APPD_R, line)
-                    self._APPD_PATH = match.group(1)
+                    self._appd_path = match.group(1)
                     break
-        if self._APPD_PATH is None:
+        if self._appd_path is None:
             raise PackageNotValid('entry definitions not exist')
-        self.appd_file_path = self.base_dir + '/' + self._APPD_PATH
+        self.appd_file_path = self.base_dir + '/' + self._appd_path
         self.appd_file_dir = os.path.dirname(self.appd_file_path)
         self.hot_path = self.appd_file_dir + '/hot.yaml'
 
-    def _unzip(self):
+    def unzip(self):
+        """
+        解压csar包
+        """
         with zipfile.ZipFile(self.appd_file_path) as zip_file:
             namelist = zip_file.namelist()
-            for f in namelist:
-                zip_file.extract(f, self.appd_file_dir)
+            for file in namelist:
+                zip_file.extract(file, self.appd_file_dir)
 
     def translate(self):
-        self._unzip()
+        """
+        转换csar包为hot
+        """
+        self.unzip()
         if self.appd_file_path.endswith('.zip'):
             cmcc_appd = CmccAppD(self.appd_file_dir)
             appd = cmcc_appd.appd
@@ -86,40 +100,19 @@ class CsarPkg(object):
             'outputs': {}
         }
         for name, template in appd['topology_template']['node_templates'].items():
-            if template['type'] == 'tosca.nodes.nfv.VNF':
-                pass
-            elif template['type'] == 'tosca.nodes.nfv.Vdu.Compute':
-                NovaServer(name, template, hot, appd['topology_template']['node_templates'])
-            elif template['type'] == 'tosca.nodes.nfv.VduCp':
-                VirtualPort(name, template, hot, appd['topology_template']['node_templates'])
-            elif template['type'] == 'tosca.nodes.nfv.VnfVirtualLink':
-                # VirtualLink(name, template, hot)
-                pass
-            elif template['type'] == 'tosca.nodes.nfv.Vdu.VirtualBlockStorage':
-                VirtualStorage(name, template, hot)
-            elif template['type'] == 'tosca.nodes.nfv.app.configuration':
-                pass
+            if template['type'] in TOSCA_TYPE_CLASS:
+                TOSCA_TYPE_CLASS[template['type']](name, template, hot, appd['topology_template']['node_templates'])
             else:
                 LOG.info('skip unknown tosca type %s', template['type'])
-
-        for name, group in appd['topology_template']['groups'].items():
-            if group['type'] == 'tosca.groups.nfv.PlacementGroup':
-                pass
-            else:
-                LOG.info('skip unknown tosca type %s', group['type'])
-
-        for policy in appd['topology_template']['policies']:
-            for key, value in policy.items():
-                if value['type'] == 'tosca.policies.nfv.AntiAffinityRule':
-                    pass
-                else:
-                    LOG.info('skip unknow tosca type %s', value['type'])
 
         with open(self.hot_path, 'w') as file:
             yaml.dump(hot, file)
 
 
-class CmccAppD(object):
+class CmccAppD:
+    """
+    中国移动appd
+    """
     def __init__(self, path):
         dirs = os.listdir(path)
         if len(dirs) == 1:
@@ -135,3 +128,15 @@ class CmccAppD(object):
                     break
         with open(self.appd_file_path, 'r') as appd_file:
             self.appd = yaml.load(appd_file, Loader=yaml.FullLoader)
+
+    def get_path(self):
+        """
+        获取路径
+        """
+        return self.appd_file_path
+
+    def get_appd(self):
+        """
+        获取appd
+        """
+        return self.appd

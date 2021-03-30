@@ -26,11 +26,17 @@ LOG = logger
 
 
 class AppLcmServiceTest(unittest.TestCase):
+    """
+    applcm service方法单元测试
+    """
     app_lcm_service = AppLcmService()
     access_token = gen_token.test_access_token
     host_ip = '159.138.23.91'
 
     def test_upload_package(self):
+        """
+        测试上传包
+        """
         with open('tests/resources/vm_csar.csar', 'rb') as f:
             package_data = f.read()
         data = [
@@ -44,6 +50,9 @@ class AppLcmServiceTest(unittest.TestCase):
         self.assertEqual(response.status, utils.SUCCESS)
 
     def test_delete_package(self):
+        """
+        测试删除包
+        """
         data = lcmservice_pb2.DeletePackageRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
@@ -54,6 +63,9 @@ class AppLcmServiceTest(unittest.TestCase):
         self.assertEqual(response.status, utils.SUCCESS)
 
     def test_instantiate(self):
+        """
+        测试实例化
+        """
         data = lcmservice_pb2.InstantiateRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
@@ -67,6 +79,9 @@ class AppLcmServiceTest(unittest.TestCase):
         self.assertEqual(response.status, utils.SUCCESS)
 
     def test_terminate(self):
+        """
+        测试销毁
+        """
         data = lcmservice_pb2.TerminateRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
@@ -76,6 +91,9 @@ class AppLcmServiceTest(unittest.TestCase):
         self.assertEqual(response.status, utils.SUCCESS)
 
     def test_query(self):
+        """
+        测试查询
+        """
         data = lcmservice_pb2.QueryRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
@@ -84,7 +102,10 @@ class AppLcmServiceTest(unittest.TestCase):
         response = self.app_lcm_service.query(data, None)
         LOG.info(response.response)
 
-    def test_uploadConfig(self):
+    def test_upload_config(self):
+        """
+        测试上传配置
+        """
         data = [
             lcmservice_pb2.UploadCfgRequest(accessToken=self.access_token),
             lcmservice_pb2.UploadCfgRequest(hostIp='10.0.0.1'),
@@ -93,7 +114,10 @@ class AppLcmServiceTest(unittest.TestCase):
         response = self.app_lcm_service.uploadConfig(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
 
-    def test_removeConfig(self):
+    def test_remove_config(self):
+        """
+        测试删除配置
+        """
         data = lcmservice_pb2.RemoveCfgRequest(
             accessToken=self.access_token,
             hostIp='10.0.0.1'
@@ -101,7 +125,10 @@ class AppLcmServiceTest(unittest.TestCase):
         response = self.app_lcm_service.removeConfig(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
 
-    def test_workloadEvents(self):
+    def test_workload_events(self):
+        """
+        测试查询实例化事件
+        """
         data = lcmservice_pb2.WorkloadEventsRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,

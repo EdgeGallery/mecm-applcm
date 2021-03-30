@@ -18,9 +18,9 @@
 # -*- coding: utf-8 -*-
 import os
 
-enable_ssl = True
+ssl_enabled = True
 if os.getenv('ENABLE_SSL', 'true') == 'false':
-    enable_ssl = False
+    ssl_enabled = False
 
 listen_ip = os.getenv('LISTEN_IP', '[::]')
 
@@ -50,8 +50,9 @@ db_host = os.getenv('DB_HOST', 'mepm-postgres')
 db_port = int(os.getenv('DB_PORT', '5432'))
 db_name = os.getenv('DB_NAME', 'osplugindb')
 
-# default chunk_size 1M
-chunk_size = os.getenv("IMAGE_CHUNK_SIZE", 1024 * 1024 * 2)
+# default chunk_size 2M
+_DEFAULT_IMAGE_CHUNK_SIZE = 1021 * 1024 * 2
+chunk_size = int(os.getenv("IMAGE_CHUNK_SIZE", str(_DEFAULT_IMAGE_CHUNK_SIZE)))
 
 _SERVER_CA_VERIFY = os.getenv('SERVER_CA_VERIFY_DIR', 'false')
 if _SERVER_CA_VERIFY == 'false':
@@ -59,3 +60,5 @@ if _SERVER_CA_VERIFY == 'false':
 elif _SERVER_CA_VERIFY == 'true':
     _SERVER_CA_VERIFY = True
 server_ca_verify = _SERVER_CA_VERIFY
+
+log_formatter = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'

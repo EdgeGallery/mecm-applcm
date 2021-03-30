@@ -15,14 +15,11 @@
 
 """
 # -*- coding: utf-8 -*-
-import zipfile
 
 from pony.orm import PrimaryKey, Required, Optional
 
 import config
 import utils
-from core.csar.pkg import get_hot_yaml_path
-from core.exceptions import ParamNotValid
 from core.log import logger
 from core.orm.adapter import db
 
@@ -30,7 +27,10 @@ _APP_TASK_PATH = config.base_dir + '/tmp/tasks'
 LOG = logger
 
 
-class UploadPackageRequest(object):
+class UploadPackageRequest:
+    """
+    上传请求体封装
+    """
     accessToken = None
     hostIp = None
     app_package_id = None
@@ -51,14 +51,29 @@ class UploadPackageRequest(object):
             elif request.tenantId:
                 self.tenant_id = request.tenantId
             elif request.package:
-                with open(self.tmp_package_file_path, 'ab') as f:
-                    f.write(request.package)
+                with open(self.tmp_package_file_path, 'ab') as file:
+                    file.write(request.package)
 
     def delete_tmp(self):
+        """
+        删除临时文件
+        """
         utils.delete_dir(self._tmp_package_dir)
 
+    def get_tmp_file_path(self):
+        """
+        获取临时文件目录
+        """
+        return self.tmp_package_file_path
 
-class InstantiateRequest(object):
+
+_APP_PACKAGE_PATH_FORMATTER = '{base_dir}/package/{host_ip}/{app_package_id}'
+
+
+class InstantiateRequest:
+    """
+    实例化请求体封装
+    """
     accessToken = None
     hostIp = None
     app_instance_id = None
@@ -72,12 +87,34 @@ class InstantiateRequest(object):
         self.app_instance_id = request.appInstanceId
         self.hostIp = request.hostIp
         self.app_package_id = request.appPackageId
-        self.app_package_path = config.base_dir + '/package/' + request.hostIp + '/' + request.appPackageId
+        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER.format(base_dir=config.base_dir,
+                                                                   host_ip=request.hostIp,
+                                                                   app_package_id=request.appPackageId)
+
         self.ak = request.ak
         self.sk = request.sk
 
+    def get_app_package_path(self):
+        """
+        get app package path
+        Returns:
 
-class UploadCfgRequest(object):
+        """
+        return self.app_package_path
+
+    def get_host_ip(self):
+        """
+        get host ip
+        Returns:
+
+        """
+        return self.hostIp
+
+
+class UploadCfgRequest:
+    """
+    配置上传请求体封装
+    """
     accessToken = None
     hostIp = None
     config_file = None
@@ -91,6 +128,22 @@ class UploadCfgRequest(object):
             elif request.configFile:
                 self.config_file = request.configFile
 
+    def get_config_file(self):
+        """
+        get config file
+        Returns:
+
+        """
+        return self.config_file
+
+    def get_host_ip(self):
+        """
+        get host ip
+        Returns:
+
+        """
+        return self.hostIp
+
 
 """
 数据库定义
@@ -98,6 +151,9 @@ class UploadCfgRequest(object):
 
 
 class AppInsMapper(db.Entity):
+    """
+    t_app_instance表映射
+    """
     _table_ = 't_app_instance'
     app_instance_id = PrimaryKey(str, max_len=64)
     host_ip = Required(str, max_len=15)
@@ -107,6 +163,9 @@ class AppInsMapper(db.Entity):
 
 
 class VmImageInfoMapper(db.Entity):
+    """
+    t_vm_image_info表映射
+    """
     _table_ = 't_vm_image_info'
     app_instance_id = Required(str, max_len=64)
     host_ip = Required(str, max_len=15)
