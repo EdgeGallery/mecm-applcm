@@ -138,6 +138,9 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 			mecHost.Origin     = readMecHost.Origin
 		}
 	}
+	if cols[0] == "app_pkg_name" {
+		return errors.New("record not found")
+	}
 	return nil
 }
 
