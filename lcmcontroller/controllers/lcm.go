@@ -1512,6 +1512,17 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
+	appPkgRecord := &models.AppPackageRecord{
+		AppPkgName:    pkgDetails.App_product_name,
+		AppPkgVersion: pkgDetails.App_package_version,
+	}
+	readErr := c.Db.ReadData(appPkgRecord, "app_pkg_name", "app_pkg_version")
+	if readErr == nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest,
+			"Package is already exist")
+		return
+	}
+
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -1829,7 +1840,6 @@ func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 	if origin == "MEPM" {
 		syncStatus = false
 	}
-
 	appPkgRecord := &models.AppPackageRecord{
 		AppPkgId:      packageId + tenantId,
 		TenantId:      tenantId,
