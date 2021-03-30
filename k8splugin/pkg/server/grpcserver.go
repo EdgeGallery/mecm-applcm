@@ -1164,6 +1164,10 @@ func (c *ServerGRPC) extractFiles(file *zip.File, zippedFile io.ReadCloser, tota
 			log.Error("Failed to create directory")
 		}
 	} else {
+		parent := filepath.Dir(extractedFilePath)
+		if _, err := os.Stat(parent); os.IsNotExist(err) {
+			_ = os.MkdirAll(parent, 0750)
+		}
 		outputFile, err := os.OpenFile(
 			extractedFilePath,
 			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
