@@ -101,7 +101,10 @@ class CsarPkg:
         }
         for name, template in appd['topology_template']['node_templates'].items():
             if template['type'] in TOSCA_TYPE_CLASS:
-                TOSCA_TYPE_CLASS[template['type']](name, template, hot, appd['topology_template']['node_templates'])
+                TOSCA_TYPE_CLASS[template['type']](name,
+                                                   template,
+                                                   hot,
+                                                   appd['topology_template']['node_templates'])
             else:
                 LOG.info('skip unknown tosca type %s', template['type'])
 

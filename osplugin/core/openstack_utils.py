@@ -15,7 +15,7 @@
 
 # -*- coding: utf-8 -*-
 """
-import os
+
 import re
 
 from heatclient.v1.client import Client as HeatClient
@@ -97,10 +97,10 @@ def create_nova_client(host_ip):
     """
     创建nova客户端
     """
-    rc = get_rc(host_ip)
+    rc_data = get_rc(host_ip)
     return nova_client.Client('2',
                               session=get_session(host_ip),
-                              endpoint_override=rc.nova_url)
+                              endpoint_override=rc_data.nova_url)
 
 
 _GLANCE_CLIENT_MAP = {}
@@ -126,7 +126,7 @@ def clear_glance_client(host_ip):
         _GLANCE_CLIENT_MAP.pop(host_ip)
 
 
-class RCFile(object):
+class RCFile:
     """
     rc文件解析类
     """
@@ -168,6 +168,22 @@ class RCFile(object):
                     self.nova_url = group2
                 elif group1 == 'CINDER_URL':
                     self.cinder_url = group2
+
+    def get_auth_url(self):
+        """
+        get auth url
+        Returns:
+
+        """
+        return self.auth_url
+
+    def get_heat_url(self):
+        """
+        get heat url
+        Returns:
+
+        """
+        return self.heat_url
 
 
 class HOTBase:
@@ -345,7 +361,8 @@ class VirtualStorage(HOTBase):
     _TOSCA_TYPE = 'tosca.nodes.nfv.Vdu.VirtualBlockStorage'
 
     def __init__(self, name, template, hot_file, node_templates=None):
-        super(VirtualStorage, self).__init__('OS::Cinder::Volume')
+        super().__init__('OS::Cinder::Volume')
+        self.node_templates = node_templates
         self.template = template
 
         size = template['properties']['virtual_block_storage_data']['size_of_storage']
@@ -358,6 +375,22 @@ class VirtualStorage(HOTBase):
             'type': self.type,
             'properties': self.properties
         }
+
+    def get_type(self):
+        """
+        get type
+        Returns:
+
+        """
+        return self.type
+
+    def get_properties(self):
+        """
+        get properties
+        Returns:
+
+        """
+        return self.properties
 
 
 class VirtualPort(HOTBase):
@@ -388,6 +421,22 @@ class VirtualPort(HOTBase):
             'type': self.type,
             'properties': self.properties
         }
+
+    def get_type(self):
+        """
+        get type
+        Returns:
+
+        """
+        return self.type
+
+    def get_properties(self):
+        """
+        get properties
+        Returns:
+
+        """
+        return self.properties
 
 
 TOSCA_TYPE_CLASS = {

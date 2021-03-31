@@ -135,7 +135,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                           app_instance_id=request.appInstanceId,
                           host_ip=request.hostIp)
         commit()
-        res.response = '{"imageId": "%s"}' % image_id
+        res.response = '{"imageId": "%s"}', image_id
         return res
 
     @db_session
@@ -222,12 +222,12 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             if buf.tell() >= buf_size:
                 yield DownloadVmImageResponse(content=buf.getvalue())
                 send_size += buf.tell()
-                LOG.debug('%s bytes send' % send_size)
+                LOG.debug('%s bytes send', send_size)
                 buf.close()
                 buf = BytesIO()
 
         if buf.tell() > 0:
             yield DownloadVmImageResponse(content=buf.getvalue())
             send_size += buf.tell()
-            LOG.debug('all bytes send, size %s' % send_size)
+            LOG.debug('all bytes send, size %s', send_size)
         buf.close()

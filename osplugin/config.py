@@ -18,9 +18,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-ssl_enabled = True
-if os.getenv('ENABLE_SSL', 'true') == 'false':
-    ssl_enabled = False
+ssl_enabled = os.getenv('ENABLE_SSL', 'true') != 'false'
 
 listen_ip = os.getenv('LISTEN_IP', '[::]')
 
@@ -60,5 +58,3 @@ if _SERVER_CA_VERIFY == 'false':
 elif _SERVER_CA_VERIFY == 'true':
     _SERVER_CA_VERIFY = True
 server_ca_verify = _SERVER_CA_VERIFY
-
-log_formatter = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
