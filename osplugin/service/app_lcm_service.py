@@ -31,7 +31,7 @@ import utils
 from core import openstack_utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
-from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest
+from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest, BaseRequest
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
@@ -97,8 +97,8 @@ def validate_input_params(param):
     Returns:
         host_ip
     """
-    access_token = param.accessToken
-    host_ip = param.hostIp
+    access_token = param.access_token
+    host_ip = param.host_ip
     LOG.debug('param hostIp: %s', host_ip)
     LOG.debug('param accessToken: %s', access_token)
     if not utils.validate_access_token(access_token):
@@ -196,7 +196,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive delete package msg...')
         res = DeletePackageResponse(status=utils.FAILURE)
 
-        host_ip = validate_input_params(request)
+        host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
             return res
 
@@ -285,7 +285,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res = TerminateResponse(status=utils.FAILURE)
 
         LOG.debug('校验token, host ip')
-        host_ip = validate_input_params(request)
+        host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
             return res
 
@@ -333,7 +333,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive query msg...')
         res = QueryResponse(response='{"code": 500, "msg": "server error"}')
 
-        host_ip = validate_input_params(request)
+        host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
             res.response = '{"code":400}'
             return res
@@ -367,7 +367,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive workload describe msg...')
         res = WorkloadEventsResponse(response='{"code":500}')
 
-        host_ip = validate_input_params(request)
+        host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
             return res
 
@@ -454,7 +454,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive removeConfig msg...')
         res = RemoveCfgResponse(status=utils.FAILURE)
 
-        host_ip = validate_input_params(request)
+        host_ip = validate_input_params(BaseRequest(request))
         if not host_ip:
             return res
 

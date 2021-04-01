@@ -27,12 +27,40 @@ _APP_TASK_PATH = config.base_dir + '/tmp/tasks'
 LOG = logger
 
 
+class BaseRequest:
+    """
+    基础请求参数
+    """
+    access_token = None
+    host_ip = None
+
+    def __init__(self, request):
+        self.access_token = request.accessToken
+        self.host_ip = request.hostIp
+
+    def get_access_token(self):
+        """
+        get access token
+        Returns:
+
+        """
+        return self.access_token
+
+    def get_host_ip(self):
+        """
+        get host ip
+        Returns:
+
+        """
+        return self.host_ip
+
+
 class UploadPackageRequest:
     """
     上传请求体封装
     """
-    accessToken = None
-    hostIp = None
+    access_token = None
+    host_ip = None
     app_package_id = None
     tenant_id = None
 
@@ -43,11 +71,11 @@ class UploadPackageRequest:
         self.tmp_package_file_path = self._tmp_package_dir + '/package.zip'
         for request in request_iterator:
             if request.accessToken:
-                self.accessToken = request.accessToken
+                self.access_token = request.accessToken
             elif request.appPackageId:
                 self.app_package_id = request.appPackageId
             elif request.hostIp:
-                self.hostIp = request.hostIp
+                self.host_ip = request.hostIp
             elif request.tenantId:
                 self.tenant_id = request.tenantId
             elif request.package:
@@ -74,25 +102,25 @@ class InstantiateRequest:
     """
     实例化请求体封装
     """
-    accessToken = None
-    hostIp = None
+    access_token = None
+    host_ip = None
     app_instance_id = None
     app_package_id = None
-    ak = None
-    sk = None
+    access_key = None
+    secret_key = None
     app_package_path = None
 
     def __init__(self, request):
-        self.accessToken = request.accessToken
+        self.access_token = request.accessToken
         self.app_instance_id = request.appInstanceId
-        self.hostIp = request.hostIp
+        self.host_ip = request.hostIp
         self.app_package_id = request.appPackageId
-        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER.format(base_dir=config.base_dir,
-                                                                   host_ip=request.hostIp,
-                                                                   app_package_id=request.appPackageId)
+        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER\
+            .format(base_dir=config.base_dir, host_ip=request.hostIp,
+                    app_package_id=request.appPackageId)
 
-        self.ak = request.ak
-        self.sk = request.sk
+        self.access_key = request.ak
+        self.secret_key = request.sk
 
     def get_app_package_path(self):
         """
@@ -108,23 +136,23 @@ class InstantiateRequest:
         Returns:
 
         """
-        return self.hostIp
+        return self.host_ip
 
 
 class UploadCfgRequest:
     """
     配置上传请求体封装
     """
-    accessToken = None
-    hostIp = None
+    access_token = None
+    host_ip = None
     config_file = None
 
     def __init__(self, request_iterator):
         for request in request_iterator:
             if request.accessToken:
-                self.accessToken = request.accessToken
+                self.access_token = request.accessToken
             elif request.hostIp:
-                self.hostIp = request.hostIp
+                self.host_ip = request.hostIp
             elif request.configFile:
                 self.config_file = request.configFile
 
@@ -142,12 +170,7 @@ class UploadCfgRequest:
         Returns:
 
         """
-        return self.hostIp
-
-
-"""
-数据库定义
-"""
+        return self.host_ip
 
 
 class AppInsMapper(db.Entity):
@@ -161,6 +184,22 @@ class AppInsMapper(db.Entity):
     operational_status = Required(str, max_len=128)
     operation_info = Optional(str, max_len=256, nullable=True)
 
+    def get_table_name(self):
+        """
+        get table name
+        Returns:
+
+        """
+        return self._table_
+
+    def get_key(self):
+        """
+        get key
+        Returns:
+
+        """
+        return self.app_instance_id
+
 
 class VmImageInfoMapper(db.Entity):
     """
@@ -173,6 +212,22 @@ class VmImageInfoMapper(db.Entity):
     image_id = Required(str, max_len=64)
     image_name = Required(str, max_len=64)
     image_size = Required(int, size=64)
+
+    def get_table_name(self):
+        """
+        get table name
+        Returns:
+
+        """
+        return self._table_
+
+    def get_key(self):
+        """
+        get key
+        Returns:
+
+        """
+        return self.image_id
 
 
 db.generate_mapping(create_tables=True)

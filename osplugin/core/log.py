@@ -23,14 +23,12 @@ import os
 
 import config
 
-"""
-日志配置
-"""
+LOG_FORMATTER = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter(config.log_formatter)
+formatter = logging.Formatter(LOG_FORMATTER)
 
 log_path = config.log_dir
 try:
