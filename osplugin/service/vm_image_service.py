@@ -135,7 +135,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                           app_instance_id=request.appInstanceId,
                           host_ip=request.hostIp)
         commit()
-        res.response = '{"imageId": "%s"}', image_id
+        res.response = json.dumps({'image_id': image_id})
         return res
 
     @db_session
