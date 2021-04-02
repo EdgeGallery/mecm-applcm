@@ -1262,13 +1262,23 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
-	_, _ = c.Db.QueryTable("app_info_record", &appInstances, util.TenantId, tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	_, _ = c.Db.QueryTable("app_info_record", &appInstances, "")
 	for _, appInstance := range appInstances {
 		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
 			appInstancesSync = append(appInstancesSync, appInstance)
@@ -1332,11 +1342,22 @@ func (c *LcmController) SynchronizeStaleRecord() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
-	_, _ = c.Db.QueryTable("app_instance_stale_rec", &appInstStaleRecs, util.TenantId, tenantId)
+
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+	_, _ = c.Db.QueryTable("app_instance_stale_rec", &appInstStaleRecs, "")
 
 	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
 	res, err := json.Marshal(appInstanceStaleRecords)
@@ -2073,12 +2094,23 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
-	_, _ = c.Db.QueryTable("app_package_record", &appPackages, util.TenantId, tenantId)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+
+	_, _ = c.Db.QueryTable("app_package_record", &appPackages, "")
 	for _, appPackage := range appPackages {
 		if strings.EqualFold(appPackage.Origin, "mepm") {
 			_, _ = c.Db.LoadRelated(appPackage, util.MecHostInfo)
@@ -2124,12 +2156,23 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
-	_, _ = c.Db.QueryTable("app_package_stale_rec", &appPackageStaleRecs, util.TenantId, tenantId)
-	_, _ = c.Db.QueryTable("app_package_host_stale_rec", &appPkgHostStaleRecs, util.TenantId, tenantId)
+
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+	_, _ = c.Db.QueryTable("app_package_stale_rec", &appPackageStaleRecs, "")
+	_, _ = c.Db.QueryTable("app_package_host_stale_rec", &appPkgHostStaleRecs, "")
 
 	appDistPkgHostStaleRecords.AppPackageStaleRecs = append(appDistPkgHostStaleRecords.AppPackageStaleRecs, appPackageStaleRecs...)
 	appDistPkgHostStaleRecords.AppPackageHostStaleRec = append(appDistPkgHostStaleRecords.AppPackageHostStaleRec, appPkgHostStaleRecs...)
