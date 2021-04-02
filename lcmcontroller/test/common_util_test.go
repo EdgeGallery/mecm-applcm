@@ -103,10 +103,11 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 func createToken(userid string) string {
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
-	roleName := make([]string, 3)
-	roleName[0] = "ROLE_MECM_TENANT"
-	roleName[1] = "ROLE_APPSTORE_TENANT"
-	roleName[2] = "ROLE_DEVELOPER_TENANT"
+	roleName := make([]string, 4)
+	roleName[0] = "ROLE_MECM_ADMIN"
+	roleName[1] = "ROLE_MECM_TENANT"
+	roleName[2] = "ROLE_APPSTORE_TENANT"
+	roleName[3] = "ROLE_DEVELOPER_TENANT"
 	atClaims["authorities"] = roleName
 	atClaims["user_name"] = "lcmcontroller"
 	atClaims["authorized"] = true
