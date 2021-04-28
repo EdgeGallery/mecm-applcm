@@ -348,6 +348,15 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             res.response = '{"code":404}'
             return res
 
+        if app_ins_mapper.operational_status != utils.INSTANTIATED:
+            res_data = {
+                'code': 500,
+                'msg': app_ins_mapper.operation_info,
+                'data': app_ins_mapper.operational_status
+            }
+            res.response = json.dumps(res_data)
+            return res
+
         heat = openstack_utils.create_heat_client(host_ip)
         output_list = heat.stacks.output_list(app_ins_mapper.stack_id)
 
