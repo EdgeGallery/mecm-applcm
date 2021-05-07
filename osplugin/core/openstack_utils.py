@@ -260,7 +260,6 @@ class NovaServer(HOTBase):
             'name': template['properties']['name'],
             'flavor': _get_flavor(template),
             'config_drive': True,
-            'image': template['properties']['sw_image_data']['name'],
             'networks': [],
             'user_data_format': 'RAW'
         }
@@ -352,6 +351,9 @@ class NovaServer(HOTBase):
                         },
                         'delete_on_termination': True
                     })
+
+    def check_image(self, template):
+        self.properties['image'] = template['properties']['sw_image_data']['name']
 
 
 class VirtualStorage(HOTBase):

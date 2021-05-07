@@ -1,4 +1,4 @@
-#!/bin/sh
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,4 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-/usr/app/venv/python3 main.py
+"""
