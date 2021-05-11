@@ -56,11 +56,13 @@ func (c *MecHostController) AddMecHost() {
 
 	err = c.ValidateAddMecHostRequest(clientIp, request)
 	if err != nil {
+		c.writeErrorResponse("failed to add mec host request", util.BadRequest)
 		return
 	}
 
 	err = c.InsertorUpdateMecHostRecord(clientIp, request)
 	if err != nil {
+		c.writeErrorResponse("failed to insert or update mec host record", util.BadRequest)
 		return
 	}
 
@@ -90,6 +92,7 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 
 	err = c.validateMecHostZipCodeCity(request, clientIp)
 	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Clientip is invalid")
 		return err
 	}
 
@@ -214,11 +217,13 @@ func (c *MecHostController) DeleteMecHost() {
 
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 
 	err = c.deleteHostInfoRecord(clientIp, hostIp)
 	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.handleLoggingForSuccess(clientIp, "Delete mec host is successful")
