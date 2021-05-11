@@ -83,8 +83,8 @@ func NewRateLimit() *RateLimit {
 func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.port = cfg.Port
 	s.address = cfg.Address
-	s.certificate = cfg.ServerConfig.Certfilepath
-	s.key = cfg.ServerConfig.Keyfilepath
+	s.certificate = cfg.ServerConfig.CertFilePath
+	s.key = cfg.ServerConfig.KeyFilePath
 	s.serverConfig = cfg.ServerConfig
 	dbAdapter, err := pgdb.GetDbAdapter(cfg.ServerConfig)
 	if err != nil {
@@ -108,9 +108,8 @@ func (s *ServerGRPC) Listen() (err error) {
 		log.Error("failed to listen on specified port")
 		return err
 	}
-	log.Info("Server started listening on configured port")
 
-	if !s.serverConfig.Sslnotenabled {
+	if !s.serverConfig.SslNotEnabled {
 		tlsConfig, err := util.GetTLSConfig(s.serverConfig, s.certificate, s.key)
 		if err != nil {
 			log.Error("failed to load certificates")
@@ -136,6 +135,7 @@ func (s *ServerGRPC) Listen() (err error) {
 		log.Error("failed to listen for GRPC connections.")
 		return err
 	}
+	log.Info("Server started listening on configured port")
 	return
 }
 

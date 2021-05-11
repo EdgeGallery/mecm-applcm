@@ -98,6 +98,11 @@ const (
 	FailedToJsonMarshal = "Failed to json marshal"
 	AppInsIdValid = "appInsId is invalid"
 	FailedToDelAppPkg = "failed to delete application package"
+	MaxSize = 20
+	MaxBackups = 50
+	MaxAge = 30
+	Compress = true
+	KubeConfigNotFound = "kubeconfig corresponding to given edge can't be found"
 )
 
 var cipherSuiteMap = map[string]uint16{
@@ -179,21 +184,21 @@ func ValidateAccessToken(accessToken string, allowedRoles []string) error {
 		}
 	} else if er, ok := err.(*jwt.ValidationError); ok {
 		if er.Errors&jwt.ValidationErrorMalformed != 0 {
-			log.Info("Invalid token")
+			log.Error("Invalid token")
 			return errors.New(InvalidToken)
 		} else if er.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			log.Infof("token expired or inactive")
+			log.Error("token expired or inactive")
 			return errors.New("token expired or inactive")
 		} else {
-			log.Info("Couldn't handle this token: ", err)
+			log.Error("Couldn't handle this token: ", err)
 			return errors.New(err.Error())
 		}
 	} else {
-		log.Info("Couldn't handle this token: ", err)
+		log.Error("Couldn't handle this token: ", err)
 		return errors.New(err.Error())
 	}
 
-	log.Info("Token validated successfully")
+	log.Debug("Token validated successfully")
 	return nil
 }
 
@@ -325,13 +330,13 @@ func GetTLSConfig(config *conf.ServerConfigurations, certificate string, key str
 	}
 
 	// Get valid server name
-	serverName := config.Servername
+	serverName := config.ServerName
 	serverNameIsValid, validateServerNameErr := ValidateServerName(serverName)
 	if validateServerNameErr != nil || !serverNameIsValid {
 		log.Error("validate server name error")
 		return nil, validateServerNameErr
 	}
-	sslCiphers := config.Sslciphers
+	sslCiphers := config.SslCiphers
 	if len(sslCiphers) == 0 {
 		return nil, errors.New("TLS cipher configuration is not recommended or invalid")
 	}
