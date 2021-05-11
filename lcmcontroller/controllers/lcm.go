@@ -253,7 +253,11 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 		return pkgDetails, errors.New("failed to convert yaml to json")
 	}
 
-	json.Unmarshal(data, &pkgDetails)
+	err = json.Unmarshal(data, &pkgDetails)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		return pkgDetails, err
+	}
 	return pkgDetails, nil
 }
 
@@ -333,8 +337,11 @@ func (c *LcmController) Instantiate() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 
 	var req models.InstantiateRequest
-	json.Unmarshal(c.Ctx.Input.RequestBody, &req)
-
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &req)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
+		return
+	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	appInsId, tenantId, hostIp, packageId, appName, err := c.validateToken(accessToken, req, clientIp)
 	if err != nil {
@@ -664,6 +671,7 @@ func (c *LcmController) Query() {
 		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -739,6 +747,7 @@ func (c *LcmController) QueryKPI() {
 		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		util.ClearByteArray(bKey)
 		return
 	}
 	util.ClearByteArray(bKey)
@@ -805,6 +814,7 @@ func (c *LcmController) QueryMepCapabilities() {
 		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -1196,6 +1206,7 @@ func (c *LcmController) GetWorkloadDescription() {
 		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		util.ClearByteArray(bKey)
 		return
 	}
 

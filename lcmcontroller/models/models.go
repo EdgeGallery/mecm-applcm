@@ -277,7 +277,7 @@ type AppInstancesInfo struct {
 	AppInstances string `json:"appInstances"`
 }
 
-// App instances key information
+// App instance stale records
 type AppInstanceStaleRec struct {
 	AppInstanceId string `orm:"pk" json:"appInstanceId"`
 	TenantId      string `json:"tenantId"`
@@ -288,7 +288,7 @@ type MecHostStaleRecords struct {
 	MecHostStaleRecs []MecHostStaleRec `json:"mecHostStaleRecs"`
 }
 
-// App instances key information
+// Mec host stale records
 type MecHostStaleRec struct {
 	MecHostId string `orm:"pk" json:"mechostIp"`
 }
@@ -307,7 +307,7 @@ type InstantiateRequest struct {
 	Origin string `json:"origin"`
 }
 
-// Mec hardware capabilities
+// App package details info
 type AppPkgDetails struct {
 	App_product_name   string `json:"app_product_name"`
 	App_provider_id string `json:"app_provider_id"`
