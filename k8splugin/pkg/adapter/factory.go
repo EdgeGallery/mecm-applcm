@@ -19,6 +19,7 @@ package adapter
 import (
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"k8splugin/util"
 	"os"
 )
 
@@ -26,11 +27,11 @@ import (
 // Get client based on deploy type
 func GetClient(deployType string, hostIp string) (client ClientIntf, err error) {
 	switch deployType {
-	case "helm":
+	case util.DeployType:
 		hc, err := NewHelmClient(hostIp)
 		if os.IsNotExist(err) {
-			log.Error("Kubeconfig corresponding to given Edge can't be found.")
-			return nil, errors.New("kubeconfig corresponding to given edge cannot be found")
+			log.Error(util.KubeConfigNotFound)
+			return nil, errors.New(util.KubeConfigNotFound)
 		}
 		return hc, nil
 	default:

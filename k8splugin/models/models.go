@@ -26,14 +26,14 @@ func init() {
 	orm.RegisterModel(new(AppPackage))
 }
 
-// Application instance info record
+// AppInstanceInfo info record
 type AppInstanceInfo struct {
 	AppInsId   string `orm:"pk"`
 	HostIp     string
 	WorkloadId string
 }
 
-// Application package info record
+// AppPackage info record
 type AppPackage struct {
 	AppPkgId      string `orm:"pk"`
 	HostIp        string
@@ -42,53 +42,54 @@ type AppPackage struct {
 	DockerImages  string
 }
 
-// Application Information
+// AppInfo Information
 type AppInfo struct {
 	Pods []PodInfo `json:"pods"`
 }
 
-// Pod Information
+// PodInfo Information
 type PodInfo struct {
 	PodStatus  string          `json:"podstatus"`
 	PodName    string          `json:"podname"`
 	Containers []ContainerInfo `json:"containers"`
 }
 
-// Container Information
+// ContainerInfo Information
 type ContainerInfo struct {
 	ContainerName string         `json:"containername"`
 	MetricsUsage  ContainerStats `json:"metricsusage"`
 }
 
-// Container statistics
+// ContainerStats statistics
 type ContainerStats struct {
 	CpuUsage  string `json:"cpuusage"`
 	MemUsage  string `json:"memusage"`
 	DiskUsage string `json:"diskusage"`
 }
 
-// Label Selector
+// LabelSelector Selector
 type LabelSelector struct {
-	Label []Label
+	Label []LabelList
 }
 
-// Label Info
-type Label struct {
+// LabelList Info
+type LabelList struct {
 	Kind     string
 	Selector string
 }
 
-// Pod information
+// PodDescribeInfo information
 type PodDescribeInfo struct {
-	PodDescInfo []PodDescInfo `json:"pods"`
+	PodDescInfo []PodDescList `json:"pods"`
 }
 
-// Pod Description Info
-type PodDescInfo struct {
-	PodName     string `json:"podName"`
-	PodEventsInfo []string `json:"podEventsInfo"`
+// PodDescList info
+type PodDescList struct {
+	PodName       string   `json:"podName"`
+	PodEventsList []string `json:"podEventsInfo"`
 }
 
+// SwImageDescriptor information
 type SwImageDescriptor struct {
 	Id               string `json:"id"`
 	Name             string `json:"name"`

@@ -102,7 +102,7 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 }
 
 // Gets deployment artifact
-func (c *HelmClient) getDeploymentArtifact(dir string, ext string) (string, error) {
+func getDeploymentArtifact(dir string, ext string) (string, error) {
 	d, err := os.Open(dir)
 	if err != nil {
 		log.Info("failed to open the directory")
@@ -129,7 +129,7 @@ func (c *HelmClient) getDeploymentArtifact(dir string, ext string) (string, erro
 func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, error) {
 
 	pkgPath := appPackagesBasePath + tenantId + "/" + packageId + hostIp + "/Artifacts/Deployment/Charts"
-	artifact, _ := c.getDeploymentArtifact(pkgPath, ".tar")
+	artifact, _ := getDeploymentArtifact(pkgPath, ".tar")
 	if artifact == "" {
 		log.Error("Artifact not available in application package.")
 		return "", errors.New("Helm chart not available in application package.")
@@ -320,7 +320,7 @@ func (hc *HelmClient) WorkloadEvents(relName string) (string, error) {
 }
 
 func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
-	label models.Label) (models.PodDescribeInfo, error) {
+	label models.LabelList) (models.PodDescribeInfo, error) {
 	options := metav1.ListOptions{
 		LabelSelector: label.Selector,
 	}
@@ -384,7 +384,7 @@ func (hc *HelmClient) getClientSet(relName string) (clientset *kubernetes.Client
 }
 
 func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
-	podName string) (podDescInfo models.PodDescInfo) {
+	podName string) (podDescInfo models.PodDescList) {
 	ref.Kind = ""
 	if _, isMirrorPod := pod.Annotations[corev1.MirrorPodAnnotationKey]; isMirrorPod {
 		ref.UID = types.UID(pod.Annotations[corev1.MirrorPodAnnotationKey])
@@ -392,11 +392,11 @@ func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 	events, _ := clientset.CoreV1().Events(util.Default).Search(scheme.Scheme, ref)
 	podDescInfo.PodName = podName
 	if len(events.Items) == 0 {
-		podDescInfo.PodEventsInfo = append(podDescInfo.PodEventsInfo,
+		podDescInfo.PodEventsList = append(podDescInfo.PodEventsList,
 			"Pod is running successfully")
 	}
 	for _, e := range events.Items {
-		podDescInfo.PodEventsInfo = append(podDescInfo.PodEventsInfo, strings.TrimSpace(e.Message))
+		podDescInfo.PodEventsList = append(podDescInfo.PodEventsList, strings.TrimSpace(e.Message))
 	}
 	return podDescInfo
 }
@@ -404,7 +404,7 @@ func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 // Get label selector
 func getLabelSelector(manifest []Manifest) models.LabelSelector {
 	var labelSelector models.LabelSelector
-	var label models.Label
+	var label models.LabelList
 
 	for i := 0; i < len(manifest); i++ {
 		if manifest[i].Kind == util.Deployment || manifest[i].Kind == util.Pod || manifest[i].Kind == "Service" {

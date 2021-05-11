@@ -20,6 +20,7 @@ import (
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	_ "k8splugin/config"
+	_ "k8splugin/log"
 	_ "k8splugin/models"
 	_ "k8splugin/pgdb"
 	"k8splugin/pkg/server"
@@ -41,7 +42,7 @@ func main() {
 	}
 
 	// Create GRPC server
-	serverConfig := server.ServerGRPCConfig{Address: config.Server.Httpsaddr, Port: config.Server.Serverport,
+	serverConfig := server.ServerGRPCConfig{Address: config.Server.HttpsAddr, Port: config.Server.ServerPort,
 		ServerConfig: &config.Server}
 	grpcServer := server.NewServerGRPC(serverConfig)
 

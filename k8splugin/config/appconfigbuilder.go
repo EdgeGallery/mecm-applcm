@@ -63,6 +63,11 @@ func (_ *AppAuthConfigBuilder) extractTarFile(gzipStream io.Reader) (string, err
 		return "", err
 	}
 
+	err = uncompressedStream.Close()
+	if err != nil {
+		log.Error("failed to close the stream")
+		return "", err
+	}
 	return dirName, nil
 }
 

@@ -67,7 +67,7 @@ func TestGetDbAdapterSuccess(t *testing.T) {
 	os.Setenv("K8S_PLUGIN_DB_PASSWORD", "fe0Hmv%sbq")
 
 	// Create GRPC server
-	serverConfig := server.ServerGRPCConfig{Address: config.Server.Httpsaddr, Port: config.Server.Serverport,
+	serverConfig := server.ServerGRPCConfig{Address: config.Server.HttpsAddr, Port: config.Server.ServerPort,
 		ServerConfig: &config.Server}
 	_, err = pgdb.GetDbAdapter(serverConfig.ServerConfig)
 	assert.NoError(t, err, "TestGetDbAdapterSuccess execution result")
@@ -77,7 +77,7 @@ func TestGetDbAdapterSuccess(t *testing.T) {
 }
 
 func TestGetGetClientSuccess(t *testing.T) {
-	_, err := adapter.GetClient("helm", ipAddress)
+	_, err := adapter.GetClient(util.DeployType, ipAddress)
 	assert.Error(t, err, "TestGetGetClientSuccess execution result")
 	_, err = adapter.GetClient("default", ipAddress)
 	assert.Error(t, err, "TestGetGetClientSuccess execution result")

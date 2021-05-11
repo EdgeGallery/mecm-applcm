@@ -23,13 +23,13 @@ type Configurations struct {
 
 // ServerConfigurations exported
 type ServerConfigurations struct {
-	Sslciphers    string
-	Servername    string
-	Sslnotenabled bool
-	Certfilepath  string
-	Keyfilepath   string
-	Serverport    string
-	Httpsaddr     string
+	SslCiphers    string
+	ServerName    string
+	SslNotEnabled bool
+	CertFilePath  string
+	KeyFilePath   string
+	ServerPort    string
+	HttpsAddr     string
 	DbAdapter     string
 	DbSslMode     string
 }
