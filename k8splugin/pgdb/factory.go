@@ -28,7 +28,7 @@ func GetDbAdapter(serverConfigs *conf.ServerConfigurations) (db Database, err er
 	switch serverConfigs.DbAdapter {
 	case "pgDb":
 		db = &PgDb{}
-		err = db.InitDatabase(serverConfigs.DbSslMode)
+		err = db.InitDatabase(serverConfigs)
 		if err != nil {
 			log.Error("Failed to init database")
 			os.Exit(1)
