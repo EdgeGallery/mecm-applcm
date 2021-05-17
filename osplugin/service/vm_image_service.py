@@ -162,6 +162,8 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             vm_info.image_size = image_info.size
             vm_info.status = image_info.status
             commit()
+        if not image_info.size:
+            image_info.size = 0
         res.response = json.dumps({
             "imageId": vm_info.image_id,
             "imageName": vm_info.image_name,
