@@ -16,9 +16,11 @@
 
 package pgdb
 
+import "k8splugin/conf"
+
 // Database API's
 type Database interface {
-	InitDatabase(dbSslMode string) error
+	InitDatabase(serverConfigs *conf.ServerConfigurations) error
 	InsertOrUpdateData(data interface{}, cols ...string) (err error)
 	ReadData(data interface{}, cols ...string) (err error)
 	DeleteData(data interface{}, cols ...string) (err error)

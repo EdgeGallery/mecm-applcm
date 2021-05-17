@@ -18,6 +18,7 @@ package test
 
 import (
 	"errors"
+	"k8splugin/conf"
 	"k8splugin/models"
 	"k8splugin/util"
 )
@@ -26,7 +27,7 @@ type mockK8sPluginDb struct {
 	appInstanceRecords map[string]models.AppInstanceInfo
 }
 
-func (db *mockK8sPluginDb) InitDatabase(_ string) error {
+func (db *mockK8sPluginDb) InitDatabase(_ *conf.ServerConfigurations) error {
 	panic("implement me")
 }
 

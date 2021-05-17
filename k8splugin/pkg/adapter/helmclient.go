@@ -101,41 +101,6 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 	}
 }
 
-// Gets deployment artifact
-func getDeploymentArtifact(dir string, ext string) (string, error) {
-	d, err := os.Open(dir)
-	if err != nil {
-		log.Info("failed to open the directory")
-		return "", err
-	}
-	defer d.Close()
-
-	files, err := d.Readdir(-1)
-	if err != nil {
-		log.Info("failed to read the directory")
-		return "", err
-	}
-
-	for _, file := range files {
-		if file.Mode().IsRegular() && (filepath.Ext(file.Name()) == ext ||
-			filepath.Ext(file.Name()) == ".gz" || filepath.Ext(file.Name()) == ".tgz") {
-			return dir + "/" + file.Name(), nil
-		}
-	}
-	return "", err
-}
-
-// Get helm chart
-func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, error) {
-
-	pkgPath := appPackagesBasePath + tenantId + "/" + packageId + hostIp + "/Artifacts/Deployment/Charts"
-	artifact, _ := getDeploymentArtifact(pkgPath, ".tar")
-	if artifact == "" {
-		log.Error("Artifact not available in application package.")
-		return "", errors.New("Helm chart not available in application package.")
-	}
-	return artifact, nil
-}
 
 // Install a given helm chart
 func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk string, db pgdb.Database) (string, error) {
@@ -275,7 +240,7 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	labelSelector := getLabelSelector(manifest)
 
 	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig)
@@ -319,31 +284,40 @@ func (hc *HelmClient) WorkloadEvents(relName string) (string, error) {
 	return string(podDescInfoJson), nil
 }
 
-func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
-	label models.LabelList) (models.PodDescribeInfo, error) {
-	options := metav1.ListOptions{
-		LabelSelector: label.Selector,
-	}
-	pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
-	if err != nil {
-		return podDesc, err
-	}
-	for _, podItem := range pods.Items {
-		podName := podItem.GetObjectMeta().GetName()
-		pod, err := clientset.CoreV1().Pods(util.Default).Get(context.TODO(), podName, metav1.GetOptions{})
-		if err != nil {
-			return podDesc, err
-		}
+// Get helm chart
+func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, error) {
 
-		if ref, err := reference.GetReference(scheme.Scheme, pod); err != nil {
-			log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
-			return podDesc, err
-		} else {
-			podDescInfo := getPodDescInfo(ref, pod, clientset, podName)
-			podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
+	pkgPath := appPackagesBasePath + tenantId + "/" + packageId + hostIp + "/Artifacts/Deployment/Charts"
+	artifact, _ := getDeploymentArtifact(pkgPath, ".tar")
+	if artifact == "" {
+		log.Error("Artifact not available in application package.")
+		return "", errors.New("Helm chart not available in application package.")
+	}
+	return artifact, nil
+}
+
+// Gets deployment artifact
+func getDeploymentArtifact(dir string, ext string) (string, error) {
+	d, err := os.Open(dir)
+	if err != nil {
+		log.Info("failed to open the directory")
+		return "", err
+	}
+	defer d.Close()
+
+	files, err := d.Readdir(-1)
+	if err != nil {
+		log.Info("failed to read the directory")
+		return "", err
+	}
+
+	for _, file := range files {
+		if file.Mode().IsRegular() && (filepath.Ext(file.Name()) == ext ||
+			filepath.Ext(file.Name()) == ".gz" || filepath.Ext(file.Name()) == ".tgz") {
+			return dir + "/" + file.Name(), nil
 		}
 	}
-	return podDesc, nil
+	return "", err
 }
 
 func (hc *HelmClient) getClientSet(relName string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
@@ -381,6 +355,33 @@ func (hc *HelmClient) getClientSet(relName string) (clientset *kubernetes.Client
 		return clientset, manifest, err
 	}
 	return clientset, manifest, nil
+}
+
+func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
+	label models.LabelList) (models.PodDescribeInfo, error) {
+	options := metav1.ListOptions{
+		LabelSelector: label.Selector,
+	}
+	pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
+	if err != nil {
+		return podDesc, err
+	}
+	for _, podItem := range pods.Items {
+		podName := podItem.GetObjectMeta().GetName()
+		pod, err := clientset.CoreV1().Pods(util.Default).Get(context.TODO(), podName, metav1.GetOptions{})
+		if err != nil {
+			return podDesc, err
+		}
+
+		if ref, err := reference.GetReference(scheme.Scheme, pod); err != nil {
+			log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
+			return podDesc, err
+		} else {
+			podDescInfo := getPodDescInfo(ref, pod, clientset, podName)
+			podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
+		}
+	}
+	return podDesc, nil
 }
 
 func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,

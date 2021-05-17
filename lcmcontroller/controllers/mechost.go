@@ -154,7 +154,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		Address:            request.Address,
 		Affinity:           request.Affinity,
 		UserName:           request.UserName,
-		ConfigUploadStatus: "false",
+		ConfigUploadStatus: "",
 		Coordinates:        request.Coordinates,
 		Vim:                request.Vim,
 		Origin:             request.Origin,

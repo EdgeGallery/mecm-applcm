@@ -106,7 +106,7 @@ func (c *LcmController) UploadConfig() {
 		return
 	}
 
-	hostInfoRec.ConfigUploadStatus = "true"
+	hostInfoRec.ConfigUploadStatus = "Uploaded"
 	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save mec host info record to database.")
@@ -303,7 +303,7 @@ func (c *LcmController) RemoveConfig() {
 		c.HandleLoggingForFailure(clientIp, err.Error())
 		return
 	}
-	hostInfoRec.ConfigUploadStatus = "false"
+	hostInfoRec.ConfigUploadStatus = ""
 	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save mec host info record to database.")
