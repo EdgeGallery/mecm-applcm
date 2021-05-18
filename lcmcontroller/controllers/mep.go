@@ -30,6 +30,7 @@ type MepController struct {
 }
 
 func (c *MepController) Services() {
+	log.Info("Query mec host request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -38,44 +39,38 @@ func (c *MepController) Services() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	log.Info("mepm get services request received.")
 	url := "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
-	GetFromMep(c, url, clientIp)
-}
 
-func (c *MepController) Kong_log() {
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	log.Info("mepm get kong log request received.")
-	url := "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
-	GetFromMep(c, url, clientIp)
-}
-
-
-
-func GetFromMep(c *MepController, url string, clientIp string){
-	rsp, err :=http.Get(url)
+	response, err :=http.Get(url)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
 	}
 
-	body, err := ioutil.ReadAll(rsp.Body)
+	body, err := ioutil.ReadAll(response.Body)
+	_, _ = c.Ctx.ResponseWriter.Write(body)
+	c.handleLoggingForSuccess(clientIp, "Query Service from mep is successful")
+}
+
+func (c *MepController) KongLog() {
+	log.Info("Query mec host request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrFromMep)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	url := "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
+
+	response, err := http.Get(url)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write(body)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
-	c.handleLoggingForSuccess(clientIp, "Query from mep successful")
+	body, err := ioutil.ReadAll(response.Body)
+	_, _ = c.Ctx.ResponseWriter.Write(body)
+	c.handleLoggingForSuccess(clientIp, "Query Service call status info is successful")
 }

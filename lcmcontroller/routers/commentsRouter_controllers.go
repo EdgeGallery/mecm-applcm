@@ -57,7 +57,7 @@ func init() {
 	initAPI(util.MecHostcontroller, "SynchronizeMecHostUpdatedRecord", "/hosts/sync_updated", util.GET)
 	initAPI(util.MecHostcontroller, "SynchronizeMecHostStaleRecord", "/hosts/sync_deleted", util.GET)
 	initAPI(util.Mepcontroller, "Services", "/mep/services", util.GET)
-	initAPI(util.Mepcontroller, "Kong_log", "/mep/kong_log", util.GET)
+	initAPI(util.Mepcontroller, "KongLog", "/mep/kong_log", util.GET)
 }
 
 func initAPI(controllerName, methodName, path, operationType string,) {
