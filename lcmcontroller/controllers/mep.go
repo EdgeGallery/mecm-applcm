@@ -18,6 +18,7 @@
 package controllers
 
 import (
+	"crypto/tls"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"lcmcontroller/util"
@@ -39,9 +40,13 @@ func (c *MepController) Services() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	url := "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 
-	response, err :=http.Get(url)
+	client := &http.Client{Transport: tr}
+	url := "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
+	response, err :=client.Get(url)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
@@ -61,15 +66,19 @@ func (c *MepController) KongLog() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 
+	client := &http.Client{Transport: tr}
 	url := "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
 
-	response, err := http.Get(url)
+	response, err := client.Get(url)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
 	}
-
+	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	_, _ = c.Ctx.ResponseWriter.Write(body)
 	c.handleLoggingForSuccess(clientIp, "Query Service call status info is successful")
