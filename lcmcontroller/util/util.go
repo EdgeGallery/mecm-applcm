@@ -135,6 +135,7 @@ const (
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
+	Mepcontroller        = "lcmcontroller/controllers:MepController"
 	Hosts                = "/hosts"
 	DELETE               = "delete"
 	GET                  = "get"
@@ -148,6 +149,8 @@ const (
 	MecHostInfo          = "MecHostInfo"
 	PkgId                = "package_id"
 	PkgUrlPath           = "/tenants/:tenantId/packages/:packageId"
+	ErrCallFromMep string = "failed to send metadata information"
+	ErrFromMep    string = "failed to send metadata information"
 )
 var VmImageMap       = make(map[int32][]byte, 150000)
 

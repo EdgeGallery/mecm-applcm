@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright 2020 Huawei Technologies Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +39,7 @@ func init() {
 			&controllers.LcmController{controllers.BaseController{Db: adapter}},
 			&controllers.ImageController{controllers.BaseController{Db: adapter}},
 			&controllers.MecHostController{controllers.BaseController{Db: adapter}},
+			&controllers.MecController{controllers.BaseController{Db: adapter}},
 		),
 	)
 	beego.AddNamespace(ns)
