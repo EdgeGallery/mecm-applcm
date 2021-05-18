@@ -25,11 +25,11 @@ import (
 )
 
 // Mep Controller
-type MecController struct {
+type MepController struct {
 	BaseController
 }
 
-func (c *MecController) Services() {
+func (c *MepController) Services() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -43,7 +43,7 @@ func (c *MecController) Services() {
 	GetFromMep(c, url, clientIp)
 }
 
-func (c *MecController) Kong_log() {
+func (c *MepController) Kong_log() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -59,7 +59,7 @@ func (c *MecController) Kong_log() {
 
 
 
-func GetFromMep(c *MecController, url string, clientIp string){
+func GetFromMep(c *MepController, url string, clientIp string){
 	rsp, err :=http.Get(url)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
