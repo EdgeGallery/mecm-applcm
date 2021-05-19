@@ -56,6 +56,8 @@ func init() {
 	initAPI(util.MecHostcontroller, "BatchTerminate", "/tenants/:tenantId/app_instances/batchTerminate", util.DELETE)
 	initAPI(util.MecHostcontroller, "SynchronizeMecHostUpdatedRecord", "/hosts/sync_updated", util.GET)
 	initAPI(util.MecHostcontroller, "SynchronizeMecHostStaleRecord", "/hosts/sync_deleted", util.GET)
+	initAPI(util.Mepcontroller, "Services", "/mep/services", util.GET)
+	initAPI(util.Mepcontroller, "KongLog", "/mep/kong_log", util.GET)
 }
 
 func initAPI(controllerName, methodName, path, operationType string,) {
