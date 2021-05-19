@@ -153,9 +153,10 @@ const (
 	//mep service calling
 	ErrCallFromMep  string = "failed to execute rest calling, check if mep service is ready."
 	MepServiceQuery string = "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
-	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
+	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
 )
-var VmImageMap       = make(map[int32][]byte, 150000)
+
+var VmImageMap = make(map[int32][]byte, 150000)
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
