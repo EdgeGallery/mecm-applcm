@@ -50,7 +50,7 @@ func (c *MepController) Services() {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
 	}
-
+	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	_, _ = c.Ctx.ResponseWriter.Write(body)
 	c.handleLoggingForSuccess(clientIp, "Query Service from mep is successful")
