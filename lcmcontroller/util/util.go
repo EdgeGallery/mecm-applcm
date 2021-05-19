@@ -149,8 +149,11 @@ const (
 	MecHostInfo          = "MecHostInfo"
 	PkgId                = "package_id"
 	PkgUrlPath           = "/tenants/:tenantId/packages/:packageId"
-	ErrCallFromMep string = "failed to send metadata information"
-	ErrFromMep    string = "failed to send metadata information"
+
+	//mep service calling
+	ErrCallFromMep  string = "failed to execute rest calling, check if mep service is ready."
+	MepServiceQuery string = "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
+	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
 )
 var VmImageMap       = make(map[int32][]byte, 150000)
 

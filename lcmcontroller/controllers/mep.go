@@ -31,7 +31,7 @@ type MepController struct {
 }
 
 func (c *MepController) Services() {
-	log.Info("Query mec host request received.")
+	log.Info("Query services request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -45,8 +45,7 @@ func (c *MepController) Services() {
 	}
 
 	client := &http.Client{Transport: tr}
-	url := "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
-	response, err :=client.Get(url)
+	response, err :=client.Get(util.MepServiceQuery)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
@@ -58,7 +57,7 @@ func (c *MepController) Services() {
 }
 
 func (c *MepController) KongLog() {
-	log.Info("Query mec host request received.")
+	log.Info("Query kong log request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -71,9 +70,8 @@ func (c *MepController) KongLog() {
 	}
 
 	client := &http.Client{Transport: tr}
-	url := "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
 
-	response, err := client.Get(url)
+	response, err := client.Get(util.MepKongLogQuery)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
@@ -81,5 +79,5 @@ func (c *MepController) KongLog() {
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	_, _ = c.Ctx.ResponseWriter.Write(body)
-	c.handleLoggingForSuccess(clientIp, "Query Service call status info is successful")
+	c.handleLoggingForSuccess(clientIp, "Query Kong log from mep is successful")
 }
