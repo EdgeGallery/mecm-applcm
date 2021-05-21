@@ -43,4 +43,4 @@ COPY *.py ./
 
 COPY --from=developement /venv ./venv
 
-CMD ./venv/bin/python3 run.py
+CMD ./venv/bin/python3 main.py

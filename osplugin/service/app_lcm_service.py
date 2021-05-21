@@ -125,7 +125,7 @@ def _get_output_data(output_list, heat, stack_id):
             'vncUrl': output_value['vncUrl'],
             'networks': []
         }
-        if 'networks' in output_value:
+        if 'networks' in output_value and output_value['networks'] is not None:
             for net_name, ip_data in output_value['networks'].items():
                 if utils.validate_uuid(net_name):
                     continue

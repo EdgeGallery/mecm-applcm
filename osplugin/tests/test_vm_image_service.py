@@ -44,6 +44,16 @@ def make_delete_image_request(access_token, host_ip, app_instance_id, image_id):
                                                imageId=image_id)
 
 
+def make_query_image_request(access_token, host_ip, app_instance_id, image_id):
+    """
+    make_delete_image_request
+    """
+    return lcmservice_pb2.QueryVmImageRequest(accessToken=access_token,
+                                              hostIp=host_ip,
+                                              appInstanceId=app_instance_id,
+                                              imageId=image_id)
+
+
 def make_download_image_request(access_token, chunk_num, host_ip, app_instance_id, image_id):
     """
     make_download_image_request
@@ -61,7 +71,7 @@ class VmImageServiceTest(unittest.TestCase):
     """
     vm_image_service = VmImageService()
     access_token = gen_token.test_access_token
-    host_ip = '159.138.23.91'
+    host_ip = '10.10.9.75'
 
     def test_create_image(self):
         """
@@ -89,10 +99,10 @@ class VmImageServiceTest(unittest.TestCase):
         """
         test_query_image
         """
-        request = make_delete_image_request(access_token=self.access_token,
+        request = make_query_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
-                                            image_id="7258b4b1-c358-47e4-9863-dc181532b2bb")
+                                            image_id="e8360231-14fe-4baf-b34a-5be17c62e2f8")
         res = self.vm_image_service.queryVmImage(request, None)
         print(res)
 
