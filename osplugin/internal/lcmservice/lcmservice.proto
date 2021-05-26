@@ -22,8 +22,7 @@ message InstantiateRequest {
   string appInstanceId = 3;
   string appPackageId = 4;
   string hostIp = 5;
-  string ak     = 6;
-  string sk     = 7;
+  map<string, string> parameters = 6;
 }
 
 message InstantiateResponse {

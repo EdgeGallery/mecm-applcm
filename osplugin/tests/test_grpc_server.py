@@ -49,7 +49,7 @@ class GrpcServerTest(unittest.TestCase):
     grpc客户端
     """
     access_token = gen_token.test_access_token
-    host_ip = '159.138.58.41'
+    host_ip = '192.168.1.110'
 
     def __init__(self, method_name='runTest'):
         super().__init__(method_name)
@@ -82,7 +82,7 @@ class GrpcServerTest(unittest.TestCase):
         """
         测试上传包
         """
-        with open('resources/ht-package.zip', 'rb') as file:
+        with open('resources/simple-package.zip', 'rb') as file:
             package = file.read()
         request = iter([
             lcmservice_pb2.UploadPackageRequest(accessToken=self.access_token),

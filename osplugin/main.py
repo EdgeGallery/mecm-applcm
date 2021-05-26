@@ -18,9 +18,7 @@
 # !/usr/app/venv/python3
 # -*- coding: utf-8 -*-
 from core import grpc_server
-from task import upload_image_task
 
 
 if __name__ == "__main__":
-    upload_image_task.start()
     grpc_server.serve()

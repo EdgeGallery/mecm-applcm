@@ -177,6 +177,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 for file in namelist:
                     zip_file.extract(file, app_package_path)
             pkg = CsarPkg(app_package_path)
+            pkg.check_image(host_ip)
             pkg.translate()
             res.status = utils.SUCCESS
         except Exception as exception:
