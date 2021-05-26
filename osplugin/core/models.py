@@ -201,17 +201,29 @@ class AppInsMapper(db.Entity):
         return self.app_instance_id
 
 
+class AppPkgMapper(db.Entity):
+    """
+    t_app_package表
+    """
+    _table_ = 't_app_package'
+    app_package_id = Required(str, max_len=64)
+    host_ip = Required(str, max_len=15)
+    package_path = Required(str, max_len=256)
+    hot_file_path = Optional(str, max_len=256, nullable=True)
+
+
+
 class VmImageInfoMapper(db.Entity):
     """
     t_vm_image_info表映射
     """
     _table_ = 't_vm_image_info'
-    app_instance_id = Required(str, max_len=64)
-    host_ip = Required(str, max_len=15)
-    vm_id = Required(str, max_len=64)
     image_id = Required(str, max_len=64)
+    host_ip = Required(str, max_len=15)
     image_name = Required(str, max_len=64)
-    image_size = Required(int, size=64)
+    status = Required(str, max_len=5)
+    image_size = Optional(int, size=64, nullable=True)
+    checksum = Optional(str, max_len=64, nullable=True)
 
     def get_table_name(self):
         """

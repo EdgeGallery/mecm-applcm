@@ -130,10 +130,8 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
         VmImageInfoMapper(image_id=image_id,
                           image_name=image_name,
-                          image_size=0,
-                          vm_id=request.vmId,
-                          app_instance_id=request.appInstanceId,
-                          host_ip=request.hostIp)
+
+                          host_ip=host_ip)
         commit()
         res.response = json.dumps({'imageId': image_id})
         return res
@@ -147,12 +145,12 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
-        vm_info = VmImageInfoMapper.get(image_id=request.imageId)
+        vm_info = VmImageInfoMapper.get(image_id=request.imageId,host_ip=host_ip)
         if not vm_info:
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
-        glance_client = create_glance_client(host_ip)
         try:
+            glance_client = create_glance_client(host_ip)
             image_info = glance_client.images.get(request.imageId)
         except Exception as exception:
             LOG.error(exception, exc_info=True)
@@ -208,11 +206,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             raise ParamNotValid("host ip is null...")
-        try:
-            glance_client = create_glance_client(host_ip)
-        except Exception as exception:
-            LOG.error(exception, exc_info=True)
-            raise exception
+        glance_client = create_glance_client(host_ip)
 
         iterable = glance_client.images.data(image_id=request.imageId)
 
