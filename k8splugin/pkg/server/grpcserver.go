@@ -557,13 +557,14 @@ func (s *ServerGRPC) validateInputParamsForInstantiate(
 			util.TenantIdIsInvalid))
 	}
 
-	ak = req.GetAk()
+	parameters := req.GetParameters()
+	ak = parameters["ak"]
 	if ak == "" {
 		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AKIsInvalid))
 	}
 
-	sk = req.GetSk()
+	sk = parameters["sk"]
 	if sk == "" {
 		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.SKIsInvalid))
