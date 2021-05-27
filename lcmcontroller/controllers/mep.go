@@ -59,7 +59,7 @@ func GetFromMep(c *MepController, url string){
 
 	client := &http.Client{Transport: tr}
 
-	response, err := client.Get(util.MepSubscribeStatistic)
+	response, err := client.Get(url)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
 		return
