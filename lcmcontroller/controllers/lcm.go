@@ -41,7 +41,7 @@ import (
 )
 
 var (
-	PackageFolderPath   = "/usr/app/"
+	PackageFolderPath   = "/usr/app/packages/"
 )
 
 // Lcm Controller
@@ -342,6 +342,9 @@ func (c *LcmController) Instantiate() {
 		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return
 	}
+	if req.Parameters == nil {
+		req.Parameters = make(map[string]string)
+	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	appInsId, tenantId, hostIp, packageId, appName, err := c.validateToken(accessToken, req, clientIp)
 	if err != nil {
@@ -400,7 +403,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err, appAuthConfig, acm := processAkSkConfig(appInsId, appName)
+	err, acm := processAkSkConfig(appInsId, appName, &req)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
@@ -428,7 +431,7 @@ func (c *LcmController) Instantiate() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, _ = adapter.Instantiate(tenantId, hostIp, packageId, accessToken, appAuthConfig)
+	err, _ = adapter.Instantiate(tenantId, accessToken, appInsId, req)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
@@ -460,19 +463,28 @@ func (c *LcmController) validateToken(accessToken string, req models.Instantiate
 }
 
 // Process Ak Sk configuration
-func processAkSkConfig(appInsId, appName string) (error, config.AppAuthConfig, config.AppConfigAdapter) {
+func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest) (error, config.AppConfigAdapter) {
 	appAuthConfig := config.NewAppAuthCfg(appInsId)
-	err := appAuthConfig.GenerateAkSK()
-	if err != nil {
-		return err, config.AppAuthConfig{}, config.AppConfigAdapter{}
+	if req.Parameters["ak"] == "" || req.Parameters["sk"] == "" {
+		err := appAuthConfig.GenerateAkSK()
+		if err != nil {
+			return err, config.AppConfigAdapter{}
+		}
+		req.Parameters["ak"] = appAuthConfig.Ak
+		req.Parameters["sk"] = appAuthConfig.Sk
+		req.AkSkLcmGen = true
+	} else {
+		appAuthConfig.Ak = req.Parameters["ak"]
+		appAuthConfig.Sk = req.Parameters["sk"]
+		req.AkSkLcmGen = false
 	}
 
 	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig)
-	err = acm.PostAppAuthConfig()
+	err := acm.PostAppAuthConfig()
 	if err != nil {
-		return err, config.AppAuthConfig{}, config.AppConfigAdapter{}
+		return err, config.AppConfigAdapter{}
 	}
-	return nil, appAuthConfig, acm
+	return nil, acm
 }
 
 

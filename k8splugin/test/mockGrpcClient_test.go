@@ -157,15 +157,16 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
-
+	parameters := make(map[string]string)
+	parameters["ak"] = "1"
+	parameters["sk"] = "1"
 	req := &lcmservice.InstantiateRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		AppPackageId:  packageId,
 		TenantId:      tenantIdentifier,
-		Ak: ak,
-		Sk: sk,
+		Parameters:    parameters,
 	}
 	resp, err := c.client.Instantiate(ctx, req)
 	return resp.Status, err
