@@ -32,58 +32,20 @@ type MepController struct {
 
 func (c *MepController) Services() {
 	log.Info("Query services request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	client := &http.Client{Transport: tr}
-	response, err :=client.Get(util.MepServiceQuery)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
-		return
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	_, _ = c.Ctx.ResponseWriter.Write(body)
-	c.handleLoggingForSuccess(clientIp, "Query Service from mep is successful")
+	GetFromMep(c,util.MepServiceQuery)
 }
 
 func (c *MepController) KongLog() {
 	log.Info("Query kong log request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	client := &http.Client{Transport: tr}
-
-	response, err := client.Get(util.MepKongLogQuery)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
-		return
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	_, _ = c.Ctx.ResponseWriter.Write(body)
-	c.handleLoggingForSuccess(clientIp, "Query Kong log from mep is successful")
+	GetFromMep(c,util.MepKongLogQuery)
 }
 
 func (c *MepController) Subscribe() {
 	log.Info("Query subscribe statistic request received.")
+	GetFromMep(c,util.MepSubscribeStatistic)
+}
+
+func GetFromMep(c *MepController, url string){
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -105,5 +67,5 @@ func (c *MepController) Subscribe() {
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	_, _ = c.Ctx.ResponseWriter.Write(body)
-	c.handleLoggingForSuccess(clientIp, "Query subscribe statistic from mep is successful")
+	c.handleLoggingForSuccess(clientIp, "Query data from mep is successful")
 }
