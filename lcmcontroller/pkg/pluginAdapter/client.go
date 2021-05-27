@@ -18,7 +18,7 @@ package pluginAdapter
 import (
 	"bytes"
 	beegoCtx "github.com/astaxie/beego/context"
-	"lcmcontroller/config"
+	"lcmcontroller/models"
 	"mime/multipart"
 
 	"golang.org/x/net/context"
@@ -26,8 +26,8 @@ import (
 
 // GRPC client APIs
 type ClientIntf interface {
-	Instantiate(ctx context.Context, tenantId string, host string, packageId string,
-		accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error)
+	Instantiate(ctx context.Context, tenantId string, accessToken string, appInsId string,
+		req models.InstantiateRequest) (status string, error error)
 	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
 	Query(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
 	UploadConfig(ctx context.Context, multipartFile multipart.File,

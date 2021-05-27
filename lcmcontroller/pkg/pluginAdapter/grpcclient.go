@@ -22,8 +22,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
-	"lcmcontroller/config"
 	"lcmcontroller/internal/lcmservice"
+	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
 	"os"
@@ -87,16 +87,16 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 }
 
 // Instantiate application
-func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, host string, packageId string,
-	accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
+func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, accessToken string,
+	appInsId string, instantiateReq models.InstantiateRequest) (status string, error error) {
 	req := &lcmservice.InstantiateRequest{
-		HostIp:        host,
+		HostIp:        instantiateReq.HostIp,
 		TenantId:      tenantId,
-		AppPackageId:  packageId,
+		AppPackageId:  instantiateReq.PackageId,
 		AccessToken:   accessToken,
-		AppInstanceId: akSkAppInfo.AppInsId,
-		Ak: akSkAppInfo.Ak,
-		Sk: akSkAppInfo.Sk,
+		AppInstanceId: appInsId,
+		Parameters: instantiateReq.Parameters,
+		AkSkLcmGen: instantiateReq.AkSkLcmGen,
 	}
 	resp, err := c.client.Instantiate(ctx, req)
 	if err != nil {

@@ -18,9 +18,9 @@ package test
 
 import (
 	"bytes"
-	beegoCtx "github.com/astaxie/beego/context"
 	"context"
-	"lcmcontroller/config"
+	beegoCtx "github.com/astaxie/beego/context"
+	"lcmcontroller/models"
 	"mime/multipart"
 )
 
@@ -28,7 +28,7 @@ const SUCCESS_RETURN = "Success"
 
 type mockClient struct{}
 
-func (mc *mockClient) Instantiate(ctx context.Context, tenantId string, host string, packageId string, accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
+func (mc *mockClient) Instantiate(ctx context.Context, tenantId string, accessToken string, appInsId string, req models.InstantiateRequest) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
 

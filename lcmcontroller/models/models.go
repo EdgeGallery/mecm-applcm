@@ -301,10 +301,12 @@ type DistributeRequest struct {
 
 // Application package instantiation request
 type InstantiateRequest struct {
-	HostIp string `json:"hostIp"`
-	PackageId string `json:"packageId"`
-	AppName string `json:"appName"`
-	Origin string `json:"origin"`
+	HostIp     string            `json:"hostIp"`
+	PackageId  string            `json:"packageId"`
+	AppName    string            `json:"appName"`
+	Origin     string            `json:"origin"`
+	Parameters map[string]string `json:"parameters"`
+	AkSkLcmGen bool              `json:"akSkGen"`
 }
 
 // App package details info

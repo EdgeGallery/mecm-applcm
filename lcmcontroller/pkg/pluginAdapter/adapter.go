@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"context"
 	beegoCtx "github.com/astaxie/beego/context"
-	"lcmcontroller/config"
+	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
 	"time"
@@ -39,13 +39,13 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 }
 
 // Instantiate application
-func (c *PluginAdapter) Instantiate(tenantId string, host string, packageId string,
-	accessToken string, akSkAppInfo config.AppAuthConfig) (error error, status string) {
+func (c *PluginAdapter) Instantiate(tenantId string, accessToken string, appInsId string,
+	req models.InstantiateRequest) (error error, status string) {
 	log.Info("Instantiation started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.Instantiate(ctx, tenantId, host, packageId, accessToken, akSkAppInfo)
+	status, err := c.client.Instantiate(ctx, tenantId, accessToken, appInsId, req)
 	if err != nil {
 		log.Error("failed to instantiate application")
 		return err, util.Failure
