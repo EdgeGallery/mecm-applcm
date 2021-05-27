@@ -47,8 +47,8 @@ import (
 )
 
 var (
-	KubeconfigPath = "/usr/app/config/"
-	appPackagesBasePath = "/usr/app/packages/"
+	KubeconfigPath = "/usr/app/artifacts/config/"
+	appPackagesBasePath = "/usr/app/artifacts/packages/"
 )
 
 // GRPC server

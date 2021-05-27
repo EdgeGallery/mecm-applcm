@@ -50,8 +50,8 @@ import (
 
 // Variables to be defined in deployment file
 var (
-	kubeconfigPath   = "/usr/app/config/"
-	appPackagesBasePath = "/usr/app/packages/"
+	kubeconfigPath   = "/usr/app/artifacts/config/"
+	appPackagesBasePath = "/usr/app/artifacts/packages/"
 )
 
 // Helm client

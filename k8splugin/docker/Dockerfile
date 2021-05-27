@@ -65,7 +65,8 @@ RUN chmod 750 $HOME &&\
     mkdir -p -m 700 $HOME/ssl &&\
     mkdir -p -m 750 $HOME/log &&\
     mkdir -p -m 750 $HOME/conf &&\
-    mkdir -p -m 750 $HOME/packages &&\
+    mkdir -p -m 750 $HOME/artifacts &&\
+    mkdir -p -m 750 $HOME/artifacts/packages &&\
     chown -hR $USER_NAME:$GROUP_NAME $HOME
 
 # Copy in the application exe.

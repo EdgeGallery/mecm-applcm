@@ -41,7 +41,7 @@ import (
 )
 
 var (
-	PackageFolderPath   = "/usr/app/"
+	PackageFolderPath   = "/usr/app/packages/"
 )
 
 // Lcm Controller
