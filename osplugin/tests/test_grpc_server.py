@@ -49,7 +49,7 @@ class GrpcServerTest(unittest.TestCase):
     grpc客户端
     """
     access_token = gen_token.test_access_token
-    host_ip = '192.168.1.110'
+    host_ip = '159.138.57.166'
 
     def __init__(self, method_name='runTest'):
         super().__init__(method_name)
@@ -142,8 +142,23 @@ class GrpcServerTest(unittest.TestCase):
             appInstanceId='ins001',
             appPackageId='pkg001',
             tenantId='tenant001',
-            ak='ak001',
-            sk='sk001'
+            parameters={
+                'ak': 'access-key',
+                'sk': 'secret-key',
+                'app_internet_gw': '192.168.227.1',
+                'app_internet_ip': '192.168.227.123',
+                'app_internet_mask': '255.255.255.0',
+                'app_n6_gw': '192.168.225.1',
+                'app_n6_ip': '192.168.225.121',
+                'app_n6_mask': '255.255.255.0',
+                'app_mp1_gw': '192.168.226.1',
+                'app_mp1_ip': '192.168.226.213',
+                'app_mp1_mask': '255.255.255.0',
+                'ue_ip_segment': '192.168.233.0/24',
+                'mep_ip': '192.168.1.226',
+                'mep_port': '8080'
+            },
+            akSkLcmGen=True
         )
         response = self.app_lcm_stub.instantiate(request)
         self.assertEqual(response.status, 'Success')

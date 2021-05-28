@@ -226,17 +226,22 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         LOG.debug('读取包的hot文件')
-        hot_yaml_path = get_hot_yaml_path(parameter.app_package_path)
+        hot_yaml_path = get_hot_yaml_path(parameter.app_package_id,
+                                          parameter.app_package_path)
         if hot_yaml_path is None:
             return res
 
         LOG.debug('构建heat参数')
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
+        parameters = {}
+        for key in template['parameters'].keys():
+            if key in parameter.parameters:
+                parameters[key] = parameter.parameters[key]
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
             'files': dict(list(tpl_files.items())),
-            'parameters': parameter.parameters
+            'parameters': parameters
         }
         LOG.debug('init heat client')
         heat = openstack_utils.create_heat_client(host_ip)

@@ -16,15 +16,14 @@
 """
 
 # -*- coding: utf-8 -*-
-import threading
-
+import time
 from pony.orm import db_session, commit
 
 import utils
 from core import openstack_utils
 from core.log import logger
 from core.models import VmImageInfoMapper
-from task import upload_thread_pool
+from task import upload_thread_pool, check_thread_pool
 
 
 def start_check_image_status(image_id, host_ip):
@@ -37,8 +36,7 @@ def start_check_image_status(image_id, host_ip):
     Returns:
 
     """
-    thread_timer = threading.Timer(5, _check_image_status, [image_id, host_ip])
-    thread_timer.start()
+    check_thread_pool.submit(_check_image_status, image_id, host_ip)
 
 
 @db_session
@@ -52,6 +50,7 @@ def _check_image_status(image_id, host_ip):
     Returns:
 
     """
+    time.sleep(5)
     try:
         image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         if not image_info:

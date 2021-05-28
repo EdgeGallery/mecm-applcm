@@ -493,9 +493,11 @@ class SecurityGroup(HOTBase):
         }
         for port in self.template['members']:
             if port in hot_file['resources']:
-                hot_file['resources'][port]['properties']['security_groups'] = {
-                    'get_resource': self.name
-                }
+                hot_file['resources'][port]['properties']['security_groups'] = [
+                    {
+                        'get_resource': self.name
+                    }
+                ]
         hot_file['resources'][self.name + 'DefaultIngressRule'] = {
             'type': 'OS::Neutron::SecurityGroupRule',
             'properties': {

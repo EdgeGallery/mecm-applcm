@@ -85,6 +85,9 @@ def delete_dir(path):
     """
     if not exists_path(path):
         return
+    if os.path.isfile(path):
+        os.remove(path)
+        return
     for i in os.listdir(path):
         file_data = path + '/' + i
         if os.path.isfile(file_data):

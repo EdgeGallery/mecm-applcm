@@ -16,13 +16,14 @@
 """
 
 # -*- coding: utf-8 -*-
-import threading
+import time
 
 from pony.orm import db_session, commit
 
 import utils
 from core.log import logger
 from core.models import VmImageInfoMapper, AppPkgMapper
+from task import check_thread_pool
 
 
 def start_check_package_status(package_id, host_ip):
@@ -35,13 +36,12 @@ def start_check_package_status(package_id, host_ip):
     Returns:
 
     """
-    thread_timer = threading.Timer(5, _check_package_status, [package_id, host_ip])
-    thread_timer.start()
-    pass
+    check_thread_pool.submit(_check_package_status, package_id, host_ip)
 
 
 @db_session
 def _check_package_status(package_id, host_ip):
+    time.sleep(5)
     try:
         package = AppPkgMapper.get(app_package_id=package_id, host_ip=host_ip)
         if package is None:

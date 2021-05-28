@@ -120,7 +120,6 @@ class InstantiateRequest:
                     app_package_id=request.appPackageId)
 
         self.parameters = request.parameters
-        logger.info(type(self.parameters))
         self.ak_sk_lcm_gen = request.akSkLcmGen
 
     def get_app_package_path(self):

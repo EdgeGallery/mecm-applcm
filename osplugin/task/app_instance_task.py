@@ -16,7 +16,7 @@
 """
 
 # -*- coding: utf-8 -*-
-import threading
+import time
 
 from pony.orm import db_session
 
@@ -24,6 +24,7 @@ import utils
 from core import openstack_utils
 from core.log import logger
 from core.models import AppInsMapper
+from task import check_thread_pool
 
 LOG = logger
 
@@ -34,8 +35,7 @@ def start_check_stack_status(app_instance_id):
     Args:
         app_instance_id:
     """
-    thread_timer = threading.Timer(5, _check_stack_status, [app_instance_id])
-    thread_timer.start()
+    check_thread_pool.submit(_check_stack_status, app_instance_id)
 
 
 @db_session
@@ -45,6 +45,7 @@ def _check_stack_status(app_instance_id):
     Args:
         app_instance_id:
     """
+    time.sleep(5)
     app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
     if not app_ins_mapper:
         LOG.debug('app ins: %s db record not found', app_instance_id)
