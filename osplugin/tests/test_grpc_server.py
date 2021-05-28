@@ -86,7 +86,7 @@ class GrpcServerTest(unittest.TestCase):
             package = file.read()
         request = iter([
             lcmservice_pb2.UploadPackageRequest(accessToken=self.access_token),
-            lcmservice_pb2.UploadPackageRequest(hostIp=self.host_ip),
+            lcmservice_pb2.UploadPackageRequest(hostIp='159.138.57.166'),
             lcmservice_pb2.UploadPackageRequest(appPackageId='pkg001'),
             lcmservice_pb2.UploadPackageRequest(tenantId='tenant001'),
             lcmservice_pb2.UploadPackageRequest(package=package)
@@ -100,7 +100,7 @@ class GrpcServerTest(unittest.TestCase):
         """
         request = lcmservice_pb2.DeletePackageRequest(
             accessToken=self.access_token,
-            hostIp=self.host_ip,
+            hostIp='159.138.57.166',
             appPackageId='pkg001',
             tenantId='tenant001',
         )

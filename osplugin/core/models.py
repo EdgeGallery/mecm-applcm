@@ -106,9 +106,9 @@ class InstantiateRequest:
     host_ip = None
     app_instance_id = None
     app_package_id = None
-    access_key = None
-    secret_key = None
     app_package_path = None
+    parameters = None
+    ak_sk_lcm_gen = None
 
     def __init__(self, request):
         self.access_token = request.accessToken
@@ -119,8 +119,9 @@ class InstantiateRequest:
             .format(base_dir=config.base_dir, host_ip=request.hostIp,
                     app_package_id=request.appPackageId)
 
-        self.access_key = request.ak
-        self.secret_key = request.sk
+        self.parameters = request.parameters
+        logger.info(type(self.parameters))
+        self.ak_sk_lcm_gen = request.akSkLcmGen
 
     def get_app_package_path(self):
         """
@@ -208,9 +209,7 @@ class AppPkgMapper(db.Entity):
     _table_ = 't_app_package'
     app_package_id = Required(str, max_len=64)
     host_ip = Required(str, max_len=15)
-    package_path = Required(str, max_len=256)
-    hot_file_path = Optional(str, max_len=256, nullable=True)
-
+    status = Required(str, max_len=10)
 
 
 class VmImageInfoMapper(db.Entity):
@@ -221,7 +220,8 @@ class VmImageInfoMapper(db.Entity):
     image_id = Required(str, max_len=64)
     host_ip = Required(str, max_len=15)
     image_name = Required(str, max_len=64)
-    status = Required(str, max_len=5)
+    status = Required(str, max_len=10)
+    app_package_id = Optional(str, max_len=64)
     image_size = Optional(int, size=64, nullable=True)
     checksum = Optional(str, max_len=64, nullable=True)
 

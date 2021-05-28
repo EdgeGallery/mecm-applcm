@@ -21,12 +21,16 @@ import re
 import zipfile
 
 import yaml
+from pony.orm import db_session
 
+import utils
 from core.csar import sw_image
 from core.exceptions import PackageNotValid
 from core.log import logger
-from core.openstack_utils import TOSCA_TYPE_CLASS, create_glance_client, \
-    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS
+from core.models import VmImageInfoMapper
+from core.openstack_utils import TOSCA_TYPE_CLASS, \
+    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, create_glance_client, get_image_by_name_checksum
+from task.image_task import add_import_image_task, create_image_record, add_upload_image_task
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
 _APPD_TOSCA_METADATA_PATH = 'TOSCA_VNFD.meta'
@@ -104,7 +108,8 @@ class CsarPkg:
     csar包
     """
 
-    def __init__(self, pkg_path):
+    def __init__(self, app_package_id, pkg_path):
+        self.app_package_id = app_package_id
         dirs = os.listdir(pkg_path)
         if len(dirs) == 1:
             self.base_dir = pkg_path + '/' + dirs[0]
@@ -134,20 +139,42 @@ class CsarPkg:
             for file in namelist:
                 zip_file.extract(file, self.appd_file_dir)
 
+    @db_session
     def check_image(self, host_ip):
-        glance_client = create_glance_client(host_ip)
         image_id_map = {}
         for sw_image_desc in self.sw_image_desc_list:
-            images = glance_client.images.list(filters={'name': sw_image_desc.name})
-            is_existed = False
-            for image in images:
-                if image['checksum'] == sw_image_desc.checksum:
+            image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc.checksum)
+            if image is not None:
+                image_id_map[sw_image_desc.name] = image.image_id
+            else:
+                if sw_image_desc.sw_image is None or sw_image_desc.sw_image == '':
+                    image = get_image_by_name_checksum(sw_image_desc.name,
+                                                       sw_image_desc.checksum,
+                                                       host_ip)
+                    if image is None:
+                        raise RuntimeError(f'image {sw_image_desc.name} 不存在')
                     image_id_map[sw_image_desc.name] = image['id']
-                    is_existed = True
-                    break
-            if not is_existed:
-                # TODO start upload
-                LOG.info(f'image {sw_image_desc.name} not in openstack')
+
+                elif sw_image_desc.sw_image.startswith('http'):
+                    image_id = create_image_record(sw_image_desc,
+                                                   self.app_package_id,
+                                                   host_ip)
+                    image_id_map[sw_image_desc.name] = image_id
+                    add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
+                else:
+                    image_id = create_image_record(sw_image_desc,
+                                                   self.app_package_id,
+                                                   host_ip)
+                    image_id_map[sw_image_desc.name] = image_id
+                    zip_index = sw_image_desc.sw_image.find('.zip')
+                    zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index+4]
+                    img_tmp_dir = f'/tmp/osplugin/images/{image_id}'
+                    img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index+4:]
+                    logger.info(f'image dir {img_tmp_file}')
+                    if not utils.exists_path(img_tmp_dir):
+                        utils.unzip(zip_file_path, img_tmp_dir)
+                    add_upload_image_task(image_id, host_ip, img_tmp_file)
+
         self.image_id_map = image_id_map
 
     def translate(self):

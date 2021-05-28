@@ -25,6 +25,7 @@ from core.log import logger
 from internal.lcmservice import lcmservice_pb2_grpc
 from service.app_lcm_service import AppLcmService
 from service.vm_image_service import VmImageService
+from task import upload_thread_pool
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LISTEN_PORT = 8234
@@ -41,7 +42,10 @@ def serve():
         ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
     ]
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=200), options=options)
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=200, thread_name_prefix='HandlerExecutor'),
+        options=options
+    )
     lcmservice_pb2_grpc.add_AppLCMServicer_to_server(AppLcmService(), server)
     lcmservice_pb2_grpc.add_VmImageServicer_to_server(VmImageService(), server)
 
@@ -68,4 +72,5 @@ def serve():
         LOG.info("Started server on %s", listen_addr)
         server.wait_for_termination()
     except KeyboardInterrupt:
+        upload_thread_pool.shutdown()
         LOG.info('Server stopped')

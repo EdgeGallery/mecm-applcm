@@ -19,11 +19,49 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10lcmservice.proto\x12\nlcmservice\"\x90\x01\n\x12InstantiateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x15\n\rappInstanceId\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\x12\x0e\n\x06hostIp\x18\x05 \x01(\t\x12\n\n\x02\x61k\x18\x06 \x01(\t\x12\n\n\x02sk\x18\x07 \x01(\t\"%\n\x13InstantiateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"N\n\x10TerminateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"#\n\x11TerminateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"J\n\x0cQueryRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"!\n\rQueryResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"Y\n\x10UploadCfgRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x02 \x01(\tH\x00\x12\x14\n\nconfigFile\x18\x03 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"#\n\x11UploadCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"7\n\x10RemoveCfgRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\"#\n\x11RemoveCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"S\n\x15WorkloadEventsRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"*\n\x16WorkloadEventsResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"`\n\x14\x43reateVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\")\n\x15\x43reateVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"b\n\x13QueryVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\"(\n\x14QueryVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"c\n\x14\x44\x65leteVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\")\n\x15\x44\x65leteVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"w\n\x16\x44ownloadVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\x12\x10\n\x08\x63hunkNum\x18\x05 \x01(\x05\"*\n\x17\x44ownloadVmImageResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\"\x86\x01\n\x14UploadPackageRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x16\n\x0c\x61ppPackageId\x18\x02 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x03 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x04 \x01(\tH\x00\x12\x11\n\x07package\x18\x05 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"\'\n\x15UploadPackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"c\n\x14\x44\x65letePackageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\"\'\n\x15\x44\x65letePackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t2\x93\x05\n\x06\x41ppLCM\x12P\n\x0binstantiate\x12\x1e.lcmservice.InstantiateRequest\x1a\x1f.lcmservice.InstantiateResponse\"\x00\x12J\n\tterminate\x12\x1c.lcmservice.TerminateRequest\x1a\x1d.lcmservice.TerminateResponse\"\x00\x12>\n\x05query\x12\x18.lcmservice.QueryRequest\x1a\x19.lcmservice.QueryResponse\"\x00\x12O\n\x0cuploadConfig\x12\x1c.lcmservice.UploadCfgRequest\x1a\x1d.lcmservice.UploadCfgResponse\"\x00(\x01\x12M\n\x0cremoveConfig\x12\x1c.lcmservice.RemoveCfgRequest\x1a\x1d.lcmservice.RemoveCfgResponse\"\x00\x12Y\n\x0eworkloadEvents\x12!.lcmservice.WorkloadEventsRequest\x1a\".lcmservice.WorkloadEventsResponse\"\x00\x12X\n\ruploadPackage\x12 .lcmservice.UploadPackageRequest\x1a!.lcmservice.UploadPackageResponse\"\x00(\x01\x12V\n\rdeletePackage\x12 .lcmservice.DeletePackageRequest\x1a!.lcmservice.DeletePackageResponse\"\x00\x32\xee\x02\n\x07VmImage\x12V\n\rcreateVmImage\x12 .lcmservice.CreateVmImageRequest\x1a!.lcmservice.CreateVmImageResponse\"\x00\x12S\n\x0cqueryVmImage\x12\x1f.lcmservice.QueryVmImageRequest\x1a .lcmservice.QueryVmImageResponse\"\x00\x12V\n\rdeleteVmImage\x12 .lcmservice.DeleteVmImageRequest\x1a!.lcmservice.DeleteVmImageResponse\"\x00\x12^\n\x0f\x64ownloadVmImage\x12\".lcmservice.DownloadVmImageRequest\x1a#.lcmservice.DownloadVmImageResponse\"\x00\x30\x01\x62\x06proto3'
+  serialized_pb=b'\n\x10lcmservice.proto\x12\nlcmservice\"\x83\x02\n\x12InstantiateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x15\n\rappInstanceId\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\x12\x0e\n\x06hostIp\x18\x05 \x01(\t\x12\x42\n\nparameters\x18\x06 \x03(\x0b\x32..lcmservice.InstantiateRequest.ParametersEntry\x12\x12\n\nakSkLcmGen\x18\x07 \x01(\x08\x1a\x31\n\x0fParametersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x13InstantiateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"N\n\x10TerminateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"#\n\x11TerminateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"J\n\x0cQueryRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"!\n\rQueryResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"Y\n\x10UploadCfgRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x02 \x01(\tH\x00\x12\x14\n\nconfigFile\x18\x03 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"#\n\x11UploadCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"7\n\x10RemoveCfgRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\"#\n\x11RemoveCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"S\n\x15WorkloadEventsRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"*\n\x16WorkloadEventsResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"`\n\x14\x43reateVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\")\n\x15\x43reateVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"b\n\x13QueryVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\"(\n\x14QueryVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"c\n\x14\x44\x65leteVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\")\n\x15\x44\x65leteVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"w\n\x16\x44ownloadVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\x12\x10\n\x08\x63hunkNum\x18\x05 \x01(\x05\"*\n\x17\x44ownloadVmImageResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\"\x86\x01\n\x14UploadPackageRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x16\n\x0c\x61ppPackageId\x18\x02 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x03 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x04 \x01(\tH\x00\x12\x11\n\x07package\x18\x05 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"\'\n\x15UploadPackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"c\n\x14\x44\x65letePackageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\"\'\n\x15\x44\x65letePackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t2\x93\x05\n\x06\x41ppLCM\x12P\n\x0binstantiate\x12\x1e.lcmservice.InstantiateRequest\x1a\x1f.lcmservice.InstantiateResponse\"\x00\x12J\n\tterminate\x12\x1c.lcmservice.TerminateRequest\x1a\x1d.lcmservice.TerminateResponse\"\x00\x12>\n\x05query\x12\x18.lcmservice.QueryRequest\x1a\x19.lcmservice.QueryResponse\"\x00\x12O\n\x0cuploadConfig\x12\x1c.lcmservice.UploadCfgRequest\x1a\x1d.lcmservice.UploadCfgResponse\"\x00(\x01\x12M\n\x0cremoveConfig\x12\x1c.lcmservice.RemoveCfgRequest\x1a\x1d.lcmservice.RemoveCfgResponse\"\x00\x12Y\n\x0eworkloadEvents\x12!.lcmservice.WorkloadEventsRequest\x1a\".lcmservice.WorkloadEventsResponse\"\x00\x12X\n\ruploadPackage\x12 .lcmservice.UploadPackageRequest\x1a!.lcmservice.UploadPackageResponse\"\x00(\x01\x12V\n\rdeletePackage\x12 .lcmservice.DeletePackageRequest\x1a!.lcmservice.DeletePackageResponse\"\x00\x32\xee\x02\n\x07VmImage\x12V\n\rcreateVmImage\x12 .lcmservice.CreateVmImageRequest\x1a!.lcmservice.CreateVmImageResponse\"\x00\x12S\n\x0cqueryVmImage\x12\x1f.lcmservice.QueryVmImageRequest\x1a .lcmservice.QueryVmImageResponse\"\x00\x12V\n\rdeleteVmImage\x12 .lcmservice.DeleteVmImageRequest\x1a!.lcmservice.DeleteVmImageResponse\"\x00\x12^\n\x0f\x64ownloadVmImage\x12\".lcmservice.DownloadVmImageRequest\x1a#.lcmservice.DownloadVmImageResponse\"\x00\x30\x01\x62\x06proto3'
 )
 
 
 
+
+_INSTANTIATEREQUEST_PARAMETERSENTRY = _descriptor.Descriptor(
+  name='ParametersEntry',
+  full_name='lcmservice.InstantiateRequest.ParametersEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='lcmservice.InstantiateRequest.ParametersEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='lcmservice.InstantiateRequest.ParametersEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=b'8\001',
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=243,
+  serialized_end=292,
+)
 
 _INSTANTIATEREQUEST = _descriptor.Descriptor(
   name='InstantiateRequest',
@@ -69,23 +107,23 @@ _INSTANTIATEREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ak', full_name='lcmservice.InstantiateRequest.ak', index=5,
-      number=6, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      name='parameters', full_name='lcmservice.InstantiateRequest.parameters', index=5,
+      number=6, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='sk', full_name='lcmservice.InstantiateRequest.sk', index=6,
-      number=7, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      name='akSkLcmGen', full_name='lcmservice.InstantiateRequest.akSkLcmGen', index=6,
+      number=7, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
-  nested_types=[],
+  nested_types=[_INSTANTIATEREQUEST_PARAMETERSENTRY, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -95,7 +133,7 @@ _INSTANTIATEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=33,
-  serialized_end=177,
+  serialized_end=292,
 )
 
 
@@ -126,8 +164,8 @@ _INSTANTIATERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=179,
-  serialized_end=216,
+  serialized_start=294,
+  serialized_end=331,
 )
 
 
@@ -172,8 +210,8 @@ _TERMINATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=218,
-  serialized_end=296,
+  serialized_start=333,
+  serialized_end=411,
 )
 
 
@@ -204,8 +242,8 @@ _TERMINATERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=298,
-  serialized_end=333,
+  serialized_start=413,
+  serialized_end=448,
 )
 
 
@@ -250,8 +288,8 @@ _QUERYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=335,
-  serialized_end=409,
+  serialized_start=450,
+  serialized_end=524,
 )
 
 
@@ -282,8 +320,8 @@ _QUERYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=411,
-  serialized_end=444,
+  serialized_start=526,
+  serialized_end=559,
 )
 
 
@@ -333,8 +371,8 @@ _UPLOADCFGREQUEST = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=446,
-  serialized_end=535,
+  serialized_start=561,
+  serialized_end=650,
 )
 
 
@@ -365,8 +403,8 @@ _UPLOADCFGRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=537,
-  serialized_end=572,
+  serialized_start=652,
+  serialized_end=687,
 )
 
 
@@ -404,8 +442,8 @@ _REMOVECFGREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=574,
-  serialized_end=629,
+  serialized_start=689,
+  serialized_end=744,
 )
 
 
@@ -436,8 +474,8 @@ _REMOVECFGRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=631,
-  serialized_end=666,
+  serialized_start=746,
+  serialized_end=781,
 )
 
 
@@ -482,8 +520,8 @@ _WORKLOADEVENTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=668,
-  serialized_end=751,
+  serialized_start=783,
+  serialized_end=866,
 )
 
 
@@ -514,8 +552,8 @@ _WORKLOADEVENTSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=753,
-  serialized_end=795,
+  serialized_start=868,
+  serialized_end=910,
 )
 
 
@@ -567,8 +605,8 @@ _CREATEVMIMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=797,
-  serialized_end=893,
+  serialized_start=912,
+  serialized_end=1008,
 )
 
 
@@ -599,8 +637,8 @@ _CREATEVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=895,
-  serialized_end=936,
+  serialized_start=1010,
+  serialized_end=1051,
 )
 
 
@@ -652,8 +690,8 @@ _QUERYVMIMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=938,
-  serialized_end=1036,
+  serialized_start=1053,
+  serialized_end=1151,
 )
 
 
@@ -684,8 +722,8 @@ _QUERYVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1038,
-  serialized_end=1078,
+  serialized_start=1153,
+  serialized_end=1193,
 )
 
 
@@ -737,8 +775,8 @@ _DELETEVMIMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1080,
-  serialized_end=1179,
+  serialized_start=1195,
+  serialized_end=1294,
 )
 
 
@@ -769,8 +807,8 @@ _DELETEVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1181,
-  serialized_end=1222,
+  serialized_start=1296,
+  serialized_end=1337,
 )
 
 
@@ -829,8 +867,8 @@ _DOWNLOADVMIMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1224,
-  serialized_end=1343,
+  serialized_start=1339,
+  serialized_end=1458,
 )
 
 
@@ -861,8 +899,8 @@ _DOWNLOADVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1345,
-  serialized_end=1387,
+  serialized_start=1460,
+  serialized_end=1502,
 )
 
 
@@ -926,8 +964,8 @@ _UPLOADPACKAGEREQUEST = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1390,
-  serialized_end=1524,
+  serialized_start=1505,
+  serialized_end=1639,
 )
 
 
@@ -958,8 +996,8 @@ _UPLOADPACKAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1526,
-  serialized_end=1565,
+  serialized_start=1641,
+  serialized_end=1680,
 )
 
 
@@ -1011,8 +1049,8 @@ _DELETEPACKAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1567,
-  serialized_end=1666,
+  serialized_start=1682,
+  serialized_end=1781,
 )
 
 
@@ -1043,10 +1081,12 @@ _DELETEPACKAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1668,
-  serialized_end=1707,
+  serialized_start=1783,
+  serialized_end=1822,
 )
 
+_INSTANTIATEREQUEST_PARAMETERSENTRY.containing_type = _INSTANTIATEREQUEST
+_INSTANTIATEREQUEST.fields_by_name['parameters'].message_type = _INSTANTIATEREQUEST_PARAMETERSENTRY
 _UPLOADCFGREQUEST.oneofs_by_name['data'].fields.append(
   _UPLOADCFGREQUEST.fields_by_name['accessToken'])
 _UPLOADCFGREQUEST.fields_by_name['accessToken'].containing_oneof = _UPLOADCFGREQUEST.oneofs_by_name['data']
@@ -1098,11 +1138,19 @@ DESCRIPTOR.message_types_by_name['DeletePackageResponse'] = _DELETEPACKAGERESPON
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 InstantiateRequest = _reflection.GeneratedProtocolMessageType('InstantiateRequest', (_message.Message,), {
+
+  'ParametersEntry' : _reflection.GeneratedProtocolMessageType('ParametersEntry', (_message.Message,), {
+    'DESCRIPTOR' : _INSTANTIATEREQUEST_PARAMETERSENTRY,
+    '__module__' : 'lcmservice_pb2'
+    # @@protoc_insertion_point(class_scope:lcmservice.InstantiateRequest.ParametersEntry)
+    })
+  ,
   'DESCRIPTOR' : _INSTANTIATEREQUEST,
   '__module__' : 'lcmservice_pb2'
   # @@protoc_insertion_point(class_scope:lcmservice.InstantiateRequest)
   })
 _sym_db.RegisterMessage(InstantiateRequest)
+_sym_db.RegisterMessage(InstantiateRequest.ParametersEntry)
 
 InstantiateResponse = _reflection.GeneratedProtocolMessageType('InstantiateResponse', (_message.Message,), {
   'DESCRIPTOR' : _INSTANTIATERESPONSE,
@@ -1266,6 +1314,7 @@ DeletePackageResponse = _reflection.GeneratedProtocolMessageType('DeletePackageR
 _sym_db.RegisterMessage(DeletePackageResponse)
 
 
+_INSTANTIATEREQUEST_PARAMETERSENTRY._options = None
 
 _APPLCM = _descriptor.ServiceDescriptor(
   name='AppLCM',
@@ -1274,8 +1323,8 @@ _APPLCM = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1710,
-  serialized_end=2369,
+  serialized_start=1825,
+  serialized_end=2484,
   methods=[
   _descriptor.MethodDescriptor(
     name='instantiate',
@@ -1370,8 +1419,8 @@ _VMIMAGE = _descriptor.ServiceDescriptor(
   index=1,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=2372,
-  serialized_end=2738,
+  serialized_start=2487,
+  serialized_end=2853,
   methods=[
   _descriptor.MethodDescriptor(
     name='createVmImage',

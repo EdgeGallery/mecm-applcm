@@ -107,6 +107,15 @@ def create_nova_client(host_ip):
 _GLANCE_CLIENT_MAP = {}
 
 
+def get_image_by_name_checksum(name, checksum, host_ip):
+    glance = create_glance_client(host_ip)
+    images = glance.images.list(filters={'name': name})
+    for image in images:
+        if image['checksum'] == checksum:
+            return image
+    return None
+
+
 def create_glance_client(host_ip):
     """
     创建glance客户端
