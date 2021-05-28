@@ -28,7 +28,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/ulule/limiter/v3"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -44,9 +43,6 @@ var (
 
 const (
 	AccessToken              string = "access_token"
-	MecHostIp                string = "hostIp"
-	AppName                  string = "appName"
-	PackageId                string = "packageId"
 	PluginSuffix             string = "_PLUGIN"
 	PluginPortSuffix         string = "_PORT"
 	MepServer                string = "MEP_SERVER"
@@ -64,7 +60,7 @@ const (
 	InvalidToken             string = "invalid token"
 	Forbidden                string = "forbidden"
 	IllegalTenantId          string = "Illegal TenantId"
-	AppInsId                        = "app_ins_id"
+	AppInsId                        = "app_instance_id"
 	AppPkgId                        = "app_pkg_id"
 	AppPackageRecordId              = "app_package_record"
 	PkgHostKey                      = "pkg_host_key"
@@ -72,14 +68,13 @@ const (
 	HostIp                          = "mec_host_id"
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
-    FailedToMakeDir                 = "failed to make directory"
-    FileNameNotFound                = "file name not found with "
-    AppNameIsNotValid               = "AppName is invalid"
-    HostIpIsInvalid                 = "HostIp address is invalid"
-    PackageIdIsInvalid              = "package id is invalid"
-    Origin                          = "origin"
-    OriginIsInvalid                 = "Origin is invalid"
-    RecordDoesNotExist              = "Records does not exist"
+	FailedToMakeDir                 = "failed to make directory"
+	FileNameNotFound                = "file name not found with "
+	AppNameIsNotValid               = "AppName is invalid"
+	HostIpIsInvalid                 = "MecHost address is invalid"
+	PackageIdIsInvalid              = "package id is invalid"
+	OriginIsInvalid                 = "Origin is invalid"
+	RecordDoesNotExist              = "Records does not exist"
 	RequestBodyTooLarge             = "request body too large"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
@@ -95,7 +90,6 @@ const (
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
 	StatusInternalServerError int = 500
-	StatusConflict            int = 409
 	StatusNotFound            int = 404
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
@@ -112,7 +106,7 @@ const (
 	lowerCaseRegex   string = `[a-z]`
 	upperCaseRegex   string = `[A-Z]`
 	maxPasswordCount        = 2
-	MaxIdLength             = 32
+	MaxIdLength             = 36
 
 	TooManyFile      = 1024
 	TooBig           = 0x6400000
@@ -141,12 +135,29 @@ const (
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
+	Mepcontroller        = "lcmcontroller/controllers:MepController"
 	Hosts                = "/hosts"
 	DELETE               = "delete"
+	GET                  = "get"
+	POST                 = "post"
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
-	TEMP_FILE            = "/usr/app/temp"
+	TempFile             = "/usr/app/temp"
+	ApplicationJson      = "application/json"
+	ContentType          = "Content-Type"
+	Accept               = "Accept"
+	MecHostInfo          = "MecHostInfo"
+	PkgId                = "package_id"
+	PkgUrlPath           = "/tenants/:tenantId/packages/:packageId"
+
+	//mep service calling
+	ErrCallFromMep  string = "failed to execute rest calling, check if mep service is ready."
+	MepServiceQuery string = "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
+	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
+	MepSubscribeStatistic string = "https://mep-mm5.mep:80/mep/service_govern/v1/subscribe_statistic"
 )
+
+var VmImageMap = make(map[int32][]byte, 150000)
 
 var cipherSuiteMap = map[string]uint16{
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -167,20 +178,12 @@ func ValidateUUID(id string) error {
 	if id == "" {
 		return errors.New("require app instance id")
 	}
-	if len(id) != 0 {
-		validate := validator.New()
-		res := validate.Var(id, "required,uuid")
-		if res != nil {
-			return errors.New("UUID validate failed")
-		}
-	} else {
+	validate := validator.New()
+	res := validate.Var(id, "required,uuid")
+	if res != nil {
 		return errors.New("UUID validate failed")
 	}
 	return nil
-}
-
-func IsValidUUID(uuid string) (bool, error) {
-	return regexp.MatchString(UuidRegex, uuid)
 }
 
 // Validate IPv4 address
@@ -680,17 +683,6 @@ func GetPluginInfo(vim string) string {
 	pluginPort := GetPluginPort(pluginPortVar)
 	pluginInfo := pluginAddr + ":" + pluginPort
 	return pluginInfo
-}
-
-// get random directory name
-func RandomDirectoryName(n int) string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
-
-	s := make([]rune, n)
-	for i := range s {
-		s[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(s)
 }
 
 func GenerateUUID() string {

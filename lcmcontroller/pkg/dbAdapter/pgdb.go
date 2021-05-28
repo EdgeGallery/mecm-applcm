@@ -35,7 +35,7 @@ type PgDb struct {
 }
 
 // Constructor of PluginAdapter
-func (db *PgDb) initOrmer() (err1 error) {
+func (db *PgDb) InitOrmer() (err1 error) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error("panic handled:", err)
@@ -77,20 +77,20 @@ func (db *PgDb) QueryCount(tableName string) (int64, error) {
 }
 
 // Query count based on fieldname and fieldvalue
-func (db *PgDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
+func (db *PgDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
 	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
 	return num, err
 }
 
 // return a raw query setter for raw sql string.
-func (db *PgDb) QueryTable(tableName string) orm.QuerySeter {
-	results := db.ormer.QueryTable(tableName)
-	return results
-}
+func (db *PgDb) QueryTable(tableName string, container interface{}, field string, container1 ...interface{}) (num int64, err error) {
 
-// Query count based on fieldname and fieldvalue
-func (db *PgDb) QueryCountForAppPackage(tableName, fieldName, fieldValue string) (int64, error) {
-	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
+	if field != "" {
+		num, err = db.ormer.QueryTable(tableName).Filter(field, container1).All(container)
+	} else {
+		num, err = db.ormer.QueryTable(tableName).All(container)
+	}
+
 	return num, err
 }
 
@@ -146,7 +146,7 @@ func (db *PgDb) InitDatabase() error {
 		return errRunSyncdb
 	}
 
-	err := db.initOrmer()
+	err := db.InitOrmer()
 	if err != nil {
 		log.Error("Failed to init ormer")
 		return err

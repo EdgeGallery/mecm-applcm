@@ -18,11 +18,12 @@ package pluginAdapter
 
 import (
 	"bytes"
+	beegoCtx "github.com/astaxie/beego/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
-	"lcmcontroller/config"
 	"lcmcontroller/internal/lcmservice"
+	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
 	"os"
@@ -38,7 +39,7 @@ import (
 type ClientGRPC struct {
 	conn        *grpc.ClientConn
 	client      lcmservice.AppLCMClient
-	imageClient lcmservice.VmImageServiceClient
+	imageClient lcmservice.VmImageClient
 	chunkSize   int
 }
 
@@ -65,8 +66,11 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 			return nil, err
 		}
 		creds := credentials.NewTLS(tlsConfig)
+		size := 1024 * 1024 * 24
+		grpcOpts = append(grpcOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(size)))
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(creds))
 		// Create a connection with the TLS credentials
-		conn, err = grpc.Dial(cfg.Address, grpc.WithTransportCredentials(creds))
+		conn, err = grpc.Dial(cfg.Address, grpcOpts...)
 	} else {
 		// Create non TLS connection
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
@@ -79,27 +83,26 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 	}
 
 	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn),
-		imageClient: lcmservice.NewVmImageServiceClient(conn)}, nil
+		imageClient: lcmservice.NewVmImageClient(conn)}, nil
 }
 
 // Instantiate application
-func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, host string, packageId string,
-	accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
+func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, accessToken string,
+	appInsId string, instantiateReq models.InstantiateRequest) (status string, error error) {
 	req := &lcmservice.InstantiateRequest{
-		HostIp:        host,
+		HostIp:        instantiateReq.HostIp,
 		TenantId:      tenantId,
-		AppPackageId:  packageId,
+		AppPackageId:  instantiateReq.PackageId,
 		AccessToken:   accessToken,
-		AppInstanceId: akSkAppInfo.AppInsId,
-		Ak: akSkAppInfo.Ak,
-		Sk: akSkAppInfo.Sk,
+		AppInstanceId: appInsId,
+		Parameters: instantiateReq.Parameters,
+		AkSkLcmGen: instantiateReq.AkSkLcmGen,
 	}
 	resp, err := c.client.Instantiate(ctx, req)
 	if err != nil {
 		return "", err
 	}
 	return resp.Status, err
-	return "", nil
 }
 
 // Query application
@@ -298,7 +301,7 @@ func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appI
 
 // Download VM Image
 func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32) (buf bytes.Buffer, error error) {
+	hostIP string, imageId string, chunkNum int32, _ *beegoCtx.Response) (buf *bytes.Buffer, error error) {
 	req := &lcmservice.DownloadVmImageRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
@@ -307,13 +310,12 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 		ChunkNum:      chunkNum,
 	}
 
-	buf = bytes.Buffer{}
 
 	stream, err := c.imageClient.DownloadVmImage(ctx, req)
 	if err != nil {
 		return buf, err
 	}
-
+	var count int32 = 0
 	for {
 		err := c.contextError(stream.Context())
 		if err != nil {
@@ -322,9 +324,9 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 
 		log.Debug("Waiting to receive more data")
 
-		req, err := stream.Recv()
+		res, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Info("No more data")
 			break
 		}
 		if err != nil {
@@ -332,13 +334,11 @@ func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, ap
 		}
 
 		// Receive chunk and write to package
-		chunk := req.GetContent()
-
-		_, err = buf.Write(chunk)
-		if err != nil {
-			return buf, c.logError(status.Error(codes.Internal, "cannot write chunk data"))
-		}
+		chunk := res.GetContent()
+		util.VmImageMap[count] = chunk
+		count++
 	}
+	_ = stream.CloseSend()
 	return buf, nil
 }
 

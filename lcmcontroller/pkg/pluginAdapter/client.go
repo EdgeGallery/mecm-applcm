@@ -17,7 +17,8 @@ package pluginAdapter
 
 import (
 	"bytes"
-	"lcmcontroller/config"
+	beegoCtx "github.com/astaxie/beego/context"
+	"lcmcontroller/models"
 	"mime/multipart"
 
 	"golang.org/x/net/context"
@@ -25,8 +26,8 @@ import (
 
 // GRPC client APIs
 type ClientIntf interface {
-	Instantiate(ctx context.Context, tenantId string, host string, packageId string,
-		accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error)
+	Instantiate(ctx context.Context, tenantId string, accessToken string, appInsId string,
+		req models.InstantiateRequest) (status string, error error)
 	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
 	Query(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
 	UploadConfig(ctx context.Context, multipartFile multipart.File,
@@ -49,5 +50,5 @@ type ClientIntf interface {
 	DeleteVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
 		imageId string) (status string, error error)
 	DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
-		imageId string, chunkNum int32) (buf bytes.Buffer, error error)
+		imageId string, chunkNum int32, imgCtrlr *beegoCtx.Response) (buf *bytes.Buffer, error error)
 }

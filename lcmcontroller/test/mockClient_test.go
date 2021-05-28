@@ -19,7 +19,8 @@ package test
 import (
 	"bytes"
 	"context"
-	"lcmcontroller/config"
+	beegoCtx "github.com/astaxie/beego/context"
+	"lcmcontroller/models"
 	"mime/multipart"
 )
 
@@ -27,7 +28,7 @@ const SUCCESS_RETURN = "Success"
 
 type mockClient struct{}
 
-func (mc *mockClient) Instantiate(ctx context.Context, tenantId string, host string, packageId string, accessToken string, akSkAppInfo config.AppAuthConfig) (status string, error error) {
+func (mc *mockClient) Instantiate(ctx context.Context, tenantId string, accessToken string, appInsId string, req models.InstantiateRequest) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
@@ -46,9 +47,9 @@ func (mc *mockClient) DeleteVmImage(ctx context.Context, accessToken string, app
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32) (response bytes.Buffer, error error) {
-	return bytes.Buffer{}, nil
+func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
+	imageId string, chunkNum int32, imgCtrlr *beegoCtx.Response) (buf *bytes.Buffer, error error) {
+	return &bytes.Buffer{}, nil
 }
 
 

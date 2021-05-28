@@ -18,7 +18,6 @@ package test
 
 import (
 	"errors"
-	"github.com/astaxie/beego/orm"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"reflect"
@@ -41,7 +40,7 @@ func (db *mockDb) InsertOrUpdateData(data interface{}, cols ...string) (err erro
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
-			db.appInstanceRecords[appInstance.AppInsId] = *appInstance
+			db.appInstanceRecords[appInstance.AppInstanceId] = *appInstance
 		}
 	}
 	if cols[0] == util.TenantId {
@@ -78,13 +77,14 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
-			readAppInstance := db.appInstanceRecords[appInstance.AppInsId]
+			readAppInstance := db.appInstanceRecords[appInstance.AppInstanceId]
 			if (readAppInstance == models.AppInfoRecord{}) {
 				return errors.New("App Instance record not found")
 			}
 			appInstance.TenantId = readAppInstance.TenantId
-			appInstance.HostIp = readAppInstance.HostIp
+			appInstance.MecHost = readAppInstance.MecHost
 			appInstance.DeployType = readAppInstance.DeployType
+			appInstance.Origin     = readAppInstance.Origin
 		}
 	}
 	if cols[0] == util.TenantId {
@@ -106,6 +106,7 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 			appPackage.TenantId = readAppPackage.TenantId
 			appPackage.AppId = readAppPackage.AppId
 			appPackage.PackageId = readAppPackage.PackageId
+			appPackage.Origin = readAppPackage.Origin
 		}
 	}
 
@@ -119,7 +120,7 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 			appPackageHost.TenantId = readAppPackageHost.TenantId
 			appPackageHost.AppPkgId = readAppPackageHost.AppPkgId
 			appPackageHost.HostIp = readAppPackageHost.HostIp
-			appPackageHost.DistributionStatus = readAppPackageHost.DistributionStatus
+			appPackageHost.Status = readAppPackageHost.Status
 		}
 	}
 
@@ -134,7 +135,11 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 			mecHost.MechostIp = readMecHost.MechostIp
 			mecHost.MechostName = readMecHost.MechostName
 			mecHost.Vim = readMecHost.Vim
+			mecHost.Origin     = readMecHost.Origin
 		}
+	}
+	if cols[0] == "app_pkg_name" {
+		return errors.New("record not found")
 	}
 	return nil
 }
@@ -143,11 +148,11 @@ func (db *mockDb) DeleteData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
-			readAppInstance := db.appInstanceRecords[appInstance.AppInsId]
+			readAppInstance := db.appInstanceRecords[appInstance.AppInstanceId]
 			if (readAppInstance == models.AppInfoRecord{}) {
 				return errors.New("App Instance record not found")
 			}
-			delete(db.appInstanceRecords, readAppInstance.AppInsId)
+			delete(db.appInstanceRecords, readAppInstance.AppInstanceId)
 		}
 	}
 	if cols[0] == util.TenantId {
@@ -199,20 +204,36 @@ func (db *mockDb) QueryCount(tableName string) (int64, error) {
 	return 0, nil
 }
 
-func (db *mockDb) QueryCountForAppInfo(tableName, fieldName, fieldValue string) (int64, error) {
+func (db *mockDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
+	if tableName == "app_info_record" {
+		var count int64
+		for _, _ = range db.appInstanceRecords {
+			count++
+		}
+		return count, nil
+	}
 	return 0, nil
 }
 
-func (db *mockDb) QueryTable(tableName string) orm.QuerySeter {
-	return nil
+func (db *mockDb) QueryTable(tableName string, container interface{}, field string, container1 ...interface{}) (int64, error) {
+	if tableName == "app_info_record" {
+		for _, appInfoRec := range db.appInstanceRecords {
+			container = appInfoRec
+		}
+
+		return 1, nil
+	}
+
+	if tableName == util.AppPackageRecordId {
+		for _, appPkgRec := range db.appPackageRecords {
+			container = appPkgRec
+		}
+		return 1, nil
+	}
+	return 0, nil
 }
 
 func (db *mockDb) LoadRelated(md interface{}, name string) (int64, error) {
 	return 0, nil
 }
-
-func (db *mockDb) QueryCountForAppPackage(tableName, fieldName, fieldValue string) (int64, error) {
-	return 0, nil
-}
-
 

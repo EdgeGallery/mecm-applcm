@@ -23,259 +23,50 @@ import (
 )
 
 func init() {
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "AppDeploymentStatus",
-			Router:           "/hosts/:hostIp/packages/:packageId/status",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "HealthCheck",
-			Router:           "/health",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "UploadConfig",
-			Router:           "/configuration",
-			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "RemoveConfig",
-			Router:           "/configuration",
-			AllowHTTPMethods: []string{util.DELETE},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "Instantiate",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/instantiate",
-			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "Terminate",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/terminate",
-			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "Query",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "QueryKPI",
-			Router:           "/tenants/:tenantId/hosts/:hostIp/kpi",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "QueryMepCapabilities",
-			Router:           "/tenants/:tenantId/hosts/:hostIp/mep_capabilities",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "QueryMepCapabilities",
-			Router:           "/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "GetWorkloadDescription",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/workload/events",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
+	initAPI(util.Lcmcontroller, "AppDeploymentStatus", "/hosts/:hostIp/packages/:packageId/status", util.GET)
+	initAPI(util.Lcmcontroller, "HealthCheck", "/health", util.GET)
+	initAPI(util.Lcmcontroller, "UploadConfig", "/configuration", util.POST)
+	initAPI(util.Lcmcontroller, "RemoveConfig", "/configuration", util.DELETE)
+	initAPI(util.Lcmcontroller, "Instantiate", "/tenants/:tenantId/app_instances/:appInstanceId/instantiate", util.POST)
+	initAPI(util.Lcmcontroller, "Terminate", "/tenants/:tenantId/app_instances/:appInstanceId/terminate", util.POST)
+	initAPI(util.Lcmcontroller, "Query", "/tenants/:tenantId/app_instances/:appInstanceId", util.GET)
+	initAPI(util.Lcmcontroller, "QueryKPI", "/tenants/:tenantId/hosts/:hostIp/kpi", util.GET)
+	initAPI(util.Lcmcontroller, "QueryMepCapabilities", "/tenants/:tenantId/hosts/:hostIp/mep_capabilities", util.GET)
+	initAPI(util.Lcmcontroller, "QueryMepCapabilities", "/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId", util.GET)
+	initAPI(util.Lcmcontroller, "GetWorkloadDescription", "/tenants/:tenantId/app_instances/:appInstanceId/workload/events", util.GET)
+	initAPI(util.Lcmcontroller, "SynchronizeUpdatedRecord", "/tenants/:tenantId/app_instances/sync_updated", util.GET)
+	initAPI(util.Lcmcontroller, "SynchronizeStaleRecord", "/tenants/:tenantId/app_instances/sync_deleted", util.GET)
+	initAPI(util.Lcmcontroller, "UploadPackage", "/tenants/:tenantId/packages", util.POST)
+	initAPI(util.Lcmcontroller, "DeletePackage", util.PkgUrlPath, util.DELETE)
+	initAPI(util.Lcmcontroller, "DeletePackageOnHost", "/tenants/:tenantId/packages/:packageId/hosts/:hostIp", util.DELETE)
+	initAPI(util.Lcmcontroller, "DistributePackage",   util.PkgUrlPath, util.POST)
+	initAPI(util.Lcmcontroller, "DistributionStatus", util.PkgUrlPath, util.GET)
+	initAPI(util.Lcmcontroller, "DistributionStatus", "/tenants/:tenantId/packages", util.GET)
+	initAPI(util.Lcmcontroller, "SynchronizeAppPackageUpdatedRecord","/tenants/:tenantId/packages/sync_updated", util.GET)
+	initAPI(util.Lcmcontroller, "SynchronizeAppPackageStaleRecord",  "/tenants/:tenantId/packages/sync_deleted", util.GET)
+	initAPI(util.Imagecontroller, "CreateImage", "/tenants/:tenantId/app_instances/:appInstanceId/images", util.POST)
+	initAPI(util.Imagecontroller, "DeleteImage", "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId", util.DELETE)
+	initAPI(util.Imagecontroller, "GetImage", "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId", util.GET)
+	initAPI(util.Imagecontroller, "GetImageFile", "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file", util.GET)
+	initAPI(util.MecHostcontroller, "AddMecHost", util.Hosts, util.POST)
+	initAPI(util.MecHostcontroller, "UpdateMecHost", util.Hosts, "put")
+	initAPI(util.MecHostcontroller, "GetMecHost", util.Hosts, util.GET)
+	initAPI(util.MecHostcontroller, "DeleteMecHost", "/hosts/:hostIp", util.DELETE)
+	initAPI(util.MecHostcontroller, "GetAppInstance", "/tenants/:tenantId/app_instances", util.GET)
+	initAPI(util.MecHostcontroller, "BatchTerminate", "/tenants/:tenantId/app_instances/batchTerminate", util.DELETE)
+	initAPI(util.MecHostcontroller, "SynchronizeMecHostUpdatedRecord", "/hosts/sync_updated", util.GET)
+	initAPI(util.MecHostcontroller, "SynchronizeMecHostStaleRecord", "/hosts/sync_deleted", util.GET)
+	initAPI(util.Mepcontroller, "Services", "/mep/services", util.GET)
+	initAPI(util.Mepcontroller, "KongLog", "/mep/kong_log", util.GET)
+	initAPI(util.Mepcontroller, "Subscribe", "/mep/subscribe_statistic", util.GET)
+}
 
-	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
+func initAPI(controllerName, methodName, path, operationType string,) {
+	beego.GlobalControllerRouter[controllerName] = append(beego.GlobalControllerRouter[controllerName],
 		beego.ControllerComments{
-			Method:           "CreateImage",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images",
-			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
-		beego.ControllerComments{
-			Method:           "DeleteImage",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId",
-			AllowHTTPMethods: []string{util.DELETE},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
-		beego.ControllerComments{
-			Method:           "GetImage",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Imagecontroller] = append(beego.GlobalControllerRouter[util.Imagecontroller],
-		beego.ControllerComments{
-			Method:           "GetImageFile",
-			Router:           "/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "AddMecHost",
-			Router:           util.Hosts,
-			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "UpdateMecHost",
-			Router:           util.Hosts,
-			AllowHTTPMethods: []string{"put"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "DeleteMecHost",
-			Router:           "/hosts/:hostIp",
-			AllowHTTPMethods: []string{util.DELETE},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "GetMecHost",
-			Router:           util.Hosts,
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "GetAppInstance",
-			Router:           "/tenants/:tenantId/app_instances",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "BatchTerminate",
-			Router:           "/tenants/:tenantId/app_instances/batchTerminate",
-			AllowHTTPMethods: []string{util.DELETE},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "SynchronizeUpdatedRecord",
-			Router:           "/tenants/:tenantId/app_instances/sync_updated",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "SynchronizeStaleRecord",
-			Router:           "/tenants/:tenantId/app_instances/sync_deleted",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "SynchronizeMecHostUpdatedRecord",
-			Router:           "/hosts/sync_updated",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter[util.MecHostcontroller] = append(beego.GlobalControllerRouter[util.MecHostcontroller],
-		beego.ControllerComments{
-			Method:           "SynchronizeMecHostStaleRecord",
-			Router:           "/hosts/sync_deleted",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-			
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "UploadPackage",
-			Router:           "/tenants/:tenantId/packages",
-			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "DeletePackage",
-			Router:           "/tenants/:tenantId/packages/:packageId",
-			AllowHTTPMethods: []string{"delete"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "DeletePackageOnHost",
-			Router:           "/tenants/:tenantId/packages/:packageId/hosts/:hostIp",
-			AllowHTTPMethods: []string{"delete"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "DistributePackage",
-			Router:           "/tenants/:tenantId/packages/:packageId",
-			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "DistributionStatus",
-			Router:           "/tenants/:tenantId/packages/:packageId",
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter[util.Lcmcontroller] = append(beego.GlobalControllerRouter[util.Lcmcontroller],
-		beego.ControllerComments{
-			Method:           "DistributionStatus",
-			Router:           "/tenants/:tenantId/packages",
-			AllowHTTPMethods: []string{"get"},
+			Method:           methodName,
+			Router:           path,
+			AllowHTTPMethods: []string{operationType},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})

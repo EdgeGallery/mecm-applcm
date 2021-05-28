@@ -22,8 +22,8 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/models"
+	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
-	"os"
 	"strconv"
 	"unsafe"
 )
@@ -44,40 +44,8 @@ type ImageController struct {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images [post]
 func (c *ImageController) CreateImage() {
 	log.Info("Image creation request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
 
-	appInsId, err := c.getAppInstId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -91,17 +59,16 @@ func (c *ImageController) CreateImage() {
 		return
 	}
 
-	response, err := adapter.CreateVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, request.VmId)
+	response, err := adapter.CreateVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, request.VmId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		// To check if any more error code needs to be returned.
-		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	err = c.sendResponse(response, clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
 
@@ -121,56 +88,23 @@ func (c *ImageController) CreateImage() {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId [delete]
 func (c *ImageController) DeleteImage() {
 	log.Info("Image deletion request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
+
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	appInsId, err := c.getAppInstId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
+	imageId, err := c.getImgId(clientIp, bKey)
+	if nil != err {
 		return
 	}
 
-	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	imageId, err := c.getImageId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	_, err = adapter.DeleteVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId)
+	_, err = adapter.DeleteVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		// To check if any more error code needs to be returned.
-		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return
 	}
 
@@ -190,62 +124,27 @@ func (c *ImageController) DeleteImage() {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId [get]
 func (c *ImageController) GetImage() {
 	log.Info("Query image request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	appInsId, err := c.getAppInstId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
+	imageId, err := c.getImgId(clientIp, bKey)
+	if nil != err {
 		return
 	}
 
-	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	imageId, err := c.getImageId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	response, err := adapter.QueryVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId)
+	response, err := adapter.QueryVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		// To check if any more error code needs to be returned.
-		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
+		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	err = c.sendResponse(response, clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
 
@@ -264,48 +163,15 @@ func (c *ImageController) GetImage() {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file [get]
 func (c *ImageController) GetImageFile() {
 	log.Info("Download image file request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
+
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	appInsId, err := c.getAppInstId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	imageId, err := c.getImageId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
+	imageId, err := c.getImgId(clientIp, bKey)
+	if nil != err {
 		return
 	}
 
@@ -315,40 +181,35 @@ func (c *ImageController) GetImageFile() {
 		return
 	}
 
-	// Create temporary file to hold helm chart
-	file, err := os.Create(util.TEMP_FILE)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+	if chunkNum == 0 {
+		responseWriter := c.Ctx.ResponseWriter
+		_, err = adapter.DownloadVmImage(responseWriter, appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, imageId,
+			chunkNum)
 		util.ClearByteArray(bKey)
-		return
+		if err != nil {
+			// To check if any more error code needs to be returned.
+			c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
+			return
+		}
 	}
-	defer os.Remove(util.TEMP_FILE)
-
-	buf, err := adapter.DownloadVmImage(appInfoRecord.HostIp, accessToken, appInfoRecord.AppInsId, imageId,
-		chunkNum)
 	util.ClearByteArray(bKey)
-	if err != nil {
-		// To check if any more error code needs to be returned.
-		c.handleLoggingForError(clientIp, util.BadRequest, err.Error())
-		return
+	_, ok := util.VmImageMap[chunkNum]
+	if ok {
+		_, _ = c.Ctx.ResponseWriter.Write(util.VmImageMap[chunkNum])
+		delete(util.VmImageMap, chunkNum)
+		c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
+	} else {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
+			"data is not exist for given chunk number")
 	}
 
-	// Write input bytes to temp file
-	_, err = buf.WriteTo(file)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-
-	c.Ctx.Output.Download(util.TEMP_FILE)
-	c.handleLoggingForSuccess(clientIp, "VM Image download chunk is successful")
 }
 
 // Get Image Id
 func (c *ImageController) getImageId(clientIp string) (string, error) {
 	imageId := c.Ctx.Input.Param(":imageId")
 	if len(imageId) > util.MaxIdLength {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Image ID is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Image ID is invalid")
 		return "", errors.New("Image ID is invalid")
 	}
 	return imageId, nil
@@ -356,12 +217,68 @@ func (c *ImageController) getImageId(clientIp string) (string, error) {
 
 // Get Chunk number
 func (c *ImageController) getChunkNum(clientIp string) (int32, error) {
-	chunkString := c.Ctx.Input.Param(":chunk_num")
+	chunkString := c.Ctx.Request.Header.Get("chunk_num")
 
 	i, err := strconv.ParseInt(chunkString, 10, 32)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Chunk number is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Chunk number is invalid")
 		return 0, errors.New("Chunk number is invalid")
 	}
 	return int32(i), nil
+}
+
+func (c *ImageController) getInputParams() (accessToken string, bKey []byte, appInfoRecord *models.AppInfoRecord,
+	adapter *pluginAdapter.PluginAdapter, clientIp string, err error) {
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+	}
+
+	appInfoRecord, err = c.getAppInfoRecord(appInsId, clientIp)
+	if err != nil {
+		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+	}
+
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
+	if err != nil {
+		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+	}
+
+	adapter, err = c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+	if err != nil {
+		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+	}
+	return accessToken, bKey, appInfoRecord, adapter, clientIp, nil
+}
+
+func (c *ImageController) getImgId(clientIp string, bKey []byte) (string, error) {
+	imageId, err := c.getImageId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return "", err
+	}
+	return imageId, nil
+}
+
+func (c *ImageController) sendResponse(response, clientIp string) error {
+	_, err := c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return err
+	}
+	return nil
 }

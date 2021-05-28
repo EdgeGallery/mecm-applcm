@@ -18,7 +18,8 @@ package pluginAdapter
 import (
 	"bytes"
 	"context"
-	"lcmcontroller/config"
+	beegoCtx "github.com/astaxie/beego/context"
+	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
 	"time"
@@ -38,13 +39,13 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 }
 
 // Instantiate application
-func (c *PluginAdapter) Instantiate(tenantId string, host string, packageId string,
-	accessToken string, akSkAppInfo config.AppAuthConfig) (error error, status string) {
+func (c *PluginAdapter) Instantiate(tenantId string, accessToken string, appInsId string,
+	req models.InstantiateRequest) (error error, status string) {
 	log.Info("Instantiation started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.Instantiate(ctx, tenantId, host, packageId, accessToken, akSkAppInfo)
+	status, err := c.client.Instantiate(ctx, tenantId, accessToken, appInsId, req)
 	if err != nil {
 		log.Error("failed to instantiate application")
 		return err, util.Failure
@@ -190,20 +191,20 @@ func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId s
 }
 
 // Query VM Image
-func (c *PluginAdapter) DownloadVmImage(host string, accessToken string, appInsId string, imageId string,
-	chunkNum int32) (buf bytes.Buffer, error error) {
+func (c *PluginAdapter) DownloadVmImage(imgCtrlr *beegoCtx.Response, host string, accessToken string, appInsId string, imageId string,
+	chunkNum int32) (buf *bytes.Buffer, error error) {
 	log.Info("Download VM Image chunk started")
 
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Hour)
 	defer cancel()
 
-	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum)
+	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum, imgCtrlr)
 	if err != nil {
 		log.Error("failed to download VM image chunk")
 		return response, err
 	}
 
-	log.Info("VM image chunk download completed with response: ", response)
+	log.Info("VM image chunk download completed successfully")
 	return response, nil
 }
 

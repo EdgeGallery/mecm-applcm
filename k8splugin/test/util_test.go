@@ -199,3 +199,9 @@ func TestGetReleaseNamespaceSuccess(t *testing.T) {
 	result := util.GetReleaseNamespace()
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }
+
+func TestInvalidPwd(t *testing.T) {
+	testVar := "invalidpwd"
+	_, err := util.ValidateDbParams(testVar)
+	assert.Error(t,  err, "Test invalid password")
+}

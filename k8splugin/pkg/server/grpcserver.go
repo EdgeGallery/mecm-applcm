@@ -47,8 +47,8 @@ import (
 )
 
 var (
-	KubeconfigPath = "/usr/app/config/"
-	appPackagesBasePath = "/usr/app/packages/"
+	KubeconfigPath = "/usr/app/artifacts/config/"
+	appPackagesBasePath = "/usr/app/artifacts/packages/"
 )
 
 // GRPC server
@@ -83,8 +83,8 @@ func NewRateLimit() *RateLimit {
 func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC) {
 	s.port = cfg.Port
 	s.address = cfg.Address
-	s.certificate = cfg.ServerConfig.Certfilepath
-	s.key = cfg.ServerConfig.Keyfilepath
+	s.certificate = cfg.ServerConfig.CertFilePath
+	s.key = cfg.ServerConfig.KeyFilePath
 	s.serverConfig = cfg.ServerConfig
 	dbAdapter, err := pgdb.GetDbAdapter(cfg.ServerConfig)
 	if err != nil {
@@ -108,9 +108,8 @@ func (s *ServerGRPC) Listen() (err error) {
 		log.Error("failed to listen on specified port")
 		return err
 	}
-	log.Info("Server started listening on configured port")
 
-	if !s.serverConfig.Sslnotenabled {
+	if !s.serverConfig.SslNotEnabled {
 		tlsConfig, err := util.GetTLSConfig(s.serverConfig, s.certificate, s.key)
 		if err != nil {
 			log.Error("failed to load certificates")
@@ -136,6 +135,7 @@ func (s *ServerGRPC) Listen() (err error) {
 		log.Error("failed to listen for GRPC connections.")
 		return err
 	}
+	log.Info("Server started listening on configured port")
 	return
 }
 
@@ -341,7 +341,7 @@ func (s *ServerGRPC) Instantiate(ctx context.Context,
 		return resp, err
 	}
 
-	releaseName, err := client.Deploy(tenantId, hostIp, packageId, appInsId, ak, sk, s.db)
+	releaseName, err := client.Deploy(appPkgRecord, appInsId, ak, sk, s.db)
 	if err != nil {
 		log.Info("instantiation failed")
 		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")
@@ -557,13 +557,14 @@ func (s *ServerGRPC) validateInputParamsForInstantiate(
 			util.TenantIdIsInvalid))
 	}
 
-	ak = req.GetAk()
+	parameters := req.GetParameters()
+	ak = parameters["ak"]
 	if ak == "" {
 		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AKIsInvalid))
 	}
 
-	sk = req.GetSk()
+	sk = parameters["sk"]
 	if sk == "" {
 		return "", "", "", "",  "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.SKIsInvalid))
@@ -720,6 +721,7 @@ func (s *ServerGRPC) insertOrUpdateAppPkgRecord(packageId string, tenantId strin
 		HostIp:       hostIp,
 		TenantId:     tenantId,
 		DockerImages: dockerImages,
+		PackageId: packageId,
 	}
 	err = s.db.InsertOrUpdateData(appPkgRecord, util.AppPkgId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
@@ -1044,7 +1046,7 @@ func (s *ServerGRPC) DeletePackage(ctx context.Context,
 	err = s.deletePackage(packagePath)
 	if err != nil {
 		log.Error("failed to delete application package file")
-		s.displayResponseMsg(ctx, util.DeletePackage, "failed to delete application package")
+		s.displayResponseMsg(ctx, util.DeletePackage, util.FailedToDelAppPkg)
 		return resp, nil
 	}
 	
@@ -1067,7 +1069,7 @@ func (s *ServerGRPC) deletePackage(appPkgPath string) error {
 
 	tenantDir, err := os.Open(tenantPath)
 	if err != nil {
-		return errors.New("failed to delete application package")
+		return errors.New(util.FailedToDelAppPkg)
 	}
 	defer tenantDir.Close()
 	
@@ -1076,7 +1078,7 @@ func (s *ServerGRPC) deletePackage(appPkgPath string) error {
 	if err == io.EOF {
 		err := os.Remove(tenantPath)
 		if err != nil {
-            return errors.New("failed to delete application package")
+            return errors.New(util.FailedToDelAppPkg)
 		}
 		return nil
 	}
@@ -1163,6 +1165,10 @@ func (c *ServerGRPC) extractFiles(file *zip.File, zippedFile io.ReadCloser, tota
 			log.Error("Failed to create directory")
 		}
 	} else {
+		parent := filepath.Dir(extractedFilePath)
+		if _, err := os.Stat(parent); os.IsNotExist(err) {
+			_ = os.MkdirAll(parent, 0750)
+		}
 		outputFile, err := os.OpenFile(
 			extractedFilePath,
 			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
@@ -1192,7 +1198,7 @@ func (s *ServerGRPC) deleteDockerImagesFromHost(dockerImages string) error {
 			"delete docker image": dockers[i],
 		}).Info("delete docker images")
 
-		//TODO: delete docker images form host machine using docker client
+		//delete docker images form host machine using docker client
 	}
 	return nil
 }
@@ -1219,7 +1225,7 @@ func (c *ServerGRPC) loadDockerImagesToHost(packagePath string) (string, error) 
 
 		dockerImages = append(dockerImages, imageDescriptors[i].SwImage)
 
-		//TODO: load docker image to docker host using docker client
+		//load docker image to docker host using docker client
 	}
 
 	return strings.Join(dockerImages,", "), nil

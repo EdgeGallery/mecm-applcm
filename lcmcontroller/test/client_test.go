@@ -100,16 +100,34 @@ func doTest(t *testing.T) {
 	//Upload package
 	testUploadPackage(t, extraParams, path, testDb)
 
-	testAddMecHost(t, extraParams, path, testDb)
+	testAddMecHost(t, extraParams, testDb)
 
 	//Distribute package
-	testDistributePackage(t, extraParams, path, testDb)
+	testDistributePackage(t, extraParams, testDb)
 
 	// Test instantiate
-	testInstantiate(t, extraParams, path, testDb)
+	testInstantiate(t, extraParams, testDb)
+
+	// Test work load events
+	testWorkloadEvents(t, nil, "", testDb, "Success")
+
+	// Test create image
+	testCreateImage(t, extraParams, testDb)
+
+	// Test get image
+	testGetImage(t, extraParams, testDb)
+
+	// Test get image file
+	testGetImageFile(t, extraParams, testDb)
+
+	// Test delete image file
+	testDeleteImage(t, extraParams, testDb)
 
 	// Test query
 	testQuery(t, nil, "", testDb, "{\"Output\":\"Success\"}")
+
+	// Test delete package
+	testDeletePackageOnHost(t, extraParams, testDb)
 
 	// Update path to config file
 	path, _ = os.Getwd()

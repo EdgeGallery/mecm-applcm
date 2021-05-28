@@ -20,6 +20,7 @@ package pgdb
 import (
 	"errors"
 	"fmt"
+	"k8splugin/conf"
 	"k8splugin/util"
 	"os"
 	"strings"
@@ -27,11 +28,6 @@ import (
 
 	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
-)
-
-// Variables are required for db connections
-var (
-	DB_SSL_ROOT_CER = "ssl/ca.crt"
 )
 
 // Pg database
@@ -76,13 +72,17 @@ func (db *PgDb) DeleteData(data interface{}, cols ...string) (err error) {
 }
 
 // Init database
-func (db *PgDb) InitDatabase(dbSslMode string) error {
+func (db *PgDb) InitDatabase(serverConfigs *conf.ServerConfigurations) error {
 	dbUser := util.GetDbUser()
 	dbPwd := []byte(os.Getenv("K8S_PLUGIN_DB_PASSWORD"))
 	dbName := util.GetDbName()
 	dbHost := util.GetDbHost()
 	dbPort := util.GetDbPort()
-	dbSslRootCert := DB_SSL_ROOT_CER
+	dbSslRootCert := serverConfigs.DbSslFilePath
+	dbSslMode := "enable"
+	if serverConfigs.DbSslMode == false {
+		dbSslMode = "disable"
+	}
 
 	dbPwdStr := string(dbPwd)
 	util.ClearByteArray(dbPwd)

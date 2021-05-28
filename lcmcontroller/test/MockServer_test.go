@@ -40,6 +40,38 @@ type AppLCMServer struct {
 	Address string
 }
 
+
+// GRPC server
+type VmImageServer struct {
+	server  *grpc.Server
+	Address string
+}
+
+func (v VmImageServer) CreateVmImage(ctx context.Context, request *lcmservice.CreateVmImageRequest) (*lcmservice.CreateVmImageResponse, error) {
+	resp := &lcmservice.CreateVmImageResponse{
+		Response: SUCCESS_RETURN,
+	}
+	return resp, nil
+}
+
+func (v VmImageServer) QueryVmImage(ctx context.Context, request *lcmservice.QueryVmImageRequest) (*lcmservice.QueryVmImageResponse, error) {
+	resp := &lcmservice.QueryVmImageResponse{
+		Response: SUCCESS_RETURN,
+	}
+	return resp, nil
+}
+
+func (v VmImageServer) DeleteVmImage(ctx context.Context, request *lcmservice.DeleteVmImageRequest) (*lcmservice.DeleteVmImageResponse, error) {
+	resp := &lcmservice.DeleteVmImageResponse{
+		Response: SUCCESS_RETURN,
+	}
+	return resp, nil
+}
+
+func (v VmImageServer) DownloadVmImage(request *lcmservice.DownloadVmImageRequest, server lcmservice.VmImage_DownloadVmImageServer) error {
+	return nil
+}
+
 func (a AppLCMServer) Instantiate(ctx context.Context, request *lcmservice.InstantiateRequest) (*lcmservice.InstantiateResponse, error) {
 	resp := &lcmservice.InstantiateResponse{
 		Status: SUCCESS_RETURN,
@@ -66,7 +98,7 @@ func (a AppLCMServer) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) 
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Debug(noMoreData)
 			break
 		}
 
@@ -104,7 +136,7 @@ func (a AppLCMServer) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Debug(noMoreData)
 			break
 		}
 
@@ -124,18 +156,11 @@ func (a AppLCMServer) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer
 }
 
 func (a AppLCMServer) DeletePackage(ctx context.Context, request *lcmservice.DeletePackageRequest) (*lcmservice.DeletePackageResponse, error) {
-	return nil, nil
+	resp := &lcmservice.DeletePackageResponse{
+		Status: SUCCESS_RETURN,
+	}
+	return resp, nil
 }
-
-/*func (s *ServerGRPC) UploadPackage(server lcmservice.AppLCM_UploadPackageServer) error {
-	log.Info("not supported")
-	return nil
-}
-
-func (s *ServerGRPC) DeletePackage(ctx context.Context, request *lcmservice.DeletePackageRequest) (*lcmservice.DeletePackageResponse, error) {
-	log.Info("not supported")
-	return nil, nil
-}*/
 
 // Start GRPC server and start listening on the port
 func (s *ServerGRPC) Listen() (err error) {
@@ -153,8 +178,10 @@ func (s *ServerGRPC) Listen() (err error) {
 	// Create server without TLS credentials
 	s.server = grpc.NewServer()
 	var appLCMServer AppLCMServer
+	var appVmImageServer VmImageServer
 	
 	lcmservice.RegisterAppLCMServer(s.server, appLCMServer)
+	lcmservice.RegisterVmImageServer(s.server, appVmImageServer)
 	log.Infof("Mock server registered with GRPC")
 
 	// Server start serving
@@ -186,24 +213,6 @@ func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateReq
 
 // Instantiate HELM Chart
 func (s *ServerGRPC) Instantiate() (err error) {
-	/*for {
-		req, err := stream.Recv()
-		if err == io.EOF {
-			log.Debug("No more data")
-			break
-		}
-		// Receive chunk and write to helm package
-		_ = req.GetPackage()
-	}
-
-	var res lcmservice.InstantiateResponse
-	res.Status = SUCCESS_RETURN
-	log.Info("Successful Instantiation")
-	err = stream.SendAndClose(&res)
-	if err != nil {
-		log.Info("Failed Instantiation")
-		return errors.New("Failed Instantiation")
-	} */
 	return nil
 }
 
@@ -213,7 +222,7 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("No more data")
+			log.Debug(noMoreData)
 			break
 		}
 

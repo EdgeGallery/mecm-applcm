@@ -36,18 +36,18 @@ import (
 // Start lcmcontroller application
 func main() {
 	r := &util.RateLimiter{}
-	rate, err := limiter.NewRateFromFormatted("200-S")
+	rate, _ := limiter.NewRateFromFormatted("200-S")
 	r.GeneralLimiter = limiter.New(memory.NewStore(), rate)
 
 	beego.InsertFilter("/*", beego.BeforeRouter, func(c *context.Context) {
 		util.RateLimit(r, c)
 	}, true)
 
-	beego.InsertFilter("*", beego.BeforeRouter,cors.Allow(&cors.Options{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "X-Requested-With", "Content-Type", "Accept"},
-		ExposeHeaders: []string{"Content-Length"},
+	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"PUT", "POST", "GET", "DELETE"},
+		AllowHeaders:     []string{"Origin", "X-Requested-With", "Content-Type", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
 
@@ -57,13 +57,15 @@ func main() {
 		return
 	})
 
-	tlsConf, err := util.TLSConfig("HTTPSCertFile")
-	if err != nil {
-		log.Error("failed to config tls for beego")
-		return
-	}
+	if util.GetAppConfig("isHTTPS") == "true" {
+		tlsConf, err := util.TLSConfig("HTTPSCertFile")
+		if err != nil {
+			log.Error("failed to config tls for beego")
+			return
+		}
 
-	beego.BeeApp.Server.TLSConfig = tlsConf
+		beego.BeeApp.Server.TLSConfig = tlsConf
+	}
 
 	if beego.BConfig.RunMode == "dev" {
 		beego.BConfig.WebConfig.DirectoryIndex = true

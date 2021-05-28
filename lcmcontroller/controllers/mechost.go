@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"github.com/astaxie/beego/orm"
 	log "github.com/sirupsen/logrus"
 	"lcmcontroller/config"
 	"lcmcontroller/models"
@@ -35,16 +34,15 @@ type MecHostController struct {
 // @Title Add MEC host
 // @Description Add mec host information
 // @Param   body        body    models.MecHostInfo   true      "The mec host information"
-// @Param   origin      header  string               true   "origin information"
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /hosts [post]
 func (c *MecHostController) AddMecHost() {
-	log.Info("Add mec host request received.")
+	log.Info("Add or update mec host request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -56,70 +54,31 @@ func (c *MecHostController) AddMecHost() {
 		return
 	}
 
-	origin := c.Ctx.Request.Header.Get("origin")
-	originVar, err := util.ValidateName(origin, util.NameRegex)
-	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
-		return
-	}
-
 	err = c.ValidateAddMecHostRequest(clientIp, request)
 	if err != nil {
+		c.writeErrorResponse("failed to add mec host request", util.BadRequest)
 		return
 	}
 
-	err = c.InsertorUpdateMecHostRecord(clientIp, request, origin)
+	err = c.InsertorUpdateMecHostRecord(clientIp, request)
 	if err != nil {
+		c.writeErrorResponse("failed to insert or update mec host record", util.BadRequest)
 		return
 	}
 
-	c.handleLoggingForSuccess(clientIp, "Add mec host is successful")
+	c.handleLoggingForSuccess(clientIp, "Add or update mec host is successful")
 	c.ServeJSON()
 }
 
 // @Title Update MEC host
 // @Description Add mec host information
 // @Param   body        body    models.MecHostInfo   true      "The mec host information"
-// @Param   origin      header  string               true   "origin information"
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /hosts [put]
 func (c *MecHostController) UpdateMecHost() {
-	log.Info("Update mec host request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	var request models.MecHostInfo
-	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
-	if err != nil {
-		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
-		return
-	}
-
-	origin := c.Ctx.Request.Header.Get("origin")
-	originVar, err := util.ValidateName(origin, util.NameRegex)
-	if err != nil || !originVar {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
-		return
-	}
-
-	err = c.ValidateAddMecHostRequest(clientIp, request)
-	if err != nil {
-		return
-	}
-
-	err = c.InsertorUpdateMecHostRecord(clientIp, request, origin)
-	if err != nil {
-		return
-	}
-
-	c.handleLoggingForSuccess(clientIp, "Update mec host is successful")
-	c.ServeJSON()
+	log.Info("Add or Update mec host request received.")
+	c.AddMecHost()
 }
 
 // Validate add mec host request fields
@@ -127,53 +86,47 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 
 	err := util.ValidateIpv4Address(request.MechostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, "HostIp address is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "MecHost address is invalid")
 		return err
 	}
 
-	hostName, err := util.ValidateName(request.MechostName, util.NameRegex)
-	if err != nil || !hostName {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Mec host name is invalid")
-		return err
-	}
-
-	zipcode, err := util.ValidateName(request.ZipCode, util.NameRegex)
-	if err != nil || !zipcode {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Zipcode is invalid")
-		return err
-	}
-
-	city, err := util.ValidateName(request.City, util.CityRegex)
-	if err != nil || !city {
-		c.handleLoggingForError(clientIp, util.BadRequest, "City is invalid")
+	err = c.validateMecHostZipCodeCity(request, clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Clientip is invalid")
 		return err
 	}
 
 	if len(request.Address) > 256 {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Address is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Address is invalid")
 		return err
 	}
 
 	affinity, err := util.ValidateName(request.Affinity, util.AffinityRegex)
 	if err != nil || !affinity {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Affinity is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Affinity is invalid")
 		return err
 	}
 
 	userName, err := util.ValidateName(request.UserName, util.NameRegex)
 	if err != nil || !userName {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Username is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Username is invalid")
 		return err
 	}
 
 	if len(request.Coordinates) > 128 {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Coordinates is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Coordinates is invalid")
 		return err
 	}
 
 	vim, err := util.ValidateName(request.Vim, util.NameRegex)
 	if err != nil || !vim {
-		c.handleLoggingForError(clientIp, util.BadRequest, "Vim is invalid")
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Vim is invalid")
+		return err
+	}
+
+	originVar, err := util.ValidateName(request.Origin, util.NameRegex)
+	if err != nil || !originVar {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
 		return err
 	}
 
@@ -181,10 +134,14 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 }
 
 // Insert or update mec host record
-func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo, origin string) error {
+func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo) error {
+
+	if request.Origin == "" {
+		request.Origin = "MEO"
+	}
 
 	syncStatus := true
-	if origin == "MEPM" {
+	if request.Origin == "MEPM" {
 		syncStatus = false
 	}
 	// Insert or update host info record
@@ -197,28 +154,28 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		Address:            request.Address,
 		Affinity:           request.Affinity,
 		UserName:           request.UserName,
-		ConfigUploadStatus: "false",
+		ConfigUploadStatus: "",
 		Coordinates:        request.Coordinates,
 		Vim:                request.Vim,
-		Origin:             origin,
+		Origin:             request.Origin,
 		SyncStatus:         syncStatus,
 	}
 
 	count, err := c.Db.QueryCount(util.Mec_Host)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
 	if count >= util.MaxNumberOfHostRecords {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Maximum number of host records are exceeded")
 		return err
 	}
 
 	err = c.Db.InsertOrUpdateData(hostInfoRecord, util.HostIp)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to save host info record to database.")
 		return err
 	}
@@ -233,7 +190,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		}
 		err = c.Db.InsertOrUpdateData(capabilityRecord, "mec_capability_id")
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError,
+			c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
 				"Failed to save capability info record to database.")
 			return err
 		}
@@ -253,18 +210,20 @@ func (c *MecHostController) DeleteMecHost() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
 
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 
 	err = c.deleteHostInfoRecord(clientIp, hostIp)
 	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.handleLoggingForSuccess(clientIp, "Delete mec host is successful")
@@ -275,9 +234,9 @@ func (c *MecHostController) DeleteMecHost() {
 func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error {
 
 	var appInstances []*models.AppInfoRecord
-	_, _ = c.Db.QueryTable("app_info_record").Filter("host_ip", hostIp).All(&appInstances)
+	_, _ = c.Db.QueryTable("app_info_record", &appInstances, "mec_host", hostIp)
 	for _, appInstance := range appInstances {
-		err := c.TerminateApplication(clientIp, appInstance.AppInsId)
+		err := c.TerminateApplication(clientIp, appInstance.AppInstanceId)
 		if err != nil {
 			return err
 		}
@@ -289,16 +248,15 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 
 	readErr := c.Db.ReadData(hostInfoRecord, util.HostIp)
 	if readErr != nil {
-		c.handleLoggingForError(clientIp, util.StatusNotFound,
+		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"Mec host info record does not exist in database")
 		return readErr
 	}
 	var origin = hostInfoRecord.Origin
-	var syncStatus = hostInfoRecord.SyncStatus
 
 	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
@@ -306,10 +264,10 @@ func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error 
 		MecHostId: hostIp,
 	}
 
-	if !syncStatus && strings.EqualFold(origin, "mepm") {
+	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
 		}
 	}
@@ -324,7 +282,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.HostIp)
+	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		return err
 	}
@@ -334,26 +292,24 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.HostIp, "", appInfoRecord.AppInsId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId)
 	if err != nil {
-		errorString := err.Error()
-		c.handleLoggingK8s(clientIp, errorString)
+		c.HandleLoggingForFailure(clientIp, err.Error())
 		return err
 	}
 
-	acm := config.NewAppConfigMgr(appInfoRecord.AppInsId, "", config.AppAuthConfig{})
+	acm := config.NewAppConfigMgr(appInfoRecord.AppInstanceId, "", config.AppAuthConfig{})
 	err = acm.DeleteAppAuthConfig()
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
 	var origin = appInfoRecord.Origin
-	var syncStatus = appInfoRecord.SyncStatus
 	var tenantId = appInfoRecord.TenantId
-	err = c.deleteAppInfoRecord(appInfoRecord.AppInsId)
+	err = c.deleteAppInfoRecord(appInfoRecord.AppInstanceId)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
@@ -363,11 +319,11 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 	}
 
 	appInsKeyRec := &models.AppInstanceStaleRec{
-		AppInsId: appInsId,
-		TenantId: tenantId,
+		AppInstanceId: appInsId,
+		TenantId:      tenantId,
 	}
 
-	if !syncStatus && strings.EqualFold(origin, "mepm") {
+	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save app instance key record to database.")
@@ -387,13 +343,13 @@ func (c *MecHostController) GetMecHost() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
 
 	var mecHosts []*models.MecHost
-	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
+	_, _ = c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
 	for _, mecHost := range mecHosts {
 		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 	}
@@ -427,7 +383,7 @@ func (c *MecHostController) GetAppInstance() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -437,13 +393,22 @@ func (c *MecHostController) GetAppInstance() {
 		return
 	}
 
-	var maps []orm.Params
-	_, _ = c.Db.QueryTable("app_info_record").Filter("tenant_id", tenantId).Values(&maps)
-	res, err := json.Marshal(maps)
+	var appInfoRecords []*models.AppInfoRecord
+	var appInfoRec []*models.AppInfoRec
+	_, _ = c.Db.QueryTable("app_info_record", &appInfoRecords, util.TenantId, tenantId)
+	res, err := json.Marshal(appInfoRecords)
 	if err != nil {
 		return
 	}
-	_, _ = c.Ctx.ResponseWriter.Write(res)
+	err = json.Unmarshal(res, &appInfoRec)
+	if err != nil {
+		return
+	}
+	response, err := json.Marshal(appInfoRec)
+	if err != nil {
+		return
+	}
+	_, _ = c.Ctx.ResponseWriter.Write(response)
 	c.handleLoggingForSuccess(clientIp, "Query App Instance info is successful")
 }
 
@@ -460,7 +425,7 @@ func (c *MecHostController) BatchTerminate() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -481,7 +446,7 @@ func (c *MecHostController) BatchTerminate() {
 	for _, appInsId := range listOfAppIds {
 		err = util.ValidateUUID(appInsId)
 		if err != nil {
-			c.handleLoggingForError(clientIp, util.BadRequest, "App instance is invalid")
+			c.HandleLoggingForError(clientIp, util.BadRequest, "App instance is invalid")
 			return
 		}
 
@@ -510,12 +475,12 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
 
-	_, _ = c.Db.QueryTable(util.Mec_Host).All(&mecHosts)
+	_, _ = c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
 	for _, mecHost := range mecHosts {
 		if !mecHost.SyncStatus && strings.EqualFold(mecHost.Origin, "mepm") {
 			_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
@@ -542,9 +507,11 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 		return
 	}
 
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(response)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
 	for _, mecHost := range mecHostsSync {
@@ -572,12 +539,12 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
 
-	_, _ = c.Db.QueryTable("mec_host_stale_rec").All(&mecHostStaleRecs)
+	_, _ = c.Db.QueryTable("mec_host_stale_rec", &mecHostStaleRecs, "")
 
 	mecHostStaleRecords.MecHostStaleRecs = append(mecHostStaleRecords.MecHostStaleRecs, mecHostStaleRecs...)
 	res, err := json.Marshal(mecHostStaleRecords)
@@ -586,17 +553,41 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 		return
 	}
 
+	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
+	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
-		c.handleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
 	for _, mecHostStaleRec := range mecHostStaleRecs {
 		err = c.Db.DeleteData(&mecHostStaleRec, util.HostIp)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.handleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return
 		}
 	}
 	c.handleLoggingForSuccess(clientIp, "Stale mec host records synchronization is successful")
+}
+
+// Validate mec host, zip code and city
+func (c *MecHostController) validateMecHostZipCodeCity(request models.MecHostInfo, clientIp string) error {
+	hostName, err := util.ValidateName(request.MechostName, util.NameRegex)
+	if err != nil || !hostName {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Mec host name is invalid")
+		return err
+	}
+
+	zipcode, err := util.ValidateName(request.ZipCode, util.NameRegex)
+	if err != nil || !zipcode {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Zipcode is invalid")
+		return err
+	}
+
+	city, err := util.ValidateName(request.City, util.CityRegex)
+	if err != nil || !city {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "City is invalid")
+		return err
+	}
+	return nil
 }

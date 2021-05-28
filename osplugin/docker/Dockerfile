@@ -33,6 +33,7 @@ RUN /venv/bin/pip3 install -r /requirements.txt
 # 构建运行时镜像
 FROM base
 
+RUN mkdir -p /usr/app/log /usr/app/config /usr/app/package
 WORKDIR /usr/app
 
 COPY core ./core

@@ -17,6 +17,7 @@
 package test
 
 import (
+	"k8splugin/models"
 	"k8splugin/pgdb"
 )
 
@@ -24,7 +25,7 @@ import (
 type mockedHelmClient struct {
 }
 
-func (hc *mockedHelmClient) Deploy(tenantId string, hostIp string, packageId string, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
+func (hc *mockedHelmClient) Deploy(appPkgRec *models.AppPackage, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
 	return "testRelease", nil
 }
 
@@ -41,3 +42,4 @@ func (hc *mockedHelmClient) WorkloadEvents(relName string) (string, error) {
 	// Output to be checked
 	return "{\"Output\":\"Success\"}", nil
 }
+

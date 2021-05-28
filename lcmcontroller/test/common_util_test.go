@@ -35,6 +35,7 @@ var (
 	ipAddFormatter = "%d.%d.%d.%d"
 	fwdIp          = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
 		rand.Intn(util.MaxIPVal))
+	noMoreData     = 	"No more data"
 )
 
 // Creates a new file upload http request with optional extra params
@@ -90,6 +91,7 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 	req.Header.Set("appId", "e261211d80d04cb6aed00e5cd1f2cd1")
 	req.Header.Set("packageId", packageId)
 	req.Header.Set("X-Forwarded-For", fwdIp)
+	req.Header.Set("chunk_num", "0")
 
 
 	// Parse and create multipart form
@@ -101,10 +103,11 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 func createToken(userid string) string {
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
-	roleName := make([]string, 3)
-	roleName[0] = "ROLE_MECM_TENANT"
-	roleName[1] = "ROLE_APPSTORE_TENANT"
-	roleName[2] = "ROLE_DEVELOPER_TENANT"
+	roleName := make([]string, 4)
+	roleName[0] = "ROLE_MECM_ADMIN"
+	roleName[1] = "ROLE_MECM_TENANT"
+	roleName[2] = "ROLE_APPSTORE_TENANT"
+	roleName[3] = "ROLE_DEVELOPER_TENANT"
 	atClaims["authorities"] = roleName
 	atClaims["user_name"] = "lcmcontroller"
 	atClaims["authorized"] = true

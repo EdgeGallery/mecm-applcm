@@ -22,8 +22,8 @@ message InstantiateRequest {
   string appInstanceId = 3;
   string appPackageId = 4;
   string hostIp = 5;
-  string ak     = 6;
-  string sk     = 7;
+  map<string,string> parameters = 6;
+  bool akSkLcmGen = 7;
 }
 
 message InstantiateResponse {
@@ -181,7 +181,7 @@ service AppLCM {
   rpc deletePackage (DeletePackageRequest) returns (DeletePackageResponse) {}
 }
 
-service VmImageService {
+service VmImage {
   rpc createVmImage(CreateVmImageRequest) returns (CreateVmImageResponse) {}
   rpc queryVmImage(QueryVmImageRequest) returns (QueryVmImageResponse) {}
   rpc deleteVmImage(DeleteVmImageRequest) returns (DeleteVmImageResponse) {}

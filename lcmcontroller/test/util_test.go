@@ -173,3 +173,31 @@ func TestGetAppConfig(_ *testing.T) {
 	appConfig := "appConfig"
 	util.GetAppConfig(appConfig)
 }
+
+func TestInvalidPwd(t *testing.T) {
+	testVar := "invalidpwd"
+	_, err := util.ValidateDbParams(testVar)
+	assert.Error(t,  err, "Test invalid password")
+}
+
+
+func TestValidPwd(t *testing.T) {
+	testVar := "sa1Znv&srs"
+	_, err := util.ValidateDbParams(testVar)
+	assert.Nil(t, err, "Test valid password")
+}
+
+func TestGetPluginAddress(t *testing.T) {
+	addr := util.GetPluginAddress("K8S")
+	assert.Equal(t, "", addr, "Test get plugin address")
+}
+
+func TestGetPluginPort(t *testing.T) {
+	port := util.GetPluginPort("K8S")
+	assert.Equal(t, "", port, "Test get plugin port")
+}
+
+func TestGetPluginInfo(t *testing.T) {
+	pluginInfo := util.GetPluginInfo("")
+	assert.Equal(t, "127.0.0.1:10001", pluginInfo, "Test get plugin info")
+}
