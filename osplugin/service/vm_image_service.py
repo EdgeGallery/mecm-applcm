@@ -32,6 +32,7 @@ from core.openstack_utils import create_nova_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
     DownloadVmImageResponse, DeleteVmImageResponse
+from task.image_task import start_check_image_status
 
 LOG = logger
 
@@ -110,6 +111,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                           status=utils.QUEUED,
                           host_ip=host_ip)
         commit()
+        start_check_image_status(image_id, host_ip)
         res.response = json.dumps({'imageId': image_id})
         return res
 
