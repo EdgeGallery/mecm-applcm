@@ -32,6 +32,7 @@ from core.openstack_utils import create_nova_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
     DownloadVmImageResponse, DeleteVmImageResponse
+from task.image_task import start_check_image_status
 
 LOG = logger
 
@@ -78,30 +79,6 @@ def validate_input_params_for_upload_cfg(req):
     return host_ip
 
 
-_IMAGE_INFO_TMP_ = {}
-
-
-def _get_image_info(image_id, glance_client):
-    """
-    获取镜像信息
-    """
-    if image_id in _IMAGE_INFO_TMP_:
-        return _IMAGE_INFO_TMP_[image_id]
-    image_info = glance_client.images.get(image_id)
-    if image_info.status != 'active':
-        LOG.error("image status %s", image_info.status)
-        raise Exception("image status is not active...")
-    _IMAGE_INFO_TMP_[image_id] = image_info
-    return image_info
-
-
-def _del_image_info(image_id):
-    """
-    删除镜像信息
-    """
-    _IMAGE_INFO_TMP_.pop(image_id)
-
-
 class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
     """
     VmImageService
@@ -118,11 +95,12 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
-        nova_client = create_nova_client(host_ip)
-        vm_info = nova_client.servers.get(request.vmId)
-        LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
-        image_name = get_image_name(vm_info.name)
+
         try:
+            nova_client = create_nova_client(host_ip)
+            vm_info = nova_client.servers.get(request.vmId)
+            LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
+            image_name = get_image_name(vm_info.name)
             image_id = nova_client.servers.create_image(request.vmId, image_name)
         except Exception as exception:
             LOG.error(exception, exc_info=True)
@@ -130,11 +108,10 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
         VmImageInfoMapper(image_id=image_id,
                           image_name=image_name,
-                          image_size=0,
-                          vm_id=request.vmId,
-                          app_instance_id=request.appInstanceId,
-                          host_ip=request.hostIp)
+                          status=utils.QUEUED,
+                          host_ip=host_ip)
         commit()
+        start_check_image_status(image_id, host_ip)
         res.response = json.dumps({'imageId': image_id})
         return res
 
@@ -147,31 +124,22 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return res
-        vm_info = VmImageInfoMapper.get(image_id=request.imageId)
-        if not vm_info:
+        vm_image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
+        if not vm_image_info:
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
-        glance_client = create_glance_client(host_ip)
-        try:
-            image_info = glance_client.images.get(request.imageId)
-        except Exception as exception:
-            LOG.error(exception, exc_info=True)
-            return res
-        LOG.info("openstack image %s status: %s", image_info.id, image_info.status)
-        if image_info.status == 'active' and vm_info.image_size == 0:
-            vm_info.image_size = image_info.size
-            vm_info.status = image_info.status
-            commit()
-        if not image_info.size:
-            image_info.size = 0
-        res.response = json.dumps({
-            "imageId": vm_info.image_id,
-            "imageName": vm_info.image_name,
-            "appInstanceId": vm_info.app_instance_id,
-            "status": image_info.status,
-            "sumChunkNum": get_chunk_num(size=image_info.size, chunk_size=int(config.chunk_size)),
-            "chunkSize": config.chunk_size
-        })
+
+        res_dir = {
+            "imageId": vm_image_info.image_id,
+            "imageName": vm_image_info.image_name,
+            "appInstanceId": vm_image_info.app_instance_id,
+            "status": vm_image_info.status
+        }
+        if vm_image_info.status == utils.ACTIVE:
+            res_dir['checksum'] = vm_image_info.checksum
+            res_dir['sumChunkNum'] = get_chunk_num(size=vm_image_info.size, chunk_size=int(config.chunk_size))
+            res_dir['chunkSize'] = config.chunk_size
+        res.response = json.dumps(res_dir)
 
         return res
 
@@ -208,11 +176,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             raise ParamNotValid("host ip is null...")
-        try:
-            glance_client = create_glance_client(host_ip)
-        except Exception as exception:
-            LOG.error(exception, exc_info=True)
-            raise exception
+        glance_client = create_glance_client(host_ip)
 
         iterable = glance_client.images.data(image_id=request.imageId)
 

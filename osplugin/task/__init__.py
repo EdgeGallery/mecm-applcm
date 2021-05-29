@@ -14,3 +14,10 @@
 # limitations under the License.
 
 """
+
+# -*- coding: utf-8 -*-
+from concurrent import futures
+
+upload_thread_pool = futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix='TaskExecutor')
+
+check_thread_pool = futures.ThreadPoolExecutor(max_workers=100, thread_name_prefix='CheckStatusExecutor')

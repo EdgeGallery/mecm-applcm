@@ -21,11 +21,16 @@ import re
 import zipfile
 
 import yaml
+from pony.orm import db_session
 
+import utils
 from core.csar import sw_image
 from core.exceptions import PackageNotValid
 from core.log import logger
-from core.openstack_utils import TOSCA_TYPE_CLASS, SecurityGroup, SecurityGroupDefaultRule
+from core.models import VmImageInfoMapper
+from core.openstack_utils import TOSCA_TYPE_CLASS, \
+    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, create_glance_client, get_image_by_name_checksum
+from task.image_task import add_import_image_task, create_image_record, add_upload_image_task
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
 _APPD_TOSCA_METADATA_PATH = 'TOSCA_VNFD.meta'
@@ -34,18 +39,69 @@ _APPD_R = '^Entry-Definitions: (.*)$'
 LOG = logger
 
 
-def get_hot_yaml_path(unzip_pkg_path):
+def get_hot_yaml_path(app_package_id, unzip_pkg_path):
     """
     获取hot模板路径
+    :param app_package_id:
     :param unzip_pkg_path: 包解压路径
     :return: hot模板路径
     """
     try:
-        csar_pkg = CsarPkg(unzip_pkg_path)
+        csar_pkg = CsarPkg(app_package_id, unzip_pkg_path)
     except FileNotFoundError:
         LOG.info('%s 文件不存在', unzip_pkg_path)
         return None
     return csar_pkg.hot_path
+
+
+def _set_default_security_group(appd):
+    topology_template = appd['topology_template']
+    if 'ue_ip_segment' not in topology_template['inputs'] \
+            and 'mep_ip' not in topology_template['inputs']:
+        return
+    if 'groups' not in topology_template:
+        topology_template['groups'] = {}
+    topology_template['groups']['DefaultSecurityGroup'] = {
+        'type': 'tosca.groups.nfv.PortSecurityGroup',
+        'properties': {
+            'description': 'default security group',
+            'name': 'app-group'
+        },
+        'members': []
+    }
+    for name, template in topology_template['node_templates'].items():
+        if template['type'] == 'tosca.nodes.nfv.VduCp':
+            topology_template['groups']['DefaultSecurityGroup']['members'] \
+                .append(name)
+    if 'policies' not in topology_template:
+        topology_template['policies'] = {}
+    if 'ue_ip_segment' in topology_template['inputs']:
+        topology_template['policies']['n6_rule'] = {
+            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'targets': ['DefaultSecurityGroup'],
+            'properties': {
+                'protocol': 0,
+                'remote_ip_prefix': {
+                    'get_input': 'ue_ip_segment'
+                }
+            }
+        }
+    if 'mep_ip' in topology_template['inputs']:
+        topology_template['policies']['mp1_rule'] = {
+            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'targets': ['DefaultSecurityGroup'],
+            'properties': {
+                'protocol': 0,
+                'remote_ip_prefix': {
+                    'concat': [
+                        {
+                            'get_input': 'mep_ip'
+                        },
+                        '/32'
+                    ]
+                }
+            }
+        }
 
 
 class CsarPkg:
@@ -53,7 +109,8 @@ class CsarPkg:
     csar包
     """
 
-    def __init__(self, pkg_path):
+    def __init__(self, app_package_id, pkg_path):
+        self.app_package_id = app_package_id
         dirs = os.listdir(pkg_path)
         if len(dirs) == 1:
             self.base_dir = pkg_path + '/' + dirs[0]
@@ -67,6 +124,7 @@ class CsarPkg:
                     break
         sw_image_desc_path = self.base_dir + '/Image/SwImageDesc.json'
         self.sw_image_desc_list = sw_image.get_sw_image_desc_list(sw_image_desc_path)
+        self.image_id_map = {}
         if self._appd_path is None:
             raise PackageNotValid('entry definitions not exist')
         self.appd_file_path = self.base_dir + '/' + self._appd_path
@@ -82,8 +140,44 @@ class CsarPkg:
             for file in namelist:
                 zip_file.extract(file, self.appd_file_dir)
 
-    def check_image(self):
-        pass
+    @db_session
+    def check_image(self, host_ip):
+        image_id_map = {}
+        for sw_image_desc in self.sw_image_desc_list:
+            image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc.checksum)
+            if image is not None:
+                image_id_map[sw_image_desc.name] = image.image_id
+            else:
+                if sw_image_desc.sw_image is None or sw_image_desc.sw_image == '':
+                    image = get_image_by_name_checksum(sw_image_desc.name,
+                                                       sw_image_desc.checksum,
+                                                       host_ip)
+                    if image is None:
+                        raise RuntimeError(f'image {sw_image_desc.name} 不存在')
+                    image_id_map[sw_image_desc.name] = image['id']
+
+                elif sw_image_desc.sw_image.startswith('http'):
+                    image_id = create_image_record(sw_image_desc,
+                                                   self.app_package_id,
+                                                   host_ip)
+                    image_id_map[sw_image_desc.name] = image_id
+                    add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
+                else:
+                    image_id = create_image_record(sw_image_desc,
+                                                   self.app_package_id,
+                                                   host_ip)
+                    image_id_map[sw_image_desc.name] = image_id
+                    zip_index = sw_image_desc.sw_image.find('.zip')
+                    zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index+4]
+                    img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
+                    img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index+4:]
+                    logger.debug(f'image dir {img_tmp_file}')
+                    if not utils.exists_path(img_tmp_dir):
+                        utils.unzip(zip_file_path, img_tmp_dir)
+                    add_upload_image_task(image_id, host_ip, img_tmp_file)\
+                        #.add_done_callback(lambda future: utils.delete_dir(img_tmp_file))
+
+        self.image_id_map = image_id_map
 
     def translate(self):
         """
@@ -99,57 +193,37 @@ class CsarPkg:
             raise PackageNotValid('不支持的appd类型')
 
         hot = {
-            'heat_template_version': '2015-04-30',
-            'description': 'generated by osplugin',
+            'heat_template_version': '2017-09-01',
+            'description': 'Generated By OsPlugin',
             'resources': {},
             'parameters': appd['topology_template']['inputs'],
             'outputs': {}
         }
+
+        # 默认安全组规则
+        _set_default_security_group(appd)
+
         for name, template in appd['topology_template']['node_templates'].items():
             if template['type'] in TOSCA_TYPE_CLASS:
-                TOSCA_TYPE_CLASS[template['type']](name,
-                                                   template,
-                                                   hot,
-                                                   appd['topology_template'])
+                resource = TOSCA_TYPE_CLASS[template['type']](name,
+                                                              template)
+                resource.set_properties(topology_template=appd['topology_template'],
+                                        hot_file=hot,
+                                        image_id_map=self.image_id_map)
             else:
                 LOG.info('skip unknown tosca type %s', template['type'])
 
-        default_rule_template = {
-            'properties': {
-                'rules': [
-                    {
-                        'direction': 'egress',
-                        'remote_ip_prefix': '0.0.0.0/0'
-                    },
-                    {
-                        'remote_ip_prefix': {
-                            'get_param': 'ue_ip_segment'
-                        }
-                    },
-                    {
-                        'remote_ip_prefix': {
-                            'str_replace': {
-                                'template': 'mep_ip/32',
-                                'params': {
-                                    'mep_ip': {
-                                        'get_param': 'mep_ip'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-        SecurityGroup('APP_DEFAULT_SECURITY_GROUPS', default_rule_template, hot)
-        default_ingress_rule_template = {
-            'properties': {
-                'protocol': '-1',
-                'father': 'APP_DEFAULT_SECURITY_GROUPS',
-                'remote_group': 'APP_DEFAULT_SECURITY_GROUPS'
-            }
-        }
-        SecurityGroupDefaultRule('APP_DEFAULT_INGRESS_RULE', default_ingress_rule_template, hot)
+        for name, group in appd['topology_template']['groups'].items():
+            if group['type'] in TOSCA_GROUP_CLASS:
+                resource = TOSCA_GROUP_CLASS[group['type']](name, group)
+                resource.set_properties(topology_template=appd['topology_template'],
+                                        hot_file=hot)
+
+        for name, policy in appd['topology_template']['policies'].items():
+            if policy['type'] in TOSCA_POLICY_CLASS:
+                resource = TOSCA_POLICY_CLASS[policy['type']](name, policy)
+                resource.set_properties(topology_template=appd['topology_template'],
+                                        hot_file=hot)
 
         with open(self.hot_path, 'w') as file:
             yaml.dump(hot, file)
@@ -159,6 +233,7 @@ class CmccAppD:
     """
     中国移动appd
     """
+
     def __init__(self, path):
         dirs = os.listdir(path)
         if len(dirs) == 1:

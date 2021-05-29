@@ -1,4 +1,4 @@
-// Copyright 2021 21CN Corporation Limited
+// Copyright 2020 Huawei Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ message InstantiateRequest {
   string appInstanceId = 3;
   string appPackageId = 4;
   string hostIp = 5;
-  string ak     = 6;
-  string sk     = 7;
+  map<string, string> parameters = 6;
+  bool akSkLcmGen = 7;
 }
 
 message InstantiateResponse {

@@ -106,9 +106,9 @@ class InstantiateRequest:
     host_ip = None
     app_instance_id = None
     app_package_id = None
-    access_key = None
-    secret_key = None
     app_package_path = None
+    parameters = None
+    ak_sk_lcm_gen = None
 
     def __init__(self, request):
         self.access_token = request.accessToken
@@ -119,8 +119,8 @@ class InstantiateRequest:
             .format(base_dir=config.base_dir, host_ip=request.hostIp,
                     app_package_id=request.appPackageId)
 
-        self.access_key = request.ak
-        self.secret_key = request.sk
+        self.parameters = request.parameters
+        self.ak_sk_lcm_gen = request.akSkLcmGen
 
     def get_app_package_path(self):
         """
@@ -201,17 +201,28 @@ class AppInsMapper(db.Entity):
         return self.app_instance_id
 
 
+class AppPkgMapper(db.Entity):
+    """
+    t_app_package表
+    """
+    _table_ = 't_app_package'
+    app_package_id = Required(str, max_len=64)
+    host_ip = Required(str, max_len=15)
+    status = Required(str, max_len=10)
+
+
 class VmImageInfoMapper(db.Entity):
     """
     t_vm_image_info表映射
     """
     _table_ = 't_vm_image_info'
-    app_instance_id = Required(str, max_len=64)
-    host_ip = Required(str, max_len=15)
-    vm_id = Required(str, max_len=64)
     image_id = Required(str, max_len=64)
+    host_ip = Required(str, max_len=15)
     image_name = Required(str, max_len=64)
-    image_size = Required(int, size=64)
+    status = Required(str, max_len=10)
+    app_package_id = Optional(str, max_len=64)
+    image_size = Optional(int, size=64, nullable=True)
+    checksum = Optional(str, max_len=64, nullable=True)
 
     def get_table_name(self):
         """

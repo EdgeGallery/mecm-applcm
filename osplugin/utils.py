@@ -20,6 +20,7 @@
 import os
 import re
 import uuid
+import zipfile
 from pathlib import Path
 
 import jwt
@@ -30,6 +31,13 @@ from core.log import logger
 FAILURE = 'Failure'
 SUCCESS = 'Success'
 FAILURE_JSON = '{"code": 500}'
+
+QUEUED = 'queued'
+SAVING = 'saving'
+DEACTIVATED = 'deactivated'
+UPLOADING = 'uploading'
+ACTIVE = 'active'
+KILLED = 'killed'
 
 
 INSTANTIATING = 'Instantiating'
@@ -75,6 +83,11 @@ def delete_dir(path):
     """
     删除目录
     """
+    if not exists_path(path):
+        return
+    if os.path.isfile(path):
+        os.remove(path)
+        return
     for i in os.listdir(path):
         file_data = path + '/' + i
         if os.path.isfile(file_data):
@@ -82,6 +95,14 @@ def delete_dir(path):
         else:
             delete_dir(file_data)
     os.rmdir(path)
+
+
+def unzip(file, target):
+    create_dir(target)
+    with zipfile.ZipFile(file) as zip_file:
+        namelist = zip_file.namelist()
+        for file in namelist:
+            zip_file.extract(file, target)
 
 
 def validate_access_token(access_token):

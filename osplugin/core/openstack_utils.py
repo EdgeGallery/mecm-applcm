@@ -26,6 +26,7 @@ from novaclient import client as nova_client
 import config
 import utils
 from core.exceptions import PackageNotValid
+from core.log import logger
 
 _RC_MAP = {}
 
@@ -104,6 +105,15 @@ def create_nova_client(host_ip):
 
 
 _GLANCE_CLIENT_MAP = {}
+
+
+def get_image_by_name_checksum(name, checksum, host_ip):
+    glance = create_glance_client(host_ip)
+    images = glance.images.list(filters={'name': name})
+    for image in images:
+        if image['checksum'] == checksum:
+            return image
+    return None
 
 
 def create_glance_client(host_ip):
@@ -206,19 +216,21 @@ class HOTBase:
         self.type = hot_type
 
 
-def _change_input_to_param(properties):
+def _change_function(properties):
     """
     把tosca input转换为hot param
     """
     if isinstance(properties, dict):
         if 'get_input' in properties:
             properties['get_param'] = properties.pop('get_input')
+        if 'concat' in properties:
+            properties['list_join'] = ['', properties.pop('concat')]
         for key, value in properties.items():
-            _change_input_to_param(value)
+            _change_function(value)
 
     elif isinstance(properties, list):
         for item in properties:
-            _change_input_to_param(item)
+            _change_function(item)
 
 
 class NovaServer(HOTBase):
@@ -227,64 +239,22 @@ class NovaServer(HOTBase):
     """
     _TOSCA_TYPE = 'tosca.nodes.nfv.Vdu.Compute'
 
-    def __init__(self, name, template, hot_file, topology_template):
+    def __init__(self, name, template):
         super().__init__('OS::Nova::Server')
+        self.name = name
+        self.template = template
+        self.properties = {}
         if template['type'] != self._TOSCA_TYPE:
             raise PackageNotValid('错误的类型')
 
-        flavor_name = name + '_FLAVOR'
-        Flavor(flavor_name, template, hot_file)
-        # simple
-        self.properties = {
-            'name': template['properties']['name'],
-            'flavor': {
-                'get_resource': flavor_name
-            },
-            'config_drive': True,
-            'networks': [],
-            'user_data_format': 'RAW'
-        }
-
-        self.check_image(template)
-
-        self.check_availability_zone(template)
-
-        # user data
-        self.check_user_data(template)
-
-        # network
-        self.check_network(name, topology_template['node_templates'])
-
-        # data disk
-        self.check_data_disk(template)
-
-        _change_input_to_param(self.properties)
-        hot_file['resources'][name] = {
-            'type': self.type,
-            'properties': self.properties
-        }
-        hot_file['outputs'][name] = {
-            'value': {
-                'vmId': {
-                    'get_resource': name
-                },
-                'vncUrl': {
-                    'get_attr': [name, 'console_urls', 'novnc']
-                },
-                'networks': {
-                    'get_attr': [name, 'addresses']
-                }
-            }
-        }
-
-    def check_availability_zone(self, template):
+    def _check_availability_zone(self):
         """
         转换可用区
         """
-        if 'nfvi_constraints' in template['properties']:
-            self.properties['availability_zone'] = template['properties']['nfvi_constraints']
+        if 'nfvi_constraints' in self.template['properties']:
+            self.properties['availability_zone'] = self.template['properties']['nfvi_constraints']
 
-    def check_user_data(self, template):
+    def _check_user_data(self):
         """
         转换user data
         """
@@ -294,14 +264,14 @@ class NovaServer(HOTBase):
                 'params': {}
             }
         }
-        if 'bootdata' in template['properties'] \
-                and 'user_data' in template['properties']['bootdata']:
-            if 'contents' in template['properties']['bootdata']['user_data']:
+        if 'bootdata' in self.template['properties'] \
+                and 'user_data' in self.template['properties']['bootdata']:
+            if 'contents' in self.template['properties']['bootdata']['user_data']:
                 user_data['str_replace']['template'] = \
-                    template['properties']['bootdata']['user_data']['contents'] + '\n'
-            if 'params' in template['properties']['bootdata']['user_data']:
+                    self.template['properties']['bootdata']['user_data']['contents'] + '\n'
+            if 'params' in self.template['properties']['bootdata']['user_data']:
                 params = {}
-                for key, param in template['properties']['bootdata']['user_data']['params']\
+                for key, param in self.template['properties']['bootdata']['user_data']['params']\
                         .items():
                     params['$' + key + '$'] = param
                 user_data['str_replace']['params'] = params
@@ -310,60 +280,35 @@ class NovaServer(HOTBase):
             user_data['str_replace']['template'] = '#!/bin/bash\n'
 
         mec_runtime_script = '\n'
-        for vnic_name in _VNIC_NAME_IP_MAP.keys():
-            default_route = 'no'
-            if vnic_name == 'eth2':
-                default_route = 'yes'
-            ip = _VNIC_NAME_IP_MAP[vnic_name]['ip']
-            mask = _VNIC_NAME_IP_MAP[vnic_name]['mask']
-
-            vnic_file = f'etc/sysconfig/network-scripts/ifcfg-{vnic_name}'
-            mec_runtime_script += f'rm -rf {vnic_file}\n'
-            mec_runtime_script += f'echo "BOOTPROTO=static" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "DEVICE={vnic_name}" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "TYPE=Ethernet" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "USERCTL=no" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "DEFAULTROUTE={default_route}" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "IPV4_FAILURE_FATAL=no" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "MTU=1500" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "IPADDR=${ip}$" >> {vnic_file}\n'
-            mec_runtime_script += f'echo "NETMASK=${mask}$" >> {vnic_file}\n'
-
-        mec_runtime_script += 'echo "$mep_ip$/32 via $app_mp1_gw$" >> ' \
-                              '/etc/sysconfig/network-scripts/route-eth0\n'
-        mec_runtime_script += 'echo "$ue_ip_segment$ via $app_n6_gw$" >> ' \
-                              '/etc/sysconfig/network-scripts/route-eth1\n'
-        mec_runtime_script += 'echo "GATEWAY=$app_internet_gw$" >> ' \
-                              '/etc/sysconfig/network-scripts/ifcfg-eth2\n'
-        mec_runtime_script += 'systemctl restart network\n'
 
         user_data['str_replace']['template'] = \
             user_data['str_replace']['template'] + mec_runtime_script
 
         self.properties['user_data'] = user_data
-        if 'config_drive' in template['properties']['bootdata']:
-            self.properties['config_drive'] = template['properties']['bootdata']['config_drive']
+        if 'config_drive' in self.template['properties']['bootdata']:
+            self.properties['config_drive'] = self.template['properties']['bootdata']['config_drive']
 
-    def check_network(self, name, node_templates):
+    def _check_network(self, node_templates):
         """
         转换网络
         """
         for node_name, node_template in node_templates.items():
             if node_template['type'] == 'tosca.nodes.nfv.VduCp':
                 for requirement in node_template['requirements']:
-                    if 'virtual_binding' in requirement and requirement['virtual_binding'] == name:
+                    if 'virtual_binding' in requirement \
+                            and requirement['virtual_binding'] == self.name:
                         self.properties['networks'].append({
                             'port': {
                                 'get_resource': node_name
                             }
                         })
 
-    def check_data_disk(self, template):
+    def _check_data_disk(self):
         """
         转换数据盘
         """
-        if 'requirements' in template:
-            for requirement in template['requirements']:
+        if 'requirements' in self.template:
+            for requirement in self.template['requirements']:
                 if 'virtual_storage' in requirement:
                     self.properties['block_device_mapping_v2'].append({
                         'volume_id': {
@@ -372,8 +317,62 @@ class NovaServer(HOTBase):
                         'delete_on_termination': True
                     })
 
-    def check_image(self, template):
-        self.properties['image'] = template['properties']['sw_image_data']['name']
+    def _check_image(self, image_id_map):
+        image_name = self.template['properties']['sw_image_data']['name']
+        if image_name in image_id_map:
+            self.properties['image'] = image_id_map[image_name]
+        else:
+            raise RuntimeError(f'image {image_name} not define in SwImageDesc.json')
+
+    def set_properties(self, **kwargs):
+        # simple
+        self.properties['name'] = self.template['properties']['name']
+        self.properties['config_drive'] = True
+        self.properties['user_data_format'] = 'RAW'
+        self._check_availability_zone()
+
+        # flavor
+        hot_file = kwargs['hot_file']
+        flavor_name = self.name + '_FLAVOR'
+        flavor = Flavor(flavor_name, self.template)
+        flavor.set_properties(hot_file=hot_file)
+        self.properties['flavor'] = {
+            'get_resource': flavor_name
+        }
+
+        # image
+        image_id_map = kwargs['image_id_map']
+        self._check_image(image_id_map)
+
+        # user data
+        self._check_user_data()
+
+        # network
+        self.properties['networks'] = []
+        node_templates = kwargs['topology_template']['node_templates']
+        self._check_network(node_templates)
+
+        # data disk
+        self._check_data_disk()
+
+        _change_function(self.properties)
+        hot_file['resources'][self.name] = {
+            'type': self.type,
+            'properties': self.properties
+        }
+        hot_file['outputs'][self.name] = {
+            'value': {
+                'vmId': {
+                    'get_resource': self.name
+                },
+                'vncUrl': {
+                    'get_attr': [self.name, 'console_urls', 'novnc']
+                },
+                'networks': {
+                    'get_attr': [self.name, 'addresses']
+                }
+            }
+        }
 
 
 class VirtualStorage(HOTBase):
@@ -382,168 +381,161 @@ class VirtualStorage(HOTBase):
     """
     _TOSCA_TYPE = 'tosca.nodes.nfv.Vdu.VirtualBlockStorage'
 
-    def __init__(self, name, template, hot_file):
+    def __init__(self, name, template):
         super().__init__('OS::Cinder::Volume')
+        self.name = name
         self.template = template
+        self.properties = {}
 
-        size = template['properties']['virtual_block_storage_data']['size_of_storage']
+    def set_properties(self, **kwargs):
+        hot_file = kwargs['hot_file']
 
-        self.properties = {
-            'size': size
-        }
-        _change_input_to_param(self.properties)
-        hot_file['resources'][name] = {
+        self._set_size()
+
+        _change_function(self.properties)
+        hot_file['resources'][self.name] = {
             'type': self.type,
             'properties': self.properties
         }
 
-    def get_type(self):
-        """
-        get type
-        Returns:
-
-        """
-        return self.type
-
-    def get_properties(self):
-        """
-        get properties
-        Returns:
-
-        """
-        return self.properties
-
-
-_VNIC_NAME_IP_MAP = {
-    'eth0': {
-        'ip': 'app_mp1_ip',
-        'mask': 'app_mp1_mask',
-        'gw': 'app_mp1_gw'
-    },
-    'eth1': {
-        'ip': 'app_n6_ip',
-        'mask': 'app_n6_mask',
-        'gw': 'app_n6_gw'
-    },
-    'eth2': {
-        'ip': 'app_internet_ip',
-        'mask': 'app_internet_mask',
-        'gw': 'app_internet_gw'
-    }
-}
+    def _set_size(self):
+        size = self.template['properties']['virtual_block_storage_data']['size_of_storage']
+        self.properties['size'] = size
 
 
 class VirtualPort(HOTBase):
     """
     hot port类型
     """
-    def __init__(self, name, template, hot_file, topology_template):
+    def __init__(self, name, template):
         super().__init__('OS::Neutron::Port')
+        self.name = name
+        self.template = template
+        self.properties = {}
+
+    def _set_fixed_ips(self):
+        if 'attributes' in self.template and 'ipv4_address' in self.template['attributes']:
+            self.properties['fixed_ips'] = [{
+                'ip_address': self.template['attributes']['ipv4_address']
+            }]
+
+    def set_properties(self, **kwargs):
+        node_templates = kwargs['topology_template']['node_templates']
+        hot_file = kwargs['hot_file']
         network = None
-        for requirement in template['requirements']:
+        for requirement in self.template['requirements']:
             if 'virtual_link' in requirement:
                 network = \
-                    topology_template['node_templates'][requirement['virtual_link']][
+                    node_templates[requirement['virtual_link']][
                         'properties']['vl_profile']['network_name']
         if network is None:
             raise PackageNotValid('network未定义')
-
-        self.properties = {
-            'network': network,
-            'security_groups': [{
-                'get_resource': 'APP_DEFAULT_GROUPS'
-            }]
-        }
-        if 'vnic_name' in template['properties']\
-                and template['properties']['vnic_name'] in _VNIC_NAME_IP_MAP \
-                and _VNIC_NAME_IP_MAP[template['properties']['vnic_name']]['ip'] \
-                in topology_template['inputs']:
-            self.properties['fixed_ips'] = [{
-                'ip_address': {
-                    'get_param': _VNIC_NAME_IP_MAP[template['properties']['vnic_name']]
-                }
-            }]
-
-        if 'vnic_type' in template['properties']:
-            self.properties['binding:vnic_type'] = template['properties']['vnic_type']
-        if 'port_security_enabled' in template['properties']:
+        self.properties['network'] = network
+        if 'vnic_type' in self.template['properties']:
+            self.properties['binding:vnic_type'] = self.template['properties']['vnic_type']
+        if 'port_security_enabled' in self.template['properties']:
             self.properties['port_security_enabled'] = \
-                template['properties']['port_security_enabled']
+                self.template['properties']['port_security_enabled']
 
-        _change_input_to_param(self.properties)
-        hot_file['resources'][name] = {
+        self._set_fixed_ips()
+
+        _change_function(self.properties)
+        hot_file['resources'][self.name] = {
             'type': self.type,
             'properties': self.properties
         }
-
-    def get_type(self):
-        """
-        get type
-        Returns:
-
-        """
-        return self.type
-
-    def get_properties(self):
-        """
-        get properties
-        Returns:
-
-        """
-        return self.properties
 
 
 class Flavor(HOTBase):
     """
     flavor 类型
     """
-    def __init__(self, name, template, hot_file):
+    def __init__(self, name, template):
         super().__init__('OS::Nova::Flavor')
-        cpu = template['capabilities'][
+        self.name = name
+        self.template = template
+        self.properties = {}
+
+    def set_properties(self, **kwargs):
+        hot_file = kwargs['hot_file']
+        cpu = self.template['capabilities'][
             'virtual_compute']['properties']['virtual_cpu']['num_virtual_cpu']
-        memory = template['capabilities'][
+        memory = self.template['capabilities'][
             'virtual_compute']['properties']['virtual_memory']['virtual_mem_size']
-        sys_disk = template['capabilities'][
+        sys_disk = self.template['capabilities'][
             'virtual_compute']['properties']['virtual_local_storage']['size_of_storage']
-        self.properties = {
-            'vcpus': cpu,
-            'ram': memory,
-            'disk': sys_disk
-        }
-        if 'flavor_extra_specs' in template['properties']['vdu_profile']:
-            self.properties['extra_specs'] = template['properties'][
+        self.properties['vcpus'] = cpu
+        self.properties['ram'] = memory
+        self.properties['disk'] = sys_disk
+
+        if 'flavor_extra_specs' in self.template['properties']['vdu_profile']:
+            self.properties['extra_specs'] = self.template['properties'][
                 'vdu_profile']['flavor_extra_specs']
-        hot_file['resources'][name] = {
+
+        _change_function(self.properties)
+        hot_file['resources'][self.name] = {
             'type': self.type,
             'properties': self.properties
         }
 
 
 class SecurityGroup(HOTBase):
-    def __init__(self, name, template, hot_file):
+    def __init__(self, name, template):
         super().__init__('OS::Neutron::SecurityGroup')
-        hot_file['resources'][name] = {
-            'type': self.type,
+        self.name = name
+        self.template = template
+        self.properties = {}
+
+    def set_properties(self, **kwargs):
+        hot_file = kwargs['hot_file']
+        hot_file['resources'][self.name] = {
+            'type': self.type
+        }
+        for port in self.template['members']:
+            if port in hot_file['resources']:
+                hot_file['resources'][port]['properties']['security_groups'] = [
+                    {
+                        'get_resource': self.name
+                    }
+                ]
+        hot_file['resources'][self.name + 'DefaultIngressRule'] = {
+            'type': 'OS::Neutron::SecurityGroupRule',
             'properties': {
-                'rules': template['properties']['rules']
+                'protocol': 0,
+                'remote_group': {
+                    'get_resource': self.name
+                },
+                'security_group': {
+                    'get_resource': self.name
+                }
             }
         }
 
 
-class SecurityGroupDefaultRule(HOTBase):
-    def __init__(self, name, template, hot_file):
+class SecurityGroupRule(HOTBase):
+    def __init__(self, name, template):
         super().__init__('OS::Neutron::SecurityGroupRule')
-        hot_file['resources'][name] = {
+        self.name = name
+        self.template = template
+        self.properties = {}
+
+    def set_properties(self, **kwargs):
+        hot_file = kwargs['hot_file']
+
+        if 'protocol' in self.template['properties']:
+            self.properties['protocol'] = self.template['properties']['protocol']
+        if 'direction' in self.template['properties']:
+            self.properties['direction'] = self.template['properties']['direction']
+        if 'remote_ip_prefix' in self.template['properties']:
+            self.properties['remote_ip_prefix'] = self.template['properties']['remote_ip_prefix']
+        self.properties['security_group'] = {
+            'get_resource': self.template['targets'][0]
+        }
+
+        _change_function(self.properties)
+        hot_file['resources'][self.name] = {
             'type': self.type,
-            'properties': {
-                'protocol': template['properties']['protocol'],
-                'security_group': {
-                    'get_resource': template['properties']['father']
-                },
-                'remote_group': {
-                    'get_resource': template['properties']['remote_group']
-                }
-            }
+            'properties': self.properties
         }
 
 
@@ -551,4 +543,12 @@ TOSCA_TYPE_CLASS = {
     'tosca.nodes.nfv.Vdu.Compute': NovaServer,
     'tosca.nodes.nfv.VduCp': VirtualPort,
     'tosca.nodes.nfv.Vdu.VirtualBlockStorage': VirtualStorage,
+}
+
+TOSCA_GROUP_CLASS = {
+    'tosca.groups.nfv.PortSecurityGroup': SecurityGroup
+}
+
+TOSCA_POLICY_CLASS = {
+    'tosca.policies.nfv.SecurityGroupRule': SecurityGroupRule
 }

@@ -39,6 +39,7 @@ WORKDIR /usr/app
 COPY core ./core
 COPY internal ./internal
 COPY service ./service
+COPY task ./task
 COPY *.py ./
 
 COPY --from=developement /venv ./venv

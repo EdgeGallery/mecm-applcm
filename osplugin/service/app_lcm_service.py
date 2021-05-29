@@ -19,74 +19,29 @@
 
 import json
 import os
-import threading
 import uuid
-import zipfile
 
+import glanceclient.exc
 from heatclient.common import template_utils
 from heatclient.exc import HTTPNotFound
-from pony.orm import db_session, commit
+from pony.orm import db_session, commit, rollback
 
 import utils
 from core import openstack_utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
-from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest, BaseRequest
+from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest, BaseRequest, \
+    AppPkgMapper, VmImageInfoMapper
+from core.openstack_utils import create_glance_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
     RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
     WorkloadEventsResponse
+from task.app_instance_task import start_check_stack_status
+from task.app_package_task import start_check_package_status
 
 LOG = logger
-
-
-def start_check_stack_status(app_instance_id):
-    """
-    start_check_stack_status
-    Args:
-        app_instance_id:
-    """
-    thread_timer = threading.Timer(5, check_stack_status, [app_instance_id])
-    thread_timer.start()
-
-
-@db_session
-def check_stack_status(app_instance_id):
-    """
-    check_stack_status
-    Args:
-        app_instance_id:
-    """
-    app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
-    if not app_ins_mapper:
-        LOG.debug('app ins: %s db record not found', app_instance_id)
-        return
-    heat = openstack_utils.create_heat_client(app_ins_mapper.host_ip)
-    stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
-    if stack_resp is None and app_ins_mapper.operational_status == 'Terminating':
-        app_ins_mapper.delete()
-        LOG.debug('finish terminate app ins %s', app_instance_id)
-        return
-    if stack_resp.status == 'COMPLETE' or stack_resp.status == 'FAILED':
-        LOG.debug('app ins: %s, stack_status: %s, reason: %s',
-                  app_instance_id,
-                  stack_resp.stack_status,
-                  stack_resp.stack_status_reason)
-        if stack_resp.action == 'CREATE' and stack_resp.stack_status == 'CREATE_COMPLETE':
-            app_ins_mapper.operational_status = utils.INSTANTIATED
-            app_ins_mapper.operation_info = stack_resp.stack_status_reason
-            LOG.debug('finish instantiate app ins %s', app_instance_id)
-        elif stack_resp.action == 'DELETE' and stack_resp.stack_status == 'DELETE_COMPLETE':
-            app_ins_mapper.delete()
-            LOG.debug('finish terminate app ins %s', app_instance_id)
-        else:
-            app_ins_mapper.operation_info = stack_resp.stack_status_reason
-            app_ins_mapper.operational_status = utils.FAILURE
-            LOG.debug('failed action %s app ins %s', stack_resp.action, app_instance_id)
-    else:
-        LOG.debug('app ins %s status not updated, waite next...')
-        start_check_stack_status(app_instance_id)
 
 
 def validate_input_params(param):
@@ -142,6 +97,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
     """
     AppLcmService
     """
+    @db_session
     def uploadPackage(self, request_iterator, context):
         """
         上传app包
@@ -164,28 +120,37 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.debug('appPackageId is required')
             parameters.delete_tmp()
             return res
-        app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
-        if utils.exists_path(app_package_path):
+
+        app_pkg_mapper = AppPkgMapper.get(app_package_id=app_package_id, host_ip=host_ip)
+        if app_pkg_mapper is not None:
             LOG.debug('app package exist')
             parameters.delete_tmp()
             return res
-        utils.create_dir(app_package_path)
+        AppPkgMapper(
+            app_package_id=app_package_id,
+            host_ip=host_ip,
+            status=utils.SAVING
+        )
+        commit()
+
+        app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         try:
             LOG.debug('unzip package')
-            with zipfile.ZipFile(parameters.tmp_package_file_path) as zip_file:
-                namelist = zip_file.namelist()
-                for file in namelist:
-                    zip_file.extract(file, app_package_path)
-            pkg = CsarPkg(app_package_path)
+            utils.unzip(parameters.tmp_package_file_path, app_package_path)
+            pkg = CsarPkg(app_package_id, app_package_path)
+            pkg.check_image(host_ip)
             pkg.translate()
+            start_check_package_status(app_package_id, host_ip)
             res.status = utils.SUCCESS
         except Exception as exception:
+            rollback()
             LOG.error(exception, exc_info=True)
             utils.delete_dir(app_package_path)
         finally:
             parameters.delete_tmp()
         return res
 
+    @db_session
     def deletePackage(self, request, context):
         """
         删除app包
@@ -203,6 +168,21 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         app_package_id = request.appPackageId
         if not app_package_id:
             return res
+
+        app_package_info = AppPkgMapper.get(app_package_id=app_package_id,
+                                            host_ip=host_ip)
+        if app_package_info is not None:
+            app_package_info.delete()
+        glance = create_glance_client(host_ip)
+        images = VmImageInfoMapper.select().filter(app_package_id=app_package_id,
+                                                   host_ip=host_ip)
+        for image in images:
+            image.delete()
+            try:
+                glance.images.delete(image.image_id)
+            except glanceclient.exc.HTTPNotFound:
+                logger.debug(f'skip delete image {image.image_id}')
+        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         utils.delete_dir(app_package_path)
@@ -239,17 +219,29 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('app ins %s exist', app_instance_id)
             return res
 
+        LOG.debug('检查app包状态')
+        app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id)
+        if app_pkg_mapper is None or app_pkg_mapper.status != utils.ACTIVE:
+            LOG.info('app pkg %s not active', parameter.app_package_id)
+            return res
+
         LOG.debug('读取包的hot文件')
-        hot_yaml_path = get_hot_yaml_path(parameter.app_package_path)
+        hot_yaml_path = get_hot_yaml_path(parameter.app_package_id,
+                                          parameter.app_package_path)
         if hot_yaml_path is None:
             return res
 
         LOG.debug('构建heat参数')
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
+        parameters = {}
+        for key in template['parameters'].keys():
+            if key in parameter.parameters:
+                parameters[key] = parameter.parameters[key]
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
-            'files': dict(list(tpl_files.items()))
+            'files': dict(list(tpl_files.items())),
+            'parameters': parameters
         }
         LOG.debug('init heat client')
         heat = openstack_utils.create_heat_client(host_ip)
