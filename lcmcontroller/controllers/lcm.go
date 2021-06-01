@@ -134,7 +134,7 @@ func (c *LcmController) validateYamlFile(clientIp string, file multipart.File) e
 }
 
 // extract CSAR package
-func (c *LcmController) extractCsarPackage(packagePath string) (string, error) {
+func extractCsarPackage(packagePath string) (string, error) {
 	zipReader, _ := zip.OpenReader(packagePath)
 	if len(zipReader.File) > util.TooManyFile {
 		return "", errors.New("Too many files contains in zip file")
@@ -159,7 +159,7 @@ func (c *LcmController) extractCsarPackage(packagePath string) (string, error) {
 
 		defer zippedFile.Close()
 
-		isContinue, wrote := c.extractFiles(file, zippedFile, totalWrote, packageDir)
+		isContinue, wrote := extractFiles(file, zippedFile, totalWrote, packageDir)
 		if isContinue {
 			continue
 		}
@@ -169,7 +169,7 @@ func (c *LcmController) extractCsarPackage(packagePath string) (string, error) {
 }
 
 // Extract files
-func (c *LcmController) extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64, dirName string) (bool, int64) {
+func extractFiles(file *zip.File, zippedFile io.ReadCloser, totalWrote int64, dirName string) (bool, int64) {
 	targetDir := dirName
 	extractedFilePath := filepath.Join(
 		targetDir,
@@ -403,7 +403,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err, acm := processAkSkConfig(appInsId, appName, &req, clientIp)
+	err, acm := processAkSkConfig(appInsId, appName, &req, clientIp, tenantId, vim)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
@@ -463,7 +463,10 @@ func (c *LcmController) validateToken(accessToken string, req models.Instantiate
 }
 
 // Process Ak Sk configuration
-func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest, clientIp string) (error, config.AppConfigAdapter) {
+func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest, clientIp string,
+	tenantId string, vim string) (error, config.AppConfigAdapter) {
+	var applicationConfig config.ApplicationConfig
+
 	appAuthConfig := config.NewAppAuthCfg(appInsId)
 	if req.Parameters["ak"] == "" || req.Parameters["sk"] == "" {
 		err := appAuthConfig.GenerateAkSK()
@@ -479,7 +482,46 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 		req.AkSkLcmGen = false
 	}
 
-	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig)
+	if vim == "openstack" {
+		appConfigFile, err := getApplicationConfigFile(tenantId, req.PackageId)
+		if err != nil {
+			log.Error("failed to get application configuration file")
+			return err, config.AppConfigAdapter{}
+		}
+
+		configYaml, err := os.Open(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/" + appConfigFile)
+		if err != nil {
+			log.Error("failed to read config file")
+			return err, config.AppConfigAdapter{}
+		}
+		defer configYaml.Close()
+
+		mfFileBytes, _ := ioutil.ReadAll(configYaml)
+
+		data, err := yaml.YAMLToJSON(mfFileBytes)
+		if err != nil {
+			log.Error("failed to convert yaml to json")
+			return err, config.AppConfigAdapter{}
+		}
+
+		err = json.Unmarshal(data, &applicationConfig)
+		if err != nil {
+			log.Error(util.UnMarshalError)
+			return err, config.AppConfigAdapter{}
+		}
+
+		//remove definition directory
+		err = os.RemoveAll(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/Definition")
+		if err != nil {
+			return err, config.AppConfigAdapter{}
+		}
+		//remove vnfd metadata file
+		err = os.Remove(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/TOSCA_VNFD.meta")
+		if err != nil {
+			return err, config.AppConfigAdapter{}
+		}
+	}
+	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig, applicationConfig)
 	err := acm.PostAppAuthConfig(clientIp)
 	if err != nil {
 		return err, config.AppConfigAdapter{}
@@ -487,7 +529,44 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 	return nil, acm
 }
 
+// Get application config file
+func getApplicationConfigFile(tenantId string, packageId string) (string, error) {
+	files, err := ioutil.ReadDir(PackageFolderPath + tenantId + "/" + packageId + "/" + "APPD")
+	if err != nil {
+		log.Error("failed to read directory")
+		return "", nil
+	}
 
+	zipFile := files[0].Name()
+	pkgDir, err := extractCsarPackage(PackageFolderPath + tenantId + "/" + packageId + "/" + "APPD" + "/" + zipFile)
+	if err != nil {
+		log.Error("failed to extract package")
+		return "", err
+	}
+
+	mfYaml, err := os.Open(pkgDir + "/TOSCA_VNFD.meta")
+	if err != nil {
+		log.Error("failed to read mf file")
+		return "", err
+	}
+	defer mfYaml.Close()
+
+	mfFileBytes, _ := ioutil.ReadAll(mfYaml)
+
+	data, err := yaml.YAMLToJSON(mfFileBytes)
+	if err != nil {
+		log.Error("failed to convert yaml to json")
+		return "", err
+	}
+	var vnfData models.VnfData
+
+	err = json.Unmarshal(data, &vnfData)
+	if err != nil {
+		log.Error(util.UnMarshalError)
+		return "", err
+	}
+	return vnfData.EntryDefinitions, nil
+}
 
 // @Title Terminate application
 // @Description Terminate application
@@ -547,7 +626,7 @@ func (c *LcmController) Terminate() {
 		return
 	}
 
-	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{})
+	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{}, config.ApplicationConfig{})
 	err = acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -1542,7 +1621,7 @@ func (c *LcmController) UploadPackage() {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
-	pkgDir, err := c.extractCsarPackage(pkgFilePath)
+	pkgDir, err := extractCsarPackage(pkgFilePath)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)

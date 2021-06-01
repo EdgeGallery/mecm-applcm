@@ -179,7 +179,6 @@ type AppDistPkgHostStaleRecords struct {
 	AppPackageHostStaleRec []AppPackageHostStaleRec `json:"appPackageHostStaleRec"`
 }
 
-
 // App package key information
 type AppPackageHostStaleRec struct {
 	PackageId      string `orm:"pk" json:"packageId"`
@@ -307,6 +306,16 @@ type InstantiateRequest struct {
 	Origin     string            `json:"origin"`
 	Parameters map[string]string `json:"parameters"`
 	AkSkLcmGen bool              `json:"akSkGen"`
+}
+
+//Vnf Data
+type VnfData struct {
+	VnfdMetaFileVersion int     `json:"VNFD-Meta-File-Version"`
+	CsarVersion         float64 `json:"CSAR-Version"`
+	CreatedBy           string  `json:"Created-by"`
+	EntryDefinitions    string  `json:"Entry-Definitions"`
+	Name                string  `json:"Name"`
+	ContentType         string  `json:"Content-Type"`
 }
 
 // App package details info
