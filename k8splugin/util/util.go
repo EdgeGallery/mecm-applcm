@@ -95,6 +95,7 @@ const (
 	RpcName = " RpcName ["
 	Pod = "Pod"
 	Deployment = "Deployment"
+	Service = "Service"
 	FailedToJsonMarshal = "Failed to json marshal"
 	AppInsIdValid = "appInsId is invalid"
 	FailedToDelAppPkg = "failed to delete application package"

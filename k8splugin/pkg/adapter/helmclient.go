@@ -24,6 +24,7 @@ import (
 	"github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -406,16 +407,22 @@ func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 func getLabelSelector(manifest []Manifest) models.LabelSelector {
 	var labelSelector models.LabelSelector
 	var label models.LabelList
+	var selector string
 
 	for i := 0; i < len(manifest); i++ {
-		if manifest[i].Kind == util.Deployment || manifest[i].Kind == util.Pod || manifest[i].Kind == "Service" {
+		if manifest[i].Kind == util.Deployment || manifest[i].Kind == util.Pod || manifest[i].Kind == util.Service {
 			appName := manifest[i].Metadata.Name
 			if manifest[i].Metadata.Labels.App != "" {
 				appName = manifest[i].Metadata.Labels.App
 			}
-			pod := "app=" + appName
+			if manifest[i].Kind == util.Service {
+				selector = "svc=" + appName
+			} else {
+				selector = "app=" + appName
+			}
+
 			label.Kind = manifest[i].Kind
-			label.Selector = pod
+			label.Selector = selector
 			labelSelector.Label = append(labelSelector.Label, label)
 		}
 	}
@@ -466,12 +473,45 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 			if err != nil {
 				return appInfo, nil, err
 			}
-
 			appInfo.Pods = append(appInfo.Pods, podInfo)
+		}
+		if label.Kind == util.Service {
+			options := metav1.ListOptions{
+				LabelSelector: label.Selector,
+			}
+			serviceInfo, err := getServiceInfo(clientset, options)
+			if err != nil {
+				return appInfo, nil, err
+			}
+			appInfo.Services = append(appInfo.Services, serviceInfo)
 		}
 	}
 
 	return appInfo, nil, nil
+}
+
+func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions) (serviceInfo models.ServiceInfo, err error) {
+	services, err := clientset.CoreV1().Services(util.Default).List(context.Background(), options)
+	if err != nil {
+		return serviceInfo, err
+	}
+	var portInfo models.PortInfo
+	for _, service := range services.Items {
+		serviceInfo.ServiceName = service.Name
+		serviceInfo.ServiceType = string(service.Spec.Type)
+		for i := range service.Spec.Ports {
+			sp := &service.Spec.Ports[i]
+			portInfo.Port = fmt.Sprint(sp.Port)
+			if sp.TargetPort.Type == intstr.Int {
+				portInfo.TargetPort = fmt.Sprint(sp.TargetPort.IntVal)
+			} else {
+				portInfo.TargetPort = sp.TargetPort.StrVal
+			}
+			portInfo.NodePort = fmt.Sprint(sp.NodePort)
+			serviceInfo.Ports = append(serviceInfo.Ports, portInfo)
+		}
+	}
+	return serviceInfo, nil
 }
 
 // Get pod information
