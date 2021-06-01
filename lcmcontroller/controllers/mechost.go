@@ -299,7 +299,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 	}
 
 	acm := config.NewAppConfigMgr(appInfoRecord.AppInstanceId, "", config.AppAuthConfig{})
-	err = acm.DeleteAppAuthConfig()
+	err = acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err

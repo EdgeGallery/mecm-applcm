@@ -403,7 +403,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err, acm := processAkSkConfig(appInsId, appName, &req)
+	err, acm := processAkSkConfig(appInsId, appName, &req, clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
@@ -463,7 +463,7 @@ func (c *LcmController) validateToken(accessToken string, req models.Instantiate
 }
 
 // Process Ak Sk configuration
-func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest) (error, config.AppConfigAdapter) {
+func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest, clientIp string) (error, config.AppConfigAdapter) {
 	appAuthConfig := config.NewAppAuthCfg(appInsId)
 	if req.Parameters["ak"] == "" || req.Parameters["sk"] == "" {
 		err := appAuthConfig.GenerateAkSK()
@@ -480,7 +480,7 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest)
 	}
 
 	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig)
-	err := acm.PostAppAuthConfig()
+	err := acm.PostAppAuthConfig(clientIp)
 	if err != nil {
 		return err, config.AppConfigAdapter{}
 	}
@@ -548,7 +548,7 @@ func (c *LcmController) Terminate() {
 	}
 
 	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{})
-	err = acm.DeleteAppAuthConfig()
+	err = acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
@@ -1138,7 +1138,7 @@ func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
 
 func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter,
 	clientIp, appInsId, tenantId string) {
-	err := acm.DeleteAppAuthConfig()
+	err := acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
