@@ -97,7 +97,7 @@ func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 }
 
 // Send app auth configuration request
-func (acm *AppConfigAdapter) PostAppAuthConfig() error {
+func (acm *AppConfigAdapter) PostAppAuthConfig(clientIp string) error {
 	authInfo := Auth{
 		AuthInfo{
 			Credentials{
@@ -119,6 +119,7 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 	if errNewRequest != nil {
 		return errNewRequest
 	}
+	req.Header.Set("X-Real-Ip", clientIp)
 	response, errDo := util.DoRequest(req)
 	if errDo != nil {
 		log.Error("Failed to send the request to mep", errDo)
@@ -139,7 +140,7 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 }
 
 // Delete app auth configuration request
-func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
+func (acm *AppConfigAdapter) DeleteAppAuthConfig(clientIp string) error {
 
 	url := util.HttpsUrl + util.GetMepServerAddress() + ":" + util.GetMepPort() + "/mep/mec_app_support/v1/applications/" +
 		acm.AppAuthCfg.AppInsId + "/AppInstanceTermination"
@@ -148,6 +149,7 @@ func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
 		return errNewRequest
 	}
 	req.Header.Set("X-AppinstanceID", acm.AppAuthCfg.AppInsId)
+	req.Header.Set("X-Real-Ip", clientIp)
 	response, errDo := util.DoRequest(req)
 	if errDo != nil {
 		return errDo
