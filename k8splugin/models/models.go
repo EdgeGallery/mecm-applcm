@@ -45,6 +45,7 @@ type AppPackage struct {
 // AppInfo Information
 type AppInfo struct {
 	Pods []PodInfo `json:"pods"`
+	Services []ServiceInfo `json:"services"`
 }
 
 // PodInfo Information
@@ -54,6 +55,19 @@ type PodInfo struct {
 	Containers []ContainerInfo `json:"containers"`
 }
 
+// ServiceInfo Information
+type ServiceInfo struct {
+	ServiceName  string         `json:"serviceName"`
+	ServiceType  string         `json:"type"`
+	Ports        []PortInfo    `json:"ports"`
+}
+
+// PortsList Information
+type PortInfo struct {
+	Port        string `json:"port"`
+	TargetPort  string `json:"targetPort"`
+	NodePort    string `json:"nodePort"`
+}
 // ContainerInfo Information
 type ContainerInfo struct {
 	ContainerName string         `json:"containername"`

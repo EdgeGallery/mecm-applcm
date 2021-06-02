@@ -262,5 +262,5 @@ func testQueryInfo(t *testing.T) {
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	result, _ := client.Query(relName)
-	assert.Equal(t, "{\"pods\":null}", result, "Test query info execution result")
+	assert.Equal(t, "{\"pods\":null,\"services\":null}", result, "Test query info execution result")
 }
