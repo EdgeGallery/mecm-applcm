@@ -482,47 +482,46 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 		req.AkSkLcmGen = false
 	}
 
-	if vim == "openstack" {
-		appConfigFile, err := getApplicationConfigFile(tenantId, req.PackageId)
-		if err != nil {
-			log.Error("failed to get application configuration file")
-			return err, config.AppConfigAdapter{}
-		}
-
-		configYaml, err := os.Open(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/" + appConfigFile)
-		if err != nil {
-			log.Error("failed to read config file")
-			return err, config.AppConfigAdapter{}
-		}
-		defer configYaml.Close()
-
-		mfFileBytes, _ := ioutil.ReadAll(configYaml)
-
-		data, err := yaml.YAMLToJSON(mfFileBytes)
-		if err != nil {
-			log.Error("failed to convert yaml to json")
-			return err, config.AppConfigAdapter{}
-		}
-
-		err = json.Unmarshal(data, &applicationConfig)
-		if err != nil {
-			log.Error(util.UnMarshalError)
-			return err, config.AppConfigAdapter{}
-		}
-
-		//remove definition directory
-		err = os.RemoveAll(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/Definition")
-		if err != nil {
-			return err, config.AppConfigAdapter{}
-		}
-		//remove vnfd metadata file
-		err = os.Remove(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/TOSCA_VNFD.meta")
-		if err != nil {
-			return err, config.AppConfigAdapter{}
-		}
+	appConfigFile, err := getApplicationConfigFile(tenantId, req.PackageId)
+	if err != nil {
+		log.Error("failed to get application configuration file")
+		return err, config.AppConfigAdapter{}
 	}
+
+	configYaml, err := os.Open(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/" + appConfigFile)
+	if err != nil {
+		log.Error("failed to read config file")
+		return err, config.AppConfigAdapter{}
+	}
+	defer configYaml.Close()
+
+	mfFileBytes, _ := ioutil.ReadAll(configYaml)
+
+	data, err := yaml.YAMLToJSON(mfFileBytes)
+	if err != nil {
+		log.Error("failed to convert yaml to json")
+		return err, config.AppConfigAdapter{}
+	}
+
+	err = json.Unmarshal(data, &applicationConfig)
+	if err != nil {
+		log.Error(util.UnMarshalError)
+		return err, config.AppConfigAdapter{}
+	}
+
+	//remove definition directory
+	err = os.RemoveAll(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/Definition")
+	if err != nil {
+		return err, config.AppConfigAdapter{}
+	}
+	//remove vnfd metadata file
+	err = os.Remove(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/TOSCA_VNFD.meta")
+	if err != nil {
+		return err, config.AppConfigAdapter{}
+	}
+
 	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig, applicationConfig)
-	err := acm.PostAppAuthConfig(clientIp)
+	err = acm.PostAppAuthConfig(clientIp)
 	if err != nil {
 		return err, config.AppConfigAdapter{}
 	}
