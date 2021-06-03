@@ -403,7 +403,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err, acm := processAkSkConfig(appInsId, appName, &req, clientIp, tenantId, vim)
+	err, acm := processAkSkConfig(appInsId, appName, &req, clientIp, tenantId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
@@ -464,7 +464,7 @@ func (c *LcmController) validateToken(accessToken string, req models.Instantiate
 
 // Process Ak Sk configuration
 func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest, clientIp string,
-	tenantId string, vim string) (error, config.AppConfigAdapter) {
+	tenantId string) (error, config.AppConfigAdapter) {
 	var applicationConfig config.ApplicationConfig
 
 	appAuthConfig := config.NewAppAuthCfg(appInsId)

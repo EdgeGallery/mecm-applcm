@@ -50,27 +50,27 @@ type ApplicationConfig struct {
 				Properties struct {
 					Appservicerequired []struct {
 						Sername              string `json:"serName"`
-						Version              int    `json:"version"`
+						Version              string    `json:"version"`
 						Requestedpermissions bool   `json:"requestedPermissions"`
 					} `json:"appServiceRequired"`
 					Appserviceoptional []struct {
 						Sername              string `json:"serName"`
-						Version              int    `json:"version"`
+						Version              string    `json:"version"`
 						Requestedpermissions bool   `json:"requestedPermissions"`
 					} `json:"appServiceOptional"`
 					Appserviceproduced []struct {
 						Sername           string   `json:"serName"`
-						Version           int      `json:"version"`
+						Version           string      `json:"version"`
 						Dnsruleidlist     []string `json:"dnsRuleIdList"`
 						Trafficruleidlist []string `json:"trafficRuleIdList"`
 					} `json:"appServiceProduced"`
 					Appfeaturerequired []struct {
 						Featurename string `json:"featureName"`
-						Version     int    `json:"version"`
+						Version     string    `json:"version"`
 					} `json:"appFeatureRequired"`
 					Appfeatureoptional []struct {
 						Featurename string `json:"featureName"`
-						Version     int    `json:"version"`
+						Version     string    `json:"version"`
 					} `json:"appFeatureOptional"`
 					Appname string `json:"appName"`
 				} `json:"properties"`
