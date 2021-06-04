@@ -200,7 +200,7 @@ class CsarPkg:
             'outputs': {}
         }
 
-        # 默认安全组规则
+        # Default security group rules
         _set_default_security_group(appd)
 
         for name, template in appd['topology_template']['node_templates'].items():
