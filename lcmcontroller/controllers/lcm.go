@@ -509,17 +509,6 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 		return err, config.AppConfigAdapter{}
 	}
 
-	//remove definition directory
-	err = os.RemoveAll(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/Definition")
-	if err != nil {
-		return err, config.AppConfigAdapter{}
-	}
-	//remove vnfd metadata file
-	err = os.Remove(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/TOSCA_VNFD.meta")
-	if err != nil {
-		return err, config.AppConfigAdapter{}
-	}
-
 	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig, applicationConfig)
 	err = acm.PostAppAuthConfig(clientIp)
 	if err != nil {
@@ -530,13 +519,21 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 
 // Get application config file
 func getApplicationConfigFile(tenantId string, packageId string) (string, error) {
+	var zipFile string
+
 	files, err := ioutil.ReadDir(PackageFolderPath + tenantId + "/" + packageId + "/" + "APPD")
 	if err != nil {
 		log.Error("failed to read directory")
 		return "", nil
 	}
 
-	zipFile := files[0].Name()
+	for _, filename := range files {
+		if filepath.Ext(filename.Name()) == ".zip" {
+			zipFile = filename.Name()
+			break
+		}
+	}
+
 	pkgDir, err := extractCsarPackage(PackageFolderPath + tenantId + "/" + packageId + "/" + "APPD" + "/" + zipFile)
 	if err != nil {
 		log.Error("failed to extract package")
