@@ -2326,11 +2326,16 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
 
 		adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-		_, err = adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
+		status, err := adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
 		//c.deletePackage(path.Dir(pkgFilePath))
 		if err != nil {
 			c.HandleLoggingForFailure(clientIp, err.Error())
 			err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")
+			return err
+		}
+		if status == util.Failure {
+			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to UploadPackage")
+			err = errors.New("failed to uploadPackage")
 			return err
 		}
 
