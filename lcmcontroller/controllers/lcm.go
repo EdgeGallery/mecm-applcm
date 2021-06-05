@@ -2334,7 +2334,7 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 			return err
 		}
 		if status == util.Failure {
-			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to upload package to plugin")
+			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToUploadToPlugin)
 			err = errors.New("failed to upload package to plugin")
 			return err
 		}
