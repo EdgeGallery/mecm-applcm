@@ -1928,6 +1928,7 @@ func (c *LcmController) DeletePackage() {
 	pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
 	err = c.deletePackageFromDir(path.Dir(pkgFilePath))
 	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return
 	}
 

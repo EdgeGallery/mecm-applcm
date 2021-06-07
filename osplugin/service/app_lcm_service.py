@@ -24,7 +24,7 @@ import uuid
 import glanceclient.exc
 from heatclient.common import template_utils
 from heatclient.exc import HTTPNotFound
-from pony.orm import db_session, commit, rollback
+from pony.orm import db_session, rollback
 
 import utils
 from core import openstack_utils
@@ -131,7 +131,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             host_ip=host_ip,
             status=utils.SAVING
         )
-        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         try:
@@ -182,7 +181,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 glance.images.delete(image.image_id)
             except glanceclient.exc.HTTPNotFound:
                 logger.debug(f'skip delete image {image.image_id}')
-        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         utils.delete_dir(app_package_path)
@@ -256,7 +254,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
         LOG.debug('更新数据库')
-        commit()
 
         LOG.debug('开始更新状态定时任务')
         start_check_stack_status(app_instance_id=app_instance_id)
@@ -305,7 +302,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_ins_mapper.operational_status = utils.TERMINATING
         LOG.debug('更新数据库状态')
-        commit()
 
         LOG.debug('开始状态更新定时任务')
         start_check_stack_status(app_instance_id=app_instance_id)
