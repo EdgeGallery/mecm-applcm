@@ -82,12 +82,12 @@ class GrpcServerTest(unittest.TestCase):
         """
         测试上传包
         """
-        with open('resources/simple-package.zip', 'rb') as file:
+        with open('resources/edgegallery_vm_openstack.zip', 'rb') as file:
             package = file.read()
         request = iter([
             lcmservice_pb2.UploadPackageRequest(accessToken=self.access_token),
             lcmservice_pb2.UploadPackageRequest(hostIp='159.138.57.166'),
-            lcmservice_pb2.UploadPackageRequest(appPackageId='pkg001'),
+            lcmservice_pb2.UploadPackageRequest(appPackageId='pkg002'),
             lcmservice_pb2.UploadPackageRequest(tenantId='tenant001'),
             lcmservice_pb2.UploadPackageRequest(package=package)
         ])
@@ -101,7 +101,7 @@ class GrpcServerTest(unittest.TestCase):
         request = lcmservice_pb2.DeletePackageRequest(
             accessToken=self.access_token,
             hostIp='159.138.57.166',
-            appPackageId='pkg001',
+            appPackageId='pkg002',
             tenantId='tenant001',
         )
         response = self.app_lcm_stub.deletePackage(request)

@@ -104,6 +104,35 @@ def _set_default_security_group(appd):
         }
 
 
+def _set_default_ip(appd):
+    """
+    主动注入IP，需要固定cp名称和ip参数
+    """
+    topology_template = appd['topology_template']
+    inputs = topology_template['inputs']
+    node_templates = topology_template['node_templates']
+    if 'app_mp1_ip' in inputs and 'EMS_VDU1_CP0' in node_templates:
+        node_templates['EMS_VDU1_CP0']['attributes'] = {
+            'ipv4_address': {
+                'get_input': 'app_mp1_ip'
+            }
+        }
+
+    if 'app_internet_ip' in inputs and 'EMS_VDU1_CP1' in node_templates:
+        node_templates['EMS_VDU1_CP1']['attributes'] = {
+            'ipv4_address': {
+                'get_input': 'app_internet_ip'
+            }
+        }
+
+    if 'app_n6_ip' in inputs and 'EMS_VDU1_CP2' in node_templates:
+        node_templates['EMS_VDU1_CP2']['attributes'] = {
+            'ipv4_address': {
+                'get_input': 'app_n6_ip'
+            }
+        }
+
+
 class CsarPkg:
     """
     csar包
@@ -200,6 +229,8 @@ class CsarPkg:
             'outputs': {}
         }
 
+        # TODO 设置ip，临时性
+        _set_default_ip(appd)
         # 默认安全组规则
         _set_default_security_group(appd)
 
