@@ -18,7 +18,6 @@
 package controllers
 
 import (
-	"crypto/tls"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"lcmcontroller/util"
@@ -83,8 +82,15 @@ func GetFromMep(c *MepController, url string){
 	c.displayReceivedMsg(clientIp)
 
 	//trust all mep ca, for https calling
+	config, err := util.TLSConfig("DB_SSL_ROOT_CERT")
+	if err != nil {
+		log.Error("Unable to send request")
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.ErrCallFromMep)
+		return
+	}
+
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: config,
 	}
 	client := &http.Client{Transport: tr}
 	response, err := client.Get(url)
