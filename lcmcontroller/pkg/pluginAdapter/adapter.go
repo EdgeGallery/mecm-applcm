@@ -41,83 +41,83 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 // Instantiate application
 func (c *PluginAdapter) Instantiate(tenantId string, accessToken string, appInsId string,
 	req models.InstantiateRequest) (error error, status string) {
-	log.Info("| adapter.go | Instantiate | Instantiation started")
+	log.Info("Instantiation started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err := c.client.Instantiate(ctx, tenantId, accessToken, appInsId, req)
 	if err != nil {
-		log.Error("| adapter.go | Instantiate | failed to instantiate application")
+		log.Error("failed to instantiate application")
 		return err, util.Failure
 	}
-	log.Info("| adapter.go | Instantiate | instantiation completed with status: ", status)
+	log.Info("instantiation completed with status: ", status)
 	return nil, status
 }
 
 // Query application
 func (c *PluginAdapter) Query(accessToken, appInsId, host string) (response string, error error) {
-	log.Info("| adapter.go | Query | Query started")
+	log.Info("Query started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	response, err := c.client.Query(ctx, accessToken, appInsId, host)
 	if err != nil {
-		log.Errorf("| adapter.go | Query | failed to query information")
+		log.Errorf("failed to query information")
 		return "", err
 	}
-	log.Info("| adapter.go | Query | Query completed with status: Success")
+	log.Info("Query completed with status: Success")
 	return response, nil
 }
 
 // Terminate application
 func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId string) (status string, error error) {
-	log.Info("| adapter.go | Terminate | Terminate started")
+	log.Info("Terminate started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err := c.client.Terminate(ctx, host, accessToken, appInsId)
 	if err != nil {
-		log.Error("| adapter.go | Terminate | failed to terminate application")
+		log.Error("failed to terminate application")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | Terminate | termination completed with status: ", status)
+	log.Info("termination completed with status: ", status)
 	return status, nil
 }
 
 // Upload configuration
 func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string,
 	error error) {
-	log.Info("| adapter.go | UploadConfig | Upload config started")
+	log.Info("Upload config started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err := c.client.UploadConfig(ctx, file, host, accessToken)
 	if err != nil {
-		log.Error("| adapter.go | UploadConfig | failed to upload configuration")
+		log.Error("failed to upload configuration")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | UploadConfig | upload configuration is success with status: ", status)
+	log.Info("upload configuration is success with status: ", status)
 	return status, nil
 }
 
 // Remove configuration
 func (c *PluginAdapter) RemoveConfig(host string, accessToken string) (status string, error error) {
-	log.Info("| adapter.go | RemoveConfig | Remove config started")
+	log.Info("Remove config started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err := c.client.RemoveConfig(ctx, host, accessToken)
 	if err != nil {
-		log.Error("| adapter.go | RemoveConfig | failed to remove configuration")
+		log.Error("failed to remove configuration")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | RemoveConfig | remove configuration is success with status: ", status)
+	log.Info("remove configuration is success with status: ", status)
 	return status, nil
 }
 
@@ -130,114 +130,114 @@ func (c *PluginAdapter) GetWorkloadDescription(accessToken, host, appInsId strin
 
 	response, err := c.client.WorkloadDescription(ctx, accessToken, appInsId, host)
 	if err != nil {
-		log.Errorf("| adapter.go | CreateVmImage | failed to get workload description")
+		log.Errorf("failed to get workload description")
 		return "", err
 	}
-	log.Info("| adapter.go | CreateVmImage | Queried workload description completed with status: Success")
+	log.Info("Queried workload description completed with status: Success")
 	return response, nil
 }
 
 // Create VM Image
 func (c *PluginAdapter) CreateVmImage(host string, accessToken string, appInsId string, vmId string) (response string, error error) {
-	log.Info("| adapter.go | CreateVmImage | Create VM Image started")
+	log.Info("Create VM Image started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	response, err := c.client.CreateVmImage(ctx, accessToken, appInsId, host, vmId)
 	if err != nil {
-		log.Error("| adapter.go | CreateVmImage | failed to create VM image")
+		log.Error("failed to create VM image")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | CreateVmImage | VM image creation completed with response: ", response)
+	log.Info("VM image creation completed with response: ", response)
 	return response, nil
 }
 
 // Delete VM Image
 func (c *PluginAdapter) DeleteVmImage(host string, accessToken string, appInsId string,
 	imageId string) (status string, error error) {
-	log.Info("| adapter.go | DeleteVmImage | Delete VM Image started")
+	log.Info("Delete VM Image started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err := c.client.DeleteVmImage(ctx, accessToken, appInsId, host, imageId)
 	if err != nil {
-		log.Error("| adapter.go | DeleteVmImage | failed to delete VM image")
+		log.Error("failed to delete VM image")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | DeleteVmImage | VM image deletion completed with status: ", status)
+	log.Info("VM image deletion completed with status: ", status)
 	return status, nil
 }
 
 // Query VM Image
 func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId string,
 	imageId string) (status string, error error) {
-	log.Info("| adapter.go | QueryVmImage | Query VM Image started")
+	log.Info("Query VM Image started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	response, err := c.client.QueryVmImage(ctx, accessToken, appInsId, host, imageId)
 	if err != nil {
-		log.Error("| adapter.go | QueryVmImage | failed to query VM image")
+		log.Error("failed to query VM image")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | QueryVmImage | VM image query completed with response: ", response)
+	log.Info("VM image query completed with response: ", response)
 	return response, nil
 }
 
 // Query VM Image
 func (c *PluginAdapter) DownloadVmImage(imgCtrlr *beegoCtx.Response, host string, accessToken string, appInsId string, imageId string,
 	chunkNum int32) (buf *bytes.Buffer, error error) {
-	log.Info("| adapter.go | DownloadVmImage | Download VM Image chunk started")
+	log.Info("Download VM Image chunk started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Hour)
 	defer cancel()
 
 	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum, imgCtrlr)
 	if err != nil {
-		log.Error("| adapter.go | DownloadVmImage | failed to download VM image chunk")
+		log.Error("failed to download VM image chunk")
 		return response, err
 	}
 
-	log.Info("| adapter.go | DownloadVmImage | VM image chunk download completed successfully")
+	log.Info("VM image chunk download completed successfully")
 	return response, nil
 }
 
 // Upload configuration
 func (c *PluginAdapter) UploadPackage(tenantId string, appPkg string, host string, packageId string,
 	accessToken string) (status string, error error) {
-	log.Info("| adapter.go | UploadPackage | Distribute package started")
+	log.Info("Distribute package started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err := c.client.UploadPackage(ctx, tenantId, appPkg, host, packageId, accessToken)
 	if err != nil {
-		log.Error("| adapter.go | UploadPackage | failed to upload configuration")
+		log.Error("failed to upload configuration")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | UploadPackage | Package distribution success with status: ", status)
+	log.Info("Package distribution is success with status: ", status)
 	return status, nil
 }
 
 // Remove configuration
 func (c *PluginAdapter) DeletePackage(tenantId string, host string, packageId string, accessToken string) (status string, error error) {
-	log.Info("| adapter.go | DeletePackage | Delete package started")
+	log.Info("Delete package started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
 	status, err := c.client.DeletePackage(ctx, tenantId, host, packageId, accessToken)
 	if err != nil {
-		log.Error("| adapter.go | DeletePackage | failed to remove configuration")
+		log.Error("failed to remove configuration")
 		return util.Failure, err
 	}
 
-	log.Info("| adapter.go | DeletePackage | remove configuration success with status: ", status)
+	log.Info("remove configuration is success with status: ", status)
 	return status, nil
 }
