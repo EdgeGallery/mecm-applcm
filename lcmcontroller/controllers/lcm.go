@@ -234,13 +234,14 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 	var pkgDetails models.AppPkgDetails
 	mf, err := c.getFileContainsExtension(clientIp, packageDir, ".mf")
     if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest, util.ClientIpaddressInvalid,
+			"| lcm.go | getPackageDetailsFromPackage | getFileContainsExtension.")
 		return pkgDetails, errors.New("failed to find mf file")
 	}
 
 	mfYaml, err := os.Open(mf)
 	if err != nil {
-		log.Error("failed to read mf file")
+		log.Error("| lcm.go | getPackageDetailsFromPackage | failed to read mf file")
 		return pkgDetails, errors.New("failed to read mf file")
 	}
 	defer mfYaml.Close()
@@ -249,13 +250,14 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error("| lcm.go | getPackageDetailsFromPackage | failed to convert yaml to json")
 		return pkgDetails, errors.New("failed to convert yaml to json")
 	}
 
 	err = json.Unmarshal(data, &pkgDetails)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError, util.UnMarshalError,
+			"| lcm.go | getPackageDetailsFromPackage | Unmarshal.")
 		return pkgDetails, err
 	}
 	return pkgDetails, nil
@@ -269,7 +271,7 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 // @Failure 400 bad request
 // @router /configuration [delete]
 func (c *LcmController) RemoveConfig() {
-	log.Info("Delete configuration request received.")
+	log.Info("| lcm.go | RemoveConfig | Delete configuration request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -306,7 +308,7 @@ func (c *LcmController) RemoveConfig() {
 	hostInfoRec.ConfigUploadStatus = ""
 	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
-		log.Error("Failed to save mec host info record to database.")
+		log.Error("| lcm.go | RemoveConfig | Failed to save mec host info record to database.")
 		return
 	}
 	c.handleLoggingForSuccess(clientIp, "Remove config is successful")
@@ -325,7 +327,7 @@ func (c *LcmController) RemoveConfig() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/:appInstanceId/instantiate [post]
 func (c *LcmController) Instantiate() {
-	log.Info("Application instantiation request received.")
+	log.Info("| lcm.go | Instantiate | Application instantiation request received.")
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -355,7 +357,7 @@ func (c *LcmController) Instantiate() {
 	originVar, err := util.ValidateName(req.Origin, util.NameRegex)
 	if err != nil || !originVar {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest, util.OriginIsInvalid, "| lcm.go | Instantiate.")
 		return
 	}
 
@@ -365,14 +367,14 @@ func (c *LcmController) Instantiate() {
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
 	if readErr != nil {
-		c.HandleLoggingForError(clientIp, util.StatusNotFound,
-			"App package host record not exists")
+		c.LoggingForErrorWithCaller(clientIp, util.StatusNotFound,
+			"App package host record not exists", "| lcm.go | Instantiate.")
 		util.ClearByteArray(bKey)
 		return
 	}
 	if appPkgHostRecord.Status != "Distributed" {
-		c.HandleLoggingForError(clientIp, util.BadRequest,
-			"application package distribution status is:" + appPkgHostRecord.Status)
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest,
+			"application package distribution status is:" + appPkgHostRecord.Status, "| lcm.go | Instantiate.")
 		util.ClearByteArray(bKey)
 		return
 	}
@@ -383,8 +385,8 @@ func (c *LcmController) Instantiate() {
 
 	readErr = c.Db.ReadData(appInfoRecord, util.AppInsId)
 	if readErr == nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest,
-			"App instance info record already exists")
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest,
+			"App instance info record already exists", "| lcm.go | Instantiate.")
 		util.ClearByteArray(bKey)
 		return
 	}
@@ -399,13 +401,15 @@ func (c *LcmController) Instantiate() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+			"| lcm.go | Instantiate.")
 		return
 	}
 
 	err, acm := processAkSkConfig(appInsId, appName, &req, clientIp, tenantId)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError, err.Error(),
+			"| lcm.go | Instantiate | processAkSkConfig.")
 		util.ClearByteArray(bKey)
 		return
 	}
@@ -484,13 +488,13 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 
 	appConfigFile, err := getApplicationConfigFile(tenantId, req.PackageId)
 	if err != nil {
-		log.Error("failed to get application configuration file")
+		log.Error("| lcm.go | processAkSkConfig | failed to get application configuration file")
 		return err, config.AppConfigAdapter{}
 	}
 
 	configYaml, err := os.Open(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/" + appConfigFile)
 	if err != nil {
-		log.Error("failed to read config file")
+		log.Error("| lcm.go | processAkSkConfig | failed to read config file")
 		return err, config.AppConfigAdapter{}
 	}
 	defer configYaml.Close()
@@ -499,7 +503,7 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error("| lcm.go | processAkSkConfig | failed to convert yaml to json")
 		return err, config.AppConfigAdapter{}
 	}
 
@@ -523,7 +527,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 
 	files, err := ioutil.ReadDir(PackageFolderPath + tenantId + "/" + packageId + "/" + "APPD")
 	if err != nil {
-		log.Error("failed to read directory")
+		log.Error("| lcm.go | getApplicationConfigFile | failed to read directory")
 		return "", nil
 	}
 
@@ -536,13 +540,13 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 
 	pkgDir, err := extractCsarPackage(PackageFolderPath + tenantId + "/" + packageId + "/" + "APPD" + "/" + zipFile)
 	if err != nil {
-		log.Error("failed to extract package")
+		log.Error("| lcm.go | getApplicationConfigFile | failed to extract package")
 		return "", err
 	}
 
 	mfYaml, err := os.Open(pkgDir + "/TOSCA_VNFD.meta")
 	if err != nil {
-		log.Error("failed to read mf file")
+		log.Error("| lcm.go | getApplicationConfigFile | failed to read mf file")
 		return "", err
 	}
 	defer mfYaml.Close()
@@ -551,7 +555,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error("| lcm.go | getApplicationConfigFile | failed to convert yaml to json")
 		return "", err
 	}
 	var vnfData models.VnfData
@@ -573,7 +577,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/:appInstanceId/terminate [post]
 func (c *LcmController) Terminate() {
-	log.Info("Application termination request received.")
+	log.Info("| lcm.go | Terminate | Application termination request received.")
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -649,7 +653,7 @@ func (c *LcmController) Terminate() {
 	if strings.EqualFold(origin, "mepm") {
 		err = c.Db.InsertOrUpdateData(appInsKeyRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			log.Error("Failed to save app instance key record to database.")
+			log.Error("| lcm.go | Terminate | Failed to save app instance key record to database.")
 			return
 		}
 	}
@@ -709,7 +713,7 @@ func (c *LcmController) AppDeploymentStatus() {
 
 	responseBody, err := json.Marshal(response)
 	if err != nil {
-		log.Error("Failed to marshal the request body information")
+		log.Error("| lcm.go | AppDeploymentStatus | Failed to marshal the request body information")
 		return
 	}
 	_, err = c.Ctx.ResponseWriter.Write(responseBody)
@@ -738,7 +742,7 @@ func (c *LcmController) HealthCheck() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/:appInstanceId [get]
 func (c *LcmController) Query() {
-	log.Info("Application query request received.")
+	log.Info("| lcm.go | Query | Application query request received.")
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -1056,7 +1060,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoPara
 	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
 	if readErr != nil {
 		c.HandleLoggingForError(clientIp, util.StatusNotFound,
-			"Mec host info record does not exist in database")
+			"| lcm.go | insertOrUpdateAppInfoRecord | Mec host info record does not exist in database")
 		return readErr
 	}
 	syncStatus := true
@@ -1089,7 +1093,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoPara
 
 	err = c.Db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
-		log.Error("Failed to save app info record to database.")
+		log.Error("| lcm.go | insertOrUpdateAppInfoRecord |Failed to save app info record to database.")
 		return err
 	}
 	return nil
@@ -1103,19 +1107,20 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 
 	count, err := c.Db.QueryCount("tenant_info_record")
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError, err.Error(),
+			"| lcm.go | insertOrUpdateAppInfoRecord |")
 		return err
 	}
 
 	if count >= util.MaxNumberOfTenantRecords {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Maximum number of tenant records are exceeded")
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError,
+			"Maximum number of tenant records are exceeded", "| lcm.go | insertOrUpdateAppInfoRecord |")
 		return errors.New("maximum number of tenant records are exceeded")
 	}
 
 	err = c.Db.InsertOrUpdateData(tenantRecord, util.TenantId)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
-		log.Error("Failed to save tenant record to database.")
+		log.Error("| lcm.go | insertOrUpdateAppInfoRecord | Failed to save tenant record to database.")
 		return err
 	}
 	return nil
@@ -1273,7 +1278,7 @@ func (c *LcmController) saveApplicationPackage(clientIp string, tenantId string,
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/:appInstanceId/workload/events  [get]
 func (c *LcmController) GetWorkloadDescription() {
-	log.Info("Get workload description request received.")
+	log.Info("| lcm.go | GetWorkloadDescription | Get workload description request received.")
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -1346,7 +1351,7 @@ func (c *LcmController) GetWorkloadDescription() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/sync_updated [get]
 func (c *LcmController) SynchronizeUpdatedRecord() {
-	log.Info("Sync app instances request received.")
+	log.Info("| lcm.go | SynchronizeUpdatedRecord | Sync app instances request received.")
 
 	var appInstances []models.AppInfoRecord
 	var appInstancesSync []models.AppInfoRecord
@@ -1414,7 +1419,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 		appInstance.SyncStatus = true
 		err = c.Db.InsertOrUpdateData(&appInstance, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			log.Error("Failed to save app info record to database.")
+			log.Error("| lcm.go | SynchronizeUpdatedRecord | Failed to save app info record to database.")
 			return
 		}
 	}
@@ -1427,7 +1432,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/sync_deleted [get]
 func (c *LcmController) SynchronizeStaleRecord() {
-	log.Info("Sync app instances stale request received.")
+	log.Info("| lcm.go | SynchronizeStaleRecord | Sync app instances stale request received.")
 
 	var appInstStaleRecs []models.AppInstanceStaleRec
 	var appInstanceStaleRecords models.AppInstanceStaleRecords
@@ -1561,7 +1566,7 @@ func (c *LcmController) getInputParametersForRemoveCfg(clientIp string) (string,
 // @Failure 400 bad request
 // @router /packages [post]
 func (c *LcmController) UploadPackage() {
-	log.Info("Upload application package request received.")
+	log.Info("| lcm.go | UploadPackage | Upload application package request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -1592,42 +1597,48 @@ func (c *LcmController) UploadPackage() {
 	file, header, err := c.GetFile("package")
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.BadRequest, "Upload package file error")
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest, "Upload package file error",
+			"| lcm.go | UploadPackage | ")
 		return
 	}
 
 	err = util.ValidateFileExtensionCsar(header.Filename)
 	if err != nil || len(header.Filename) > util.MaxFileNameSize {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.BadRequest,
-			"File shouldn't contains any extension or filename is larger than max size")
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest,
+			"File shouldn't contains any extension or filename is larger than max size",
+		"| lcm.go | UploadPackage | ")
 		return
 	}
 
 	err = util.ValidateFileSize(header.Size, util.MaxAppPackageFile)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest, "File size is larger than max size",
+			"| lcm.go | UploadPackage | ")
 		return
 	}
 
 	pkgFilePath, err := c.saveApplicationPackage(clientIp, tenantId, packageId, header, file)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+			"| lcm.go | UploadPackage | ")
 		return
 	}
 	pkgDir, err := extractCsarPackage(pkgFilePath)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+			"| lcm.go | UploadPackage | ")
 		return
 	}
 
 	pkgDetails, err := c.getPackageDetailsFromPackage(clientIp, pkgDir)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.BadRequest, "failed to get app package details")
+		c.LoggingForErrorWithCaller(clientIp, util.BadRequest, "failed to get app package details",
+			"| lcm.go | UploadPackage | ")
 		return
 	}
 
@@ -1727,7 +1738,7 @@ func (c *LcmController) ValidateInstantiateInputParameters(clientIp string, req 
 // @Failure 400 bad request
 // @router /packages/:packageId [post]
 func (c *LcmController) DistributePackage() {
-	log.Info("Distribute application package request received.")
+	log.Info("| lcm.go | DistributePackage | Distribute application package request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -1796,7 +1807,7 @@ func (c *LcmController) DistributePackage() {
 // @Failure 400 bad request
 // @router /packages/:packageId/hosts/:hostIp [delete]
 func (c *LcmController) DeletePackageOnHost() {
-	log.Info("Delete application package on host request received.")
+	log.Info("| lcm.go | DeletePackageOnHost |  Delete application package on host request received.")
 
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
@@ -1870,6 +1881,7 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 	if err == io.EOF {
 		err := os.Remove(tenantPath)
 		if err != nil {
+			log.Info("| lcm.go | deletePackageFromDir | Delete from device with error.")
 			return errors.New("failed to delete application package")
 		}
 		return nil
@@ -1887,8 +1899,7 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/packages/:packageId [delete]
 func (c *LcmController) DeletePackage() {
-	log.Info("Delete application package request received.")
-
+	log.Info("| lcm.go | DeletePackage | Delete application package request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -1938,6 +1949,7 @@ func (c *LcmController) DeletePackage() {
 
 	c.handleLoggingForSuccess(clientIp, "Deleted application package successfully")
 	c.ServeJSON()
+	log.Info("| lcm.go | DeletePackage | Delete application package request finished.")
 }
 
 // Insert or update application package record
@@ -1969,14 +1981,15 @@ func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 	}
 
 	if count >= util.MaxNumberOfRecords {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Maximum number of app package records are exceeded for given tenant")
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError,
+			"Maximum number of app package records are exceeded for given tenant",
+			"| lcm.go | insertOrUpdateAppPkgRecord | QueryCountForTable." )
 		return errors.New("maximum number of app package records are exceeded for given tenant")
 	}
 	log.Info("Add app package record: %+v", appPkgRecord)
 	err = c.Db.InsertOrUpdateData(appPkgRecord, util.AppPkgId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
-		log.Error("Failed to save app package record to database.")
+		log.Error("| lcm.go | insertOrUpdateAppPkgRecord | Failed to save app package record to database.")
 		return err
 	}
 	return nil
@@ -2023,17 +2036,19 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 
 	count, err := c.Db.QueryCountForTable("app_package_host_record", util.TenantId, tenantId)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError, err.Error(),
+			"lcm.go | insertOrUpdateAppPkgHostRecord.")
 		return err
 	}
 
 	if count >= util.MaxNumberOfRecords {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Maximum number of app package records are exceeded for given tenant")
+		c.LoggingForErrorWithCaller(clientIp, util.StatusInternalServerError,
+			"Maximum number of app package records are exceeded for given tenant",
+			"lcm.go | insertOrUpdateAppPkgHostRecord.")
 		return errors.New("maximum number of app package host records are exceeded for given tenant")
 	}
 
-	log.Info("Add app package host record: %+v", appPkgHostRecord)
+	log.Info("| lcm.go | insertOrUpdateAppPkgRecord | Add app package host record: %+v", appPkgHostRecord)
 	err = c.Db.InsertOrUpdateData(appPkgHostRecord, util.PkgHostKey)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save app package host record to database.")
@@ -2050,7 +2065,7 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 // @Failure 400 bad request
 // @router /packages/:packageId [get]
 func (c *LcmController) DistributionStatus() {
-	log.Info("Distribute status request received.")
+	log.Info("| lcm.go | DistributionStatus | Distribute status request received.")
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -2179,7 +2194,7 @@ func (c *LcmController) getInputParametersForUploadPkg(clientIp string) (string,
 // @Failure 400 bad request
 // @router /tenants/:tenantId/packages/sync_updated [get]
 func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
-	log.Info("Sync app package request received.")
+	log.Info("| lcm.go | SynchronizeAppPackageUpdatedRecord | Sync app package request received.")
 
 	var appPackages []*models.AppPackageRecord
 	var appPackagesSync []*models.AppPackageRecord
@@ -2239,7 +2254,7 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/packages/sync_deleted [get]
 func (c *LcmController) SynchronizeAppPackageStaleRecord() {
-	log.Info("Sync mec host stale request received.")
+	log.Info("| lcm.go | SynchronizeAppPackageStaleRecord | Sync mec host stale request received.")
 
 	var appPackageStaleRecs []models.AppPackageStaleRec
 	var appPkgHostStaleRecs []models.AppPackageHostStaleRec
@@ -2335,7 +2350,7 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 		}
 		if status == util.Failure {
 			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToUploadToPlugin)
-			err = errors.New("failed to upload package to plugin")
+			err = errors.New("| lcm.go | processUploadPackage | failed to upload package to plugin")
 			return err
 		}
 
@@ -2454,7 +2469,7 @@ func (c *LcmController) insertAppPackageRec(appPackagesSync []*models.AppPackage
 			appPkgMecHostInfo.SyncStatus = true
 			err := c.Db.InsertOrUpdateData(appPkgMecHostInfo, util.PkgHostKey)
 			if err != nil && err.Error() != util.LastInsertIdNotSupported {
-				log.Error("Failed to save app package mec host record to database.")
+				log.Error("| lcm.go | insertAppPackageRec | Failed to save app package mec host record to database.")
 				return err
 			}
 		}
@@ -2462,7 +2477,7 @@ func (c *LcmController) insertAppPackageRec(appPackagesSync []*models.AppPackage
 		appPackage.SyncStatus = true
 		err := c.Db.InsertOrUpdateData(appPackage, util.AppPkgId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			log.Error("Failed to save app package host record to database.")
+			log.Error("| lcm.go | insertAppPackageRec | Failed to save app package host record to database.")
 			return err
 		}
 	}

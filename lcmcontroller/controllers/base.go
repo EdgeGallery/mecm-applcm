@@ -46,6 +46,13 @@ func (c *BaseController) HandleLoggingForError(clientIp string, code int, errMsg
 		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 }
 
+// Handled logging with Callers
+func (c *BaseController) LoggingForErrorWithCaller(clientIp string, code int, errMsg string, funcName string) {
+	c.writeErrorResponse(errMsg, code)
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]" + "Error Occurs on "+ funcName)
+}
+
 // Write error response
 func (c *BaseController) writeErrorResponse(errMsg string, code int) {
 	log.Error(errMsg)
