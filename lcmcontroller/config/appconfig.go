@@ -29,6 +29,55 @@ import (
 	"strconv"
 )
 
+type ApplicationConfig struct {
+	ToscaDefinitionsVersion string   `json:"tosca_definitions_version"`
+	Description             string   `json:"description"`
+	Imports                 []string `json:"imports"`
+	Metadata                struct {
+		TemplateName    string `json:"template_name"`
+		TemplateAuthor  string `json:"template_author"`
+		TemplateVersion string `json:"template_version"`
+		VnfmType        string `json:"vnfm_type"`
+		VnfdID          string `json:"vnfd_id"`
+		VnfdVersion     string `json:"vnfd_version"`
+		VnfdName        string `json:"vnfd_name"`
+		VnfdDescription string `json:"vnfd_description"`
+	} `json:"metadata"`
+	TopologyTemplate struct {
+		NodeTemplates struct {
+			AppConfiguration struct {
+				Type       string `json:"type"`
+				Properties struct {
+					Appservicerequired []struct {
+						Sername              string `json:"serName"`
+						Version              string    `json:"version"`
+						Requestedpermissions bool   `json:"requestedPermissions"`
+					} `json:"appServiceRequired"`
+					Appserviceoptional []struct {
+						Sername              string `json:"serName"`
+						Version              string    `json:"version"`
+						Requestedpermissions bool   `json:"requestedPermissions"`
+					} `json:"appServiceOptional"`
+					Appserviceproduced []struct {
+						Sername           string   `json:"serName"`
+						Version           string      `json:"version"`
+						Dnsruleidlist     []string `json:"dnsRuleIdList"`
+						Trafficruleidlist []string `json:"trafficRuleIdList"`
+					} `json:"appServiceProduced"`
+					Appfeaturerequired []struct {
+						Featurename string `json:"featureName"`
+						Version     string    `json:"version"`
+					} `json:"appFeatureRequired"`
+					Appfeatureoptional []struct {
+						Featurename string `json:"featureName"`
+						Version     string    `json:"version"`
+					} `json:"appFeatureOptional"`
+					Appname string `json:"appName"`
+				} `json:"properties"`
+			} `json:"app_configuration"`
+		} `json:"node_templates"`
+	} `json:"topology_template"`
+}
 // Ak sk and appInsId info
 type AppAuthConfig struct {
 	AppInsId string
@@ -40,6 +89,7 @@ type AppAuthConfig struct {
 // App config adapter
 type AppConfigAdapter struct {
 	AppAuthCfg AppAuthConfig
+	AppInfo    AppInfo
 }
 
 // Credential Info
@@ -57,15 +107,33 @@ type AuthInfo struct {
 // Auth
 type Auth struct {
 	AuthInfo AuthInfo `json:"authInfo"`
+	AppAuthInfo AppInfo `json:"appInfo"`
+}
+
+// App Auth info
+type AppInfo struct {
+	AppName             string   `json:"appName"`
+	RequiredServices    []string `json:"requiredServices"`
 }
 
 // Constructor to Application configuration
-func NewAppConfigMgr(appInsId, appName string, appAuthCfg AppAuthConfig) (acm AppConfigAdapter) {
+func NewAppConfigMgr(appInsId, appName string, appAuthCfg AppAuthConfig, appConfig ApplicationConfig) (acm AppConfigAdapter) {
 	acm.AppAuthCfg.AppInsId = appInsId
 	acm.AppAuthCfg.AppName = appName
 	if (appAuthCfg != AppAuthConfig{}) {
 		acm.AppAuthCfg.Ak = appAuthCfg.Ak
 		acm.AppAuthCfg.Sk = appAuthCfg.Sk
+
+		acm.AppInfo.AppName = appConfig.TopologyTemplate.NodeTemplates.AppConfiguration.Properties.Appname
+		for _, appServiceOptional := range appConfig.TopologyTemplate.NodeTemplates.AppConfiguration.Properties.Appserviceoptional {
+			acm.AppInfo.RequiredServices = append(acm.AppInfo.RequiredServices, appServiceOptional.Sername)
+		}
+		for _, appServiceProduced := range appConfig.TopologyTemplate.NodeTemplates.AppConfiguration.Properties.Appserviceproduced {
+			acm.AppInfo.RequiredServices = append(acm.AppInfo.RequiredServices, appServiceProduced.Sername)
+		}
+		for _, appServiceRequired := range appConfig.TopologyTemplate.NodeTemplates.AppConfiguration.Properties.Appservicerequired {
+			acm.AppInfo.RequiredServices = append(acm.AppInfo.RequiredServices, appServiceRequired.Sername)
+		}
 	}
 	return
 }
@@ -97,7 +165,7 @@ func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 }
 
 // Send app auth configuration request
-func (acm *AppConfigAdapter) PostAppAuthConfig() error {
+func (acm *AppConfigAdapter) PostAppAuthConfig(clientIp string) error {
 	authInfo := Auth{
 		AuthInfo{
 			Credentials{
@@ -105,6 +173,10 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 				SecretKey:   acm.AppAuthCfg.Sk,
 				AppName:     acm.AppAuthCfg.AppName,
 			},
+		},
+		AppInfo{
+			AppName: acm.AppInfo.AppName,
+			RequiredServices: acm.AppInfo.RequiredServices,
 		},
 	}
 
@@ -119,6 +191,7 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 	if errNewRequest != nil {
 		return errNewRequest
 	}
+	req.Header.Set("X-Real-Ip", clientIp)
 	response, errDo := util.DoRequest(req)
 	if errDo != nil {
 		log.Error("Failed to send the request to mep", errDo)
@@ -139,7 +212,7 @@ func (acm *AppConfigAdapter) PostAppAuthConfig() error {
 }
 
 // Delete app auth configuration request
-func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
+func (acm *AppConfigAdapter) DeleteAppAuthConfig(clientIp string) error {
 
 	url := util.HttpsUrl + util.GetMepServerAddress() + ":" + util.GetMepPort() + "/mep/mec_app_support/v1/applications/" +
 		acm.AppAuthCfg.AppInsId + "/AppInstanceTermination"
@@ -148,6 +221,7 @@ func (acm *AppConfigAdapter) DeleteAppAuthConfig() error {
 		return errNewRequest
 	}
 	req.Header.Set("X-AppinstanceID", acm.AppAuthCfg.AppInsId)
+	req.Header.Set("X-Real-Ip", clientIp)
 	response, errDo := util.DoRequest(req)
 	if errDo != nil {
 		return errDo

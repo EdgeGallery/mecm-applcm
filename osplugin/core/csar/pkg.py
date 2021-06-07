@@ -231,7 +231,7 @@ class CsarPkg:
 
         # TODO 设置ip，临时性
         _set_default_ip(appd)
-        # 默认安全组规则
+        # Default security group rules
         _set_default_security_group(appd)
 
         for name, template in appd['topology_template']['node_templates'].items():
