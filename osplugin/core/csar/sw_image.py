@@ -16,7 +16,7 @@ class SwImageDescription:
         self.sw_image = json_data['swImage']
         self.hw_scsi_model = json_data['hw_scsi_model']
         self.hw_disk_bus = json_data['hw_disk_bus']
-        self.operation_system = json_data['operationSystem']
+        self.operating_system = json_data['operatingSystem']
         self.supported_virtualization_environment = json_data['supportedVirtualizationEnvironment']
 
 
