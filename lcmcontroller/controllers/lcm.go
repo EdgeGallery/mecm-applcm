@@ -431,11 +431,17 @@ func (c *LcmController) Instantiate() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, _ = adapter.Instantiate(tenantId, accessToken, appInsId, req)
+	err, status := adapter.Instantiate(tenantId, accessToken, appInsId, req)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	if status == util.Failure {
+		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToUploadToPlugin)
+		err = errors.New("failed to instantiate app")
 		return
 	}
 
