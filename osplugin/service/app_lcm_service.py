@@ -117,13 +117,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_package_id = parameters.app_package_id
         if app_package_id is None:
-            LOG.debug('appPackageId is required')
+            LOG.info('appPackageId is required')
             parameters.delete_tmp()
             return res
 
         app_pkg_mapper = AppPkgMapper.get(app_package_id=app_package_id, host_ip=host_ip)
         if app_pkg_mapper is not None:
-            LOG.debug('app package exist')
+            LOG.info('app package exist')
             parameters.delete_tmp()
             return res
         AppPkgMapper(
@@ -187,6 +187,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         utils.delete_dir(app_package_path)
 
         res.status = utils.SUCCESS
+        commit()
         return res
 
     @db_session
