@@ -24,12 +24,13 @@ import yaml
 from pony.orm import db_session
 
 import utils
+from core import tosca_utils
 from core.csar import sw_image
 from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
 from core.openstack_utils import TOSCA_TYPE_CLASS, \
-    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, create_glance_client, get_image_by_name_checksum
+    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, get_image_by_name_checksum
 from task.image_task import add_import_image_task, create_image_record, add_upload_image_task
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
@@ -59,49 +60,24 @@ def _set_default_security_group(appd):
     if 'ue_ip_segment' not in topology_template['inputs'] \
             and 'mep_ip' not in topology_template['inputs']:
         return
+    default_group = tosca_utils.APP_SECURITY_GROUP_NAME
+
+    # 设置默认安全组
     if 'groups' not in topology_template:
         topology_template['groups'] = {}
-    topology_template['groups']['DefaultSecurityGroup'] = {
-        'type': 'tosca.groups.nfv.PortSecurityGroup',
-        'properties': {
-            'description': 'default security group',
-            'name': 'app-group'
-        },
-        'members': []
-    }
+    topology_template['groups'][default_group] = tosca_utils.app_security_group()
     for name, template in topology_template['node_templates'].items():
         if template['type'] == 'tosca.nodes.nfv.VduCp':
-            topology_template['groups']['DefaultSecurityGroup']['members'] \
+            topology_template['groups'][default_group]['members'] \
                 .append(name)
+
+    # 设置默认安全策略
     if 'policies' not in topology_template:
-        topology_template['policies'] = {}
+        topology_template['policies'] = []
     if 'ue_ip_segment' in topology_template['inputs']:
-        topology_template['policies']['n6_rule'] = {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
-            'targets': ['DefaultSecurityGroup'],
-            'properties': {
-                'protocol': 0,
-                'remote_ip_prefix': {
-                    'get_input': 'ue_ip_segment'
-                }
-            }
-        }
+        topology_template['policies'].append(tosca_utils.n6_rule(target=default_group))
     if 'mep_ip' in topology_template['inputs']:
-        topology_template['policies']['mp1_rule'] = {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
-            'targets': ['DefaultSecurityGroup'],
-            'properties': {
-                'protocol': 0,
-                'remote_ip_prefix': {
-                    'concat': [
-                        {
-                            'get_input': 'mep_ip'
-                        },
-                        '/32'
-                    ]
-                }
-            }
-        }
+        topology_template['policies'].append(tosca_utils.mp1_rule(target=default_group))
 
 
 def _set_default_ip(appd):
@@ -250,11 +226,12 @@ class CsarPkg:
                 resource.set_properties(topology_template=appd['topology_template'],
                                         hot_file=hot)
 
-        for name, policy in appd['topology_template']['policies'].items():
-            if policy['type'] in TOSCA_POLICY_CLASS:
-                resource = TOSCA_POLICY_CLASS[policy['type']](name, policy)
-                resource.set_properties(topology_template=appd['topology_template'],
-                                        hot_file=hot)
+        for policy in appd['topology_template']['policies']:
+            for name, policy_template in policy.items():
+                if policy_template['type'] in TOSCA_POLICY_CLASS:
+                    resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
+                    resource.set_properties(topology_template=appd['topology_template'],
+                                            hot_file=hot)
 
         with open(self.hot_path, 'w') as file:
             yaml.dump(hot, file)

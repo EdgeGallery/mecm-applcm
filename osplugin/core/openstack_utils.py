@@ -26,7 +26,6 @@ from novaclient import client as nova_client
 import config
 import utils
 from core.exceptions import PackageNotValid
-from core.log import logger
 
 _RC_MAP = {}
 
