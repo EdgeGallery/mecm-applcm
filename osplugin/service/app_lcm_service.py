@@ -24,7 +24,7 @@ import uuid
 import glanceclient.exc
 from heatclient.common import template_utils
 from heatclient.exc import HTTPNotFound
-from pony.orm import db_session, rollback
+from pony.orm import db_session, rollback, commit
 
 import utils
 from core import openstack_utils
@@ -131,6 +131,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             host_ip=host_ip,
             status=utils.SAVING
         )
+        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         try:
@@ -253,6 +254,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                      host_ip=host_ip,
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
+        commit()
         LOG.debug('更新数据库')
 
         LOG.debug('开始更新状态定时任务')
@@ -301,6 +303,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         app_ins_mapper.operational_status = utils.TERMINATING
+        commit()
         LOG.debug('更新数据库状态')
 
         LOG.debug('开始状态更新定时任务')
