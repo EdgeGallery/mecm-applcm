@@ -76,8 +76,8 @@ const (
 	OriginIsInvalid                 = "Origin is invalid"
 	RecordDoesNotExist              = "Records does not exist"
 	RequestBodyTooLarge             = "request body too large"
-	FailedToUploadToPlugin          = "Failed to upload package to plugin"
-	FailedToInstantiate             = "Failed to instantiate app"
+	FailedToUploadToPlugin          = "failed to upload package to plugin"
+	FailedToInstantiate             = "failed to instantiate app"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30

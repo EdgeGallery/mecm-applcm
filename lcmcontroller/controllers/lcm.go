@@ -440,8 +440,8 @@ func (c *LcmController) Instantiate() {
 	}
 	if status == util.Failure {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToUploadToPlugin)
-		err = errors.New("failed to instantiate app")
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToInstantiate)
+		err = errors.New(util.FailedToInstantiate)
 		return
 	}
 
@@ -2342,7 +2342,7 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 		}
 		if status == util.Failure {
 			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToUploadToPlugin)
-			err = errors.New("failed to upload package to plugin")
+			err = errors.New(util.FailedToUploadToPlugin)
 			return err
 		}
 
