@@ -104,22 +104,22 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 
 
 // Install a given helm chart
-func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk string, db pgdb.Database) (string, error) {
+func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk string, db pgdb.Database) (string, string, error) {
 	log.Info("Inside helm client")
 
 	helmChart, err := hc.getHelmChart(appPkgRecord.TenantId, appPkgRecord.HostIp, appPkgRecord.PackageId)
 	tarFile, err := os.Open(helmChart)
 	if err != nil {
 		log.Error("Failed to open helm chart tar file")
-		return "", err
+		return "", "", err
 	}
 	defer tarFile.Close()
 
 	appAuthCfg := config.NewBuildAppAuthConfig(appInsId, ak, sk)
-	dirName, err := appAuthCfg.AddValues(tarFile)
+	dirName, namespace, err := appAuthCfg.AddValues(tarFile)
 	if err != nil {
 		log.Error("Failed to add values in values file")
-		return "", err
+		return "", "", err
 	}
 	defer os.Remove(dirName + ".tar.gz")
 	defer  os.RemoveAll(dirName)
@@ -127,13 +127,38 @@ func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk s
 	log.WithFields(log.Fields{
 		"helm_chart": dirName,
 		"app_instance_id": appInsId,
+		"namespace": namespace,
 	}).Info("deployment chart")
 
 	// Load the file to chart
 	chart, err := loader.Load(dirName + ".tar.gz")
 	if err != nil {
 		log.Error("Unable to load chart from file")
-		return "", err
+		return "", "", err
+	}
+
+	// uses the current context in kubeconfig
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+	if err != nil {
+		return "", "", err
+	}
+
+	clientSet, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		log.Error("failed to get clientset")
+		return "", "", err
+	}
+
+	nsName := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}
+
+	_, err = clientSet.CoreV1().Namespaces().Create(context.Background(), nsName, metav1.CreateOptions{})
+	if err != nil {
+		log.Error("failed to create namespace")
+		return "", "", err
 	}
 
 	// Release name will be taken from the name in chart's metadata
@@ -145,26 +170,24 @@ func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk s
 
 	readErr := db.ReadData(appInstanceRecord, "workload_id")
 	if readErr == nil {
-		return "", errors.New("application is already deployed with this release name")
+		return "", "", errors.New("application is already deployed with this release name")
 	}
-
-	// Get release namespace
-	releaseNamespace := util.GetReleaseNamespace()
 
 	// Initialize action config
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
+	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", namespace), namespace,
 		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
 		log.Error(util.ActionConfig)
-		return "", err
+		return "", "", err
 	}
 
 	// Prepare chart install action and install chart
 	installer := action.NewInstall(actionConfig)
-	installer.Namespace = releaseNamespace
+	installer.Namespace = namespace // so if we want to deploy helm charts via k8splugin.. first namespace should be created or exist then we can deploy helm charts in that namespace
 	installer.ReleaseName = relName
+
 	rel, err := installer.Run(chart, nil)
 	if err != nil {
 		ui := action.NewUninstall(actionConfig)
@@ -173,20 +196,18 @@ func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk s
 			log.Infof("Unable to uninstall chart. Err: %s", uninstallErr)
 		}
 		log.Errorf("Unable to install chart. Err: %s", err)
-		return "", err
+		return "", "", err
 	}
 	log.Info("Successfully created chart")
-	return rel.Name, err
+	return rel.Name, namespace, err
 }
 
 // Un-Install a given helm chart
-func (hc *HelmClient) UnDeploy(relName string) error {
-	// Get release namespace
-	releaseNamespace := util.GetReleaseNamespace()
+func (hc *HelmClient) UnDeploy(relName, namespace string) error {
 
 	// Prepare action config and uninstall chart
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
+	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", namespace), namespace,
 		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
@@ -200,18 +221,34 @@ func (hc *HelmClient) UnDeploy(relName string) error {
 		log.Errorf("Unable to uninstall chart. Err: %s", err)
 		return err
 	}
+
+	// uses the current context in kubeconfig
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	clientSet, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		log.Error("failed to get clientset")
+		return err
+	}
+
+	err = clientSet.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
+	if err != nil {
+		log.Error("failed to create namespace")
+		return err
+	}
 	log.Infof("Successfully uninstalled chart. Response Info: %s", res.Info)
 	return nil
 }
 
 // Query a given chart
-func (hc *HelmClient) Query(relName string) (string, error) {
+func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 	log.Info("In Query Chart function")
 
-	// Get release namespace
-	releaseNamespace := util.GetReleaseNamespace()
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
+	if err := actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", namespace), namespace,
 		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
@@ -244,7 +281,7 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 
 	labelSelector := getLabelSelector(manifest)
 
-	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig)
+	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig, namespace)
 	if err != nil {
 		log.Error("Failed to get pod statistics")
 		return "", err
@@ -258,11 +295,11 @@ func (hc *HelmClient) Query(relName string) (string, error) {
 }
 
 // Get workload description
-func (hc *HelmClient) WorkloadEvents(relName string) (string, error) {
+func (hc *HelmClient) WorkloadEvents(relName, namespace string) (string, error) {
 	log.Info("In Workload describe function")
 	var podDesc models.PodDescribeInfo
 
-	clientset, manifest, err := hc.getClientSet(relName)
+	clientset, manifest, err := hc.getClientSet(relName, namespace)
 	if nil != err {
 		return "", err
 	}
@@ -271,7 +308,7 @@ func (hc *HelmClient) WorkloadEvents(relName string) (string, error) {
 
 	for _, label := range labelSelector.Label {
 		if label.Kind == util.Pod || label.Kind == util.Deployment {
-			podDesc, err = updatePodDescInfo(podDesc, clientset, label)
+			podDesc, err = updatePodDescInfo(podDesc, clientset, label, namespace)
 			if err != nil {
 				return "", err
 			}
@@ -321,11 +358,10 @@ func getDeploymentArtifact(dir string, ext string) (string, error) {
 	return "", err
 }
 
-func (hc *HelmClient) getClientSet(relName string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
-	// Get release namespace
-	releaseNamespace := util.GetReleaseNamespace()
+func (hc *HelmClient) getClientSet(relName, namespace string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
+
 	actionConfig := new(action.Configuration)
-	if err = actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", releaseNamespace), releaseNamespace,
+	if err = actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", namespace), namespace,
 		util.HelmDriver, func(format string, v ...interface{}) {
 			_ = fmt.Sprintf(format, v)
 		}); err != nil {
@@ -359,17 +395,17 @@ func (hc *HelmClient) getClientSet(relName string) (clientset *kubernetes.Client
 }
 
 func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
-	label models.LabelList) (models.PodDescribeInfo, error) {
+	label models.LabelList, namespace string) (models.PodDescribeInfo, error) {
 	options := metav1.ListOptions{
 		LabelSelector: label.Selector,
 	}
-	pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
 	if err != nil {
 		return podDesc, err
 	}
 	for _, podItem := range pods.Items {
 		podName := podItem.GetObjectMeta().GetName()
-		pod, err := clientset.CoreV1().Pods(util.Default).Get(context.TODO(), podName, metav1.GetOptions{})
+		pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 		if err != nil {
 			return podDesc, err
 		}
@@ -378,7 +414,7 @@ func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Cli
 			log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
 			return podDesc, err
 		} else {
-			podDescInfo := getPodDescInfo(ref, pod, clientset, podName)
+			podDescInfo := getPodDescInfo(ref, pod, clientset, podName, namespace)
 			podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
 		}
 	}
@@ -386,12 +422,12 @@ func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Cli
 }
 
 func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
-	podName string) (podDescInfo models.PodDescList) {
+	podName, namespace string) (podDescInfo models.PodDescList) {
 	ref.Kind = ""
 	if _, isMirrorPod := pod.Annotations[corev1.MirrorPodAnnotationKey]; isMirrorPod {
 		ref.UID = types.UID(pod.Annotations[corev1.MirrorPodAnnotationKey])
 	}
-	events, _ := clientset.CoreV1().Events(util.Default).Search(scheme.Scheme, ref)
+	events, _ := clientset.CoreV1().Events(namespace).Search(scheme.Scheme, ref)
 	podDescInfo.PodName = podName
 	if len(events.Items) == 0 {
 		podDescInfo.PodEventsList = append(podDescInfo.PodEventsList,
@@ -452,34 +488,19 @@ func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string
 
 // Get resources by selector
 func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
-	config *rest.Config) (appInfo models.AppInfo, response map[string]string, err error) {
+	config *rest.Config, namespace string) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
-		if label.Kind == util.Pod || label.Kind == util.Deployment {
-			options := metav1.ListOptions{
-				LabelSelector: label.Selector,
-			}
-
-			pods, err := clientset.CoreV1().Pods(util.Default).List(context.Background(), options)
-			if err != nil {
-				return appInfo, nil, err
-			}
-			if len(pods.Items) == 0 {
-				response := map[string]string{"status": "not running"}
-				return appInfo, response, nil
-			}
-
-			podInfo, err := getPodInfo(pods, clientset, config)
-			if err != nil {
-				return appInfo, nil, err
-			}
-			appInfo.Pods = append(appInfo.Pods, podInfo)
+		appInfo, response, err = updatePodInfo(appInfo, &label, clientset, config, namespace)
+		if err != nil {
+			return appInfo, response, err
 		}
+
 		if label.Kind == util.Service {
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
 			}
-			serviceInfo, err := getServiceInfo(clientset, options)
+			serviceInfo, err := getServiceInfo(clientset, options, namespace)
 			if err != nil {
 				return appInfo, nil, err
 			}
@@ -490,8 +511,34 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	return appInfo, nil, nil
 }
 
-func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions) (serviceInfo models.ServiceInfo, err error) {
-	services, err := clientset.CoreV1().Services(util.Default).List(context.Background(), options)
+func updatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
+	config *rest.Config,
+	namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
+	if label.Kind == util.Pod || label.Kind == util.Deployment {
+		options := metav1.ListOptions{
+			LabelSelector: label.Selector,
+		}
+
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
+		if err != nil {
+			return appInfo, nil, err
+		}
+		if len(pods.Items) == 0 {
+			response = map[string]string{"status": "not running"}
+			return appInfo, response, nil
+		}
+
+		podInfo, err := getPodInfo(pods, clientset, config, namespace)
+		if err != nil {
+			return appInfo, nil, err
+		}
+		appInfo.Pods = append(appInfo.Pods, podInfo)
+	}
+	return appInfo, nil, nil
+}
+
+func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
+	services, err := clientset.CoreV1().Services(namespace).List(context.Background(), options)
 	if err != nil {
 		return serviceInfo, err
 	}
@@ -515,11 +562,11 @@ func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions)
 }
 
 // Get pod information
-func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config) (podInfo models.PodInfo, err error) {
+func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config, namespace string) (podInfo models.PodInfo, err error) {
 	var containerInfo models.ContainerInfo
 	for _, pod := range pods.Items {
 		podName := pod.GetObjectMeta().GetName()
-		podMetrics, err := getPodMetrics(config, podName)
+		podMetrics, err := getPodMetrics(config, podName, namespace)
 		if err != nil {
 			podInfo.PodName = podName
 			podInfo.PodStatus = string(pod.Status.Phase)
@@ -570,13 +617,13 @@ func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.C
 }
 
 // Get Pod metrics
-func getPodMetrics(config *rest.Config, podName string) (podMetrics *v1beta1.PodMetrics, err error) {
+func getPodMetrics(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
 	mc, err := metrics.NewForConfig(config)
 	if err != nil {
 		return podMetrics, err
 	}
 
-	podMetrics, err = mc.MetricsV1beta1().PodMetricses(metav1.NamespaceDefault).Get(context.Background(),
+	podMetrics, err = mc.MetricsV1beta1().PodMetricses(namespace).Get(context.Background(),
 		podName, metav1.GetOptions{})
 	if err != nil {
 		return podMetrics, err

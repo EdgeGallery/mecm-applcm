@@ -185,7 +185,7 @@ func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.Workloa
 	}
 
 	// Query Chart
-	r, err := client.WorkloadEvents(appInstanceRecord.WorkloadId)
+	r, err := client.WorkloadEvents(appInstanceRecord.WorkloadId, appInstanceRecord.Namespace)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.WorkloadEvents, "failed to get pod describe information")
 		return resp, err
@@ -235,7 +235,7 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 	}
 
 	// Query Chart
-	r, err := client.Query(appInstanceRecord.WorkloadId)
+	r, err := client.Query(appInstanceRecord.WorkloadId, appInstanceRecord.Namespace)
 	if err != nil {
 		log.Errorf("Chart not found for workloadId: %s. Err: %s", appInstanceRecord.WorkloadId, err)
 		s.displayResponseMsg(ctx, util.Query, "chart not found for workloadId")
@@ -285,7 +285,7 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 	}
 
 	// Uninstall chart
-	err = client.UnDeploy(appInstanceRecord.WorkloadId)
+	err = client.UnDeploy(appInstanceRecord.WorkloadId, appInstanceRecord.Namespace)
 	if err != nil {
 		log.Errorf("Chart not found for workloadId: %s. Err: %s", appInstanceRecord.WorkloadId, err)
 		s.displayResponseMsg(ctx, util.Terminate, "chart not found for workloadId")
@@ -341,13 +341,13 @@ func (s *ServerGRPC) Instantiate(ctx context.Context,
 		return resp, err
 	}
 
-	releaseName, err := client.Deploy(appPkgRecord, appInsId, ak, sk, s.db)
+	releaseName, namespace, err := client.Deploy(appPkgRecord, appInsId, ak, sk, s.db)
 	if err != nil {
 		log.Info("instantiation failed")
 		s.displayResponseMsg(ctx, util.Instantiate, "instantiation failed")
 		return resp, err
 	}
-	err = s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName)
+	err = s.insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName, namespace)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, "failed to insert or update app record")
 		return resp, err
@@ -699,11 +699,12 @@ func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigSe
 }
 
 // Insert or update application instance record
-func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName string) (err error) {
+func (s *ServerGRPC) insertOrUpdateAppInsRecord(appInsId, hostIp, releaseName, namespace string) (err error) {
 	appInfoRecord := &models.AppInstanceInfo{
 		AppInsId:   appInsId,
 		HostIp:     hostIp,
 		WorkloadId: releaseName,
+		Namespace:  namespace,
 	}
 	err = s.db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {

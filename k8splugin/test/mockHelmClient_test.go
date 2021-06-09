@@ -25,20 +25,20 @@ import (
 type mockedHelmClient struct {
 }
 
-func (hc *mockedHelmClient) Deploy(appPkgRec *models.AppPackage, appInsId string, ak string, sk string, db pgdb.Database) (string, error) {
-	return "testRelease", nil
+func (hc *mockedHelmClient) Deploy(appPkgRec *models.AppPackage, appInsId string, ak string, sk string, db pgdb.Database) (string, string, error) {
+	return "testRelease", "default", nil
 }
 
-func (hc *mockedHelmClient) UnDeploy(relName string) error {
+func (hc *mockedHelmClient) UnDeploy(relName, namespace string) error {
 	return nil
 }
 
-func (hc *mockedHelmClient) Query(relName string) (string, error) {
+func (hc *mockedHelmClient) Query(relName, namespace string) (string, error) {
 	// Output to be checked
 	return "{\"Output\":\"Success\"}", nil
 }
 
-func (hc *mockedHelmClient) WorkloadEvents(relName string) (string, error) {
+func (hc *mockedHelmClient) WorkloadEvents(relName, namespace string) (string, error) {
 	// Output to be checked
 	return "{\"Output\":\"Success\"}", nil
 }
