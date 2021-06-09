@@ -491,26 +491,11 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	config *rest.Config, namespace string) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
-		if label.Kind == util.Pod || label.Kind == util.Deployment {
-			options := metav1.ListOptions{
-				LabelSelector: label.Selector,
-			}
-
-			pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
-			if err != nil {
-				return appInfo, nil, err
-			}
-			if len(pods.Items) == 0 {
-				response := map[string]string{"status": "not running"}
-				return appInfo, response, nil
-			}
-
-			podInfo, err := getPodInfo(pods, clientset, config, namespace)
-			if err != nil {
-				return appInfo, nil, err
-			}
-			appInfo.Pods = append(appInfo.Pods, podInfo)
+		appInfo, response, err = updatePodInfo(appInfo, &label, clientset, config, namespace)
+		if err != nil {
+			return appInfo, response, err
 		}
+
 		if label.Kind == util.Service {
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
@@ -523,6 +508,32 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 		}
 	}
 
+	return appInfo, nil, nil
+}
+
+func updatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
+	config *rest.Config,
+	namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
+	if label.Kind == util.Pod || label.Kind == util.Deployment {
+		options := metav1.ListOptions{
+			LabelSelector: label.Selector,
+		}
+
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
+		if err != nil {
+			return appInfo, nil, err
+		}
+		if len(pods.Items) == 0 {
+			response = map[string]string{"status": "not running"}
+			return appInfo, response, nil
+		}
+
+		podInfo, err := getPodInfo(pods, clientset, config, namespace)
+		if err != nil {
+			return appInfo, nil, err
+		}
+		appInfo.Pods = append(appInfo.Pods, podInfo)
+	}
 	return appInfo, nil, nil
 }
 

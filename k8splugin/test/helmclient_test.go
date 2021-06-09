@@ -46,7 +46,9 @@ var (
 	packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
 	relName               = "example"
 	addValues             = "AddValues"
-	configFile                = "/usr/app/artificats/config/"
+	configFile            = "/usr/app/artificats/config/"
+	namespace             = "default"
+	failedToGetClientSet  = "failed to get clientset"
 )
 
 func testDeploySuccess(t *testing.T) {
@@ -62,7 +64,7 @@ func testDeploySuccess(t *testing.T) {
 		go func() {
 			// do nothing
 		}()
-		return "test", "default", nil
+		return "test", namespace, nil
 	})
 	defer patch2.Reset()
 
@@ -87,7 +89,7 @@ func testDeploySuccess(t *testing.T) {
 		// do nothing
 
 		var cs *kubernetes.Clientset
-		return cs, errors.New("failed to get clientset")
+		return cs, errors.New(failedToGetClientSet)
 	})
 	defer patch6.Reset()
 
@@ -126,7 +128,7 @@ func testDeployFailure(t *testing.T) {
 			go func() {
 				// do nothing
 			}()
-			return "test", "default", nil
+			return "test", namespace, nil
 		})
 	defer patch2.Reset()
 
@@ -173,7 +175,7 @@ func testUnDeploySuccess(t *testing.T) {
 			go func() {
 				// do nothing
 			}()
-			return "test", "default", nil
+			return "test", namespace, nil
 		})
 	defer patch2.Reset()
 
@@ -209,13 +211,13 @@ func testUnDeploySuccess(t *testing.T) {
 		// do nothing
 
 		var cs *kubernetes.Clientset
-		return cs, errors.New("failed to get clientset")
+		return cs, errors.New(failedToGetClientSet)
 	})
 	defer patch6.Reset()
 
 
-	result := client.UnDeploy(relName, "default")
-	assert.Equal(t, result.Error(), "failed to get clientset", "TestUnDeploySuccess execution result")
+	result := client.UnDeploy(relName, namespace)
+	assert.Equal(t, result.Error(), failedToGetClientSet, "TestUnDeploySuccess execution result")
 }
 
 func testWorkloadEvents(t *testing.T) {
@@ -254,7 +256,7 @@ func testWorkloadEvents(t *testing.T) {
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	result, _ := client.WorkloadEvents(relName, "default")
+	result, _ := client.WorkloadEvents(relName, namespace)
 	assert.Equal(t, "{\"pods\":null}", result, "Test workload events execution result")
 }
 
@@ -294,6 +296,6 @@ func testQueryInfo(t *testing.T) {
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	result, _ := client.Query(relName, "default")
+	result, _ := client.Query(relName, namespace)
 	assert.Equal(t, "{\"pods\":null,\"services\":null}", result, "Test query info execution result")
 }
