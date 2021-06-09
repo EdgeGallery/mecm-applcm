@@ -23,8 +23,8 @@ import (
 
 // Client APIs
 type ClientIntf interface {
-	Deploy(appPkgRecord *models.AppPackage, appInsId string, ak string, sk string, db pgdb.Database) (string, error)
-	UnDeploy(relName string) error
-	Query(relName string) (string, error)
-	WorkloadEvents(relName string) (string, error)
+	Deploy(appPkgRecord *models.AppPackage, appInsId string, ak string, sk string, db pgdb.Database) (string, string, error)
+	UnDeploy(relName, namespace string) error
+	Query(relName, namespace string) (string, error)
+	WorkloadEvents(relName, namespace string) (string, error)
 }

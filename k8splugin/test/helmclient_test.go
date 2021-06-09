@@ -26,6 +26,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8splugin/config"
 	"k8splugin/models"
@@ -35,7 +36,6 @@ import (
 	"os"
 	"reflect"
 	"testing"
-	restclient "k8s.io/client-go/rest"
 )
 var (
 	ipAddFormatter = "%d.%d.%d.%d"
@@ -46,7 +46,7 @@ var (
 	packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
 	relName               = "example"
 	addValues             = "AddValues"
-	configFile                = "/usr/app/config/"
+	configFile                = "/usr/app/artificats/config/"
 )
 
 func testDeploySuccess(t *testing.T) {
@@ -58,11 +58,11 @@ func testDeploySuccess(t *testing.T) {
 
 	var c *config.AppAuthConfigBuilder
 	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), addValues,
-		func(*config.AppAuthConfigBuilder, *os.File) (string, error) {
+		func(*config.AppAuthConfigBuilder, *os.File) (string, string, error) {
 		go func() {
 			// do nothing
 		}()
-		return "test", nil
+		return "test", "default", nil
 	})
 	defer patch2.Reset()
 
@@ -73,6 +73,23 @@ func testDeploySuccess(t *testing.T) {
 		return 	c, nil
 	})
 	defer patch3.Reset()
+
+
+	patch5 := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(_ string, _ string) (*restclient.Config, error) {
+		// do nothing
+
+		kubeconfig, _ := restclient.InClusterConfig()
+		return kubeconfig, nil
+	})
+	defer patch5.Reset()
+
+	patch6 := gomonkey.ApplyFunc(kubernetes.NewForConfig, func(*restclient.Config) (*kubernetes.Clientset, error) {
+		// do nothing
+
+		var cs *kubernetes.Clientset
+		return cs, errors.New("failed to get clientset")
+	})
+	defer patch6.Reset()
 
 	var i *action.Install
 	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(i), "Run",
@@ -90,7 +107,7 @@ func testDeploySuccess(t *testing.T) {
 		HostIp: hostIpAddress,
 		PackageId: packageId,
 	}
-	result, _ := client.Deploy(appPkgRecord,  appInstanceIdentifier,  ak,  sk,
+	result, _, _ := client.Deploy(appPkgRecord,  appInstanceIdentifier,  ak,  sk,
 		&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }
@@ -105,11 +122,11 @@ func testDeployFailure(t *testing.T) {
 
 	var c *config.AppAuthConfigBuilder
 	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), addValues,
-		func(*config.AppAuthConfigBuilder, *os.File) (string, error) {
+		func(*config.AppAuthConfigBuilder, *os.File) (string, string, error) {
 			go func() {
 				// do nothing
 			}()
-			return "test", nil
+			return "test", "default", nil
 		})
 	defer patch2.Reset()
 
@@ -137,7 +154,7 @@ func testDeployFailure(t *testing.T) {
 		HostIp: hostIpAddress,
 		PackageId: packageId,
 	}
-	result, _ := client.Deploy(appPkgRec,  appInstanceIdentifier,  ak,  sk,
+	result, _, _ := client.Deploy(appPkgRec,  appInstanceIdentifier,  ak,  sk,
 		&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }
@@ -152,11 +169,11 @@ func testUnDeploySuccess(t *testing.T) {
 
 	var c *config.AppAuthConfigBuilder
 	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), addValues,
-		func(*config.AppAuthConfigBuilder, *os.File) (string, error) {
+		func(*config.AppAuthConfigBuilder, *os.File) (string, string, error) {
 			go func() {
 				// do nothing
 			}()
-			return "test", nil
+			return "test", "default", nil
 		})
 	defer patch2.Reset()
 
@@ -178,11 +195,27 @@ func testUnDeploySuccess(t *testing.T) {
 		})
 	defer patch4.Reset()
 
-
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 
-	result := client.UnDeploy(relName)
-	assert.Nil(t, result, "TestUnDeploySuccess execution result")
+	patch5 := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(_ string, _ string) (*restclient.Config, error) {
+		// do nothing
+
+		kubeconfig, _ := restclient.InClusterConfig()
+		return kubeconfig, nil
+	})
+	defer patch5.Reset()
+
+	patch6 := gomonkey.ApplyFunc(kubernetes.NewForConfig, func(*restclient.Config) (*kubernetes.Clientset, error) {
+		// do nothing
+
+		var cs *kubernetes.Clientset
+		return cs, errors.New("failed to get clientset")
+	})
+	defer patch6.Reset()
+
+
+	result := client.UnDeploy(relName, "default")
+	assert.Equal(t, result.Error(), "failed to get clientset", "TestUnDeploySuccess execution result")
 }
 
 func testWorkloadEvents(t *testing.T) {
@@ -221,7 +254,7 @@ func testWorkloadEvents(t *testing.T) {
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	result, _ := client.WorkloadEvents(relName)
+	result, _ := client.WorkloadEvents(relName, "default")
 	assert.Equal(t, "{\"pods\":null}", result, "Test workload events execution result")
 }
 
@@ -261,6 +294,6 @@ func testQueryInfo(t *testing.T) {
 	client, _ := adapter.NewHelmClient(hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	result, _ := client.Query(relName)
+	result, _ := client.Query(relName, "default")
 	assert.Equal(t, "{\"pods\":null,\"services\":null}", result, "Test query info execution result")
 }

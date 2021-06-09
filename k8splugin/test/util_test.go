@@ -177,7 +177,7 @@ func TestAddValues(t *testing.T)  {
 	}
 	defer tarFile.Close()
 	appAuthCfg := config.NewBuildAppAuthConfig(appInstanceIdentifier, ak, sk)
-	dirName, err := appAuthCfg.AddValues(tarFile)
+	dirName, _, err := appAuthCfg.AddValues(tarFile)
 	if err != nil {
 		return
 	}
