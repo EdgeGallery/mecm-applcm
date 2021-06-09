@@ -128,6 +128,7 @@ def _do_upload_image(image_id, host_ip, file_path):
     except Exception as e:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED
+        commit()
         logger.error(e, exc_info=True)
 
 
@@ -148,19 +149,6 @@ def add_upload_image_task(image_id, host_ip, file_path):
 
 
 @db_session
-def _do_import_image(image_id, host_ip, uri):
-    """
-    加载远程镜像
-    """
-    glance = openstack_utils.create_glance_client(host_ip)
-    try:
-        glance.images.image_import(image_id, method='web-download', uri=uri)
-    except Exception as e:
-        image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-        image.status = utils.KILLED
-        logger.error(e, exc_info=True)
-
-
 def add_import_image_task(image_id, host_ip, uri):
     """
     添加加载远程镜像任务
@@ -172,6 +160,11 @@ def add_import_image_task(image_id, host_ip, uri):
     Returns:
 
     """
-    future = upload_thread_pool.submit(_do_import_image, image_id, host_ip, uri)
-    start_check_image_status(image_id, host_ip)
-    return future
+    glance = openstack_utils.create_glance_client(host_ip)
+    try:
+        glance.images.image_import(image_id, method='web-download', uri=uri)
+    except Exception as e:
+        image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+        image.status = utils.KILLED
+        commit()
+        logger.error(e, exc_info=True)
