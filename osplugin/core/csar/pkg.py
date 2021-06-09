@@ -204,7 +204,7 @@ class CsarPkg:
                     if not utils.exists_path(img_tmp_dir):
                         utils.unzip(zip_file_path, img_tmp_dir)
                     add_upload_image_task(image_id, host_ip, img_tmp_file)\
-                        #.add_done_callback(lambda future: utils.delete_dir(img_tmp_file))
+                        .add_done_callback(lambda future: utils.delete_dir(img_tmp_file))
 
         self.image_id_map = image_id_map
 
