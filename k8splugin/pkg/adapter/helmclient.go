@@ -137,28 +137,31 @@ func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk s
 		return "", "", err
 	}
 
-	// uses the current context in kubeconfig
-	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
-	if err != nil {
-		return "", "", err
-	}
+	if namespace != util.Default {
 
-	clientSet, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		log.Error("failed to get clientset")
-		return "", "", err
-	}
+		// uses the current context in kubeconfig
+		kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+		if err != nil {
+			return "", "", err
+		}
 
-	nsName := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: namespace,
-		},
-	}
+		clientSet, err := kubernetes.NewForConfig(kubeConfig)
+		if err != nil {
+			log.Error("failed to get clientset")
+			return "", "", err
+		}
 
-	_, err = clientSet.CoreV1().Namespaces().Create(context.Background(), nsName, metav1.CreateOptions{})
-	if err != nil {
-		log.Error("failed to create namespace")
-		return "", "", err
+		nsName := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespace,
+			},
+		}
+
+		_, err = clientSet.CoreV1().Namespaces().Create(context.Background(), nsName, metav1.CreateOptions{})
+		if err != nil {
+			log.Error("failed to create namespace")
+			return "", "", err
+		}
 	}
 
 	// Release name will be taken from the name in chart's metadata
@@ -222,22 +225,24 @@ func (hc *HelmClient) UnDeploy(relName, namespace string) error {
 		return err
 	}
 
-	// uses the current context in kubeconfig
-	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
-	if err != nil {
-		return err
-	}
+	if namespace != util.Default {
+		// uses the current context in kubeconfig
+		kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+		if err != nil {
+			return err
+		}
 
-	clientSet, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		log.Error("failed to get clientset")
-		return err
-	}
+		clientSet, err := kubernetes.NewForConfig(kubeConfig)
+		if err != nil {
+			log.Error("failed to get clientset")
+			return err
+		}
 
-	err = clientSet.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
-	if err != nil {
-		log.Error("failed to create namespace")
-		return err
+		err = clientSet.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
+		if err != nil {
+			log.Error("failed to create namespace")
+			return err
+		}
 	}
 	log.Infof("Successfully uninstalled chart. Response Info: %s", res.Info)
 	return nil
