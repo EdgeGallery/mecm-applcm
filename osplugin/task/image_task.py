@@ -56,6 +56,8 @@ def _check_image_status(image_id, host_ip):
         if not image_info:
             logger.debug(f'{image_id} not in {host_ip}')
             return
+        if image_info.status == utils.KILLED:
+            return
         glance = openstack_utils.create_glance_client(host_ip)
         image = glance.images.get(image_id)
     except Exception as exception:
@@ -105,6 +107,7 @@ def create_image_record(sw_image, app_package_id, host_ip):
     return image['id']
 
 
+@db_session
 def _do_upload_image(image_id, host_ip, file_path):
     """
     上传镜像
@@ -117,10 +120,16 @@ def _do_upload_image(image_id, host_ip, file_path):
 
     """
     glance = openstack_utils.create_glance_client(host_ip)
-    with open(file_path, 'rb') as image_data:
-        logger.debug(f'start upload image {image_id}')
-        glance.images.upload(image_id, image_data=image_data)
-        logger.debug(f'finish upload image {image_id}')
+    try:
+        with open(file_path, 'rb') as image_data:
+            logger.debug(f'start upload image {image_id}')
+            glance.images.upload(image_id, image_data=image_data)
+            logger.debug(f'finish upload image {image_id}')
+    except Exception as e:
+        image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+        image.status = utils.KILLED
+        commit()
+        logger.error(e, exc_info=True)
 
 
 def add_upload_image_task(image_id, host_ip, file_path):
@@ -139,9 +148,10 @@ def add_upload_image_task(image_id, host_ip, file_path):
     return future
 
 
+@db_session
 def add_import_image_task(image_id, host_ip, uri):
     """
-    加载远程镜像
+    添加加载远程镜像任务
     Args:
         image_id:
         host_ip:
@@ -151,5 +161,10 @@ def add_import_image_task(image_id, host_ip, uri):
 
     """
     glance = openstack_utils.create_glance_client(host_ip)
-    glance.images.image_import(image_id, method='web-download', uri=uri)
-    start_check_image_status(image_id, host_ip)
+    try:
+        glance.images.image_import(image_id, method='web-download', uri=uri)
+    except Exception as e:
+        image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+        image.status = utils.KILLED
+        commit()
+        logger.error(e, exc_info=True)

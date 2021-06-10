@@ -24,7 +24,7 @@ import uuid
 import glanceclient.exc
 from heatclient.common import template_utils
 from heatclient.exc import HTTPNotFound
-from pony.orm import db_session, commit, rollback
+from pony.orm import db_session, rollback, commit
 
 import utils
 from core import openstack_utils
@@ -117,13 +117,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_package_id = parameters.app_package_id
         if app_package_id is None:
-            LOG.debug('appPackageId is required')
+            LOG.info('appPackageId is required')
             parameters.delete_tmp()
             return res
 
         app_pkg_mapper = AppPkgMapper.get(app_package_id=app_package_id, host_ip=host_ip)
         if app_pkg_mapper is not None:
-            LOG.debug('app package exist')
+            LOG.info('app package exist')
             parameters.delete_tmp()
             return res
         AppPkgMapper(
@@ -182,12 +182,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 glance.images.delete(image.image_id)
             except glanceclient.exc.HTTPNotFound:
                 logger.debug(f'skip delete image {image.image_id}')
-        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         utils.delete_dir(app_package_path)
 
         res.status = utils.SUCCESS
+        commit()
         return res
 
     @db_session
@@ -255,8 +255,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                      host_ip=host_ip,
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
-        LOG.debug('更新数据库')
         commit()
+        LOG.debug('更新数据库')
 
         LOG.debug('开始更新状态定时任务')
         start_check_stack_status(app_instance_id=app_instance_id)
@@ -304,8 +304,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         app_ins_mapper.operational_status = utils.TERMINATING
-        LOG.debug('更新数据库状态')
         commit()
+        LOG.debug('更新数据库状态')
 
         LOG.debug('开始状态更新定时任务')
         start_check_stack_status(app_instance_id=app_instance_id)

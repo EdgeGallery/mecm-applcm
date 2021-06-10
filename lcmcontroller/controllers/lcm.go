@@ -431,11 +431,17 @@ func (c *LcmController) Instantiate() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, _ = adapter.Instantiate(tenantId, accessToken, appInsId, req)
+	err, status := adapter.Instantiate(tenantId, accessToken, appInsId, req)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	if status == util.Failure {
+		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToInstantiate)
+		err = errors.New(util.FailedToInstantiate)
 		return
 	}
 
@@ -2330,11 +2336,16 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
 
 		adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-		_, err = adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
+		status, err := adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
 		//c.deletePackage(path.Dir(pkgFilePath))
 		if err != nil {
 			c.HandleLoggingForFailure(clientIp, err.Error())
 			err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")
+			return err
+		}
+		if status == util.Failure {
+			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToUploadToPlugin)
+			err = errors.New(util.FailedToUploadToPlugin)
 			return err
 		}
 
