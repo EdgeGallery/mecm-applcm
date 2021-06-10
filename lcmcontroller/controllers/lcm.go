@@ -1862,8 +1862,7 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 	//remove package directory
 	err := os.RemoveAll(appPkgPath+"/APPD")
 	if err != nil {
-		log.Error("failed to delete application APPD file")
-		return errors.New("ailed to delete application APPD file")
+		log.Error("failed to delete application APPD file or APPD is not exist.")
 	}
 	err = os.RemoveAll(appPkgPath)
 	if err != nil {
