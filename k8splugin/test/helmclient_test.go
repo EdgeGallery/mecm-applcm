@@ -216,7 +216,7 @@ func testUnDeploySuccess(t *testing.T) {
 	defer patch6.Reset()
 
 
-	result := client.UnDeploy(relName, namespace)
+	result := client.UnDeploy(relName, "test")
 	assert.Equal(t, result.Error(), failedToGetClientSet, "TestUnDeploySuccess execution result")
 }
 
