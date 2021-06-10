@@ -1856,12 +1856,14 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 	//remove package directory
 	err := os.RemoveAll(appPkgPath)
 	if err != nil {
+		log.Error("failed to delete application package file")
 		return errors.New("failed to delete application package file")
 	}
 
 	tenantDir, err := os.Open(tenantPath)
 	if err != nil {
-		return errors.New("failed to delete application package")
+		log.Error("failed to open tenant file")
+		return errors.New("failed to open tenant file")
 	}
 	defer tenantDir.Close()
 
@@ -1870,7 +1872,8 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 	if err == io.EOF {
 		err := os.Remove(tenantPath)
 		if err != nil {
-			return errors.New("failed to delete application package")
+			log.Error("failed to remove tenant directory")
+			return errors.New("failed to remove tenant directory")
 		}
 		return nil
 	}
