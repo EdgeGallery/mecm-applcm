@@ -1123,6 +1123,7 @@ func (c *ServerGRPC) extractCsarPackage(packagePath string) (string, error) {
 	if len(zipReader.File) > util.TooManyFile {
 		return "", errors.New("Too many files contains in zip file")
 	}
+	defer zipReader.Close()
 	var totalWrote int64
 	packageDir := path.Dir(packagePath)
 	err := os.MkdirAll(packageDir, 0750)
