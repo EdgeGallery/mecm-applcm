@@ -132,7 +132,6 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         res_dir = {
             "imageId": vm_image_info.image_id,
             "imageName": vm_image_info.image_name,
-            "appInstanceId": vm_image_info.app_instance_id,
             "status": vm_image_info.status
         }
         if vm_image_info.status == utils.ACTIVE:
