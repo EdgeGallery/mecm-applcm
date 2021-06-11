@@ -37,7 +37,7 @@ from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
     RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
-    WorkloadEventsResponse
+    WorkloadEventsResponse, InstantiateResponse
 from task.app_instance_task import start_check_stack_status
 from task.app_package_task import start_check_package_status
 
@@ -199,7 +199,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :return:
         """
         LOG.info('receive instantiate msg...')
-        res = TerminateResponse(status=utils.FAILURE)
+        res = InstantiateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request)
 
