@@ -136,7 +136,9 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         }
         if vm_image_info.status == utils.ACTIVE:
             res_dir['checksum'] = vm_image_info.checksum
-            res_dir['sumChunkNum'] = get_chunk_num(size=vm_image_info.image_size, chunk_size=int(config.chunk_size))
+            res_dir['sumChunkNum'] = get_chunk_num(
+                size=vm_image_info.image_size,
+                chunk_size=int(config.chunk_size))
             res_dir['chunkSize'] = config.chunk_size
         res.response = json.dumps(res_dir)
 
