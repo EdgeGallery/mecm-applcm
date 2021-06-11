@@ -154,7 +154,7 @@ const (
 
 	//mep service calling
 	ErrCallFromMep  string = "failed to execute rest calling, check if mep service is ready."
-	MepServiceQuery string = "https://mep-mm5.mep:80/mep/mec_service_mgmt/v1/services"
+	MepServiceQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/services"
 	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
 	MepSubscribeStatistic string = "https://mep-mm5.mep:80/mep/service_govern/v1/subscribe_statistic"
 )
