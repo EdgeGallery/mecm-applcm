@@ -237,6 +237,9 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         for key in template['parameters'].keys():
             if key in parameter.parameters:
                 parameters[key] = parameter.parameters[key]
+        if not parameter.ak_sk_lcm_gen and 'ak' in parameters and 'sk' in parameters:
+            parameters['ak'] = ''
+            parameters['sk'] = ''
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
