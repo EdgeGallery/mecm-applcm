@@ -354,7 +354,7 @@ class NovaServer(HOTBase):
         self._check_image(image_id_map)
 
         # user data
-        self._check_user_data()
+        self._check_user_data(kwargs['topology_template']['inputs'])
 
         # network
         self.properties['networks'] = []
