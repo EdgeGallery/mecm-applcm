@@ -168,3 +168,4 @@ def add_import_image_task(image_id, host_ip, uri):
         image.status = utils.KILLED
         commit()
         logger.error(e, exc_info=True)
+    start_check_image_status(image_id, host_ip)
