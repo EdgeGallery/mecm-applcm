@@ -2,6 +2,9 @@ import json
 
 
 class SwImageDescription:
+    """
+    镜像描述，从sw_image_desc.json读取并解析
+    """
     def __init__(self, json_data):
         self.id = json_data.get('id', None)
         self.name = json_data['name']
@@ -21,6 +24,11 @@ class SwImageDescription:
 
 
 def get_sw_image_desc_list(path):
+    """
+    读取镜像描述文件
+    param: path 镜像描述文件路径
+    return: 镜像描述文件列表
+    """
     result = []
     with open(path, 'r') as sw_image_desc_json_file:
         json_list = json.loads(sw_image_desc_json_file.read())

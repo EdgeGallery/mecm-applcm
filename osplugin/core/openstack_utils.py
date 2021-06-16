@@ -508,10 +508,36 @@ class SecurityGroup(HOTBase):
                         'get_resource': self.name
                     }
                 ]
-        hot_file['resources'][self.name + 'DefaultIngressRule'] = {
+        hot_file['resources'][self.name + 'DefaultTcpRule'] = {
             'type': 'OS::Neutron::SecurityGroupRule',
             'properties': {
-                'protocol': 0,
+                'protocol': 'tcp',
+                'remote_group': {
+                    'get_resource': self.name
+                },
+                'security_group': {
+                    'get_resource': self.name
+                }
+            }
+        }
+
+        hot_file['resources'][self.name + 'DefaultUdpRule'] = {
+            'type': 'OS::Neutron::SecurityGroupRule',
+            'properties': {
+                'protocol': 'udp',
+                'remote_group': {
+                    'get_resource': self.name
+                },
+                'security_group': {
+                    'get_resource': self.name
+                }
+            }
+        }
+
+        hot_file['resources'][self.name + 'DefaultIcmpRule'] = {
+            'type': 'OS::Neutron::SecurityGroupRule',
+            'properties': {
+                'protocol': 'icmp',
                 'remote_group': {
                     'get_resource': self.name
                 },

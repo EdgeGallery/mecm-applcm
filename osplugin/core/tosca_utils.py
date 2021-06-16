@@ -21,6 +21,9 @@ APP_SECURITY_GROUP_NAME = 'DefaultSecurityGroup'
 
 
 def app_security_group():
+    """
+    生成默认安全组模板，默认允许所有流量出去
+    """
     return {
         'type': 'tosca.groups.nfv.PortSecurityGroup',
         'properties': {
@@ -32,12 +35,36 @@ def app_security_group():
 
 
 def n6_rule(target):
+    """
+    生产n6网络规则模板，允许ue_segment网段的源地址流量进入
+    param: target 目标安全组
+    """
     return {
-        'n6_rule': {
+        'n6_rule_tcp': {
             'type': 'tosca.policies.nfv.SecurityGroupRule',
             'targets': [target],
             'properties': {
-                'protocol': 0,
+                'protocol': 'tcp',
+                'remote_ip_prefix': {
+                    'get_input': 'ue_ip_segment'
+                }
+            }
+        },
+        'n6_rule_udp': {
+            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'targets': [target],
+            'properties': {
+                'protocol': 'udp',
+                'remote_ip_prefix': {
+                    'get_input': 'ue_ip_segment'
+                }
+            }
+        },
+        'n6_rule_icmp': {
+            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'targets': [target],
+            'properties': {
+                'protocol': 'icmp',
                 'remote_ip_prefix': {
                     'get_input': 'ue_ip_segment'
                 }
@@ -47,12 +74,45 @@ def n6_rule(target):
 
 
 def mp1_rule(target):
+    """
+    生成mp1网络规则模板，允许mep的流量进入
+    """
     return {
-        'mp1_rule': {
+        'mp1_rule_tcp': {
             'type': 'tosca.policies.nfv.SecurityGroupRule',
             'targets': [target],
             'properties': {
-                'protocol': 0,
+                'protocol': 'tcp',
+                'remote_ip_prefix': {
+                    'concat': [
+                        {
+                            'get_input': 'mep_ip'
+                        },
+                        '/32'
+                    ]
+                }
+            }
+        },
+        'mp1_rule_udp': {
+            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'targets': [target],
+            'properties': {
+                'protocol': 'udp',
+                'remote_ip_prefix': {
+                    'concat': [
+                        {
+                            'get_input': 'mep_ip'
+                        },
+                        '/32'
+                    ]
+                }
+            }
+        },
+        'mp1_rule_icmp': {
+            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'targets': [target],
+            'properties': {
+                'protocol': 'icmp',
                 'remote_ip_prefix': {
                     'concat': [
                         {

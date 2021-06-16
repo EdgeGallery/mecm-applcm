@@ -56,6 +56,9 @@ def get_hot_yaml_path(app_package_id, unzip_pkg_path):
 
 
 def _set_default_security_group(appd):
+    """
+    注入默认安全组和安全组规则
+    """
     topology_template = appd['topology_template']
     if 'ue_ip_segment' not in topology_template['inputs'] \
             and 'mep_ip' not in topology_template['inputs']:
@@ -147,6 +150,9 @@ class CsarPkg:
 
     @db_session
     def check_image(self, host_ip):
+        """
+        根据sw_image_desc.json检查镜像，如果不存在，根据类型创建镜像
+        """
         image_id_map = {}
         for sw_image_desc in self.sw_image_desc_list:
             image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc.checksum)
