@@ -182,12 +182,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 glance.images.delete(image.image_id)
             except glanceclient.exc.HTTPNotFound:
                 logger.debug(f'skip delete image {image.image_id}')
+        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         utils.delete_dir(app_package_path)
 
         res.status = utils.SUCCESS
-        commit()
+
         return res
 
     @db_session
