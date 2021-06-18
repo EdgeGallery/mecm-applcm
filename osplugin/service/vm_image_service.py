@@ -20,6 +20,7 @@ import json
 import time
 from io import BytesIO
 
+from novaclient.exceptions import NotFound
 from pony.orm import db_session, commit
 
 import config
@@ -91,9 +92,14 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         """
         创建虚拟机快照
         """
+        LOG.info("receive create vm image msg...")
         res = CreateVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
-        if not host_ip:
+        if host_ip is None:
+            LOG.info('hostIp not match ipv4')
+            return res
+        if request.vmId is None or request.vmId == '':
+            LOG.info("vmId is required")
             return res
 
         try:
@@ -113,6 +119,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         commit()
         start_check_image_status(image_id, host_ip)
         res.response = json.dumps({'imageId': image_id})
+        LOG.info('create image record created, fetching image data')
         return res
 
     @db_session
@@ -120,9 +127,11 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         """
         查询镜像信息
         """
+        LOG.info("receive query vm image msg...")
         res = QueryVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
+            LOG.info('hostIp not match ipv4')
             return res
         vm_image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
         if not vm_image_info:
@@ -141,7 +150,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
                 chunk_size=int(config.chunk_size))
             res_dir['chunkSize'] = config.chunk_size
         res.response = json.dumps(res_dir)
-
+        LOG.info("query image success")
         return res
 
     @db_session
@@ -149,12 +158,14 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         """
         删除镜像
         """
+        LOG.info("receive delete vm image msg...")
         res = DeleteVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
-        if not host_ip:
+        if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             return res
-        vm_info = VmImageInfoMapper.get(image_id=request.imageId)
-        if not vm_info:
+        vm_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
+        if vm_info is None:
             LOG.info("image not found! image_id: %s", request.imageId)
             return res
         glance_client = create_glance_client(host_ip)
@@ -166,16 +177,19 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         vm_info.delete()
         commit()
         res.response = '{"code": 200, "msg": "Ok"}'
+        LOG.info(f"delete image {request.imageId} success")
         return res
 
     def downloadVmImage(self, request, context):
         """
         下载镜像
         """
+        LOG.info("receive download vm image msg...")
         LOG.debug("download image chunk %s starting...", request.chunkNum)
 
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
+            LOG.info('hostIp not match ipv4')
             raise ParamNotValid("host ip is null...")
         glance_client = create_glance_client(host_ip)
 
@@ -198,3 +212,5 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             send_size += buf.tell()
             LOG.debug('all bytes send, size %s', send_size)
         buf.close()
+        LOG.debug("finished download image")
+        LOG.info('download image success')

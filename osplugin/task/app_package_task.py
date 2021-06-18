@@ -28,7 +28,7 @@ from task import check_thread_pool
 
 def start_check_package_status(package_id, host_ip):
     """
-
+    新增包状态检查job
     Args:
         package_id:
         host_ip:
@@ -41,23 +41,34 @@ def start_check_package_status(package_id, host_ip):
 
 @db_session
 def _check_package_status(package_id, host_ip):
+    """
+    检查包状态
+    Args:
+        package_id:
+        host_ip:
+
+    Returns:
+
+    """
     time.sleep(5)
     try:
         package = AppPkgMapper.get(app_package_id=package_id, host_ip=host_ip)
         if package is None:
+            logger.debug(f"package record {package_id} not found")
             return
         image_infos = VmImageInfoMapper.select(app_package_id=package_id, host_ip=host_ip)
     except Exception as exception:
         logger.error(exception, exc_info=True)
         return
     for image_info in image_infos:
-        if image_info.status != utils.ACTIVE:
-            if image_info.status == utils.KILLED:
-                package.status = utils.FAILURE
-            else:
-                package.status = utils.SAVING
-                start_check_package_status(package_id, host_ip)
-            commit()
-            return
+        if image_info.status == utils.ACTIVE:
+            continue
+        elif image_info.status == utils.KILLED:
+            package.status = utils.FAILURE
+        else:
+            package.status = utils.SAVING
+            start_check_package_status(package_id, host_ip)
+        commit()
+        return
     package.status = utils.ACTIVE
     commit()
