@@ -37,7 +37,7 @@ from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
     RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
-    WorkloadEventsResponse
+    WorkloadEventsResponse, InstantiateResponse
 from task.app_instance_task import start_check_stack_status
 from task.app_package_task import start_check_package_status
 
@@ -54,8 +54,6 @@ def validate_input_params(param):
     """
     access_token = param.access_token
     host_ip = param.host_ip
-    LOG.debug('param hostIp: %s', host_ip)
-    LOG.debug('param accessToken: %s', access_token)
     if not utils.validate_access_token(access_token):
         return None
     if not utils.validate_ipv4_address(host_ip):
@@ -112,6 +110,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(parameters)
         if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             parameters.delete_tmp()
             return res
 
@@ -142,6 +141,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             pkg.translate()
             start_check_package_status(app_package_id, host_ip)
             res.status = utils.SUCCESS
+            LOG.info('upload and analyze app package success, start fetch image')
         except Exception as exception:
             rollback()
             LOG.error(exception, exc_info=True)
@@ -163,10 +163,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             return res
 
         app_package_id = request.appPackageId
-        if not app_package_id:
+        if app_package_id is None or app_package_id == '':
+            LOG.info("appPackageId required")
             return res
 
         app_package_info = AppPkgMapper.get(app_package_id=app_package_id,
@@ -182,12 +184,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 glance.images.delete(image.image_id)
             except glanceclient.exc.HTTPNotFound:
                 logger.debug(f'skip delete image {image.image_id}')
+        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         utils.delete_dir(app_package_path)
 
         res.status = utils.SUCCESS
-        commit()
+        LOG.info('delete app package success')
         return res
 
     @db_session
@@ -199,18 +202,20 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :return:
         """
         LOG.info('receive instantiate msg...')
-        res = TerminateResponse(status=utils.FAILURE)
+        res = InstantiateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request)
 
         LOG.debug('校验access token, host ip')
         host_ip = validate_input_params(parameter)
         if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             return res
 
         LOG.debug('获取实例ID')
         app_instance_id = parameter.app_instance_id
-        if app_instance_id is None:
+        if app_instance_id is None or app_instance_id == '':
+            LOG.info("appInstanceId is required")
             return res
 
         LOG.debug('查询数据库是否存在相同记录')
@@ -229,6 +234,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         hot_yaml_path = get_hot_yaml_path(parameter.app_package_id,
                                           parameter.app_package_path)
         if hot_yaml_path is None:
+            LOG.info("get hot yaml path failure, app package might not active")
             return res
 
         LOG.debug('构建heat参数')
@@ -237,6 +243,9 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         for key in template['parameters'].keys():
             if key in parameter.parameters:
                 parameters[key] = parameter.parameters[key]
+        if not parameter.ak_sk_lcm_gen and 'ak' in parameters and 'sk' in parameters:
+            parameters['ak'] = ''
+            parameters['sk'] = ''
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
@@ -279,11 +288,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.debug('校验token, host ip')
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             return res
 
         LOG.debug('获取实例ID')
         app_instance_id = request.appInstanceId
-        if app_instance_id is None:
+        if app_instance_id is None or app_instance_id == '':
+            LOG.info("appInstanceId is required")
             return res
 
         LOG.debug('查询数据库')
@@ -327,11 +338,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             res.response = '{"code":400}'
             return res
 
         app_instance_id = request.appInstanceId
-        if app_instance_id is None:
+        if app_instance_id is None or app_instance_id == '':
+            LOG.info("appInstanceId is required")
             res.response = '{"code":400}'
             return res
 
@@ -347,6 +360,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 'data': app_ins_mapper.operational_status
             }
             res.response = json.dumps(res_data)
+            LOG.info('query app instance info success')
             return res
 
         heat = openstack_utils.create_heat_client(host_ip)
@@ -370,10 +384,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             return res
 
         app_instance_id = request.appInstanceId
-        if app_instance_id is None:
+        if app_instance_id is None or app_instance_id == '':
+            LOG.info("appInstanceId is required")
             return res
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
@@ -410,6 +426,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         for key, value in vm_describe_info.items():
             response_data.append(value)
         res.response = json.dumps(response_data)
+        LOG.info('query workload events success')
         return res
 
     def uploadConfig(self, request_iterator, context):
@@ -426,10 +443,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(parameter)
         if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             return res
 
         config_file = parameter.config_file
         if config_file is None:
+            LOG.info('configFile is required')
             return res
 
         config_path = utils.RC_FILE_DIR + '/' + host_ip
@@ -442,7 +461,9 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             res.status = utils.SUCCESS
         except Exception as exception:
             LOG.error(exception, exc_info=True)
+            return res
 
+        LOG.info('upload host configuration success')
         return res
 
     def removeConfig(self, request, context):
@@ -456,20 +477,20 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res = RemoveCfgResponse(status=utils.FAILURE)
 
         host_ip = validate_input_params(BaseRequest(request))
-        if not host_ip:
+        if host_ip is None:
+            LOG.info('hostIp not match ipv4')
             return res
 
         config_path = utils.RC_FILE_DIR + '/' + host_ip
         try:
-            os.remove(config_path)
+            if os.path.exists(config_path):
+                os.remove(config_path)
             openstack_utils.del_rc(host_ip)
             openstack_utils.clear_glance_client(host_ip)
-            res.status = utils.SUCCESS
-        except OSError:
             res.status = utils.SUCCESS
         except Exception as exception:
             LOG.error(exception, exc_info=True)
             return res
 
-        LOG.debug('host configuration file deleted successfully')
+        LOG.info('host configuration file deleted successfully')
         return res

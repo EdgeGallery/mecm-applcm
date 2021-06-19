@@ -253,7 +253,7 @@ class NovaServer(HOTBase):
         if 'nfvi_constraints' in self.template['properties']:
             self.properties['availability_zone'] = self.template['properties']['nfvi_constraints']
 
-    def _check_user_data(self):
+    def _check_user_data(self, inputs):
         """
         转换user data
         """
@@ -278,7 +278,17 @@ class NovaServer(HOTBase):
         if '' == user_data['str_replace']['template']:
             user_data['str_replace']['template'] = '#!/bin/bash\n'
 
-        mec_runtime_script = '\n'
+        mec_runtime_script = ''
+        if 'ak' in inputs and 'sk' in inputs:
+            mec_runtime_script = 'echo \'ak=$ak$\\nsk=$sk$\\n\' >> /root/init.txt\n'
+            if '$ak$' not in user_data['str_replace']['params']:
+                user_data['str_replace']['params']['$ak$'] = {
+                    'get_input': 'ak'
+                }
+            if '$sk$' not in user_data['str_replace']['params']:
+                user_data['str_replace']['params']['$sk$'] = {
+                    'get_input': 'sk'
+                }
 
         user_data['str_replace']['template'] = \
             user_data['str_replace']['template'] + mec_runtime_script
@@ -344,7 +354,8 @@ class NovaServer(HOTBase):
         self._check_image(image_id_map)
 
         # user data
-        self._check_user_data()
+        inputs = kwargs['topology_template']['inputs']
+        self._check_user_data(inputs)
 
         # network
         self.properties['networks'] = []
@@ -497,10 +508,36 @@ class SecurityGroup(HOTBase):
                         'get_resource': self.name
                     }
                 ]
-        hot_file['resources'][self.name + 'DefaultIngressRule'] = {
+        hot_file['resources'][self.name + 'DefaultTcpRule'] = {
             'type': 'OS::Neutron::SecurityGroupRule',
             'properties': {
-                'protocol': 0,
+                'protocol': 'tcp',
+                'remote_group': {
+                    'get_resource': self.name
+                },
+                'security_group': {
+                    'get_resource': self.name
+                }
+            }
+        }
+
+        hot_file['resources'][self.name + 'DefaultUdpRule'] = {
+            'type': 'OS::Neutron::SecurityGroupRule',
+            'properties': {
+                'protocol': 'udp',
+                'remote_group': {
+                    'get_resource': self.name
+                },
+                'security_group': {
+                    'get_resource': self.name
+                }
+            }
+        }
+
+        hot_file['resources'][self.name + 'DefaultIcmpRule'] = {
+            'type': 'OS::Neutron::SecurityGroupRule',
+            'properties': {
+                'protocol': 'icmp',
                 'remote_group': {
                     'get_resource': self.name
                 },

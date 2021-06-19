@@ -45,7 +45,7 @@ type ImageController struct {
 func (c *ImageController) CreateImage() {
 	log.Info("Image creation request received.")
 
-	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams(0)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -89,7 +89,7 @@ func (c *ImageController) CreateImage() {
 func (c *ImageController) DeleteImage() {
 	log.Info("Image deletion request received.")
 
-	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams(0)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -124,7 +124,7 @@ func (c *ImageController) DeleteImage() {
 // @router /tenants/:tenantId/app_instances/:appInstanceId/images/:imageId [get]
 func (c *ImageController) GetImage() {
 	log.Info("Query image request received.")
-	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams(0)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -164,7 +164,13 @@ func (c *ImageController) GetImage() {
 func (c *ImageController) GetImageFile() {
 	log.Info("Download image file request received.")
 
-	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams()
+	chunkNum, err := c.getChunkNum()
+	if err != nil {
+		c.writeErrorResponse("Chunk number is invalid", util.BadRequest)
+		return
+	}
+
+	accessToken, bKey, appInfoRecord, adapter, clientIp, err := c.getInputParams(chunkNum)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -172,12 +178,6 @@ func (c *ImageController) GetImageFile() {
 
 	imageId, err := c.getImgId(clientIp, bKey)
 	if nil != err {
-		return
-	}
-
-	chunkNum, err := c.getChunkNum(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -216,18 +216,17 @@ func (c *ImageController) getImageId(clientIp string) (string, error) {
 }
 
 // Get Chunk number
-func (c *ImageController) getChunkNum(clientIp string) (int32, error) {
+func (c *ImageController) getChunkNum() (int32, error) {
 	chunkString := c.Ctx.Request.Header.Get("chunk_num")
 	log.Info("chunk_num is:" + chunkString)
 	i, err := strconv.ParseInt(chunkString, 10, 32)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, "Chunk number is invalid")
 		return 0, errors.New("Chunk number is invalid")
 	}
 	return int32(i), nil
 }
 
-func (c *ImageController) getInputParams() (accessToken string, bKey []byte, appInfoRecord *models.AppInfoRecord,
+func (c *ImageController) getInputParams(chunkNum int32) (accessToken string, bKey []byte, appInfoRecord *models.AppInfoRecord,
 	adapter *pluginAdapter.PluginAdapter, clientIp string, err error) {
 	clientIp = c.Ctx.Input.IP()
 	err = util.ValidateSrcAddress(clientIp)
@@ -258,9 +257,11 @@ func (c *ImageController) getInputParams() (accessToken string, bKey []byte, app
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
 
-	adapter, err = c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
-	if err != nil {
-		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+	if chunkNum == 0 {
+		adapter, err = c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+		if err != nil {
+			return accessToken, bKey, appInfoRecord, adapter, clientIp, err
+		}
 	}
 	return accessToken, bKey, appInfoRecord, adapter, clientIp, nil
 }
