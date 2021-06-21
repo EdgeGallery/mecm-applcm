@@ -28,11 +28,7 @@ func init() {
 	fileName := "/usr/app/log/k8splugin.log"
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
 	if err == nil {
-		err = file.Close()
-		if err != nil {
-			logrus.Error("Failed to close the log file")
-			return
-		}
+		defer file.Close()
 		ioWriter := &lumberjack.Logger{
 			Filename:   fileName,
 			MaxSize:    util.MaxSize,   // megabytes

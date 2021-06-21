@@ -293,9 +293,8 @@ func ValidateUUID(id string) error {
 		if res != nil {
 			return errors.New("UUID validate failed")
 		}
-	} else {
-		return errors.New("UUID validate failed")
 	}
+
 	return nil
 }
 

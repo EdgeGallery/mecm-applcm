@@ -17,6 +17,7 @@
 package test
 
 import (
+	"errors"
 	"fmt"
 	"github.com/agiledragon/gomonkey"
 	"github.com/astaxie/beego/orm"
@@ -83,5 +84,71 @@ func TestGetGetClientSuccess(t *testing.T) {
 	assert.Error(t, err, "TestGetGetClientSuccess execution result")
 }
 
+func TestInitDbFailure(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDataBase, func(_, _, _ string, _ ...int) error {
+		// do nothing
+		return errors.New("failed to register driver")
+	})
+	defer patch1.Reset()
+	db := &pgdb.PgDb{}
+	dir, _ := os.Getwd()
+	os.Setenv("K8S_PLUGIN_DB_PASSWORD", "simple")
+	config, err := util.GetConfiguration(dir)
+	err = db.InitDatabase(&config.Server)
+	assert.Error(t, err, "TestGetGetClientFailure execution result")
 
+	os.Setenv("K8S_PLUGIN_DB_PASSWORD", "fe0Hmv%sbq")
+	err = db.InitDatabase(&config.Server)
+	assert.Error(t, err, "TestGetGetClientFailure execution result")
+}
 
+func TestInitDbFailure1(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDataBase, func(_, _, _ string, _ ...int) error {
+		// do nothing
+		return nil
+	})
+	defer patch1.Reset()
+
+	patch2 := gomonkey.ApplyFunc(orm.RunSyncdb, func(_ string, _ bool, _ bool) error {
+		// do nothing
+		return errors.New("failed to run sync database")
+	})
+	defer patch2.Reset()
+	db := &pgdb.PgDb{}
+	dir, _ := os.Getwd()
+	config, err := util.GetConfiguration(dir)
+	config.Server.DbAdapter = "default"
+	os.Setenv("K8S_PLUGIN_DB_PASSWORD", "fe0Hmv%sbq")
+	err = db.InitDatabase(&config.Server)
+	assert.Error(t, err, "TestGetGetClientFailure execution result")
+}
+
+func TestInitDbFailure2(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDataBase, func(_, _, _ string, _ ...int) error {
+		// do nothing
+		return nil
+	})
+	defer patch1.Reset()
+
+	patch2 := gomonkey.ApplyFunc(orm.RunSyncdb, func(_ string, _ bool, _ bool) error {
+		// do nothing
+		return nil
+	})
+	defer patch2.Reset()
+	var c *pgdb.PgDb
+	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(c), "InitOrmer", func(*pgdb.PgDb) (error) {
+		go func() {
+			// do nothing
+		}()
+		return errors.New("failed to init ormer")
+	})
+	defer patch3.Reset()
+
+	db := &pgdb.PgDb{}
+	dir, _ := os.Getwd()
+	config, err := util.GetConfiguration(dir)
+	config.Server.DbAdapter = "default"
+	os.Setenv("K8S_PLUGIN_DB_PASSWORD", "fe0Hmv%sbq")
+	err = db.InitDatabase(&config.Server)
+	assert.Error(t, err, "TestGetGetClientFailure execution result")
+}

@@ -39,7 +39,7 @@ var (
 	appInstanceIdentifier string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a4"
 	ak                    string      = "aQqizVqpGLWLaqKJZgU="
 	sk                    string      = "d0mutLOkfj1/vTQZY9s679lnp6199wqR9d5FVg=="
-	token                 string      = createToken(1)
+	token                 string      = createToken("1", "ROLE_MECM_ADMIN", true, true)
 )
 
 func TestServer(t *testing.T) {
@@ -163,17 +163,29 @@ func startServer(server server.ServerGRPC) {
 	}
 }
 
-func createToken(userid uint64) string {
+func createToken(userid string, role string, isRole bool, isUserId bool) string {
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
 	roleName := make([]string, 3)
-	roleName[0] = "ROLE_MECM_TENANT"
-	roleName[1] = "ROLE_APPSTORE_TENANT"
-	roleName[2] = "ROLE_DEVELOPER_TENANT"
+	if isRole == true {
+		roleName[0] = role
+		roleName[1] = "ROLE_APPSTORE_TENANT"
+		roleName[2] = "ROLE_DEVELOPER_TENANT"
+	} else {
+		roleName = nil
+	}
 	atClaims["authorities"] = roleName
-	atClaims["user_name"] = "lcmcontroller"
+	if isUserId == true {
+		atClaims["user_name"] = "lcmcontroller"
+	} else {
+		atClaims["user_name"] = nil
+	}
 	atClaims["authorized"] = true
-	atClaims["userId"] = userid
+	if userid != "" {
+		atClaims["userId"] = userid
+	} else {
+		atClaims["userId"] = nil
+	}
 	atClaims["exp"] = time.Now().Add(time.Minute * 60).Unix()
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	token, _ := at.SignedString([]byte("jdnfksdmfksd"))
