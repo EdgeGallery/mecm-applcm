@@ -112,7 +112,7 @@ def get_image_by_name_checksum(name, checksum, host_ip):
     for image in images:
         if image['checksum'] == checksum:
             return image
-    return None
+    raise RuntimeError(f'image {name} 不存在')
 
 
 def create_glance_client(host_ip):

@@ -225,7 +225,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         LOG.debug('检查app包状态')
-        app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id)
+        app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id, host_ip=host_ip)
         if app_pkg_mapper is None or app_pkg_mapper.status != utils.ACTIVE:
             LOG.info('app pkg %s not active', parameter.app_package_id)
             return res
