@@ -256,6 +256,7 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 
 	err = json.Unmarshal(data, &pkgDetails)
 	if err != nil {
+		log.Error(util.UnMarshalError)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return pkgDetails, err
 	}
@@ -1166,6 +1167,7 @@ func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort,
 	}
 	err = json.Unmarshal([]byte(cpu), &statInfo)
 	if err != nil {
+		log.Error(util.UnMarshalError)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return cpuUtilization, err
 	}
@@ -1187,6 +1189,7 @@ func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort,
 	}
 	err = json.Unmarshal([]byte(mem), &statInfo)
 	if err != nil {
+		log.Error(util.UnMarshalError)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return memUsage, err
 	}
@@ -1208,6 +1211,7 @@ func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
 	}
 	err = json.Unmarshal([]byte(disk), &statInfo)
 	if err != nil {
+		log.Error(util.UnMarshalError)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return diskUtilization, err
 	}
