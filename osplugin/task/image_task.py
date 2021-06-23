@@ -17,6 +17,8 @@
 
 # -*- coding: utf-8 -*-
 import time
+
+import urllib3
 from pony.orm import db_session, commit
 
 import utils
@@ -24,6 +26,11 @@ from core import openstack_utils
 from core.log import logger
 from core.models import VmImageInfoMapper
 from task import upload_thread_pool, check_thread_pool
+
+
+LOG = logger
+
+http = urllib3.PoolManager()
 
 
 def start_check_image_status(image_id, host_ip):
@@ -54,17 +61,17 @@ def _check_image_status(image_id, host_ip):
     try:
         image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         if not image_info:
-            logger.debug(f'{image_id} not in {host_ip}')
+            LOG.debug(f'{image_id} not in {host_ip}')
             return
         if image_info.status == utils.KILLED:
             return
         glance = openstack_utils.create_glance_client(host_ip)
         image = glance.images.get(image_id)
     except Exception as exception:
-        logger.error(exception, exc_info=True)
+        LOG.error(exception, exc_info=True)
         return
     if not image:
-        logger.error(f'{image_id} not in {host_ip}')
+        LOG.error(f'{image_id} not in {host_ip}')
         image_info.delete()
         commit()
         return
@@ -72,7 +79,7 @@ def _check_image_status(image_id, host_ip):
     image_info.checksum = image.checksum
     image_info.image_size = image.size
     commit()
-    logger.debug(f'now image status is {image.status}')
+    LOG.debug(f'now image status is {image.status}')
     if image.status != utils.ACTIVE:
         start_check_image_status(image_id, host_ip)
 
@@ -122,14 +129,14 @@ def _do_upload_image(image_id, host_ip, file_path):
     glance = openstack_utils.create_glance_client(host_ip)
     try:
         with open(file_path, 'rb') as image_data:
-            logger.debug(f'start upload image {image_id}')
+            LOG.debug(f'start upload image {image_id}')
             glance.images.upload(image_id, image_data=image_data)
-            logger.debug(f'finish upload image {image_id}')
+            LOG.debug(f'finish upload image {image_id}')
     except Exception as e:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED
         commit()
-        logger.error(e, exc_info=True)
+        LOG.error(e, exc_info=True)
 
 
 def add_upload_image_task(image_id, host_ip, file_path):
@@ -148,7 +155,6 @@ def add_upload_image_task(image_id, host_ip, file_path):
     return future
 
 
-@db_session
 def add_import_image_task(image_id, host_ip, uri):
     """
     添加加载远程镜像任务
@@ -160,6 +166,15 @@ def add_import_image_task(image_id, host_ip, uri):
     Returns:
 
     """
+    upload_thread_pool.submit(_import_image_by_os_func, image_id, host_ip, uri)
+    start_check_image_status(image_id, host_ip)
+
+
+@db_session
+def _import_image_by_os_func(image_id, host_ip, uri):
+    """
+    使用Openstack自带功能上传远端镜像
+    """
     glance = openstack_utils.create_glance_client(host_ip)
     try:
         glance.images.image_import(image_id, method='web-download', uri=uri)
@@ -167,5 +182,23 @@ def add_import_image_task(image_id, host_ip, uri):
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED
         commit()
-        logger.error(e, exc_info=True)
-    start_check_image_status(image_id, host_ip)
+        LOG.error(e, exc_info=True)
+
+
+@db_session
+def _import_image_by_python(image_id, host_ip, uri):
+    """
+    本地上传远端镜像
+    """
+    glance = openstack_utils.create_glance_client(host_ip)
+    try:
+        LOG.debug(f'open connection {uri}')
+        r = http.request('GET', uri, preload_content=False)
+        LOG.debug(f'start upload image {image_id}')
+        glance.images.upload(image_id=image_id, image_data=r)
+        LOG.debug(f'finished upload image {image_id}')
+    except Exception as e:
+        image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+        image.status = utils.KILLED
+        commit()
+        LOG.error(e, exc_info=True)
