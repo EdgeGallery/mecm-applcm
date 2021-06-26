@@ -14,7 +14,7 @@
 
 #TLS configuration
 server:
-  sslnotenabled: false
+  sslnotenabled: true
   sslciphers: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
   servername: "edgegallery"
   certfilepath: "ssl/server_tls.crt"
