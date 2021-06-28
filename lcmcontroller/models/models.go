@@ -325,6 +325,7 @@ type AppPkgDetails struct {
 	App_package_version  string `json:"app_package_version"`
 	App_release_data_time   string `json:"app_release_data_time"`
 	App_type string `json:"app_type"`
+	App_class string `json:"app_class"`
 	App_package_description  string `json:"app_package_description"`
 }
 
