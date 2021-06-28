@@ -124,8 +124,8 @@ def validate_access_token(access_token):
         if 'user_name' not in payload:
             LOG.info('Invalid token UN')
             return False
-    except PyJWTError as exception:
-        LOG.error(exception, exc_info=True)
+    except PyJWTError:
+        LOG.debug("skip accessToken check")
         # todo change to False
         return True
     return True
