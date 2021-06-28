@@ -139,6 +139,7 @@ func extractCsarPackage(packagePath string) (string, error) {
 	if len(zipReader.File) > util.TooManyFile {
 		return "", errors.New("Too many files contains in zip file")
 	}
+	defer zipReader.Close()
 	var totalWrote int64
 	packageDir := path.Dir(packagePath)
 	err := os.MkdirAll(packageDir, 0750)
@@ -431,11 +432,17 @@ func (c *LcmController) Instantiate() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, _ = adapter.Instantiate(tenantId, accessToken, appInsId, req)
+	err, status := adapter.Instantiate(tenantId, accessToken, appInsId, req)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	if status == util.Failure {
+		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToInstantiate)
+		err = errors.New(util.FailedToInstantiate)
 		return
 	}
 
@@ -1856,12 +1863,14 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 	//remove package directory
 	err := os.RemoveAll(appPkgPath)
 	if err != nil {
+		log.Error("failed to delete application package file")
 		return errors.New("failed to delete application package file")
 	}
 
 	tenantDir, err := os.Open(tenantPath)
 	if err != nil {
-		return errors.New("failed to delete application package")
+		log.Error("failed to open tenant file")
+		return errors.New("failed to open tenant file")
 	}
 	defer tenantDir.Close()
 
@@ -1870,7 +1879,8 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 	if err == io.EOF {
 		err := os.Remove(tenantPath)
 		if err != nil {
-			return errors.New("failed to delete application package")
+			log.Error("failed to remove tenant directory")
+			return errors.New("failed to remove tenant directory")
 		}
 		return nil
 	}
@@ -2336,7 +2346,7 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 		}
 		if status == util.Failure {
 			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToUploadToPlugin)
-			err = errors.New("failed to upload package to plugin")
+			err = errors.New(util.FailedToUploadToPlugin)
 			return err
 		}
 

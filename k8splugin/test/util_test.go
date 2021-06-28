@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	_ "io"
 	"k8splugin/config"
+	_ "k8splugin/log"
 	"k8splugin/util"
 	_ "mime/multipart"
 	_ "net/http"
@@ -80,15 +81,63 @@ func TestValidatePasswordInvalid(t *testing.T) {
 }
 
 func TestValidateAccessTokenSuccess(t *testing.T) {
-	accessToken := createToken(1)
+	accessToken := createToken("1", "ROLE_MECM_ADMIN", true, true)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole, util.MecmAdminRole})
+	assert.Nil(t, err, "TestValidateAccessTokenSuccess execution result")
+}
+
+func TestValidateAccessTokenTenant(t *testing.T) {
+	accessToken := createToken("1", "ROLE_MECM_TENANT", true, true)
 	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	assert.Nil(t, err, "TestValidateAccessTokenSuccess execution result")
+}
+
+func TestValidateAccessTokenRoleFailure(t *testing.T) {
+	accessToken := createToken("1", "ROLE_MECM_TENANTT", true, true)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
+	assert.Equal(t, "invalid token", err.Error(), "TestValidateAccessTokenSuccess execution result")
+}
+
+func TestValidateAccessTokenRoleGuestFailure(t *testing.T) {
+	accessToken := createToken("1", "ROLE_MECM_GUEST", true, true)
+	err := util.ValidateAccessToken(accessToken, []string{"ROLE_MECM_GUESTT"})
+	assert.Equal(t, "forbidden", err.Error(), "TestValidateAccessTokenSuccess execution result")
+}
+
+func TestValidateAccessTokenGuest(t *testing.T) {
+	accessToken := createToken("1", "ROLE_MECM_GUEST", true, true)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmGuestRole, util.MecmAdminRole})
+	assert.Nil(t, err, "TestValidateAccessTokenSuccess execution result")
+}
+
+func TestValidateAccessTokenRole(t *testing.T) {
+	accessToken := createToken("1", "ROLE_MECM_GUEST", false, true)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmGuestRole, util.MecmAdminRole})
+	assert.Equal(t, "invalid token", err.Error(), "TestValidateAccessTokenSuccess execution result")
+}
+
+func TestValidateAccessTokenUserName(t *testing.T) {
+	accessToken := createToken("1", "ROLE_MECM_GUEST", true, false)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmGuestRole, util.MecmAdminRole})
+	assert.Equal(t, "invalid token", err.Error(), "TestValidateAccessTokenSuccess execution result")
+}
+
+func TestValidateAccessTokenUserId(t *testing.T) {
+	accessToken := createToken("", "ROLE_MECM_GUEST", true, false)
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmGuestRole, util.MecmAdminRole})
+	assert.Equal(t, "invalid token", err.Error(), "TestValidateAccessTokenSuccess execution result")
 }
 
 func TestValidateAccessTokenFailure(t *testing.T) {
 	accessToken := ""
 	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	assert.Nil(t, err, "TestValidateAccessTokenFailure execution result")
+}
+
+func TestValidateAccessTokenFailure1(t *testing.T) {
+	accessToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX01FQ01fQURNSU4iLCJST0xFX01FQ01fVEVOQU5UIiwiUk9MRV9BUFBTVE9SRV9URU5BTlQiLCJST0xFX0RFVkVMT1BFUl9URU5BTlQiXSwiYXV0aG9yaXplZCI6dHJ1ZSwiZXhwIjoxNjIzODU5MDg3LCJ1c2VySWQiOiJjOWZhNjA2OS0yODQ1LTQ2MmQtOGE2ZS1iOGE1MDFhNjNhZTIiLCJ1c2VyX25hbWUiOiJsY21jb250cm9sbGVyIn0.uZOnmni-wBKNH7XGr4u0nBtKLr_gYkvoP0zp3z0fWag"
+	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
+	assert.Equal(t, "invalid token", err.Error(), "TestValidateAccessTokenSuccess execution result")
 }
 
 func TestValidateAccessTokenInvalid(t *testing.T) {
@@ -147,6 +196,11 @@ func TestCreateDirSuccess(t *testing.T) {
 	assert.True(t, true, "TestCreateDirSuccess execution result")
 }
 
+func TestCreateDirFailure(t *testing.T) {
+	util.CreateDir("test10")
+	assert.True(t, true, "TestCreateDirSuccess execution result")
+}
+
 func TestValidateAkMaxLen(t *testing.T) {
 	ak := "45262352eeetdg374dfffffffffffffffffff"
 	err := util.ValidateAk(ak)
@@ -177,7 +231,22 @@ func TestAddValues(t *testing.T)  {
 	}
 	defer tarFile.Close()
 	appAuthCfg := config.NewBuildAppAuthConfig(appInstanceIdentifier, ak, sk)
-	dirName, err := appAuthCfg.AddValues(tarFile)
+	dirName, _, err := appAuthCfg.AddValues(tarFile)
+	if err != nil {
+		return
+	}
+	defer  os.RemoveAll(dirName)
+	defer os.Remove(dirName + ".tar.gz")
+	assert.Equal(t, "7e9b913f-748a-42b7-a088-abe3f750f04c", dirName,
+		"TestAddValues execution result")
+}
+
+func TestAddValuesFailure(t *testing.T)  {
+	dir, _ := os.Getwd()
+	tarFile, err := os.Open(dir+"/"+"7e9b913f-748a-42b7-a088-abe3f750f04.tgz",)
+	defer tarFile.Close()
+	appAuthCfg := config.NewBuildAppAuthConfig(appInstanceIdentifier, ak, sk)
+	dirName, _, err := appAuthCfg.AddValues(tarFile)
 	if err != nil {
 		return
 	}
@@ -193,6 +262,36 @@ func TestGetTLSConfigSuccess(t *testing.T) {
 
 	_, err = util.GetTLSConfig(&config.Server, "./server.crt", "./server.key")
 	assert.Nil(t, err, "TestGetTLSConfigSuccess execution result")
+}
+
+
+func TestGetTLSConfigFailure(t *testing.T) {
+	dir, _ := os.Getwd()
+	config, err := util.GetConfiguration(dir)
+
+	_, err = util.GetTLSConfig(&config.Server, "./server1.crt", "./server.key")
+	assert.Equal(t, "could not load server key pair", err.Error(), "TestGetTLSConfigSuccess execution result")
+
+	config.Server.SslCiphers = ","
+
+	_, err = util.GetTLSConfig(&config.Server, "./server.crt", "./server.key")
+	assert.Equal(t, "TLS cipher configuration is not recommended or invalid", err.Error(), "TestGetTLSConfigSuccess execution result")
+
+	config.Server.SslCiphers = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA386"
+
+	_, err = util.GetTLSConfig(&config.Server, "./server.crt", "./server.key")
+	assert.Equal(t, "TLS cipher configuration is not recommended or invalid", err.Error(), "TestGetTLSConfigSuccess execution result")
+
+	config.Server.SslCiphers = ""
+
+	_, err = util.GetTLSConfig(&config.Server, "./server.crt", "./server.key")
+	assert.Equal(t, "TLS cipher configuration is not recommended or invalid", err.Error(), "TestGetTLSConfigSuccess execution result")
+
+	config.Server.ServerName = "12edgegallery12edgegallery12edgegallery12edge12edgegallery12edgegallery12edgegallery" +
+		"12edgegallery12edge12edgegallery12edgegallery12edgegallery12edgegallery12edge12edgegallery12edgegallery12ed" +
+		"gegallery12edgegallery12edge12edgegallery12edgegallery12edgegallery12edgegallery12edge12edgegallery"
+	_, err = util.GetTLSConfig(&config.Server, "./server.crt", "./server.key")
+	assert.Equal(t, "server or host name validation failed", err.Error(), "TestGetTLSConfigSuccess execution result")
 }
 
 func TestGetReleaseNamespaceSuccess(t *testing.T) {

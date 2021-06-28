@@ -63,11 +63,7 @@ func (_ *AppAuthConfigBuilder) extractTarFile(gzipStream io.Reader) (string, err
 		return "", err
 	}
 
-	err = uncompressedStream.Close()
-	if err != nil {
-		log.Error("failed to close the stream")
-		return "", err
-	}
+	defer uncompressedStream.Close()
 	return dirName, nil
 }
 
@@ -135,28 +131,27 @@ func handleRegularFile(dir string, header *tar.Header, tarReader *tar.Reader,
 }
 
 // update values yaml file
-func (appAuthCfg *AppAuthConfigBuilder) addAppAuthCfgInValuesFile(configPath string) error {
+func (appAuthCfg *AppAuthConfigBuilder) addAppAuthCfgInValuesFile(configPath string) (string, error) {
 	values, err := ioutil.ReadFile(configPath + "/values.yaml")
 	if err != nil {
 		log.Error("Failed to read values yaml file")
-		return err
+		return "", err
 	}
 
 	jsondata, err := yaml.YAMLToJSON(values)
 	if err != nil {
 		log.Error("Failed to convert yaml to json")
-		return err
+		return "", err
 	}
 
 	var appAuthConfig map[string]interface{}
 	err = json.Unmarshal(jsondata, &appAuthConfig)
 	if err != nil {
 		log.Error("Failed to unmarshal appAuthConfig")
-		return err
+		return "", err
 	}
 	appConfig := appAuthConfig["appconfig"]
 	appConfig1 := appConfig.(map[string]interface{})
-	appConfig1["appnamespace"] = util.Default
 	akskInfo := appConfig1["aksk"]
 	akskConfig := akskInfo.(map[string]interface{})
 	akskConfig["appInsId"] = appAuthCfg.AppInsId
@@ -166,16 +161,16 @@ func (appAuthCfg *AppAuthConfigBuilder) addAppAuthCfgInValuesFile(configPath str
 	appAuthInfo, err := yaml.Marshal(&appAuthConfig)
 	if err != nil {
 		log.Error("Failed to marshal appAuthConfig")
-		return err
+		return "", err
 	}
 
 	err = ioutil.WriteFile(configPath + "/values.yaml", appAuthInfo, 0644)
 	if err != nil {
 		log.Error("Failed to update values yaml file")
-		return err
+		return "", err
 	}
-
-	return nil
+	nameSpace := fmt.Sprintf("%v", appConfig1["appnamespace"])
+	return nameSpace, nil
 }
 
 // create a tar file
@@ -241,23 +236,23 @@ func (_ *AppAuthConfigBuilder) createTarFile(source, target string) error {
 }
 
 // add ak, sk and appInsId values in values yaml file
-func (appAuthCfg *AppAuthConfigBuilder) AddValues(tarFile *os.File) (string, error) {
+func (appAuthCfg *AppAuthConfigBuilder) AddValues(tarFile *os.File) (string, string, error) {
 	dirName, err := appAuthCfg.extractTarFile(tarFile)
 	if err != nil {
 		log.Error("Unable to extract tar file")
-		return "", err
+		return "", "", err
 	}
 
-	err = appAuthCfg.addAppAuthCfgInValuesFile(dirName)
+	namespace, err := appAuthCfg.addAppAuthCfgInValuesFile(dirName)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	err = appAuthCfg.createTarFile(dirName, "./")
 	if err != nil {
 		log.Error("Failed to create a tar.gz file")
-		return "", err
+		return "", "", err
 	}
 
-	return dirName, nil
+	return dirName, namespace, nil
 }

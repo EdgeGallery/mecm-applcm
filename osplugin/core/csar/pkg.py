@@ -157,36 +157,37 @@ class CsarPkg:
         for sw_image_desc in self.sw_image_desc_list:
             image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc.checksum)
             if image is not None:
+                LOG.debug('use exist image')
                 image_id_map[sw_image_desc.name] = image.image_id
-            else:
-                if sw_image_desc.sw_image is None or sw_image_desc.sw_image == '':
-                    image = get_image_by_name_checksum(sw_image_desc.name,
-                                                       sw_image_desc.checksum,
-                                                       host_ip)
-                    if image is None:
-                        raise RuntimeError(f'image {sw_image_desc.name} 不存在')
-                    image_id_map[sw_image_desc.name] = image['id']
+            elif sw_image_desc.sw_image is None or sw_image_desc.sw_image == '':
+                LOG.debug('use image from plugin')
+                image = get_image_by_name_checksum(sw_image_desc.name,
+                                                   sw_image_desc.checksum,
+                                                   host_ip)
+                image_id_map[sw_image_desc.name] = image['id']
 
-                elif sw_image_desc.sw_image.startswith('http'):
-                    image_id = create_image_record(sw_image_desc,
-                                                   self.app_package_id,
-                                                   host_ip)
-                    image_id_map[sw_image_desc.name] = image_id
-                    add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
-                else:
-                    image_id = create_image_record(sw_image_desc,
-                                                   self.app_package_id,
-                                                   host_ip)
-                    image_id_map[sw_image_desc.name] = image_id
-                    zip_index = sw_image_desc.sw_image.find('.zip')
-                    zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index+4]
-                    img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
-                    img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index+4:]
-                    logger.debug(f'image dir {img_tmp_file}')
-                    if not utils.exists_path(img_tmp_dir):
-                        utils.unzip(zip_file_path, img_tmp_dir)
-                    add_upload_image_task(image_id, host_ip, img_tmp_file)\
-                        .add_done_callback(lambda future: utils.delete_dir(img_tmp_file))
+            elif sw_image_desc.sw_image.startswith('http'):
+                LOG.debug('use image from remote')
+                image_id = create_image_record(sw_image_desc,
+                                               self.app_package_id,
+                                               host_ip)
+                image_id_map[sw_image_desc.name] = image_id
+                add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
+            else:
+                LOG.debug('use image from local')
+                image_id = create_image_record(sw_image_desc,
+                                               self.app_package_id,
+                                               host_ip)
+                image_id_map[sw_image_desc.name] = image_id
+                zip_index = sw_image_desc.sw_image.find('.zip')
+                zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index + 4]
+                img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
+                img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index + 4:]
+                logger.debug(f'image dir {img_tmp_file}')
+                if not utils.exists_path(img_tmp_dir):
+                    utils.unzip(zip_file_path, img_tmp_dir)
+                add_upload_image_task(image_id, host_ip, img_tmp_file) \
+                    .add_done_callback(lambda future: utils.delete_dir(img_tmp_file))
 
         self.image_id_map = image_id_map
 

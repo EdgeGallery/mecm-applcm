@@ -31,6 +31,7 @@ type AppInstanceInfo struct {
 	AppInsId   string `orm:"pk"`
 	HostIp     string
 	WorkloadId string
+	Namespace  string
 }
 
 // AppPackage info record
