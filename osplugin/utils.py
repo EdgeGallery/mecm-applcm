@@ -24,6 +24,7 @@ import zipfile
 from pathlib import Path
 
 import jwt
+from jwt import PyJWTError
 
 from config import jwt_public_key, base_dir
 from core.log import logger
@@ -123,8 +124,8 @@ def validate_access_token(access_token):
         if 'user_name' not in payload:
             LOG.info('Invalid token UN')
             return False
-    except jwt.PyJWTError as exception:
-        LOG.error(exception, exc_info=True)
+    except PyJWTError:
+        LOG.debug("skip accessToken check")
         # todo change to False
         return True
     return True
