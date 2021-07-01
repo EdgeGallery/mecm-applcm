@@ -166,7 +166,7 @@ def add_import_image_task(image_id, host_ip, uri):
     Returns:
 
     """
-    upload_thread_pool.submit(_import_image_by_os_func, image_id, host_ip, uri)
+    upload_thread_pool.submit(_import_image_by_python, image_id, host_ip, uri)
     start_check_image_status(image_id, host_ip)
 
 
