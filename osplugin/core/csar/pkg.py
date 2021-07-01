@@ -124,8 +124,8 @@ def _input_translate(inputs):
     """
     result = copy.deepcopy(inputs)
     for key in result.keys():
-        if key['type'] == 'text' or key['type'] == 'password':
-            result[key] = 'string'
+        if result[key]['type'] == 'text' or result[key]['type'] == 'password':
+            result[key]['type'] = 'string'
     return result
 
 
