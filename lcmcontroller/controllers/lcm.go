@@ -242,7 +242,7 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 
 	mfYaml, err := os.Open(mf)
 	if err != nil {
-		log.Error("failed to read mf file")
+		log.Error("failed to open mf file")
 		return pkgDetails, errors.New("failed to read mf file")
 	}
 	defer mfYaml.Close()
@@ -251,8 +251,8 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json, pls check mf file if struct is not correct.")
-		return pkgDetails, errors.New("failed to convert yaml to json")
+		log.Error(util.FailedToCovertYamlToJson + ", pls check mf file if struct is not correct.")
+		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
 	}
 
 	err = json.Unmarshal(data, &pkgDetails)
@@ -508,7 +508,7 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error(util.FailedToCovertYamlToJson)
 		return err, config.AppConfigAdapter{}
 	}
 
@@ -551,7 +551,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 
 	mfYaml, err := os.Open(pkgDir + "/TOSCA_VNFD.meta")
 	if err != nil {
-		log.Error("failed to read mf file")
+		log.Error("failed to read meta file")
 		return "", err
 	}
 	defer mfYaml.Close()
@@ -560,7 +560,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error(util.FailedToCovertYamlToJson)
 		return "", err
 	}
 	var vnfData models.VnfData
