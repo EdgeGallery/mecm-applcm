@@ -17,11 +17,18 @@
 
 # !python3
 # -*- coding: utf-8 -*-
-
+import json
+import os
 import unittest
+from unittest import mock
+
+from pony.orm import db_session, commit
+
+from core.models import VmImageInfoMapper
 from internal.lcmservice import lcmservice_pb2
 from service.vm_image_service import VmImageService
 from tests.resources import gen_token
+from tests.resources.test_data import mock_nova_client, mock_glance_client
 
 
 def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
@@ -73,18 +80,24 @@ class VmImageServiceTest(unittest.TestCase):
     access_token = gen_token.test_access_token
     host_ip = '10.10.9.75'
 
-    def test_create_image(self):
+    @mock.patch('service.vm_image_service.start_check_image_status')
+    @mock.patch("service.vm_image_service.create_nova_client")
+    def test_create_image(self, create_nova_client, start_check_image_status):
         """
         test_create_image
         """
+        create_nova_client.return_value = mock_nova_client
+        start_check_image_status.return_value = None
         request = make_create_image_request(access_token=self.access_token,
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
                                             vm_id="caf83c05-56dc-4f7c-b417-40d9acbf166c")
-        res = self.vm_image_service.createVmImage(request, None)
-        print(res)
+        resp = self.vm_image_service.createVmImage(request, None)
+        resp_data = json.loads(resp.response)
+        assert 'imageId' in resp_data
 
-    def test_delete_image(self):
+    @mock.patch('service.vm_image_service.create_glance_client')
+    def test_delete_image(self, create_glance_client):
         """
         test_delete_image
         """
@@ -92,24 +105,49 @@ class VmImageServiceTest(unittest.TestCase):
                                             host_ip=self.host_ip,
                                             app_instance_id="1",
                                             image_id="2fd65cfb-fa1e-4461-bc40-326a55f01803")
-        res = self.vm_image_service.deleteVmImage(request, None)
-        print(res)
+        create_glance_client.return_value = mock_glance_client
+        with db_session:
+            VmImageInfoMapper(
+                image_id='2fd65cfb-fa1e-4461-bc40-326a55f01803',
+                host_ip=self.host_ip,
+                image_name='image01',
+                status='active',
+                image_size=1024,
+                checksum='2'
+            )
+            commit()
+        resp = self.vm_image_service.deleteVmImage(request, None)
+        resp_data = json.loads(resp.response)
+        assert resp_data['code'] == 200
 
     def test_query_image(self):
         """
         test_query_image
         """
+        with db_session:
+            VmImageInfoMapper(
+                image_id='e8360231-14fe-4baf-b34a-5be17c62e2f8',
+                host_ip=self.host_ip,
+                image_name='image01',
+                status='active',
+                image_size=1024,
+                checksum='2'
+            )
+            commit()
         request = make_query_image_request(access_token=self.access_token,
-                                            host_ip=self.host_ip,
-                                            app_instance_id="1",
-                                            image_id="e8360231-14fe-4baf-b34a-5be17c62e2f8")
-        res = self.vm_image_service.queryVmImage(request, None)
-        print(res)
+                                           host_ip=self.host_ip,
+                                           app_instance_id="1",
+                                           image_id="e8360231-14fe-4baf-b34a-5be17c62e2f8")
+        resp = self.vm_image_service.queryVmImage(request, None)
+        resp_data = json.loads(resp.response)
+        assert 'imageId' in resp_data
 
-    def test_download_image(self):
+    @mock.patch('service.vm_image_service.create_glance_client')
+    def test_download_image(self, create_glance_client):
         """
         test_download_image
         """
+        create_glance_client.return_value = mock_glance_client
         request = make_download_image_request(access_token=self.access_token,
                                               host_ip=self.host_ip,
                                               app_instance_id="1",
@@ -117,7 +155,8 @@ class VmImageServiceTest(unittest.TestCase):
                                               image_id="f95bcbb1-e1e2-4aaf-872c-f0c7657862c1")
 
         response = self.vm_image_service.downloadVmImage(request, None)
-        with open('image.qcow2', 'ab') as file:
+        with open('target/image.qcow2', 'ab') as file:
             for res in response:
-                print(len(res) / (1024 * 1024))
                 file.write(res.content)
+
+        os.remove('target/image.qcow2')

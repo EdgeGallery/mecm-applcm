@@ -44,7 +44,7 @@ class AppLcmServiceTest(unittest.TestCase):
     @mock.patch("task.image_task.http")
     @mock.patch("task.image_task.create_glance_client")
     @mock.patch("core.csar.pkg.get_image_by_name_checksum")
-    def test_upload_package(self,get_image_by_name_checksum,
+    def test_upload_package(self, get_image_by_name_checksum,
                             create_glance_client,
                             http,
                             start_check_image_status,
@@ -146,9 +146,9 @@ class AppLcmServiceTest(unittest.TestCase):
         start_check_stack_status.return_value = None
         with db_session:
             AppInsMapper(
-                app_instance_id='test001',
+                app_instance_id='testterminate001',
                 host_ip=self.host_ip,
-                stack_id='stack001',
+                stack_id='stackterminate001',
                 operational_status='Instantiated',
                 operation_info=None
             )
@@ -157,7 +157,7 @@ class AppLcmServiceTest(unittest.TestCase):
         data = lcmservice_pb2.TerminateRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
-            appInstanceId='test001'
+            appInstanceId='testterminate001'
         )
         response = self.app_lcm_service.terminate(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
@@ -220,7 +220,7 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         with db_session:
             AppInsMapper(
-                app_instance_id='25e32a5c-e00f-4edf-b42d-6dd4b610c2db',
+                app_instance_id='35e32a5c-e00f-4edf-b42d-6dd4b610c2db',
                 host_ip=self.host_ip,
                 stack_id='stack001',
                 operational_status='Instantiated',
@@ -231,7 +231,7 @@ class AppLcmServiceTest(unittest.TestCase):
         data = lcmservice_pb2.WorkloadEventsRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
-            appInstanceId='25e32a5c-e00f-4edf-b42d-6dd4b610c2db'
+            appInstanceId='35e32a5c-e00f-4edf-b42d-6dd4b610c2db'
         )
         response = self.app_lcm_service.workloadEvents(data, None)
         LOG.info(response.response)

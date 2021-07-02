@@ -35,6 +35,15 @@ mock_glance_client.images.create.return_value = {
 }
 mock_glance_client.images.upload.return_value = None
 mock_glance_client.images.delete.return_value = None
+mock_glance_client.images.data.return_value = [
+    b'abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab',
+    b'abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab',
+    b'abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab',
+    b'abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab',
+    b'abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab',
+    b'abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab',
+    b'abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab',
+]
 
 """
 mock heat client 返回模拟数据
@@ -102,3 +111,12 @@ mock_heat_client.events.list.return_value = [
         'physical_resource_id': 'aabbcc'
     }
 ]
+
+# mock nova client
+mock_nova_client = Mock()
+mock_nova_client.servers.get.return_value = {
+    'id': 'aabbccvm01',
+    'status': 'active',
+    'name': 'vm01'
+}
+mock_nova_client.servers.create_image.return_value = 'aabbccvmimage01'
