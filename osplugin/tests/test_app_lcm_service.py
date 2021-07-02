@@ -15,6 +15,7 @@
 
 """
 import unittest
+from unittest import mock
 
 import utils
 from core.log import logger
@@ -33,11 +34,18 @@ class AppLcmServiceTest(unittest.TestCase):
     access_token = gen_token.test_access_token
     host_ip = '159.138.23.91'
 
-    def test_upload_package(self):
+    @mock.patch("core.csar.pkg.get_image_by_name_checksum")
+    @mock.patch("core.csar.pkg.create_image_record")
+    def test_upload_package(self,
+                            mock1,
+                            mock2):
+        mock1.return_value = {'id': 'abc123'}
+        mock2.return_value = 'imageid2'
+
         """
         测试上传包
         """
-        with open('tests/resources/vm_csar.csar', 'rb') as f:
+        with open('resources/edgegallery_vm_openstack.zip', 'rb') as f:
             package_data = f.read()
         data = [
             lcmservice_pb2.UploadPackageRequest(accessToken=self.access_token),

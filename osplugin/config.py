@@ -17,12 +17,18 @@
 
 # -*- coding: utf-8 -*-
 import os
+import configparser
 
-ssl_enabled = os.getenv('ENABLE_SSL', 'true') != 'false'
+conf = configparser.ConfigParser()
+conf.read('config.ini')
+
+env = conf.get('default', 'env')
+
+ssl_enabled = os.getenv('ENABLE_SSL', conf.get('default', 'enable_ssl')) != 'false'
 
 listen_ip = os.getenv('LISTEN_IP', '[::]')
 
-base_dir = os.getenv('BASE_DIR', '/usr/app')
+base_dir = os.getenv('BASE_DIR', conf.get('default', 'base_dir'))
 log_dir = os.getenv("LOG_DIR", base_dir + '/log')
 private_key_certificate_chain_pairs = (
     base_dir + '/ssl/server_tls.key',
@@ -42,11 +48,11 @@ _JWT_PUBLIC_KEY_DEF = '-----BEGIN PUBLIC KEY-----\n' \
 
 jwt_public_key = os.getenv('JWT_PUBLIC_KEY', _JWT_PUBLIC_KEY_DEF)
 
-db_user = os.getenv('DB_USER', 'osplugin')
-db_password = os.getenv('DB_PASSWORD', '')
-db_host = os.getenv('DB_HOST', 'mepm-postgres')
-db_port = int(os.getenv('DB_PORT', '5432'))
-db_name = os.getenv('DB_NAME', 'osplugindb')
+db_user = os.getenv('DB_USER', conf.get('postgres', 'username'))
+db_password = os.getenv('DB_PASSWORD', conf.get('postgres', 'password'))
+db_host = os.getenv('DB_HOST', conf.get('postgres', 'host'))
+db_port = int(os.getenv('DB_PORT', conf.get('postgres', 'port')))
+db_name = os.getenv('DB_NAME', conf.get('postgres', 'database'))
 
 # default chunk_size 2M
 _DEFAULT_IMAGE_CHUNK_SIZE = 1021 * 1024 * 2

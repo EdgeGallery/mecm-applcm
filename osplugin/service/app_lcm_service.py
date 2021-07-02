@@ -104,7 +104,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :return:
         """
         LOG.info('receive upload package msg...')
-        res = UploadPackageResponse(status=utils.FAILURE)
+        resp = UploadPackageResponse(status=utils.FAILURE)
 
         parameters = UploadPackageRequest(request_iterator)
 
@@ -112,19 +112,19 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if host_ip is None:
             LOG.info('hostIp not match ipv4')
             parameters.delete_tmp()
-            return res
+            return resp
 
         app_package_id = parameters.app_package_id
         if app_package_id is None:
             LOG.info('appPackageId is required')
             parameters.delete_tmp()
-            return res
+            return resp
 
         app_pkg_mapper = AppPkgMapper.get(app_package_id=app_package_id, host_ip=host_ip)
         if app_pkg_mapper is not None:
             LOG.info('app package exist')
             parameters.delete_tmp()
-            return res
+            return resp
         AppPkgMapper(
             app_package_id=app_package_id,
             host_ip=host_ip,
@@ -140,7 +140,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             pkg.check_image(host_ip)
             pkg.translate()
             start_check_package_status(app_package_id, host_ip)
-            res.status = utils.SUCCESS
+            resp.status = utils.SUCCESS
             LOG.info('upload and analyze app package success, start fetch image')
         except Exception as exception:
             rollback()
@@ -148,7 +148,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             utils.delete_dir(app_package_path)
         finally:
             parameters.delete_tmp()
-        return res
+        return resp
 
     @db_session
     def deletePackage(self, request, context):
