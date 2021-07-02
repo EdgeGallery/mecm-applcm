@@ -22,9 +22,9 @@ import urllib3
 from pony.orm import db_session, commit
 
 import utils
-from core import openstack_utils
 from core.log import logger
 from core.models import VmImageInfoMapper
+from core.openstack_utils import create_glance_client
 from task import upload_thread_pool, check_thread_pool
 
 
@@ -65,7 +65,7 @@ def _check_image_status(image_id, host_ip):
             return
         if image_info.status == utils.KILLED:
             return
-        glance = openstack_utils.create_glance_client(host_ip)
+        glance = create_glance_client(host_ip)
         image = glance.images.get(image_id)
     except Exception as exception:
         LOG.error(exception, exc_info=True)
@@ -75,12 +75,12 @@ def _check_image_status(image_id, host_ip):
         image_info.delete()
         commit()
         return
-    image_info.status = image.status
-    image_info.checksum = image.checksum
-    image_info.image_size = image.size
+    image_info.status = image['status']
+    image_info.checksum = image['checksum']
+    image_info.image_size = image['size']
     commit()
-    LOG.debug(f'now image status is {image.status}')
-    if image.status != utils.ACTIVE:
+    LOG.debug(f'now image status is {image_info.status}')
+    if image_info.status != utils.ACTIVE:
         start_check_image_status(image_id, host_ip)
 
 
@@ -96,7 +96,7 @@ def create_image_record(sw_image, app_package_id, host_ip):
     Returns: 镜像ID
 
     """
-    glance = openstack_utils.create_glance_client(host_ip)
+    glance = create_glance_client(host_ip)
     image = glance.images.create(name=sw_image.name,
                                  container_format=sw_image.container_format,
                                  min_ram=sw_image.min_ram,
@@ -126,7 +126,7 @@ def _do_upload_image(image_id, host_ip, file_path):
     Returns:
 
     """
-    glance = openstack_utils.create_glance_client(host_ip)
+    glance = create_glance_client(host_ip)
     try:
         with open(file_path, 'rb') as image_data:
             LOG.debug(f'start upload image {image_id}')
@@ -175,7 +175,7 @@ def _import_image_by_os_func(image_id, host_ip, uri):
     """
     使用Openstack自带功能上传远端镜像
     """
-    glance = openstack_utils.create_glance_client(host_ip)
+    glance = create_glance_client(host_ip)
     try:
         glance.images.image_import(image_id, method='web-download', uri=uri)
     except Exception as e:
@@ -190,7 +190,7 @@ def _import_image_by_python(image_id, host_ip, uri):
     """
     本地上传远端镜像
     """
-    glance = openstack_utils.create_glance_client(host_ip)
+    glance = create_glance_client(host_ip)
     try:
         LOG.debug(f'open connection {uri}')
         r = http.request('GET', uri, preload_content=False)

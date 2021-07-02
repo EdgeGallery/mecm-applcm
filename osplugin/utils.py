@@ -111,18 +111,18 @@ def validate_access_token(access_token):
     校验token
     """
     if access_token is None:
-        LOG.info('accessToken required')
+        LOG.error('accessToken required')
         return False
     try:
         payload = jwt.decode(access_token, jwt_public_key, algorithms=['RS256'])
         if 'authorities' not in payload:
-            LOG.info('Invalid token A')
+            LOG.error('Invalid token A')
             return False
         if 'userId' not in payload:
-            LOG.info('Invalid token UI')
+            LOG.error('Invalid token UI')
             return False
         if 'user_name' not in payload:
-            LOG.info('Invalid token UN')
+            LOG.error('Invalid token UN')
             return False
     except PyJWTError:
         LOG.debug("skip accessToken check")
@@ -136,7 +136,7 @@ def validate_ipv4_address(host_ip):
     验证ipv4格式
     """
     if host_ip is None:
-        LOG.info('hostIp required')
+        LOG.error('hostIp required')
         return False
     pattern = re.compile(_IPV4_PATTERN)
     return pattern.match(host_ip)
@@ -154,7 +154,7 @@ def validate_uuid(param):
     校验uuid格式
     """
     if param is None:
-        LOG.info('param require')
+        LOG.error('param require')
         return False
     pattern = re.compile(_UUID_PATTERN)
     return pattern.match(param)

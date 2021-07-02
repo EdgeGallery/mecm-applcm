@@ -32,7 +32,7 @@ from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest, BaseRequest, \
     AppPkgMapper, VmImageInfoMapper
-from core.openstack_utils import create_glance_client
+from core.openstack_utils import create_glance_client, create_heat_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
@@ -110,19 +110,19 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(parameters)
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
+            LOG.error('hostIp not match ipv4')
             parameters.delete_tmp()
             return resp
 
         app_package_id = parameters.app_package_id
         if app_package_id is None:
-            LOG.info('appPackageId is required')
+            LOG.error('appPackageId is required')
             parameters.delete_tmp()
             return resp
 
         app_pkg_mapper = AppPkgMapper.get(app_package_id=app_package_id, host_ip=host_ip)
         if app_pkg_mapper is not None:
-            LOG.info('app package exist')
+            LOG.error('app package exist')
             parameters.delete_tmp()
             return resp
         AppPkgMapper(
@@ -163,12 +163,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
+            LOG.error('hostIp not match ipv4')
             return res
 
         app_package_id = request.appPackageId
         if app_package_id is None or app_package_id == '':
-            LOG.info("appPackageId required")
+            LOG.error("appPackageId required")
             return res
 
         app_package_info = AppPkgMapper.get(app_package_id=app_package_id,
@@ -176,14 +176,14 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if app_package_info is not None:
             app_package_info.delete()
         glance = create_glance_client(host_ip)
-        images = VmImageInfoMapper.select().filter(app_package_id=app_package_id,
-                                                   host_ip=host_ip)
+        images = VmImageInfoMapper.find_many(app_package_id=app_package_id,
+                                             host_ip=host_ip)
         for image in images:
-            image.delete()
             try:
                 glance.images.delete(image.image_id)
             except glanceclient.exc.HTTPNotFound:
                 logger.debug(f'skip delete image {image.image_id}')
+            image.delete()
         commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
@@ -253,7 +253,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'parameters': parameters
         }
         LOG.debug('init heat client')
-        heat = openstack_utils.create_heat_client(host_ip)
+        heat = create_heat_client(host_ip)
         try:
             LOG.debug('发送创建stack请求')
             stack_resp = heat.stacks.create(**fields)
@@ -271,7 +271,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.SUCCESS
-        LOG.debug('消息处理完成')
+        LOG.info('instantiate success')
         return res
 
     @db_session
@@ -304,7 +304,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         LOG.debug('初始化openstack客户端')
-        heat = openstack_utils.create_heat_client(host_ip)
+        heat = create_heat_client(host_ip)
         try:
             LOG.debug('发送删除请求')
             heat.stacks.delete(app_ins_mapper.stack_id)
@@ -363,7 +363,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('query app instance info success')
             return res
 
-        heat = openstack_utils.create_heat_client(host_ip)
+        heat = create_heat_client(host_ip)
         output_list = heat.stacks.output_list(app_ins_mapper.stack_id)
 
         response = _get_output_data(output_list, heat, app_ins_mapper.stack_id)
@@ -398,27 +398,27 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             res.response = '{"code":404}'
             return res
 
-        heat = openstack_utils.create_heat_client(host_ip)
+        heat = create_heat_client(host_ip)
 
         events = heat.events.list(stack_id=app_ins_mapper.stack_id)
         vm_describe_info = {}
         for event in events:
-            if event.resource_name in vm_describe_info:
-                vm_describe_info[event.resource_name]['events'].append({
-                    'eventTime': event.event_time,
-                    'resourceStatus': event.resource_status,
-                    'resourceStatusReason': event.resource_status_reason
+            if event['resource_name'] in vm_describe_info:
+                vm_describe_info[event['resource_name']]['events'].append({
+                    'eventTime': event['event_time'],
+                    'resourceStatus': event['resource_status'],
+                    'resourceStatusReason': event['resource_status_reason']
                 })
             else:
-                vm_describe_info[event.resource_name] = {
-                    'resourceName': event.resource_name,
-                    'logicalResourceId': event.logical_resource_id,
-                    'physicalResourceId': event.physical_resource_id,
+                vm_describe_info[event['resource_name']] = {
+                    'resourceName': event['resource_name'],
+                    'logicalResourceId': event['logical_resource_id'],
+                    'physicalResourceId': event['physical_resource_id'],
                     'events': [
                         {
-                            'eventTime': event.event_time,
-                            'resourceStatus': event.resource_status,
-                            'resourceStatusReason': event.resource_status_reason
+                            'eventTime': event['event_time'],
+                            'resourceStatus': event['resource_status'],
+                            'resourceStatusReason': event['resource_status_reason']
                         }
                     ]
                 }

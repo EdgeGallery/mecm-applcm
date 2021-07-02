@@ -41,7 +41,8 @@ def del_rc(host_ip):
     """
     删除rc表
     """
-    _RC_MAP.pop(host_ip)
+    if host_ip in _RC_MAP:
+        _RC_MAP.pop(host_ip)
 
 
 def get_rc(host_ip):

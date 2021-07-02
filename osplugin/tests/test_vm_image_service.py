@@ -21,7 +21,7 @@
 import unittest
 from internal.lcmservice import lcmservice_pb2
 from service.vm_image_service import VmImageService
-from tests import gen_token
+from tests.resources import gen_token
 
 
 def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
