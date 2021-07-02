@@ -78,6 +78,7 @@ const (
 	RequestBodyTooLarge             = "request body too large"
 	FailedToUploadToPlugin          = "failed to upload package to plugin"
 	FailedToInstantiate             = "failed to instantiate app"
+	FailedToCovertYamlToJson        = "failed to convert yaml to json"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30

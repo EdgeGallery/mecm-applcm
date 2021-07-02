@@ -218,7 +218,7 @@ func (c *ImageController) getImageId(clientIp string) (string, error) {
 // Get Chunk number
 func (c *ImageController) getChunkNum() (int32, error) {
 	chunkString := c.Ctx.Request.Header.Get("chunk_num")
-
+	log.Info("chunk_num is:" + chunkString)
 	i, err := strconv.ParseInt(chunkString, 10, 32)
 	if err != nil {
 		return 0, errors.New("Chunk number is invalid")

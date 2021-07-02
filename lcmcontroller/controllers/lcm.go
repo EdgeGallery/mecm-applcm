@@ -235,13 +235,14 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 	var pkgDetails models.AppPkgDetails
 	mf, err := c.getFileContainsExtension(clientIp, packageDir, ".mf")
     if err != nil {
+		log.Error("failed to find mf file, check if mf file exist.")
 		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return pkgDetails, errors.New("failed to find mf file")
 	}
 
 	mfYaml, err := os.Open(mf)
 	if err != nil {
-		log.Error("failed to read mf file")
+		log.Error("failed to open mf file")
 		return pkgDetails, errors.New("failed to read mf file")
 	}
 	defer mfYaml.Close()
@@ -250,12 +251,13 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
-		return pkgDetails, errors.New("failed to convert yaml to json")
+		log.Error(util.FailedToCovertYamlToJson + ", pls check mf file if struct is not correct.")
+		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
 	}
 
 	err = json.Unmarshal(data, &pkgDetails)
 	if err != nil {
+		log.Error(util.UnMarshalError + ", pls check if app version or desc was incorrectly set to a number.")
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return pkgDetails, err
 	}
@@ -497,7 +499,7 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 
 	configYaml, err := os.Open(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/" + appConfigFile)
 	if err != nil {
-		log.Error("failed to read config file")
+		log.Error("failed to read app config file")
 		return err, config.AppConfigAdapter{}
 	}
 	defer configYaml.Close()
@@ -506,7 +508,7 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error(util.FailedToCovertYamlToJson)
 		return err, config.AppConfigAdapter{}
 	}
 
@@ -549,7 +551,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 
 	mfYaml, err := os.Open(pkgDir + "/TOSCA_VNFD.meta")
 	if err != nil {
-		log.Error("failed to read mf file")
+		log.Error("failed to read meta file")
 		return "", err
 	}
 	defer mfYaml.Close()
@@ -558,7 +560,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error(util.FailedToCovertYamlToJson)
 		return "", err
 	}
 	var vnfData models.VnfData
@@ -1166,6 +1168,7 @@ func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort,
 	}
 	err = json.Unmarshal([]byte(cpu), &statInfo)
 	if err != nil {
+		log.Error(util.UnMarshalError)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return cpuUtilization, err
 	}
@@ -1187,6 +1190,7 @@ func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort,
 	}
 	err = json.Unmarshal([]byte(mem), &statInfo)
 	if err != nil {
+		log.Error(util.UnMarshalError)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return memUsage, err
 	}
@@ -1208,6 +1212,7 @@ func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
 	}
 	err = json.Unmarshal([]byte(disk), &statInfo)
 	if err != nil {
+		log.Error(util.UnMarshalError)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return diskUtilization, err
 	}

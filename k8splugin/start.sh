@@ -56,41 +56,6 @@ validate_port_num() {
   return 0
 }
 
-# validates whether file exist
-validate_file_exists() {
-  file_path="$1"
-
-  # checks variable is unset
-  if [ -z "$file_path" ]; then
-    echo "file path variable is not set"
-    return 1
-  fi
-
-  # checks if file exists
-  if [ ! -f "$file_path" ]; then
-    echo "file does not exist"
-    return 1
-  fi
-
-  return 0
-}
-
-# ssl parameters validation
-validate_file_exists "/usr/app/ssl/server_tls.crt"
-valid_server_certificate="$?"
-if [ ! "$valid_server_certificate" -eq "0" ]; then
-  echo "server certificate is missing"
-  exit 1
-fi
-
-validate_file_exists "/usr/app/ssl/server_tls.key"
-valid_server_certificate="$?"
-if [ ! "$valid_server_certificate" -eq "0" ]; then
-  echo "server key is missing"
-  exit 1
-fi
-
-
 # db parameters validation
 if [ ! -z "$K8S_PLUGIN_DB" ]; then
   validate_name "$K8S_PLUGIN_DB"
