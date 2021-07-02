@@ -235,6 +235,7 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 	var pkgDetails models.AppPkgDetails
 	mf, err := c.getFileContainsExtension(clientIp, packageDir, ".mf")
     if err != nil {
+		log.Error("failed to find mf file, check if mf file exist.")
 		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return pkgDetails, errors.New("failed to find mf file")
 	}
@@ -250,13 +251,13 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
-		log.Error("failed to convert yaml to json")
+		log.Error("failed to convert yaml to json, pls check mf file if struct is not correct.")
 		return pkgDetails, errors.New("failed to convert yaml to json")
 	}
 
 	err = json.Unmarshal(data, &pkgDetails)
 	if err != nil {
-		log.Error(util.UnMarshalError)
+		log.Error(util.UnMarshalError + ", pls check if app version or desc was incorrectly set to a number.")
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
 		return pkgDetails, err
 	}
@@ -498,7 +499,7 @@ func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 
 	configYaml, err := os.Open(PackageFolderPath + tenantId + "/" + req.PackageId + "/APPD/" + appConfigFile)
 	if err != nil {
-		log.Error("failed to read config file")
+		log.Error("failed to read app config file")
 		return err, config.AppConfigAdapter{}
 	}
 	defer configYaml.Close()
