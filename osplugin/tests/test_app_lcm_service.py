@@ -171,7 +171,7 @@ class AppLcmServiceTest(unittest.TestCase):
             AppInsMapper(
                 app_instance_id='25e32a5c-e00f-4edf-b42d-6dd4b610c2db',
                 host_ip=self.host_ip,
-                stack_id='stack001',
+                stack_id='stacuquery001',
                 operational_status='Instantiated',
                 operation_info=None
             )
@@ -222,7 +222,7 @@ class AppLcmServiceTest(unittest.TestCase):
             AppInsMapper(
                 app_instance_id='35e32a5c-e00f-4edf-b42d-6dd4b610c2db',
                 host_ip=self.host_ip,
-                stack_id='stack001',
+                stack_id='stackevent001',
                 operational_status='Instantiated',
                 operation_info=None
             )

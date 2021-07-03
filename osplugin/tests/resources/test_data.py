@@ -51,7 +51,7 @@ mock heat client 返回模拟数据
 mock_heat_client = Mock()
 mock_heat_client.stacks.create.return_value = {
     'stack': {
-        'id': 'aabbcc'
+        'id': 'created001'
     }
 }
 mock_heat_client.stacks.delete.return_value = None
