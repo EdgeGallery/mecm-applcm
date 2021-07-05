@@ -19,6 +19,8 @@
 
 APP_SECURITY_GROUP_NAME = 'DefaultSecurityGroup'
 
+SECURITY_GROUP_RULE = 'tosca.policies.nfv.SecurityGroupRule'
+
 
 def app_security_group():
     """
@@ -41,7 +43,7 @@ def n6_rule(target):
     """
     return {
         'n6_rule_tcp': {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'targets': [target],
             'properties': {
                 'protocol': 'tcp',
@@ -51,7 +53,7 @@ def n6_rule(target):
             }
         },
         'n6_rule_udp': {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'targets': [target],
             'properties': {
                 'protocol': 'udp',
@@ -61,7 +63,7 @@ def n6_rule(target):
             }
         },
         'n6_rule_icmp': {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'targets': [target],
             'properties': {
                 'protocol': 'icmp',
@@ -79,7 +81,7 @@ def mp1_rule(target):
     """
     return {
         'mp1_rule_tcp': {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'targets': [target],
             'properties': {
                 'protocol': 'tcp',
@@ -94,7 +96,7 @@ def mp1_rule(target):
             }
         },
         'mp1_rule_udp': {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'targets': [target],
             'properties': {
                 'protocol': 'udp',
@@ -109,7 +111,7 @@ def mp1_rule(target):
             }
         },
         'mp1_rule_icmp': {
-            'type': 'tosca.policies.nfv.SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'targets': [target],
             'properties': {
                 'protocol': 'icmp',

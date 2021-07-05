@@ -25,8 +25,7 @@ import yaml
 from pony.orm import db_session
 
 import utils
-from core import tosca_utils
-from core.csar import sw_image
+from core.csar import sw_image, tosca_utils
 from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
@@ -153,8 +152,7 @@ class CsarPkg:
         if self._appd_path is None:
             raise PackageNotValid('entry definitions not exist')
         self.appd_file_path = self.base_dir + '/' + self._appd_path
-        self.appd_file_dir = os.path.dirname(self.appd_file_path)
-        self.hot_path = self.appd_file_dir + '/hot.yaml'
+        self.hot_path = os.path.dirname(self.appd_file_path) + '/hot.yaml'
 
     def unzip(self):
         """
@@ -163,7 +161,7 @@ class CsarPkg:
         with zipfile.ZipFile(self.appd_file_path) as zip_file:
             namelist = zip_file.namelist()
             for file in namelist:
-                zip_file.extract(file, self.appd_file_dir)
+                zip_file.extract(file, os.path.dirname(self.appd_file_path))
 
     @db_session
     def check_image(self, host_ip):
@@ -200,11 +198,11 @@ class CsarPkg:
                 zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index + 4]
                 img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
                 img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index + 4:]
-                logger.debug(f'image dir {img_tmp_file}')
+                logger.debug('image dir %s' % img_tmp_file)
                 if not utils.exists_path(img_tmp_dir):
                     utils.unzip(zip_file_path, img_tmp_dir)
                 add_upload_image_task(image_id, host_ip, img_tmp_file) \
-                    .add_done_callback(lambda future: utils.delete_dir(img_tmp_file))
+                    .add_done_callback(lambda future: utils.delete_dir(copy.copy(img_tmp_file)))
 
         self.image_id_map = image_id_map
 
@@ -214,7 +212,7 @@ class CsarPkg:
         """
         self.unzip()
         if self.appd_file_path.endswith('.zip'):
-            cmcc_appd = CmccAppD(self.appd_file_dir)
+            cmcc_appd = CmccAppD(os.path.dirname(self.appd_file_path))
             appd = cmcc_appd.appd
         elif self.appd_file_path.endswith('.yaml'):
             appd = yaml.load(self.appd_file_path, Loader=yaml.FullLoader)
@@ -234,6 +232,21 @@ class CsarPkg:
         # Default security group rules
         _set_default_security_group(appd)
 
+        self._translate_topology_template(appd, hot)
+
+        with open(self.hot_path, 'w') as file:
+            yaml.dump(hot, file)
+
+    def _translate_topology_template(self, appd, hot):
+        """
+        翻译topology template
+        Args:
+            appd:
+            hot:
+
+        Returns:
+
+        """
         for name, template in appd['topology_template']['node_templates'].items():
             if template['type'] in TOSCA_TYPE_CLASS:
                 resource = TOSCA_TYPE_CLASS[template['type']](name,
@@ -256,9 +269,6 @@ class CsarPkg:
                     resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
                     resource.set_properties(topology_template=appd['topology_template'],
                                             hot_file=hot)
-
-        with open(self.hot_path, 'w') as file:
-            yaml.dump(hot, file)
 
 
 class CmccAppD:

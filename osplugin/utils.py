@@ -99,11 +99,20 @@ def delete_dir(path):
 
 
 def unzip(file, target):
+    """
+    解压缩
+    Args:
+        file:
+        target:
+
+    Returns:
+
+    """
     create_dir(target)
     with zipfile.ZipFile(file) as zip_file:
         namelist = zip_file.namelist()
-        for file in namelist:
-            zip_file.extract(file, target)
+        for _file in namelist:
+            zip_file.extract(_file, target)
 
 
 def validate_access_token(access_token):
@@ -111,22 +120,18 @@ def validate_access_token(access_token):
     校验token
     """
     if access_token is None:
-        LOG.error('accessToken required')
         return False
     try:
         payload = jwt.decode(access_token, jwt_public_key, algorithms=['RS256'])
         if 'authorities' not in payload:
-            LOG.error('Invalid token A')
             return False
         if 'userId' not in payload:
-            LOG.error('Invalid token UI')
             return False
         if 'user_name' not in payload:
-            LOG.error('Invalid token UN')
             return False
     except PyJWTError:
         LOG.debug("skip accessToken check")
-        # todo change to False
+        # test, change false future
         return True
     return True
 
@@ -136,7 +141,6 @@ def validate_ipv4_address(host_ip):
     验证ipv4格式
     """
     if host_ip is None:
-        LOG.error('hostIp required')
         return False
     pattern = re.compile(_IPV4_PATTERN)
     return pattern.match(host_ip)

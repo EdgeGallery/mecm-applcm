@@ -74,8 +74,10 @@ def validate_input_params_for_upload_cfg(req):
     access_token = req.accessToken
     host_ip = req.hostIp
     if not utils.validate_access_token(access_token):
+        LOG.error('accessToken not valid')
         return None
     if not utils.validate_ipv4_address(host_ip):
+        LOG.error('hostIp not match ipv4')
         return None
     return host_ip
 
@@ -96,7 +98,6 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         resp = CreateVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
             return resp
         if request.vmId is None or request.vmId == '':
             LOG.info("vmId is required")
@@ -131,7 +132,6 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         resp = QueryVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
-            LOG.info('hostIp not match ipv4')
             return resp
         vm_image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
         if vm_image_info is None:
@@ -162,11 +162,10 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         resp = DeleteVmImageResponse(response=utils.FAILURE_JSON)
         host_ip = validate_input_params_for_upload_cfg(request)
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
             return resp
         vm_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
         if vm_info is None:
-            LOG.info("image not found! image_id: %s", request.imageId)
+            LOG.info("image not found! image_id: %s" % request.imageId)
             return resp
         glance_client = create_glance_client(host_ip)
         try:
@@ -177,7 +176,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         vm_info.delete()
         commit()
         resp.response = '{"code": 200, "msg": "Ok"}'
-        LOG.info(f"delete image {request.imageId} success")
+        LOG.info("delete image %s success" % request.imageId)
         return resp
 
     def downloadVmImage(self, request, context):
@@ -189,7 +188,6 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
-            LOG.info('hostIp not match ipv4')
             raise ParamNotValid("host ip is null...")
         glance_client = create_glance_client(host_ip)
 

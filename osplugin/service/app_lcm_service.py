@@ -30,8 +30,8 @@ import utils
 from core import openstack_utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
-from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, UploadPackageRequest, BaseRequest, \
-    AppPkgMapper, VmImageInfoMapper
+from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest,\
+    UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
 from core.openstack_utils import create_glance_client, create_heat_client
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
@@ -55,8 +55,10 @@ def validate_input_params(param):
     access_token = param.access_token
     host_ip = param.host_ip
     if not utils.validate_access_token(access_token):
+        LOG.error('accessToken not valid')
         return None
     if not utils.validate_ipv4_address(host_ip):
+        LOG.error('hostIp not match ipv4')
         return None
     return host_ip
 
@@ -110,7 +112,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(parameters)
         if host_ip is None:
-            LOG.error('hostIp not match ipv4')
             parameters.delete_tmp()
             return resp
 
@@ -163,7 +164,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
-            LOG.error('hostIp not match ipv4')
             return res
 
         app_package_id = request.appPackageId
@@ -182,7 +182,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             try:
                 glance.images.delete(image.image_id)
             except glanceclient.exc.HTTPNotFound:
-                logger.debug(f'skip delete image {image.image_id}')
+                logger.debug('skip delete image %s' % image.image_id)
             image.delete()
         commit()
 
@@ -202,40 +202,39 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         :return:
         """
         LOG.info('receive instantiate msg...')
-        res = InstantiateResponse(status=utils.FAILURE)
+        resp = InstantiateResponse(status=utils.FAILURE)
 
         parameter = InstantiateRequest(request)
 
         LOG.debug('校验access token, host ip')
         host_ip = validate_input_params(parameter)
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
-            return res
+            return resp
 
         LOG.debug('获取实例ID')
         app_instance_id = parameter.app_instance_id
         if app_instance_id is None or app_instance_id == '':
-            LOG.info("appInstanceId is required")
-            return res
+            LOG.error("appInstanceId is required")
+            return resp
 
         LOG.debug('查询数据库是否存在相同记录')
-        app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
-        if app_ins_mapper is not None:
-            LOG.info('app ins %s exist', app_instance_id)
-            return res
+        if AppInsMapper.get(app_instance_id=app_instance_id) is not None:
+            LOG.error('app ins %s exist', app_instance_id)
+            return resp
 
         LOG.debug('检查app包状态')
-        app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id, host_ip=host_ip)
+        app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id,
+                                          host_ip=host_ip)
         if app_pkg_mapper is None or app_pkg_mapper.status != utils.ACTIVE:
-            LOG.info('app pkg %s not active', parameter.app_package_id)
-            return res
+            LOG.error('app pkg %s not active' % parameter.app_package_id)
+            return resp
 
         LOG.debug('读取包的hot文件')
         hot_yaml_path = get_hot_yaml_path(parameter.app_package_id,
                                           parameter.app_package_path)
         if hot_yaml_path is None:
-            LOG.info("get hot yaml path failure, app package might not active")
-            return res
+            LOG.error("get hot yaml path failure, app package might not active")
+            return resp
 
         LOG.debug('构建heat参数')
         tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
@@ -259,7 +258,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             stack_resp = heat.stacks.create(**fields)
         except Exception as exception:
             LOG.error(exception, exc_info=True)
-            return res
+            return resp
         AppInsMapper(app_instance_id=app_instance_id,
                      host_ip=host_ip,
                      stack_id=stack_resp['stack']['id'],
@@ -270,9 +269,9 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.debug('开始更新状态定时任务')
         start_check_stack_status(app_instance_id=app_instance_id)
 
-        res.status = utils.SUCCESS
+        resp.status = utils.SUCCESS
         LOG.info('instantiate success')
-        return res
+        return resp
 
     @db_session
     def terminate(self, request, context):
@@ -288,7 +287,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.debug('校验token, host ip')
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
             return res
 
         LOG.debug('获取实例ID')
@@ -338,7 +336,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
             res.response = '{"code":400}'
             return res
 
@@ -384,7 +381,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
             return res
 
         app_instance_id = request.appInstanceId
@@ -443,7 +439,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(parameter)
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
             return res
 
         config_file = parameter.config_file
@@ -478,7 +473,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
-            LOG.info('hostIp not match ipv4')
             return res
 
         config_path = utils.RC_FILE_DIR + '/' + host_ip

@@ -60,8 +60,7 @@ def _check_image_status(image_id, host_ip):
     time.sleep(5)
     try:
         image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-        if not image_info:
-            LOG.debug(f'{image_id} not in {host_ip}')
+        if image_info is None:
             return
         if image_info.status == utils.KILLED:
             return
@@ -70,8 +69,7 @@ def _check_image_status(image_id, host_ip):
     except Exception as exception:
         LOG.error(exception, exc_info=True)
         return
-    if not image:
-        LOG.error(f'{image_id} not in {host_ip}')
+    if image is None:
         image_info.delete()
         commit()
         return
@@ -79,7 +77,7 @@ def _check_image_status(image_id, host_ip):
     image_info.checksum = image['checksum']
     image_info.image_size = image['size']
     commit()
-    LOG.debug(f'now image status is {image_info.status}')
+    LOG.debug('now image status is %s' % image_info.status)
     if image_info.status != utils.ACTIVE:
         start_check_image_status(image_id, host_ip)
 
@@ -129,14 +127,14 @@ def _do_upload_image(image_id, host_ip, file_path):
     glance = create_glance_client(host_ip)
     try:
         with open(file_path, 'rb') as image_data:
-            LOG.debug(f'start upload image {image_id}')
+            LOG.debug('start upload image %s' % image_id)
             glance.images.upload(image_id, image_data=image_data)
-            LOG.debug(f'finish upload image {image_id}')
-    except Exception as e:
+            LOG.debug('finish upload image %s' % image_id)
+    except Exception as exception:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED
         commit()
-        LOG.error(e, exc_info=True)
+        LOG.error(exception, exc_info=True)
 
 
 def add_upload_image_task(image_id, host_ip, file_path):
@@ -178,11 +176,11 @@ def _import_image_by_os_func(image_id, host_ip, uri):
     glance = create_glance_client(host_ip)
     try:
         glance.images.image_import(image_id, method='web-download', uri=uri)
-    except Exception as e:
+    except Exception as exception:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED
         commit()
-        LOG.error(e, exc_info=True)
+        LOG.error(exception, exc_info=True)
 
 
 @db_session
@@ -192,13 +190,13 @@ def _import_image_by_python(image_id, host_ip, uri):
     """
     glance = create_glance_client(host_ip)
     try:
-        LOG.debug(f'open connection {uri}')
-        r = http.request('GET', uri, preload_content=False)
-        LOG.debug(f'start upload image {image_id}')
-        glance.images.upload(image_id=image_id, image_data=r)
-        LOG.debug(f'finished upload image {image_id}')
-    except Exception as e:
+        LOG.debug('open connection %s' % uri)
+        resp_stream = http.request('GET', uri, preload_content=False)
+        LOG.debug('start upload image %s' % image_id)
+        glance.images.upload(image_id=image_id, image_data=resp_stream)
+        LOG.debug('finished upload image %s' % image_id)
+    except Exception as exception:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED
         commit()
-        LOG.error(e, exc_info=True)
+        LOG.error(exception, exc_info=True)

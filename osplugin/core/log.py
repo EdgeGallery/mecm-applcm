@@ -23,7 +23,8 @@ import os
 
 import config
 
-LOG_FORMATTER = '%(asctime)s - %(threadName)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
+LOG_FORMATTER = '%(asctime)s - %(threadName)s - ' \
+                '%(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
