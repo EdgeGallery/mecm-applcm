@@ -16,7 +16,7 @@
 """
 # -*- coding: utf-8 -*-
 
-from pony.orm import PrimaryKey, Required, Optional
+from pony.orm import PrimaryKey, Required, Optional, db_session, select
 
 import config
 import utils
@@ -232,13 +232,15 @@ class VmImageInfoMapper(db.Entity):
         """
         return self._table_
 
-    def get_key(self):
+    @classmethod
+    def find_many(cls, app_package_id, host_ip):
         """
-        get key
-        Returns:
-
+        根据查询条件查询多个实例对象
+        :param app_package_id: 查询条件
+        :param host_ip:
+        :return:
         """
-        return self.image_id
+        return select(x for x in cls if x.app_package_id == app_package_id and x.host_ip == host_ip)
 
 
 db.generate_mapping(create_tables=True)

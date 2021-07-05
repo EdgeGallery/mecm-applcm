@@ -41,7 +41,8 @@ def del_rc(host_ip):
     """
     删除rc表
     """
-    _RC_MAP.pop(host_ip)
+    if host_ip in _RC_MAP:
+        _RC_MAP.pop(host_ip)
 
 
 def get_rc(host_ip):
@@ -107,6 +108,16 @@ _GLANCE_CLIENT_MAP = {}
 
 
 def get_image_by_name_checksum(name, checksum, host_ip):
+    """
+    根据名称和校验和获取镜像
+    Args:
+        name: 名称
+        checksum: 校验和
+        host_ip:
+
+    Returns: 镜像信息
+
+    """
     glance = create_glance_client(host_ip)
     images = glance.images.list(filters={'name': name})
     for image in images:
@@ -224,12 +235,36 @@ def _change_function(properties):
             properties['get_param'] = properties.pop('get_input')
         if 'concat' in properties:
             properties['list_join'] = ['', properties.pop('concat')]
-        for key, value in properties.items():
+        for value in properties.values():
             _change_function(value)
 
     elif isinstance(properties, list):
         for item in properties:
             _change_function(item)
+
+
+def _gen_runtime_script(inputs, user_data):
+    """
+    生产运行时脚本
+    Args:
+        inputs:
+        user_data:
+
+    Returns:
+
+    """
+    mec_runtime_script = ''
+    if 'ak' in inputs and 'sk' in inputs:
+        mec_runtime_script = 'echo \'ak=$ak$\\nsk=$sk$\\n\' >> /root/init.txt\n'
+        if '$ak$' not in user_data['str_replace']['params']:
+            user_data['str_replace']['params']['$ak$'] = {
+                'get_input': 'ak'
+            }
+        if '$sk$' not in user_data['str_replace']['params']:
+            user_data['str_replace']['params']['$sk$'] = {
+                'get_input': 'sk'
+            }
+    return mec_runtime_script
 
 
 class NovaServer(HOTBase):
@@ -275,27 +310,18 @@ class NovaServer(HOTBase):
                     params['$' + key + '$'] = param
                 user_data['str_replace']['params'] = params
 
-        if '' == user_data['str_replace']['template']:
+        if user_data['str_replace']['template'] == '':
             user_data['str_replace']['template'] = '#!/bin/bash\n'
 
-        mec_runtime_script = ''
-        if 'ak' in inputs and 'sk' in inputs:
-            mec_runtime_script = 'echo \'ak=$ak$\\nsk=$sk$\\n\' >> /root/init.txt\n'
-            if '$ak$' not in user_data['str_replace']['params']:
-                user_data['str_replace']['params']['$ak$'] = {
-                    'get_input': 'ak'
-                }
-            if '$sk$' not in user_data['str_replace']['params']:
-                user_data['str_replace']['params']['$sk$'] = {
-                    'get_input': 'sk'
-                }
+        mec_runtime_script = _gen_runtime_script(inputs, user_data)
 
         user_data['str_replace']['template'] = \
             user_data['str_replace']['template'] + mec_runtime_script
 
         self.properties['user_data'] = user_data
         if 'config_drive' in self.template['properties']['bootdata']:
-            self.properties['config_drive'] = self.template['properties']['bootdata']['config_drive']
+            self.properties['config_drive'] = \
+                self.template['properties']['bootdata']['config_drive']
 
     def _check_network(self, node_templates):
         """
@@ -327,6 +353,14 @@ class NovaServer(HOTBase):
                     })
 
     def _check_image(self, image_id_map):
+        """
+        转换镜像名称为id
+        Args:
+            image_id_map:
+
+        Returns:
+
+        """
         image_name = self.template['properties']['sw_image_data']['name']
         if image_name in image_id_map:
             self.properties['image'] = image_id_map[image_name]
@@ -334,6 +368,14 @@ class NovaServer(HOTBase):
             raise RuntimeError(f'image {image_name} not define in SwImageDesc.json')
 
     def set_properties(self, **kwargs):
+        """
+        转换属性
+        Args:
+            **kwargs:
+
+        Returns:
+
+        """
         # simple
         self.properties['name'] = self.template['properties']['name']
         self.properties['config_drive'] = True
@@ -398,6 +440,14 @@ class VirtualStorage(HOTBase):
         self.properties = {}
 
     def set_properties(self, **kwargs):
+        """
+        转换属性
+        Args:
+            **kwargs:
+
+        Returns:
+
+        """
         hot_file = kwargs['hot_file']
 
         self._set_size()
@@ -409,6 +459,11 @@ class VirtualStorage(HOTBase):
         }
 
     def _set_size(self):
+        """
+        设置大小
+        Returns:
+
+        """
         size = self.template['properties']['virtual_block_storage_data']['size_of_storage']
         self.properties['size'] = size
 
@@ -424,12 +479,27 @@ class VirtualPort(HOTBase):
         self.properties = {}
 
     def _set_fixed_ips(self):
+        """
+        设置ip
+        Returns:
+
+        """
         if 'attributes' in self.template and 'ipv4_address' in self.template['attributes']:
             self.properties['fixed_ips'] = [{
                 'ip_address': self.template['attributes']['ipv4_address']
             }]
 
     def set_properties(self, **kwargs):
+        """
+        设置属性
+        Args:
+            **kwargs:
+                topology_template:
+
+
+        Returns:
+
+        """
         node_templates = kwargs['topology_template']['node_templates']
         hot_file = kwargs['hot_file']
         network = None
@@ -467,6 +537,15 @@ class Flavor(HOTBase):
         self.properties = {}
 
     def set_properties(self, **kwargs):
+        """
+        设置属性
+        Args:
+            **kwargs:
+                hot_file:
+
+        Returns:
+
+        """
         hot_file = kwargs['hot_file']
         cpu = self.template['capabilities'][
             'virtual_compute']['properties']['virtual_cpu']['num_virtual_cpu']
@@ -490,6 +569,9 @@ class Flavor(HOTBase):
 
 
 class SecurityGroup(HOTBase):
+    """
+    安全组
+    """
     def __init__(self, name, template):
         super().__init__('OS::Neutron::SecurityGroup')
         self.name = name
@@ -497,6 +579,14 @@ class SecurityGroup(HOTBase):
         self.properties = {}
 
     def set_properties(self, **kwargs):
+        """
+        设置属性
+        Args:
+            **kwargs:
+
+        Returns:
+
+        """
         hot_file = kwargs['hot_file']
         hot_file['resources'][self.name] = {
             'type': self.type
@@ -509,7 +599,7 @@ class SecurityGroup(HOTBase):
                     }
                 ]
         hot_file['resources'][self.name + 'DefaultTcpRule'] = {
-            'type': 'OS::Neutron::SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'properties': {
                 'protocol': 'tcp',
                 'remote_group': {
@@ -522,7 +612,7 @@ class SecurityGroup(HOTBase):
         }
 
         hot_file['resources'][self.name + 'DefaultUdpRule'] = {
-            'type': 'OS::Neutron::SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'properties': {
                 'protocol': 'udp',
                 'remote_group': {
@@ -535,7 +625,7 @@ class SecurityGroup(HOTBase):
         }
 
         hot_file['resources'][self.name + 'DefaultIcmpRule'] = {
-            'type': 'OS::Neutron::SecurityGroupRule',
+            'type': SECURITY_GROUP_RULE,
             'properties': {
                 'protocol': 'icmp',
                 'remote_group': {
@@ -549,13 +639,24 @@ class SecurityGroup(HOTBase):
 
 
 class SecurityGroupRule(HOTBase):
+    """
+    安全组规则
+    """
     def __init__(self, name, template):
-        super().__init__('OS::Neutron::SecurityGroupRule')
+        super().__init__(SECURITY_GROUP_RULE)
         self.name = name
         self.template = template
         self.properties = {}
 
     def set_properties(self, **kwargs):
+        """
+        设置属性
+        Args:
+            **kwargs:
+
+        Returns:
+
+        """
         hot_file = kwargs['hot_file']
 
         if 'protocol' in self.template['properties']:
@@ -563,7 +664,8 @@ class SecurityGroupRule(HOTBase):
         if 'direction' in self.template['properties']:
             self.properties['direction'] = self.template['properties']['direction']
         if 'remote_ip_prefix' in self.template['properties']:
-            self.properties['remote_ip_prefix'] = self.template['properties']['remote_ip_prefix']
+            self.properties['remote_ip_prefix'] = \
+                self.template['properties']['remote_ip_prefix']
         self.properties['security_group'] = {
             'get_resource': self.template['targets'][0]
         }
@@ -588,3 +690,5 @@ TOSCA_GROUP_CLASS = {
 TOSCA_POLICY_CLASS = {
     'tosca.policies.nfv.SecurityGroupRule': SecurityGroupRule
 }
+
+SECURITY_GROUP_RULE = 'OS::Neutron::SecurityGroupRule'
