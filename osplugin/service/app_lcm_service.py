@@ -419,7 +419,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                     ]
                 }
         response_data = []
-        for key, value in vm_describe_info.items():
+        for value in vm_describe_info.values():
             response_data.append(value)
         res.response = json.dumps(response_data)
         LOG.info('query workload events success')
