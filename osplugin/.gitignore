@@ -3,3 +3,4 @@ venv
 target
 *pycache*
 .coverage
+./config.ini
