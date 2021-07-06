@@ -198,11 +198,11 @@ class CsarPkg:
                 zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index + 4]
                 img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
                 img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index + 4:]
-                logger.debug('image dir %s' % img_tmp_file)
+                logger.debug('image dir %s', img_tmp_file)
                 if not utils.exists_path(img_tmp_dir):
                     utils.unzip(zip_file_path, img_tmp_dir)
                 add_upload_image_task(image_id, host_ip, img_tmp_file) \
-                    .add_done_callback(lambda future: utils.delete_dir(copy.copy(img_tmp_file)))
+                    .add_done_callback(lambda future, path=img_tmp_file: utils.delete_dir(path))
 
         self.image_id_map = image_id_map
 

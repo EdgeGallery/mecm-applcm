@@ -54,7 +54,7 @@ def _check_package_status(package_id, host_ip):
     try:
         package = AppPkgMapper.get(app_package_id=package_id, host_ip=host_ip)
         if package is None:
-            logger.debug("package record %s not found" % package_id)
+            logger.debug("package record %s not found", package_id)
             return
         image_infos = VmImageInfoMapper.select(app_package_id=package_id, host_ip=host_ip)
     except Exception as exception:
