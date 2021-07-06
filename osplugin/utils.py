@@ -57,6 +57,8 @@ _IPV4_PATTERN = '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}' \
 
 _UUID_PATTERN = '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'
 
+APP_INS_ERR_MDG = 'appInstanceId is required'
+
 
 def create_dir(path):
     """

@@ -20,7 +20,6 @@ import json
 import time
 from io import BytesIO
 
-from novaclient.exceptions import NotFound
 from pony.orm import db_session, commit
 
 import config
@@ -165,7 +164,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return resp
         vm_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
         if vm_info is None:
-            LOG.info("image not found! image_id: %s" % request.imageId)
+            LOG.info("image not found! image_id: %s", request.imageId)
             return resp
         glance_client = create_glance_client(host_ip)
         try:
@@ -176,7 +175,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         vm_info.delete()
         commit()
         resp.response = '{"code": 200, "msg": "Ok"}'
-        LOG.info("delete image %s success" % request.imageId)
+        LOG.info("delete image %s success", request.imageId)
         return resp
 
     def downloadVmImage(self, request, context):
