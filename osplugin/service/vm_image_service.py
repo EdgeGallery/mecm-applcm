@@ -105,7 +105,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         try:
             nova_client = create_nova_client(host_ip)
             vm_info = nova_client.servers.get(request.vmId)
-            LOG.info('vm %s: status: %s', vm_info.id, vm_info.id)
+            LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
             image_name = get_image_name(vm_info.name)
             image_id = nova_client.servers.create_image(request.vmId, image_name)
         except Exception as exception:
