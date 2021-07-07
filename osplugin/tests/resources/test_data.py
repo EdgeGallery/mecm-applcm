@@ -18,6 +18,8 @@
 
 from unittest.mock import Mock
 
+from openstack.compute.v2.server import Server
+
 """
 mock glance client
 返回模拟数据
@@ -114,9 +116,9 @@ mock_heat_client.events.list.return_value = [
 
 # mock nova client
 mock_nova_client = Mock()
-mock_nova_client.servers.get.return_value = {
-    'id': 'aabbccvm01',
-    'status': 'active',
-    'name': 'vm01'
-}
+server = Server()
+server.id = 'aabbccvm01'
+server.status = 'active',
+server.name = 'vm01'
+mock_nova_client.servers.get.return_value = server
 mock_nova_client.servers.create_image.return_value = 'aabbccvmimage01'
