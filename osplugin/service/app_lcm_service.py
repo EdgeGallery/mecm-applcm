@@ -16,6 +16,9 @@
 """
 # -*- coding: utf-8 -*-
 
+import json
+import os
+import uuid
 from core import openstack_utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
@@ -33,15 +36,11 @@ from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
     WorkloadEventsResponse, InstantiateResponse
 
-import json
-import os
-
 from pony.orm import db_session, rollback, commit
 from task.app_instance_task import start_check_stack_status
 from task.app_package_task import start_check_package_status
 
 import utils
-import uuid
 
 LOG = logger
 
