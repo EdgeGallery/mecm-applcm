@@ -303,7 +303,8 @@ class NovaServer(HOTBase):
             if 'contents' in self.template['properties']['bootdata']['user_data']:
                 user_data['str_replace']['template'] = \
                     self.template['properties']['bootdata']['user_data']['contents'] + '\n'
-            if 'params' in self.template['properties']['bootdata']['user_data']:
+            if 'params' in self.template['properties']['bootdata']['user_data'] and \
+                    self.template['properties']['bootdata']['user_data']['params'] is not None:
                 params = {}
                 for key, param in self.template['properties']['bootdata']['user_data']['params']\
                         .items():

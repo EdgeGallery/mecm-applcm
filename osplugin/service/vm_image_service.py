@@ -20,7 +20,6 @@ import json
 import time
 from io import BytesIO
 
-from novaclient.exceptions import NotFound
 from pony.orm import db_session, commit
 
 import config
@@ -106,8 +105,8 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         try:
             nova_client = create_nova_client(host_ip)
             vm_info = nova_client.servers.get(request.vmId)
-            LOG.info('vm %s: status: %s', vm_info['id'], vm_info['status'])
-            image_name = get_image_name(vm_info['name'])
+            LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
+            image_name = get_image_name(vm_info.name)
             image_id = nova_client.servers.create_image(request.vmId, image_name)
         except Exception as exception:
             LOG.error(exception, exc_info=True)
@@ -165,7 +164,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return resp
         vm_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
         if vm_info is None:
-            LOG.info("image not found! image_id: %s" % request.imageId)
+            LOG.info("image not found! image_id: %s", request.imageId)
             return resp
         glance_client = create_glance_client(host_ip)
         try:
@@ -176,7 +175,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         vm_info.delete()
         commit()
         resp.response = '{"code": 200, "msg": "Ok"}'
-        LOG.info("delete image %s success" % request.imageId)
+        LOG.info("delete image %s success", request.imageId)
         return resp
 
     def downloadVmImage(self, request, context):

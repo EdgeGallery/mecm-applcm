@@ -77,7 +77,7 @@ def _check_image_status(image_id, host_ip):
     image_info.checksum = image['checksum']
     image_info.image_size = image['size']
     commit()
-    LOG.debug('now image status is %s' % image_info.status)
+    LOG.debug('now image status is %s', image_info.status)
     if image_info.status != utils.ACTIVE:
         start_check_image_status(image_id, host_ip)
 
@@ -127,9 +127,9 @@ def _do_upload_image(image_id, host_ip, file_path):
     glance = create_glance_client(host_ip)
     try:
         with open(file_path, 'rb') as image_data:
-            LOG.debug('start upload image %s' % image_id)
+            LOG.debug('start upload image %s', image_id)
             glance.images.upload(image_id, image_data=image_data)
-            LOG.debug('finish upload image %s' % image_id)
+            LOG.debug('finish upload image %s', image_id)
     except Exception as exception:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED
@@ -190,11 +190,11 @@ def _import_image_by_python(image_id, host_ip, uri):
     """
     glance = create_glance_client(host_ip)
     try:
-        LOG.debug('open connection %s' % uri)
+        LOG.debug('open connection %s', uri)
         resp_stream = http.request('GET', uri, preload_content=False)
-        LOG.debug('start upload image %s' % image_id)
+        LOG.debug('start upload image %s', image_id)
         glance.images.upload(image_id=image_id, image_data=resp_stream)
-        LOG.debug('finished upload image %s' % image_id)
+        LOG.debug('finished upload image %s', image_id)
     except Exception as exception:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
         image.status = utils.KILLED

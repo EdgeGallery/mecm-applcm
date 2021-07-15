@@ -14,32 +14,33 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
 
 import json
 import os
 import uuid
-
-import glanceclient.exc
-from heatclient.common import template_utils
-from heatclient.exc import HTTPNotFound
-from pony.orm import db_session, rollback, commit
-
-import utils
 from core import openstack_utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest,\
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
 from core.openstack_utils import create_glance_client, create_heat_client
+
+import glanceclient.exc
+
+from heatclient.common import template_utils
+from heatclient.exc import HTTPNotFound
 from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
     RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
     WorkloadEventsResponse, InstantiateResponse
+
+from pony.orm import db_session, rollback, commit
 from task.app_instance_task import start_check_stack_status
 from task.app_package_task import start_check_package_status
+
+import utils
 
 LOG = logger
 
@@ -182,7 +183,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             try:
                 glance.images.delete(image.image_id)
             except glanceclient.exc.HTTPNotFound:
-                logger.debug('skip delete image %s' % image.image_id)
+                logger.debug('skip delete image %s', image.image_id)
             image.delete()
         commit()
 
@@ -214,7 +215,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.debug('获取实例ID')
         app_instance_id = parameter.app_instance_id
         if app_instance_id is None or app_instance_id == '':
-            LOG.error("appInstanceId is required")
+            LOG.error(utils.APP_INS_ERR_MDG)
             return resp
 
         LOG.debug('查询数据库是否存在相同记录')
@@ -226,7 +227,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id,
                                           host_ip=host_ip)
         if app_pkg_mapper is None or app_pkg_mapper.status != utils.ACTIVE:
-            LOG.error('app pkg %s not active' % parameter.app_package_id)
+            LOG.error('app pkg %s not active', parameter.app_package_id)
             return resp
 
         LOG.debug('读取包的hot文件')
@@ -292,7 +293,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.debug('获取实例ID')
         app_instance_id = request.appInstanceId
         if app_instance_id is None or app_instance_id == '':
-            LOG.info("appInstanceId is required")
+            LOG.error(utils.APP_INS_ERR_MDG)
             return res
 
         LOG.debug('查询数据库')
@@ -341,7 +342,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_instance_id = request.appInstanceId
         if app_instance_id is None or app_instance_id == '':
-            LOG.info("appInstanceId is required")
+            LOG.error(utils.APP_INS_ERR_MDG)
             res.response = '{"code":400}'
             return res
 
@@ -385,7 +386,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         app_instance_id = request.appInstanceId
         if app_instance_id is None or app_instance_id == '':
-            LOG.info("appInstanceId is required")
+            LOG.error(utils.APP_INS_ERR_MDG)
             return res
 
         app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)

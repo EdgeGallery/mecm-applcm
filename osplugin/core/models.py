@@ -16,7 +16,7 @@
 """
 # -*- coding: utf-8 -*-
 
-from pony.orm import PrimaryKey, Required, Optional, db_session, select
+from pony.orm import PrimaryKey, Required, Optional, select
 
 import config
 import utils
