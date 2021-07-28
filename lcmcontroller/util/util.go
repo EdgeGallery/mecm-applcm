@@ -79,6 +79,7 @@ const (
 	FailedToUploadToPlugin          = "failed to upload package to plugin"
 	FailedToInstantiate             = "failed to instantiate app"
 	FailedToCovertYamlToJson        = "failed to convert yaml to json"
+	NotFound                        = "not found"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30

@@ -34,6 +34,7 @@ import (
 	"k8splugin/util"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -297,6 +298,158 @@ func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 		return "", err
 	}
 	return appInfoJson, nil
+}
+
+// Query KPI
+func (hc *HelmClient) QueryKPI() (string, error) {
+	log.Info("In Query KPI function")
+	var metricInfo models.MetricInfo
+	var totalCpu int64
+	var totalMem int64
+	var totalPodCpu int64
+	var totalPodMem int64
+
+	// uses the current context in kubeconfig
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", hc.Kubeconfig)
+	if err != nil {
+		return "", err
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return "", err
+	}
+
+	var statsInfo map[string]interface{}
+	data, err := clientset.RESTClient().Get().AbsPath("apis/metrics.k8s.io/v1beta1/nodes").DoRaw(context.Background())
+
+	err = json.Unmarshal(data, &statsInfo)
+	if err != nil {
+		return "", err
+	}
+
+	totalCpu, totalMem = getNodeTotalCpuMem(statsInfo)
+
+	var statsInfo1 map[string]interface{}
+	data1, err := clientset.RESTClient().Get().AbsPath("apis/metrics.k8s.io/v1beta1/pods").DoRaw(context.Background())
+	err = json.Unmarshal(data1, &statsInfo1)
+	if err != nil {
+		return "", err
+	}
+
+	totalPodCpu, totalPodMem = getPodTotalCpuMem(statsInfo1)
+
+	metricInfo.CpuUsage = make(map[string]int64)
+	metricInfo.MemUsage = make(map[string]int64)
+
+	metricInfo.CpuUsage["total"] = totalCpu
+	metricInfo.MemUsage["total"] = totalMem
+
+	metricInfo.CpuUsage["used"] = totalPodCpu
+	metricInfo.MemUsage["used"] = totalPodMem
+	metricInfoJson, err := json.Marshal(metricInfo)
+	if err != nil {
+		log.Info(util.FailedToJsonMarshal)
+		return "", err
+	}
+	return string(metricInfoJson), nil
+}
+
+func getPodTotalCpuMem(statsInfo1 map[string]interface{}) (totalPodCpu, totalPodMem int64) {
+	for key, value := range statsInfo1 {
+		if key == "items" {
+			items := value.([]interface{})
+			arr := reflect.ValueOf(items)
+			for i := 0; i < arr.Len(); i++ {
+				usage := arr.Index(i).Interface()
+				totalPodCpu, totalPodMem = getPodCpuMemUsageInfo(usage, totalPodCpu, totalPodMem)
+			}
+		}
+	}
+	return totalPodCpu, totalPodMem
+}
+
+func getPodCpuMemUsageInfo(usage interface{}, totalPodCpu, totalPodMem int64) (int64, int64) {
+	iter := reflect.ValueOf(usage).MapRange()
+	for iter.Next() {
+
+		if iter.Key().Interface() == "containers" {
+			containersList := iter.Value().Interface()
+			arr1 := reflect.ValueOf(containersList)
+			for j := 0; j < arr1.Len(); j++ {
+				usage1 := arr1.Index(j).Interface()
+				iter1 := reflect.ValueOf(usage1).MapRange()
+				for iter1.Next() {
+					if iter1.Key().Interface() == "usage" {
+						val := iter1.Value().Interface()
+						iter2 := reflect.ValueOf(val).MapRange()
+						for iter2.Next() {
+							if iter2.Key().Interface() == "cpu" {
+								cpuVal := iter2.Value().Interface()
+								cpu := cpuVal.(string)
+								cpuLen := len(cpu)
+								cpu = cpu[:cpuLen-1]
+								cpuInfo, _ := strconv.ParseInt(cpu, 10, 64);
+								totalPodCpu = totalPodCpu + cpuInfo
+							}
+							if iter2.Key().Interface() == "memory" {
+								memory := iter2.Value().Interface()
+								mem := memory.(string)
+								memLen := len(mem)
+								mem = mem[:memLen-2]
+								memInfo, _ := strconv.ParseInt(mem, 10, 64);
+								totalPodMem = totalPodMem + memInfo
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return totalPodCpu, totalPodMem
+}
+
+func getNodeTotalCpuMem(statsInfo  map[string]interface{}) (totalCpu, totalMem int64) {
+	for key, value := range statsInfo {
+		if key == "items" {
+			items := value.([]interface{})
+			arr := reflect.ValueOf(items)
+			for i := 0; i < arr.Len(); i++ {
+				usage := arr.Index(i).Interface()
+				totalCpu, totalMem = getCpuMemUsageInfo(usage, totalCpu, totalMem)
+			}
+		}
+	}
+	return totalCpu, totalMem
+}
+
+func getCpuMemUsageInfo(usage interface{}, totalCpu, totalMem int64) (int64, int64) {
+	iter := reflect.ValueOf(usage).MapRange()
+	for iter.Next() {
+		if iter.Key().Interface() == "usage" {
+			val := iter.Value().Interface()
+			iter1 :=reflect.ValueOf(val).MapRange()
+			for iter1.Next() {
+				if iter1.Key().Interface() == "cpu" {
+					cpuVal := iter1.Value().Interface()
+					cpu := cpuVal.(string)
+					cpuLen := len(cpu)
+					cpu = cpu[:cpuLen-1]
+					cpuInfo, _ := strconv.ParseInt(cpu, 10, 64);
+					totalCpu = totalCpu + cpuInfo
+				}
+				if iter1.Key().Interface() == "memory" {
+					memory := iter1.Value().Interface()
+					mem := memory.(string)
+					memLen := len(mem)
+					mem = mem[:memLen-2]
+					memInfo, _ := strconv.ParseInt(mem, 10, 64);
+					totalMem = totalMem + memInfo
+				}
+			}
+		}
+	}
+	return totalCpu, totalMem
 }
 
 // Get workload description

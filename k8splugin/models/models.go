@@ -120,3 +120,9 @@ type SwImageDescriptor struct {
 	OperatingSystem  string `json:"operatingSystem"`
 	SupportedVirtualisationEnvironment string `json:"supportedVirtualisationEnvironment"`
 }
+
+// Metric Information
+type MetricInfo struct {
+	CpuUsage  map[string]int64 `json:"cpuusage"`
+	MemUsage  map[string]int64 `json:"memusage"`
+}

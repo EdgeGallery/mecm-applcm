@@ -50,6 +50,15 @@ message QueryResponse {
   string response = 1;
 }
 
+message QueryKPIRequest {
+    string accessToken = 1;
+    string hostIp = 2;
+}
+
+message QueryKPIResponse {
+  string response = 1;
+}
+
 message UploadCfgRequest {
   oneof data {
     string accessToken = 1;
@@ -174,6 +183,7 @@ service AppLCM {
   rpc instantiate (InstantiateRequest) returns (InstantiateResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc query (QueryRequest) returns (QueryResponse) {}
+  rpc queryKPI (QueryKPIRequest) returns (QueryKPIResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
   rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}

@@ -18,7 +18,6 @@ package pluginAdapter
 
 import (
 	"bytes"
-	beegoCtx "github.com/astaxie/beego/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
@@ -115,6 +114,20 @@ func (c *ClientGRPC) Query(ctx context.Context, accessToken string,
 		HostIp:        hostIP,
 	}
 	resp, err := c.client.Query(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Query application
+func (c *ClientGRPC) QueryKPI(ctx context.Context, accessToken, hostIP string) (response string, error error) {
+
+	req := &lcmservice.QueryKPIRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIP,
+	}
+	resp, err := c.client.QueryKPI(ctx, req)
 	if err != nil {
 		return "", err
 	}
@@ -301,7 +314,7 @@ func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appI
 
 // Download VM Image
 func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32, _ *beegoCtx.Response) (buf *bytes.Buffer, error error) {
+	hostIP string, imageId string, chunkNum int32) (buf *bytes.Buffer, error error) {
 	req := &lcmservice.DownloadVmImageRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,

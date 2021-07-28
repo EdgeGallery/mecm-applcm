@@ -98,7 +98,7 @@ func TestKpi(t *testing.T) {
 	// Get base HOST IP and PORT of running server
 	u, _ := url.Parse(ts.URL)
 	parts := strings.Split(u.Host, ":")
-	localIp := util.GetPrometheusServiceName() //parts[0]
+	localIp := "1.1.1.1" //parts[0]
 	port := parts[1]
 	_ = os.Setenv("PROMETHEUS_PORT", port)
 
@@ -124,6 +124,7 @@ func TestKpi(t *testing.T) {
 		kpiController := &controllers.LcmController{controllers.BaseController{Db: testDb,
 			Controller: kpiBeegoController}}
 
+		testAddMecHost(t, extraParams, testDb)
 		// Test KPI
 		kpiController.QueryKPI()
 
@@ -268,7 +269,10 @@ func getCommonParameters(localIp string) (string, map[string]string, *mockDb) {
 		hostIp: localIp,
 	}
 	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
-		tenantRecords: make(map[string]models.TenantInfoRecord)}
+		tenantRecords: make(map[string]models.TenantInfoRecord),
+		appPackageRecords: make(map[string]models.AppPackageRecord),
+		mecHostRecords: make(map[string]models.MecHost),
+		appPackageHostRecords: make(map[string]models.AppPackageHostRecord)}
 	return path, extraParams, testDb
 }
 

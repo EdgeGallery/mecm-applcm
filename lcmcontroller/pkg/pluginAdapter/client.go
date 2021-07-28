@@ -17,7 +17,6 @@ package pluginAdapter
 
 import (
 	"bytes"
-	beegoCtx "github.com/astaxie/beego/context"
 	"lcmcontroller/models"
 	"mime/multipart"
 
@@ -30,6 +29,7 @@ type ClientIntf interface {
 		req models.InstantiateRequest) (status string, error error)
 	Terminate(ctx context.Context, hostIP string, accessToken string, appInsId string) (status string, error error)
 	Query(ctx context.Context, accessToken string, appInsId string, hostIP string) (response string, error error)
+	QueryKPI(ctx context.Context, accessToken string, hostIP string) (response string, error error)
 	UploadConfig(ctx context.Context, multipartFile multipart.File,
 		hostIP string, accessToken string) (status string, error error)
 	RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error)
@@ -50,5 +50,5 @@ type ClientIntf interface {
 	DeleteVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
 		imageId string) (status string, error error)
 	DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
-		imageId string, chunkNum int32, imgCtrlr *beegoCtx.Response) (buf *bytes.Buffer, error error)
+		imageId string, chunkNum int32) (buf *bytes.Buffer, error error)
 }

@@ -84,10 +84,12 @@ func TestServer(t *testing.T) {
 	testDeployFailure(t)
 	testWorkloadEvents(t)
 	testQueryInfo(t)
+	testQueryKpi(t)
 	testUnDeploySuccess(t)
 	testDeletePkg(t, config)
 	testInstantiate(t, dir, config)
 	testQuery(t, config)
+	testQueryKpiInfo(t, config)
 	testPodDescribe(t, config)
 	testTerminate(t, config)
 
@@ -124,14 +126,21 @@ func testQuery(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.HttpsAddr + ":" + config.Server.ServerPort)
 	status, _ := client.Query(token, appInstanceIdentifier, hostIpAddress)
-	assert.Equal(t, "{\"Output\":\"Success\"}", status, "Query failed")
+	assert.Equal(t, outputSuccess, status, "Query failed")
+}
+
+func testQueryKpiInfo(t *testing.T, config *conf.Configurations) {
+	client := &mockGrpcClient{}
+	client.dialToServer(config.Server.HttpsAddr + ":" + config.Server.ServerPort)
+	status, _ := client.QueryKpiInfo(token, hostIpAddress)
+	assert.Equal(t, outputSuccess, status, "Query failed")
 }
 
 func testPodDescribe(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.HttpsAddr + ":" + config.Server.ServerPort)
 	status, _ := client.WorkloadEvents(token, appInstanceIdentifier, hostIpAddress)
-	assert.Equal(t, "{\"Output\":\"Success\"}", status, "Pod describe failed")
+	assert.Equal(t, outputSuccess, status, "Pod describe failed")
 }
 
 func testTerminate(t *testing.T, config *conf.Configurations) {
@@ -167,7 +176,7 @@ func createToken(userid string, role string, isRole bool, isUserId bool) string 
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
 	roleName := make([]string, 3)
-	if isRole == true {
+	if isRole {
 		roleName[0] = role
 		roleName[1] = "ROLE_APPSTORE_TENANT"
 		roleName[2] = "ROLE_DEVELOPER_TENANT"
@@ -175,7 +184,7 @@ func createToken(userid string, role string, isRole bool, isUserId bool) string 
 		roleName = nil
 	}
 	atClaims["authorities"] = roleName
-	if isUserId == true {
+	if isUserId {
 		atClaims["user_name"] = "lcmcontroller"
 	} else {
 		atClaims["user_name"] = nil

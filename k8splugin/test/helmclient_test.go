@@ -25,6 +25,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -33,6 +34,7 @@ import (
 	"k8splugin/pkg/adapter"
 	"k8splugin/util"
 	"math/rand"
+	"net/url"
 	"os"
 	"reflect"
 	"testing"
@@ -49,6 +51,7 @@ var (
 	configFile            = "/usr/app/artificats/config/"
 	namespace             = "default"
 	failedToGetClientSet  = "failed to get clientset"
+	outputSuccess         = "{\"Output\":\"Success\"}"
 )
 
 func testDeploySuccess(t *testing.T) {
@@ -298,4 +301,52 @@ func testQueryInfo(t *testing.T) {
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	result, _ := client.Query(relName, namespace)
 	assert.Equal(t, "{\"pods\":null,\"services\":null}", result, "Test query info execution result")
+}
+
+func testQueryKpi(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	var i *action.Status
+	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(i), "Run",
+		func(*action.Status, string) (*release.Release, error) {
+			go func() {
+				// do nothing
+			}()
+			return &release.Release{}, nil
+		})
+	defer patch4.Reset()
+
+	patch5 := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(_ string, _ string) (*restclient.Config, error) {
+		// do nothing
+
+		kubeconfig, _ := restclient.InClusterConfig()
+		return kubeconfig, nil
+	})
+	defer patch5.Reset()
+
+
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	patch6 := gomonkey.ApplyFunc(kubernetes.NewForConfig, func(*restclient.Config) (*kubernetes.Clientset, error) {
+		// do nothing
+		var cs kubernetes.Clientset
+
+		var clientConfig restclient.ClientContentConfig
+		url1, _ := url.Parse("http://bing.com/search?q=dotnet")
+		restIntf, _ := restclient.NewRESTClient(url1, "", clientConfig, nil, nil)
+
+		cs.DiscoveryClient = discovery.NewDiscoveryClient(restIntf)
+		return &cs, nil
+
+	})
+	defer patch6.Reset()
+
+	result, _ := client.QueryKPI()
+	assert.Equal(t, "", result, "Test query kpi execution result")
 }

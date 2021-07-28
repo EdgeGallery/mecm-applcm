@@ -798,7 +798,7 @@ func (c *LcmController) Query() {
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		res := strings.Contains(err.Error(), "not found")
+		res := strings.Contains(err.Error(), util.NotFound)
 		if res {
 			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
 			return
@@ -817,13 +817,14 @@ func (c *LcmController) Query() {
 // @Title Query kpi
 // @Description perform query kpi operation
 // @Param	hostIp          path 	string	true	    "hostIp"
-// @Param	tenantId	path 	string	true	    "tenantId"
-// @Param       access_token    header  string  true        "access token"
+// @Param	tenantId	    path 	string	true	    "tenantId"
+// @Param   access_token    header  string  true        "access token"
 // @Success 200 ok
 // @Failure 403 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmController) QueryKPI() {
-	var metricInfo models.MetricInfo
+	log.Info("Application query kpi request received.")
+
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -848,32 +849,35 @@ func (c *LcmController) QueryKPI() {
 	}
 	util.ClearByteArray(bKey)
 
-	prometheusServiceName, prometheusPort := util.GetPrometheusServiceNameAndPort()
-	cpuUtilization, err := c.getCpuUsage(prometheusServiceName, prometheusPort, clientIp)
+	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
 	}
 
-	memUsage, err := c.getMemoryUsage(prometheusServiceName, prometheusPort, clientIp)
+	vim, err := c.getVim(clientIp, hostIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
-	diskUtilization, err := c.diskUsage(prometheusServiceName, prometheusPort, clientIp)
+	adapter, err := c.getPluginAdapter("", clientIp, vim)
 	if err != nil {
-		return
-	}
-	metricInfo.CpuUsage = cpuUtilization
-	metricInfo.MemUsage = memUsage
-	metricInfo.DiskUsage = diskUtilization
-
-	metricInfoByteArray, err := json.Marshal(metricInfo)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.MarshalError)
+		util.ClearByteArray(bKey)
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write(metricInfoByteArray)
+	response, err := adapter.QueryKPI(accessToken, hostIp)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		res := strings.Contains(err.Error(), util.NotFound)
+		if res {
+			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
+			return
+		}
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
@@ -1130,99 +1134,6 @@ func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) er
 	return nil
 }
 
-// Returns the utilization details
-func (c *LcmController) metricValue(statInfo models.KpiModel) (metricResponse map[string]interface{}, err error) {
-	clientIp := c.Ctx.Input.IP()
-	err = util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return metricResponse, err
-	}
-	c.displayReceivedMsg(clientIp)
-
-	if len(statInfo.Data.Result) == 0 {
-		metricResponse = map[string]interface{}{
-			"total": "0.0",
-			"used":  "0.0",
-		}
-	} else if len(statInfo.Data.Result[0].Value) > 2 {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnexpectedValue)
-		return metricResponse, errors.New(util.UnexpectedValue)
-	} else {
-		metricResponse = map[string]interface{}{
-			"total": statInfo.Data.Result[0].Value[0],
-			"used":  statInfo.Data.Result[0].Value[1],
-		}
-	}
-	return metricResponse, nil
-}
-
-func (c *LcmController) getCpuUsage(prometheusServiceName, prometheusPort,
-	clientIp string) (cpuUtilization map[string]interface{}, err error) {
-	var statInfo models.KpiModel
-
-	cpu, statusCode, errCpu := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.CpuQuery)
-	if errCpu != nil {
-		c.HandleLoggingForError(clientIp, statusCode, "invalid cpu query")
-		return cpuUtilization, errCpu
-	}
-	err = json.Unmarshal([]byte(cpu), &statInfo)
-	if err != nil {
-		log.Error(util.UnMarshalError)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
-		return cpuUtilization, err
-	}
-	cpuUtilization, err = c.metricValue(statInfo)
-	if err != nil {
-		return cpuUtilization, err
-	}
-	return cpuUtilization, nil
-}
-
-func (c *LcmController) getMemoryUsage(prometheusServiceName, prometheusPort,
-	clientIp string) (memUsage map[string]interface{}, err error) {
-	var statInfo models.KpiModel
-
-	mem, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.MemQuery)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, statusCode, "invalid memory query")
-		return memUsage, err
-	}
-	err = json.Unmarshal([]byte(mem), &statInfo)
-	if err != nil {
-		log.Error(util.UnMarshalError)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
-		return memUsage, err
-	}
-	memUsage, err = c.metricValue(statInfo)
-	if err != nil {
-		return memUsage, err
-	}
-	return memUsage, nil
-}
-
-func (c *LcmController) diskUsage(prometheusServiceName string, prometheusPort,
-	clientIp string) (diskUtilization map[string]interface{}, err error) {
-	var statInfo models.KpiModel
-
-	disk, statusCode, err := util.GetHostInfo(prometheusServiceName + ":" + prometheusPort + util.DiskQuery)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, statusCode, "invalid disk query")
-		return diskUtilization, err
-	}
-	err = json.Unmarshal([]byte(disk), &statInfo)
-	if err != nil {
-		log.Error(util.UnMarshalError)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.UnMarshalError)
-		return diskUtilization, err
-	}
-	diskUtilization, err = c.metricValue(statInfo)
-	if err != nil {
-		return diskUtilization, err
-	}
-	return diskUtilization, nil
-}
-
 func (c *LcmController) handleErrorForInstantiateApp(acm config.AppConfigAdapter,
 	clientIp, appInsId, tenantId string) {
 	err := acm.DeleteAppAuthConfig(clientIp)
@@ -1335,7 +1246,7 @@ func (c *LcmController) GetWorkloadDescription() {
 	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		res := strings.Contains(err.Error(), "not found")
+		res := strings.Contains(err.Error(), util.NotFound)
 		if res {
 			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
 			return

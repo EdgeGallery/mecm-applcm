@@ -248,6 +248,46 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 	return resp, nil
 }
 
+// QueryKPI application
+func (s *ServerGRPC) QueryKPI(ctx context.Context, req *lcmservice.QueryKPIRequest) (resp *lcmservice.QueryKPIResponse, err error) {
+
+	resp = &lcmservice.QueryKPIResponse{
+		Response: util.Failure,
+	}
+
+	err = s.displayReceivedMsg(ctx, util.QueryKPI)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.QueryKPI, util.FailedToDispRecvMsg)
+		return resp, err
+	}
+
+	// Input validation
+	hostIp, err := s.validateInputParamsForQueryKPI(req)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.QueryKPI, util.FailedToValInputParams)
+		return resp, err
+	}
+
+	// Get Client
+	client, err := adapter.GetClient(util.DeployType, hostIp)
+	if err != nil {
+		s.displayResponseMsg(ctx, util.QueryKPI, util.FailedToGetClient)
+		return resp, err
+	}
+
+	// Query KPI information
+	r, err := client.QueryKPI()
+	if err != nil {
+		s.displayResponseMsg(ctx, util.QueryKPI, "Query kpi statistics is failed")
+		return resp, err
+	}
+	resp = &lcmservice.QueryKPIResponse{
+		Response: r,
+	}
+	s.handleLoggingForSuccess(ctx, util.QueryKPI, "Query kpi statistics is successful")
+	return resp, nil
+}
+
 // Terminate application
 func (s *ServerGRPC) Terminate(ctx context.Context,
 	req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
@@ -664,6 +704,26 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	}
 
 	return hostIp, appInsId, nil
+}
+
+// Validate input parameters for Query kpi
+func (s *ServerGRPC) validateInputParamsForQueryKPI(
+	req *lcmservice.QueryKPIRequest) (hostIp string, err error) {
+
+	accessToken := req.GetAccessToken()
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
+	if err != nil {
+		return "", s.logError(status.Error(codes.InvalidArgument,
+			util.AccssTokenIsInvalid))
+	}
+
+	hostIp = req.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+
+	return hostIp, nil
 }
 
 // Get upload configuration file
