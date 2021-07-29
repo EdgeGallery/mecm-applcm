@@ -28,22 +28,22 @@ import (
 	"os"
 )
 
-const RootPath string = "/lcmcontroller/v1"
+//const RootPath string = "/lcmcontroller/v1"
 
 // Init lcmcontroller APIs
 func init() {
 	adapter := initDbAdapter()
 
-	ns := beego.NewNamespace("/lcmcontroller/v1/",
+	ns := beego.NewNamespace("/lcmcontroller/",
 		beego.NSInclude(
 			&controllers.LcmController{controllers.BaseController{Db: adapter}},
 			&controllers.ImageController{controllers.BaseController{Db: adapter}},
 			&controllers.MecHostController{controllers.BaseController{Db: adapter}},
 			&controllers.MepController{controllers.BaseController{Db: adapter}},
+			&controllers.LcmControllerV2{controllers.BaseController{Db: adapter}},
 		),
 	)
 	beego.AddNamespace(ns)
-
 }
 
 // Init Db adapter

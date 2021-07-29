@@ -68,6 +68,7 @@ const (
 	HostIp                          = "mec_host_id"
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
+
 	FailedToMakeDir                 = "failed to make directory"
 	FileNameNotFound                = "file name not found with "
 	AppNameIsNotValid               = "AppName is invalid"
@@ -77,9 +78,13 @@ const (
 	RecordDoesNotExist              = "Records does not exist"
 	RequestBodyTooLarge             = "request body too large"
 	FailedToUploadToPlugin          = "failed to upload package to plugin"
+	UploadPackageSuccess            = "Uploaded application package successfully"
 	FailedToInstantiate             = "failed to instantiate app"
 	FailedToCovertYamlToJson        = "failed to convert yaml to json"
-	NotFound                        = "not found"
+	UploadConfigSuccess             = "Upload config is successful"
+	GetPackageDetailsFailed         = "failed to get app package details"
+	PluginErrorReport               = "Failed to do operate on Plugin"
+	InsertDBWithError               = "Failed to insert data to DB"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30
@@ -97,6 +102,39 @@ const (
 	StatusNotFound            int = 404
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
+
+	SuccessCode               int = 200
+
+	//Base Error Code
+	ErrCodeForbidden          int = 31000
+	ErrCodeTokenInvalid       int = 31001
+	ErrCodeIPInvalid          int = 31002
+	ErrCodeInvalidHost        int = 31003
+	ErrCodeBodyTooLarge       int = 31005
+	ErrCodeHostNotExist       int = 31006
+	ErrCodePackageIdInvalid   int = 31007
+	ErrCodeAPPNAmeInvalid     int = 31008
+	ErrCodePackDistributed    int = 31009
+	ErrCodeInstanceIsExist    int = 31010
+	ErrCodeProcessAkSk        int = 31011
+
+	//File Error Code
+	ErrCodeFileCanNotRead     int = 31100
+	ErrCodeFileNameTooLang    int = 31102
+	ErrCodeFileToBig          int = 31103
+	ErrCodeFailedToSaveFile   int = 31104
+	ErrCodeFailedToExtract    int = 31105
+	ErrCodeFailedGetDetails   int = 31106
+
+	//Plugin Error Code
+	ErrCodeFailedGetPlugin    int = 31201
+	ErrCodeFailedPlugin       int = 31202
+
+	//DB Error Code
+	ErrCodeFailedToInsert     int = 31300
+	ErrCodeNotFoundInDB       int = 31304
+
+	ErrCodeInternalServer     int = 31503
 
 	UuidRegex     = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 	NameRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-]*[\\d\\p{L}]$"
@@ -137,10 +175,11 @@ const (
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
+	Lcmcontrollerv2      = "lcmcontroller/controllers:LcmControllerV2"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Mepcontroller        = "lcmcontroller/controllers:MepController"
-	Hosts                = "/hosts"
+	Hosts                = "/v1/hosts"
 	DELETE               = "delete"
 	GET                  = "get"
 	POST                 = "post"
@@ -152,7 +191,9 @@ const (
 	Accept               = "Accept"
 	MecHostInfo          = "MecHostInfo"
 	PkgId                = "package_id"
-	PkgUrlPath           = "/tenants/:tenantId/packages/:packageId"
+	PkgUrlPath           = "/v1/tenants/:tenantId/packages/:packageId"
+
+	PkgUrlPathV2         = "/v2/tenants/:tenantId/packages/:packageId"
 
 	//mep service calling
 	ErrCallFromMep  string = "failed to execute rest calling, check if mep service is ready."

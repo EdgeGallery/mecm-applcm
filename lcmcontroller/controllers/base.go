@@ -17,6 +17,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/astaxie/beego"
 	log "github.com/sirupsen/logrus"
@@ -46,14 +47,43 @@ func (c *BaseController) HandleLoggingForError(clientIp string, code int, errMsg
 		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 }
 
+func (c *BaseController) HandleForErrorCode(clientIp string, code int, errMsg string, errCode int) {
+	errConent := &models.ReturnResponse{
+		Data:    nil,
+		RetCode: errCode,
+		Message: errMsg,
+		Params: nil,
+	}
+	c.writeErrorResponseV2(errConent, code)
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
+}
+
+// Handled logging for error case
+func getErrorContent(clientIp string, code int, errMsg string) ([]byte, error){
+	result := &models.ReturnResponse{
+		Data:    nil,
+		RetCode: code,
+		Message: errMsg,
+		Params: nil,
+	}
+
+	resultValue, err := json.Marshal(result)
+	return resultValue, err
+}
+
 // Write error response
 func (c *BaseController) writeErrorResponse(errMsg string, code int) {
 	log.Error(errMsg)
 	c.writeResponse(errMsg, code)
 }
 
+func (c *BaseController) writeErrorResponseV2(conent *models.ReturnResponse, code int) {
+	c.writeResponse(conent, code)
+}
+
 // Write response
-func (c *BaseController) writeResponse(msg string, code int) {
+func (c *BaseController) writeResponse(msg interface{}, code int) {
 	c.Data["json"] = msg
 	c.Ctx.ResponseWriter.WriteHeader(code)
 	c.ServeJSON()
