@@ -94,14 +94,6 @@ func (a AppLCMServer) Query(ctx context.Context, request *lcmservice.QueryReques
 	return resp, nil
 }
 
-func (a AppLCMServer) QueryKPI(ctx context.Context, request *lcmservice.QueryKPIRequest) (*lcmservice.QueryKPIResponse, error) {
-	resp := &lcmservice.QueryKPIResponse{
-		Response: finalOutput,
-	}
-	log.Info("Query KPI is success")
-	return resp, nil
-}
-
 func (a AppLCMServer) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) error {
 	for {
 		req, err := stream.Recv()
