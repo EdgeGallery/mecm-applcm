@@ -58,24 +58,15 @@ type LcmController struct {
 // @Failure 400 bad request
 // @router /configuration [post]
 func (c *LcmController) UploadConfig() {
-	log.Info("Add configuration request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+
+	clientIp, bKey, accessToken, err := c.getClientIpAndIsPermitted("Add configuration request received.")
+	defer util.ClearByteArray(bKey)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
+
 	hostIp, vim, file, err := c.getInputParametersForUploadCfg(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -93,14 +84,12 @@ func (c *LcmController) UploadConfig() {
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	_, err = adapter.UploadConfig(file, hostIp, accessToken)
-	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
 		return
@@ -272,46 +261,37 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 // @Failure 400 bad request
 // @router /configuration [delete]
 func (c *LcmController) RemoveConfig() {
-	log.Info("Delete configuration request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+	clientIp, bKey, accessToken, err := c.getClientIpAndValidateAccessToken("Delete configuration request received.")
+	defer util.ClearByteArray(bKey)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
-	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
-		return
-	}
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
 	hostIp, vim, hostInfoRec, err := c.getInputParametersForRemoveCfg(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
+
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	_, err = adapter.RemoveConfig(hostIp, accessToken)
-	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
 		return
 	}
+
 	hostInfoRec.ConfigUploadStatus = ""
 	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save mec host info record to database.")
 		return
 	}
+
 	c.handleLoggingForSuccess(clientIp, "Remove config is successful")
 	c.ServeJSON()
 }
@@ -1484,44 +1464,30 @@ func (c *LcmController) getInputParametersForRemoveCfg(clientIp string) (string,
 // @Failure 400 bad request
 // @router /packages [post]
 func (c *LcmController) UploadPackage() {
-	log.Info("Upload application package request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+	clientIp, bKey, _, err := c.getClientIpAndIsPermitted("Upload application package request received.")
+	defer util.ClearByteArray(bKey)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	appId, packageId, tenantId, err := c.getInputParametersForUploadPkg(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	origin, err := c.getOrigin(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	file, header, err := c.GetFile("package")
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Upload package file error")
 		return
 	}
 
 	err = util.ValidateFileExtensionCsar(header.Filename)
 	if err != nil || len(header.Filename) > util.MaxFileNameSize {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.BadRequest,
 			"File shouldn't contains any extension or filename is larger than max size")
 		return
@@ -1529,40 +1495,34 @@ func (c *LcmController) UploadPackage() {
 
 	err = util.ValidateFileSize(header.Size, util.MaxAppPackageFile)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.BadRequest, "File size is larger than max size")
 		return
 	}
 
 	pkgFilePath, err := c.saveApplicationPackage(clientIp, tenantId, packageId, header, file)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	pkgDir, err := extractCsarPackage(pkgFilePath)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 
 	pkgDetails, err := c.getPackageDetailsFromPackage(clientIp, pkgDir)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.BadRequest, "failed to get app package details")
 		return
 	}
 
 	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	err = c.insertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails, origin)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -1650,19 +1610,9 @@ func (c *LcmController) ValidateInstantiateInputParameters(clientIp string, req 
 // @Failure 400 bad request
 // @router /packages/:packageId [post]
 func (c *LcmController) DistributePackage() {
-	log.Info("Distribute application package request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+	clientIp, bKey, accessToken, err := c.getClientIpAndIsPermitted("Distribute application package request received.")
+	defer util.ClearByteArray(bKey)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -1670,7 +1620,6 @@ func (c *LcmController) DistributePackage() {
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &hosts)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -1678,13 +1627,11 @@ func (c *LcmController) DistributePackage() {
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.BadRequest,
 			"invalid input parameters")
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -1696,12 +1643,10 @@ func (c *LcmController) DistributePackage() {
 	if readErr != nil {
 		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"App package does not exist")
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	err = c.processUploadPackage(hosts, clientIp, tenantId, packageId, accessToken)
-	util.ClearByteArray(bKey)
 	if err != nil {
 		return
 	}
@@ -1719,46 +1664,31 @@ func (c *LcmController) DistributePackage() {
 // @Failure 400 bad request
 // @router /packages/:packageId/hosts/:hostIp [delete]
 func (c *LcmController) DeletePackageOnHost() {
-	log.Info("Delete application package on host request received.")
 
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+	clientIp, bKey, accessToken, err := c.getClientIpAndValidateAccessToken("Delete application package on host request received.")
+	defer util.ClearByteArray(bKey)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
 	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
-	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
-		return
-	}
-
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
 	tenantId, packageId, hostIp, err := c.getInputParametersForDelPkgOnHost(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	pkgRecHostIp, vim, err := c.getVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, hostIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	_, err = adapter.DeletePackage(tenantId, pkgRecHostIp, packageId, accessToken)
-	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
 		return
@@ -1813,40 +1743,26 @@ func (c *LcmController) deletePackageFromDir(appPkgPath string) error {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/packages/:packageId [delete]
 func (c *LcmController) DeletePackage() {
-	log.Info("Delete application package request received.")
+	clientIp, bKey, accessToken, err := c.getClientIpAndValidateAccessToken("Delete application package request received.")
+	defer util.ClearByteArray(bKey)
+	if err != nil {
+		return
+	}
 
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
-	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
-		return
-	}
-	
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return
 	}
 
 	packageId, err := c.getUrlPackageId(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
 		return
 	}
 
 	err = c.processDeletePackage(clientIp, packageId, tenantId, accessToken)
-	util.ClearByteArray(bKey)
 	if err != nil {
 		return
 	}
@@ -1977,25 +1893,14 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 // @Failure 400 bad request
 // @router /packages/:packageId [get]
 func (c *LcmController) DistributionStatus() {
-	log.Info("Distribute status request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+	clientIp, bKey, _, err := c.getClientIpAndIsPermitted("Distribute status request received.")
+	defer util.ClearByteArray(bKey)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	tenantId, packageId, err := c.getInputParametersForDistributionStatus(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -2511,4 +2416,44 @@ func (c *LcmController) deletePackage(appPkgHost *models.AppPackageHostRecord,
 		return err
 	}
 	return nil
+}
+
+func (c *LcmController) getClientIpAndIsPermitted(receiveMsg string) (clientIp string, bKey []byte,
+	accessToken string, err error) {
+	log.Info(receiveMsg)
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return clientIp, bKey, accessToken, err
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.isPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return clientIp, bKey, accessToken, err
+	}
+	return clientIp, bKey, accessToken, nil
+}
+
+func (c *LcmController) getClientIpAndValidateAccessToken(receiveMsg string) (clientIp string, bKey []byte,
+	accessToken string, err error) {
+	log.Info(receiveMsg)
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return clientIp, bKey, accessToken, err
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
+	if err != nil {
+		c.HandleLoggingForTokenFailure(clientIp, err.Error())
+		return clientIp, bKey, accessToken, err
+	}
+	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
+	return clientIp, bKey, accessToken, nil
 }
