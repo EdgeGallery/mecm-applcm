@@ -81,6 +81,7 @@ const (
 	UploadPackageSuccess            = "Uploaded application package successfully"
 	FailedToInstantiate             = "failed to instantiate app"
 	FailedToCovertYamlToJson        = "failed to convert yaml to json"
+	NotFound                        = "not found"	
 	UploadConfigSuccess             = "Upload config is successful"
 	GetPackageDetailsFailed         = "failed to get app package details"
 	PluginErrorReport               = "Failed to do operate on Plugin"
