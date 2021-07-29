@@ -334,3 +334,24 @@ type AppPackageResponse struct {
 	AppId     string `json:"appId"`
 	PackageId string `json:"packageId"`
 }
+
+type ReturnResponse struct {
+	Data    interface{} `json:"data"`
+	RetCode int         `json:"retCode"`
+	Message string      `json:"message"`
+	Params  []string    `json:"params"`
+}
+
+// AppInfoParams info record for Instantiate
+type AppInfoParams struct {
+	AppInstanceId string
+	MecHost       string
+	DeployType    string
+	TenantId      string
+	AppPackageId  string
+	AppName       string
+	Origin        string
+	SyncStatus    bool
+	ClientIP      string
+	AccessToken   string
+}
