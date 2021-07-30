@@ -148,6 +148,43 @@ func (c *mockGrpcClient) DeletePkg() (status string, error error) {
 
 	}
 	resp, err := c.client.DeletePackage(ctx, req)
+	if resp == nil {
+		return "", err
+	}
+	req = &lcmservice.DeletePackageRequest{
+		HostIp:        "256.1.1.1",
+		AccessToken:   token,
+		AppPackageId:  packageId,
+		TenantId:      tenantIdentifier,
+
+	}
+	_, err = c.client.DeletePackage(ctx, req)
+	token1 := "1"
+	req = &lcmservice.DeletePackageRequest{
+		HostIp:        hostIpAddress,
+		AccessToken:   token1,
+		AppPackageId:  packageId,
+		TenantId:      tenantIdentifier,
+
+	}
+	_, err = c.client.DeletePackage(ctx, req)
+	req = &lcmservice.DeletePackageRequest{
+		HostIp:        hostIpAddress,
+		AccessToken:   token,
+		AppPackageId:  "",
+		TenantId:      tenantIdentifier,
+
+	}
+	_, err = c.client.DeletePackage(ctx, req)
+	req = &lcmservice.DeletePackageRequest{
+		HostIp:        hostIpAddress,
+		AccessToken:   token,
+		AppPackageId:  packageId,
+		TenantId:      "1",
+
+	}
+	_, err = c.client.DeletePackage(ctx, req)
+
 	return resp.Status, err
 }
 

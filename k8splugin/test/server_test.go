@@ -222,7 +222,12 @@ func testRemoval(t *testing.T, config *conf.Configurations) {
 	client := &mockGrpcClient{}
 	client.dialToServer(config.Server.HttpsAddr + ":" + config.Server.ServerPort)
 	status, _ := client.RemoveConfig(hostIpAddress, token)
-	assert.Equal(t, util.Success, status, "Upload failed")
+	assert.Equal(t, util.Success, status, "Remove failed")
+	status, _ = client.RemoveConfig("256.1.1.1", token)
+	assert.Equal(t, util.Success, status, "Remove failed")
+	token1 := "1"
+	status, _ = client.RemoveConfig(hostIpAddress, token1)
+	assert.Equal(t, util.Success, status, "Remove failed")
 }
 
 func startServer(server server.ServerGRPC) {
