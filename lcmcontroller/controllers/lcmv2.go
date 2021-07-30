@@ -220,13 +220,14 @@ func (c *LcmControllerV2) UploadPackageV2() {
 	}
 	c.handleLoggingForSuccess(appPkgResp, clientIp, util.UploadPackageSuccess)
 }
+
 func (c *LcmControllerV2) handleLoggingForSuccess(object interface{}, clientIp string, msg string) {
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 	returnContent, _ := handleSuccessReturn(object, util.UploadConfigSuccess)
 	c.Ctx.ResponseWriter.Write(returnContent)
 	c.Ctx.ResponseWriter.WriteHeader(util.SuccessCode)
 	c.ServeJSON()
-	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
-		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 }
 
 // Get input parameters for upload package
@@ -274,7 +275,7 @@ func (c *LcmControllerV2) getPackageId(clientIp string) (string, error) {
 	packageId := c.GetString("packageId")
 	if packageId != "" {
 		if len(packageId) > 64 {
-			c.HandleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
+			c.HandleForErrorCode(clientIp, util.BadRequest, util.PackageIdIsInvalid, util.ErrCodePackageIdInvalid)
 			return "", errors.New("package id length exceeds max limit")
 		}
 		return packageId, nil
@@ -347,7 +348,7 @@ func (c *LcmControllerV2) getUrlPackageId(clientIp string) (string, error) {
 	if packageId != "" {
 		//uuid, err := util.IsValidUUID(packageId)
 		if len(packageId) > 64 {
-			c.HandleLoggingForError(clientIp, util.BadRequest, util.PackageIdIsInvalid)
+			c.HandleForErrorCode(clientIp, util.BadRequest, util.PackageIdIsInvalid, util.ErrCodePackageIdInvalid)
 			return "", errors.New("invalid package id")
 		}
 		return packageId, nil
@@ -1016,7 +1017,7 @@ func (c *LcmControllerV2) QueryV2() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -1064,15 +1065,15 @@ func (c *LcmControllerV2) QueryV2() {
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
 		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
+			c.HandleForErrorCode(clientIp, util.StatusNotFound, err.Error(), util.ErrCodeNotFoundInPlugin)
 			return
 		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrorReportByPlugin)
 		return
 	}
 	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeFailResponse)
 		return
 	}
 	c.handleLoggingForSuccess(nil, clientIp, "Query workload statistics is successful")
@@ -1092,7 +1093,7 @@ func (c *LcmControllerV2) GetWorkloadDescriptionV2() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -1170,7 +1171,7 @@ func (c *LcmControllerV2) SynchronizeUpdatedRecordV2() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -1249,7 +1250,7 @@ func (c *LcmControllerV2) SynchronizeStaleRecordV2() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -1311,7 +1312,7 @@ func (c *LcmControllerV2) SynchronizeAppPackageStaleRecordV2() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -1441,4 +1442,20 @@ func (c *LcmControllerV2) HandleLoggingForTokenFailure(clientIp, errorString str
 	} else {
 		c.HandleForErrorCode(clientIp, util.StatusUnauthorized, util.AuthorizationFailed, util.ErrCodeTokenInvalid)
 	}
+}
+
+func (c *LcmControllerV2) getPluginAdapter(_, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+	error) {
+	var pluginInfo string
+
+	pluginInfo = util.GetPluginInfo(vim)
+
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+			util.ErrCodeFailedGetPlugin)
+		return nil, err
+	}
+	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	return adapter, nil
 }
