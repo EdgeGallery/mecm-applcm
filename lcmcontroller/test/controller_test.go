@@ -1355,7 +1355,7 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 			configfile, path, "POST", []byte(""))
 
 		// Prepare Input
-		uploadInputv2 := &context.BeegoInput{Context: &context.Context{Request: uploadRequest}}
+		uploadInputv2 := &context.BeegoInput{Context: &context.Context{Request: uploadRequestv2}}
 		setParam(uploadInputv2)
 
 		// Prepare beego controller
