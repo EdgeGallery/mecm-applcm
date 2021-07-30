@@ -57,7 +57,7 @@ func (c *mockGrpcClient) dialToServer(address string) {
 }
 // Upload Package
 func (c *mockGrpcClient) UploadPkg(deployArtifact string, hostIP string,
-	accessToken string) (status string, error error) {
+	accessToken string, packageId string, tenantId string) (status string, error error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
@@ -92,7 +92,7 @@ func (c *mockGrpcClient) UploadPkg(deployArtifact string, hostIP string,
 
 	req = &lcmservice.UploadPackageRequest{
 		Data: &lcmservice.UploadPackageRequest_TenantId{
-			TenantId: tenantIdentifier,
+			TenantId: tenantId,
 		},
 	}
 	_ = stream.Send(req)
@@ -158,8 +158,8 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 	parameters := make(map[string]string)
-	parameters["ak"] = "1"
-	parameters["sk"] = "1"
+	parameters["ak"] = ak
+	parameters["sk"] = sk
 	req := &lcmservice.InstantiateRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
@@ -169,6 +169,27 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 		Parameters:    parameters,
 	}
 	resp, err := c.client.Instantiate(ctx, req)
+	if resp == nil {
+		return "", err
+	}
+	req = &lcmservice.InstantiateRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		AppPackageId:  packageId,
+		TenantId:      "1",
+		Parameters:    parameters,
+	}
+	_, err = c.client.Instantiate(ctx, req)
+	req = &lcmservice.InstantiateRequest{
+		HostIp:        hostIP,
+		AccessToken:   accessToken,
+		AppInstanceId: appInsId,
+		AppPackageId:  "",
+		TenantId:      tenantIdentifier,
+		Parameters:    parameters,
+	}
+	_, err = c.client.Instantiate(ctx, req)
 	return resp.Status, err
 }
 
@@ -184,6 +205,9 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 		HostIp:        hostIP,
 	}
 	resp, err := c.client.Query(ctx, req)
+	if resp == nil {
+		return "", err
+	}
 	return resp.Response, err
 }
 
@@ -199,6 +223,9 @@ func (c *mockGrpcClient) QueryKpiInfo(accessToken string, hostIP string) (respon
 		HostIp:        hostIP,
 	}
 	resp, err := c.client.QueryKPI(ctx, req)
+	if resp == nil {
+		return "", err
+	}
 	return resp.Response, err
 }
 
@@ -216,6 +243,9 @@ func (c *mockGrpcClient) WorkloadEvents(accessToken string, appInsId string, hos
 		HostIp:        hostIP,
 	}
 	resp, err := c.client.WorkloadEvents(ctx, req)
+	if resp == nil {
+		return "", err
+	}
 	return resp.Response, err
 }
 
@@ -231,6 +261,9 @@ func (c *mockGrpcClient) Terminate(hostIP string, accessToken string, appInsId s
 		AppInstanceId: appInsId,
 	}
 	resp, err := c.client.Terminate(ctx, req)
+	if resp == nil {
+		return "", err
+	}
 	return resp.Status, err
 }
 
@@ -243,6 +276,9 @@ func (c *mockGrpcClient) RemoveConfig(hostIP string, accessToken string) (status
 		AccessToken: accessToken,
 	}
 	resp, err := c.client.RemoveConfig(ctx, req)
+	if resp == nil {
+		return "", err
+	}
 	return resp.Status, err
 }
 

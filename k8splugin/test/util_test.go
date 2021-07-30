@@ -199,6 +199,7 @@ func TestCreateDirSuccess(t *testing.T) {
 func TestCreateDirFailure(t *testing.T) {
 	util.CreateDir("test10")
 	assert.True(t, true, "TestCreateDirSuccess execution result")
+	_ = os.Remove("test10")
 }
 
 func TestValidateAkMaxLen(t *testing.T) {
