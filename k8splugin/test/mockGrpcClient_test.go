@@ -188,7 +188,7 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 }
 
 
-// Query application
+// Query kpi application
 func (c *mockGrpcClient) QueryKpiInfo(accessToken string, hostIP string) (response string, error error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
@@ -203,19 +203,6 @@ func (c *mockGrpcClient) QueryKpiInfo(accessToken string, hostIP string) (respon
 }
 
 
-// Query application
-func (c *mockGrpcClient) QueryKpiInfo(accessToken string, hostIP string) (response string, error error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
-	defer cancel()
-
-	req := &lcmservice.QueryKPIRequest{
-		AccessToken:   accessToken,
-		HostIp:        hostIP,
-	}
-	resp, err := c.client.QueryKPI(ctx, req)
-	return resp.Response, err
-}
 
 // Get workload description
 func (c *mockGrpcClient) WorkloadEvents(accessToken string, appInsId string, hostIP string) (response string, error error) {
