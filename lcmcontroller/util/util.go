@@ -117,6 +117,9 @@ const (
 	ErrCodePackDistributed    int = 31009
 	ErrCodeInstanceIsExist    int = 31010
 	ErrCodeProcessAkSk        int = 31011
+	ErrCodeNotFoundInPlugin   int = 31012
+	ErrorReportByPlugin       int = 31013
+	ErrCodeFailResponse       int = 31014
 
 	//File Error Code
 	ErrCodeFileCanNotRead     int = 31100
