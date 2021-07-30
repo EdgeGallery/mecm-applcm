@@ -348,5 +348,5 @@ func testQueryKpi(t *testing.T) {
 	defer patch6.Reset()
 
 	result, _ := client.QueryKPI()
-	assert.Equal(t, "", result, "Test query kpi execution result")
+	assert.Equal(t, "{\"cpuusage\":{\"total\":0,\"used\":0},\"memusage\":{\"total\":0,\"used\":0}}", result, "Test query kpi execution result")
 }
