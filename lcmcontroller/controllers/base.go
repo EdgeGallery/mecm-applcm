@@ -294,14 +294,14 @@ func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
 
 	count, err := c.Db.QueryCountForTable("app_info_record", util.TenantId, tenantId)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeNotFoundInDB)
 		return err
 	}
 
 	if count == 0 {
 		err = c.Db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
-			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeFailedDeleteData)
 			return err
 		}
 	}
@@ -316,8 +316,7 @@ func (c *BaseController) getMecHostInfoRecord(hostIp string, clientIp string) (*
 
 	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
 	if readErr != nil {
-		c.HandleLoggingForError(clientIp, util.StatusNotFound,
-			"Mec host info record does not exist in database")
+		c.HandleLoggingForError(clientIp, util.StatusNotFound, util.MecHostRecDoesNotExist)
 		return nil, readErr
 	}
 	return mecHostInfoRecord, nil

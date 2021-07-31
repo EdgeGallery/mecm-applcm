@@ -285,7 +285,7 @@ func (c *LcmControllerV2) getOrigin(clientIp string) (string, error) {
 	origin := c.GetString("origin")
 	originVar, err := util.ValidateName(origin, util.NameRegex)
 	if err != nil || !originVar {
-		c.HandleLoggingForError(clientIp, util.BadRequest, "Origin is invalid")
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.OriginIsInvalid, util.ErrCodeOriginInvalid)
 		return "", errors.New(util.OriginIsInvalid)
 	}
 	return origin, nil
@@ -318,18 +318,21 @@ func (c *LcmControllerV2) createPackagePath(pkgPath string, clientIp string, fil
 
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to copy csar file")
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, "Failed to copy csar file",
+			util.ErrCodeFailedToSaveFile)
 		return err
 	}
 
 	newFile, err := os.Create(pkgPath)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to create package path")
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, "Failed to create package path",
+			util.ErrCodeFailedToSaveFile)
 		return err
 	}
 	defer newFile.Close()
 	if _, err := newFile.Write(buf.Bytes()); err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, "Failed to write csar file")
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, "Failed to write csar file",
+			util.ErrCodeFailedToSaveFile)
 		return err
 	}
 	return nil
@@ -510,7 +513,8 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+			util.ErrCodeFailedGetPlugin)
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
@@ -603,7 +607,7 @@ func (c *LcmControllerV2) InstantiateV2() {
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
 	c.displayReceivedMsg(clientIp)
@@ -612,7 +616,7 @@ func (c *LcmControllerV2) InstantiateV2() {
 	var req models.InstantiateRequest
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &req)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, err.Error())
+		c.HandleForErrorCode(clientIp, util.BadRequest, err.Error(), util.ErrCodeInvalidRequest)
 		return
 	}
 	if req.Parameters == nil {
@@ -628,7 +632,7 @@ func (c *LcmControllerV2) InstantiateV2() {
 	originVar, err := util.ValidateName(req.Origin, util.NameRegex)
 	if err != nil || !originVar {
 		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.OriginIsInvalid, util.ErrCodeAppNameInvalid)
 		return
 	}
 
@@ -786,12 +790,13 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, params.ClientIP, params.AppInstanceId, params.TenantId)
-		c.HandleLoggingForError(params.ClientIP, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(params.ClientIP, util.StatusInternalServerError, err.Error(), util.ErrCodeFailedPlugin)
 		return
 	}
 	if status == util.Failure {
 		c.handleErrorForInstantiateApp(acm, params.ClientIP, params.AppInstanceId, params.TenantId)
-		c.HandleLoggingForError(params.ClientIP, util.StatusInternalServerError, util.FailedToInstantiate)
+		c.HandleForErrorCode(params.ClientIP, util.StatusInternalServerError, util.FailedToInstantiate,
+			util.ErrCodePluginInstFailed)
 		err = errors.New(util.FailedToInstantiate)
 		return
 	}
@@ -806,13 +811,13 @@ func (c *LcmControllerV2) insertOrUpdateTenantRecord(clientIp, tenantId string) 
 
 	count, err := c.Db.QueryCount("tenant_info_record")
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodeReportByDB)
 		return err
 	}
 
 	if count >= util.MaxNumberOfTenantRecords {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Maximum number of tenant records are exceeded")
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError,
+			util.TenantNumUpToMax, util.ErrCodeTenantNumUpToMax)
 		return errors.New("maximum number of tenant records are exceeded")
 	}
 
@@ -854,7 +859,7 @@ func (c *LcmControllerV2) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 	}
 
 	if count >= util.MaxNumberOfRecords {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PackageNumUpToMaxNums,
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PackageNumUpToMax,
 			util.ErrCodePackUptoMaxNumber)
 		return errors.New("maximum number of app package records are exceeded for given tenant")
 	}
@@ -872,12 +877,12 @@ func (c *LcmControllerV2) handleErrorForInstantiateApp(acm config.AppConfigAdapt
 	clientIp, appInsId, tenantId string) {
 	err := acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeInternalServer)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteAuthCfgFail)
 		return
 	}
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeInternalServer)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeFailedDeleteData)
 		return
 	}
 
@@ -948,7 +953,7 @@ func (c *LcmControllerV2) TerminateV2() {
 	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{}, config.ApplicationConfig{})
 	err = acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteAuthCfgFail)
 		return
 	}
 
@@ -956,7 +961,7 @@ func (c *LcmControllerV2) TerminateV2() {
 
 	err = c.deleteAppInfoRecord(appInsId)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeFailedDeleteData)
 		return
 	}
 
@@ -1291,15 +1296,15 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
 		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
+			c.HandleForErrorCode(clientIp, util.StatusNotFound, err.Error(), util.ErrCodeGetWorkloadFailed)
 			return
 		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetWorkloadFailed)
 		return
 	}
 	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeFailResponse)
 		return
 	}
 	c.handleLoggingForSuccess(nil, clientIp, "Workload description is successful")
@@ -1372,7 +1377,7 @@ func (c *LcmControllerV2) SynchronizeUpdatedRecordV2() {
 	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeFailResponse)
 		return
 	}
 
@@ -1380,7 +1385,7 @@ func (c *LcmControllerV2) SynchronizeUpdatedRecordV2() {
 		appInstance.SyncStatus = true
 		err = c.Db.InsertOrUpdateData(&appInstance, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			log.Error("Failed to save app info record to database.")
+			log.Error(util.FailedToSaveAppInfo, util.ErrCodeSaveAppInfoFailed)
 			return
 		}
 	}
@@ -1426,7 +1431,7 @@ func (c *LcmControllerV2) SynchronizeStaleRecordV2() {
 	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
 	res, err := json.Marshal(appInstanceStaleRecords)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.FailedToMarshal, util.ErrCodeFailedToMarshal)
 		return
 	}
 
@@ -1434,13 +1439,13 @@ func (c *LcmControllerV2) SynchronizeStaleRecordV2() {
 	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeFailResponse)
 		return
 	}
 	for _, appInstStaleRec := range appInstStaleRecs {
 		err = c.Db.DeleteData(&appInstStaleRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodeFailedDeleteData)
 			return
 		}
 	}
@@ -1491,7 +1496,7 @@ func (c *LcmControllerV2) SynchronizeAppPackageStaleRecordV2() {
 
 	res, err := json.Marshal(appDistPkgHostStaleRecords)
 	if err != nil {
-		c.writeErrorResponse("failed to marshal request", util.BadRequest)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.FailedToMarshal, util.ErrCodeFailedToMarshal)
 		return
 	}
 
@@ -1499,13 +1504,13 @@ func (c *LcmControllerV2) SynchronizeAppPackageStaleRecordV2() {
 	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
 	_, err = c.Ctx.ResponseWriter.Write(res)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeFailResponse)
 		return
 	}
 	for _, appPackageStaleRec := range appPackageStaleRecs {
 		err = c.Db.DeleteData(&appPackageStaleRec, util.AppPkgId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodeFailedDeleteData)
 			return
 		}
 	}
@@ -1513,7 +1518,7 @@ func (c *LcmControllerV2) SynchronizeAppPackageStaleRecordV2() {
 	for _, appPkgHostStaleRec := range appPkgHostStaleRecs {
 		err = c.Db.DeleteData(&appPkgHostStaleRec, util.PkgId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
-			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodeFailedDeleteData)
 			return
 		}
 	}

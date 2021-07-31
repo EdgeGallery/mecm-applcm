@@ -87,7 +87,9 @@ const (
 	GetPackageDetailsFailed         = "failed to get app package details"
 	PluginErrorReport               = "Failed to do operate on Plugin"
 	InsertDBWithError               = "Failed to insert data to DB"
-    PackageNumUpToMaxNums           = "Maximum number of app package records are exceeded for given tenant"
+    PackageNumUpToMax               = "Maximum number of app package records are exceeded for given tenant"
+	TenantNumUpToMax                = "Maximum number of tenant records are exceeded"
+	FailedToSaveAppInfo             = "Failed to save app info record to database."
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30
@@ -126,6 +128,12 @@ const (
 	ErrCodeFailResponse       int = 31018
 	ErrCodeInvalidCapId       int = 31020
 	ErrCodeCallForMep         int = 31022
+	ErrCodeFailedToMarshal    int = 31023
+	ErrCodeTenantNumUpToMax   int = 31024
+	ErrCodeAppNameInvalid     int = 31025
+	ErrCodeInvalidRequest     int = 31026
+	ErrCodeOriginInvalid      int = 31027
+
 
 	//File Error Code
 	ErrCodeFileCanNotRead     int = 31100
@@ -139,10 +147,20 @@ const (
 	//Plugin Error Code
 	ErrCodeFailedGetPlugin    int = 31201
 	ErrCodeFailedPlugin       int = 31202
+	ErrCodeGetWorkloadFailed  int = 31203
 
 	//DB Error Code
 	ErrCodeFailedToInsert     int = 31300
-	ErrCodeNotFoundInDB       int = 31304
+	ErrCodeNotFoundInDB       int = 31301
+	ErrCodeFailedDeleteData   int = 31302
+	ErrCodeReportByDB         int = 31303
+	ErrCodeSaveAppInfoFailed  int = 31304
+
+
+	//Instantiate Error Code
+	ErrCodePluginInstFailed  int = 31601
+	ErrCodeDeleteAuthCfgFail int = 31602
+
 
 	ErrCodeInternalServer     int = 31503
 
