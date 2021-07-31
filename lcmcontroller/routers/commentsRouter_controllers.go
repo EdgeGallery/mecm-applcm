@@ -60,8 +60,18 @@ func init() {
 	initAPI(util.Mepcontroller, "KongLog", "/v1/mep/kong_log", util.GET)
 	initAPI(util.Mepcontroller, "Subscribe", "/v1/mep/subscribe_statistic", util.GET)
 
-	initAPI(util.Lcmcontrollerv2, "UploadPackageV2", "/v2/tenants/:tenantId/packages", util.POST)
+
+
 	initAPI(util.Lcmcontrollerv2, "UploadConfigV2", "/v2/configuration", util.POST)
+	initAPI(util.Lcmcontrollerv2, "RemoveConfigV2", "/v2/configuration", util.DELETE)
+	initAPI(util.Lcmcontrollerv2, "UploadPackageV2", "/v2/tenants/:tenantId/packages", util.POST)
+	initAPI(util.Lcmcontrollerv2, "InstantiateV2", "/v2/tenants/:tenantId/app_instances/:appInstanceId/instantiate", util.POST)
+	initAPI(util.Lcmcontrollerv2, "TerminateV2", "/v2/tenants/:tenantId/app_instances/:appInstanceId/terminate", util.POST)
+	initAPI(util.Lcmcontrollerv2, "QueryV2", "/v2/tenants/:tenantId/app_instances/:appInstanceId", util.GET)
+	initAPI(util.Lcmcontrollerv2, "QueryKPI", "/v2/tenants/:tenantId/hosts/:hostIp/kpi", util.GET)
+	initAPI(util.Lcmcontrollerv2, "QueryMepCapabilities", "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities", util.GET)
+	initAPI(util.Lcmcontrollerv2, "QueryMepCapabilities", "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId", util.GET)
+	initAPI(util.Lcmcontrollerv2, "GetWorkloadDescription", "/v2/tenants/:tenantId/app_instances/:appInstanceId/workload/events", util.GET)
 }
 
 func initAPI(controllerName, methodName, path, operationType string,) {
