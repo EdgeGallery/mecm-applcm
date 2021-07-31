@@ -37,7 +37,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-
 // Lcm Controller
 type LcmControllerV2 struct {
 	BaseController
@@ -114,7 +113,6 @@ func (c *LcmControllerV2) UploadConfigV2() {
 	returnContent, _ := handleSuccessReturn(nil, util.UploadConfigSuccess)
 	c.handleLoggingForSuccess(returnContent, clientIp, util.UploadConfigSuccess)
 }
-
 
 // @Title Upload package
 // @Description Upload Package
@@ -197,8 +195,7 @@ func (c *LcmControllerV2) UploadPackageV2() {
 	pkgDetails, err := c.getPackageDetailsFromPackage(clientIp, pkgDir)
 	if err != nil {
 		util.ClearByteArray(bKey)
-		c.HandleForErrorCode(clientIp, util.BadRequest, "failed to get app package details",
-			util.ErrCodeFailedGetDetails)
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.GetPackageDetailsFailed, util.ErrCodeFailedGetDetails)
 		return
 	}
 
@@ -262,7 +259,7 @@ func (c *LcmControllerV2) getAppId(clientIp string) (string, error) {
 	appId := c.GetString("appId")
 	if appId != "" {
 		if len(appId) > 32 {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "app id is invalid")
+			c.HandleForErrorCode(clientIp, util.BadRequest, util.AppIdIsNotValid, util.ErrCodeAppIdInvalid)
 			return "", errors.New("app id length exceeds max limit")
 		}
 		return appId, nil
@@ -283,7 +280,6 @@ func (c *LcmControllerV2) getPackageId(clientIp string) (string, error) {
 	return "", nil
 }
 
-
 // Get origin
 func (c *LcmControllerV2) getOrigin(clientIp string) (string, error) {
 	origin := c.GetString("origin")
@@ -294,8 +290,6 @@ func (c *LcmControllerV2) getOrigin(clientIp string) (string, error) {
 	}
 	return origin, nil
 }
-
-
 
 func (c *LcmControllerV2) saveApplicationPackage(clientIp string, tenantId string, packageId string,
 	header *multipart.FileHeader, file multipart.File) (string, error) {
@@ -318,7 +312,6 @@ func (c *LcmControllerV2) saveApplicationPackage(clientIp string, tenantId strin
 
 	return pkgPath, nil
 }
-
 
 // Create package path
 func (c *LcmControllerV2) createPackagePath(pkgPath string, clientIp string, file multipart.File) error {
@@ -355,7 +348,6 @@ func (c *LcmControllerV2) getUrlPackageId(clientIp string) (string, error) {
 	}
 	return "", nil
 }
-
 
 // Get application package details
 func (c *LcmControllerV2) getPackageDetailsFromPackage(clientIp string,
@@ -394,7 +386,6 @@ func (c *LcmControllerV2) getPackageDetailsFromPackage(clientIp string,
 	}
 	return pkgDetails, nil
 }
-
 
 // get file with extension
 func (c *LcmControllerV2) getFileContainsExtension(clientIp string, pkgDir string, ext string) (string, error) {
@@ -655,7 +646,6 @@ func (c *LcmControllerV2) InstantiateV2() {
 	doInstantiate(c, appParams, bKey, req)
 }
 
-
 func (c *LcmControllerV2) validateToken(accessToken string, req models.InstantiateRequest,  clientIp string) (string, string, string, string, string, error) {
 
 	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
@@ -674,7 +664,6 @@ func (c *LcmControllerV2) validateToken(accessToken string, req models.Instantia
 	}
 	return appInsId, tenantId, hostIp, packageId, appName, nil
 }
-
 
 func (c *LcmControllerV2) ValidateInstantiateInputParameters(clientIp string, req models.InstantiateRequest) (string, string, string, string, string, error) {
 
@@ -860,13 +849,13 @@ func (c *LcmControllerV2) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 
 	count, err := c.Db.QueryCountForTable("app_package_record", util.TenantId, tenantId)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodeNotFoundInDB)
 		return err
 	}
 
 	if count >= util.MaxNumberOfRecords {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
-			"Maximum number of app package records are exceeded for given tenant")
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PackageNumUpToMaxNums,
+			util.ErrCodePackUptoMaxNumber)
 		return errors.New("maximum number of app package records are exceeded for given tenant")
 	}
 	log.Info("Add app package record: %+v", appPkgRecord)
@@ -1079,6 +1068,168 @@ func (c *LcmControllerV2) QueryV2() {
 	c.handleLoggingForSuccess(nil, clientIp, "Query workload statistics is successful")
 }
 
+// @Title Query kpi
+// @Description perform query kpi operation
+// @Param	hostIp          path 	string	true	    "hostIp"
+// @Param	tenantId	    path 	string	true	    "tenantId"
+// @Param   access_token    header  string  true        "access token"
+// @Success 200 ok
+// @Failure 403 bad request
+// @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
+func (c *LcmControllerV2) QueryKPI() {
+	log.Info("Application query kpi request received.")
+
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+	if err != nil {
+		c.HandleLoggingForTokenFailure(clientIp, util.AccessTokenIsInvalid)
+		util.ClearByteArray(bKey)
+		return
+	}
+	util.ClearByteArray(bKey)
+
+	hostIp, err := c.getUrlHostIP(clientIp)
+	if err != nil {
+		return
+	}
+
+	vim, err := c.getVim(clientIp, hostIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	adapter, err := c.getPluginAdapter("", clientIp, vim)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	response, err := adapter.QueryKPI(accessToken, hostIp)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		res := strings.Contains(err.Error(), util.NotFound)
+		if res {
+			c.HandleForErrorCode(clientIp, util.StatusNotFound, err.Error(), util.ErrCodeNotFoundInPlugin)
+			return
+		}
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrorReportByPlugin)
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeFailResponse)
+
+		return
+	}
+	c.handleLoggingForSuccess(nil, clientIp, "Query kpi is successful")
+}
+
+// Get host IP from url
+func (c *LcmControllerV2) getUrlHostIP(clientIp string) (string, error) {
+	hostIp := c.Ctx.Input.Param(":hostIp")
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, "MecHost address is invalid from url",
+			util.ErrCodeInvalidHost)
+		return "", err
+	}
+	return hostIp, nil
+}
+
+// @Title Query mep capabilities
+// @Description perform query mep capabilities
+// @Param	tenantId	path 	string	true	"tenantId"
+// @Param	hostIp          path 	string	true	"hostIp"
+// @Param	capabilityId    path 	string	false	"capabilityId"
+// @Param       access_token    header  string  true    "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
+func (c *LcmControllerV2) QueryMepCapabilities() {
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+	if err != nil {
+		c.HandleLoggingForTokenFailure(clientIp, util.AccessTokenIsInvalid)
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	util.ClearByteArray(bKey)
+
+	_, err = c.getUrlHostIP(clientIp)
+	if err != nil {
+		return
+	}
+
+	mepPort := util.GetMepPort()
+
+	capabilityId, err := c.getUrlCapabilityId(clientIp)
+	if err != nil {
+		return
+	}
+
+	uri := util.CapabilityUri
+	if len(capabilityId) != 0 {
+		uri = util.CapabilityUri + "/" + capabilityId
+	}
+
+	mepCapabilities, statusCode, err := util.GetHostInfo("mep-mm5.mep" + ":" + mepPort + uri)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, statusCode, "invalid mepCapabilities query", util.ErrCodeCallForMep)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeFailResponse)
+		return
+	}
+	c.handleLoggingForSuccess(nil, clientIp, "Query mep capabilities is successful")
+}
+
+// Get mep capability id from url
+func (c *LcmControllerV2) getUrlCapabilityId(clientIp string) (string, error) {
+	capabilityId := c.Ctx.Input.Param(":capabilityId")
+	err := util.ValidateMepCapabilityId(capabilityId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, "capability id is invalid from url",
+			util.ErrCodeInvalidCapId)
+		return "", err
+	}
+	return capabilityId, nil
+}
+
 // @Title GetWorkloadDescription
 // @Description perform get workload description
 // @Param	tenantId	    path 	string	true	"tenantId"
@@ -1087,7 +1238,7 @@ func (c *LcmControllerV2) QueryV2() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/:appInstanceId/workload/events  [get]
-func (c *LcmControllerV2) GetWorkloadDescriptionV2() {
+func (c *LcmControllerV2) GetWorkloadDescription() {
 	log.Info("Get workload description request received.")
 
 	clientIp := c.Ctx.Input.IP()

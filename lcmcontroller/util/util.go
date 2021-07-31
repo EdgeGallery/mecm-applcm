@@ -71,6 +71,7 @@ const (
 
 	FailedToMakeDir                 = "failed to make directory"
 	FileNameNotFound                = "file name not found with "
+	AppIdIsNotValid                 = "AppName is invalid"
 	AppNameIsNotValid               = "AppName is invalid"
 	HostIpIsInvalid                 = "MecHost address is invalid"
 	PackageIdIsInvalid              = "package id is invalid"
@@ -86,13 +87,14 @@ const (
 	GetPackageDetailsFailed         = "failed to get app package details"
 	PluginErrorReport               = "Failed to do operate on Plugin"
 	InsertDBWithError               = "Failed to insert data to DB"
+    PackageNumUpToMaxNums           = "Maximum number of app package records are exceeded for given tenant"
 	MaxSize                  int    = 20
 	MaxBackups               int    = 50
 	MaxAge                          = 30
 	MaxConfigFile            int64  = 5242880
 	MaxAppPackageFile        int64  = 536870912
 	Timeout                         = 180
-	MaxNumberOfRecords              = 50
+	MaxNumberOfRecords              = 500
 	MaxNumberOfTenantRecords        = 20
 	MaxNumberOfHostRecords          = 20
 	MaxFileNameSize                 = 128
@@ -113,14 +115,17 @@ const (
 	ErrCodeInvalidHost        int = 31003
 	ErrCodeBodyTooLarge       int = 31005
 	ErrCodeHostNotExist       int = 31006
-	ErrCodePackageIdInvalid   int = 31007
-	ErrCodeAPPNAmeInvalid     int = 31008
-	ErrCodePackDistributed    int = 31009
-	ErrCodeInstanceIsExist    int = 31010
-	ErrCodeProcessAkSk        int = 31011
-	ErrCodeNotFoundInPlugin   int = 31012
-	ErrorReportByPlugin       int = 31013
-	ErrCodeFailResponse       int = 31014
+	ErrCodeAppIdInvalid       int = 31007
+	ErrCodePackageIdInvalid   int = 31008
+	ErrCodeAPPNAmeInvalid     int = 31010
+	ErrCodePackDistributed    int = 31012
+	ErrCodeInstanceIsExist    int = 31013
+	ErrCodeProcessAkSk        int = 31014
+	ErrCodeNotFoundInPlugin   int = 31015
+	ErrorReportByPlugin       int = 31016
+	ErrCodeFailResponse       int = 31018
+	ErrCodeInvalidCapId       int = 31020
+	ErrCodeCallForMep         int = 31022
 
 	//File Error Code
 	ErrCodeFileCanNotRead     int = 31100
@@ -129,6 +134,7 @@ const (
 	ErrCodeFailedToSaveFile   int = 31104
 	ErrCodeFailedToExtract    int = 31105
 	ErrCodeFailedGetDetails   int = 31106
+	ErrCodePackUptoMaxNumber  int = 31107
 
 	//Plugin Error Code
 	ErrCodeFailedGetPlugin    int = 31201
