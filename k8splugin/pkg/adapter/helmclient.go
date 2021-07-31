@@ -323,19 +323,13 @@ func (hc *HelmClient) QueryKPI() (string, error) {
 	var statsInfo map[string]interface{}
 	data, err := clientset.RESTClient().Get().AbsPath("apis/metrics.k8s.io/v1beta1/nodes").DoRaw(context.Background())
 
-	err = json.Unmarshal(data, &statsInfo)
-	if err != nil {
-		return "", err
-	}
+	_ = json.Unmarshal(data, &statsInfo)
 
 	totalCpu, totalMem = getNodeTotalCpuMem(statsInfo)
 
 	var statsInfo1 map[string]interface{}
 	data1, err := clientset.RESTClient().Get().AbsPath("apis/metrics.k8s.io/v1beta1/pods").DoRaw(context.Background())
-	err = json.Unmarshal(data1, &statsInfo1)
-	if err != nil {
-		return "", err
-	}
+	_ = json.Unmarshal(data1, &statsInfo1)
 
 	totalPodCpu, totalPodMem = getPodTotalCpuMem(statsInfo1)
 
