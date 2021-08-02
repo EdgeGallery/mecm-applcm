@@ -301,7 +301,7 @@ func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
 	if count == 0 {
 		err = c.Db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
-			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeFailedDeleteData)
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteDataFailed)
 			return err
 		}
 	}

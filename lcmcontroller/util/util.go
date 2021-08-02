@@ -111,51 +111,54 @@ const (
 	SuccessCode               int = 200
 
 	//Base Error Code
-	ErrCodeForbidden          int = 31000
-	ErrCodeTokenInvalid       int = 31001
-	ErrCodeIPInvalid          int = 31002
-	ErrCodeInvalidHost        int = 31003
-	ErrCodeBodyTooLarge       int = 31005
-	ErrCodeHostNotExist       int = 31006
-	ErrCodeAppIdInvalid       int = 31007
-	ErrCodePackageIdInvalid   int = 31008
-	ErrCodeAPPNAmeInvalid     int = 31010
-	ErrCodePackDistributed    int = 31012
-	ErrCodeInstanceIsExist    int = 31013
-	ErrCodeProcessAkSk        int = 31014
-	ErrCodeNotFoundInPlugin   int = 31015
-	ErrorReportByPlugin       int = 31016
-	ErrCodeFailResponse       int = 31018
-	ErrCodeInvalidCapId       int = 31020
-	ErrCodeCallForMep         int = 31022
-	ErrCodeFailedToMarshal    int = 31023
-	ErrCodeTenantNumUpToMax   int = 31024
-	ErrCodeAppNameInvalid     int = 31025
-	ErrCodeInvalidRequest     int = 31026
-	ErrCodeOriginInvalid      int = 31027
-
+	ErrCodeForbidden         int = 31000
+	ErrCodeTokenInvalid      int = 31001
+	ErrCodeIPInvalid         int = 31002
+	ErrCodeMecHostInvalid    int = 31003
+	ErrCodeBodyTooLarge      int = 31005
+	ErrCodeHostNotExist      int = 31006
+	ErrCodeAppIdInvalid      int = 31007
+	ErrCodePackageIdInvalid  int = 31008
+	ErrCodeTenantIdInvalid   int = 31009
+	ErrCodeAPPNAmeInvalid    int = 31010
+	ErrCodePackDistributed   int = 31012
+	ErrCodeInstanceIsExist   int = 31013
+	ErrCodeProcessAkSkFailed int = 31014
+	ErrCodeHostNotFoundInPlg int = 31015
+	ErrorReportByPlugin      int = 31016
+	ErrCodeWriteResFailed    int = 31018
+	ErrCodeInvalidCapId      int = 31020
+	ErrCodeCallForMep        int = 31022
+	ErrCodeFailedToMarshal   int = 31023
+	ErrCodeFailedToUnMarshal int = 31024
+	ErrCodeTenantNumUpToMax  int = 31025
+	ErrCodeAppNameInvalid    int = 31026
+	ErrCodeInvalidRequest    int = 31027
+	ErrCodeOriginInvalid     int = 31029
+	ErrCodeGetVimFailed      int = 31032
+	ErrCodeDeleteFileFailed  int = 31034
 
 	//File Error Code
-	ErrCodeFileCanNotRead     int = 31100
-	ErrCodeFileNameTooLang    int = 31102
-	ErrCodeFileToBig          int = 31103
-	ErrCodeFailedToSaveFile   int = 31104
-	ErrCodeFailedToExtract    int = 31105
-	ErrCodeFailedGetDetails   int = 31106
-	ErrCodePackUptoMaxNumber  int = 31107
+	ErrCodeFileCanNotRead   int = 31100
+	ErrCodeFileNameTooLang  int = 31102
+	ErrCodeFileToBig        int = 31103
+	ErrCodeFailedToSaveFile int = 31104
+	ErrCodeFailedToExtract  int = 31105
+	ErrCodeFailedGetDetails int = 31106
+	ErrCodePackNumUptoMax   int = 31107
 
 	//Plugin Error Code
 	ErrCodeFailedGetPlugin    int = 31201
-	ErrCodeFailedPlugin       int = 31202
+	ErrCodePluginReportFailed int = 31202
 	ErrCodeGetWorkloadFailed  int = 31203
 
 	//DB Error Code
-	ErrCodeFailedToInsert     int = 31300
-	ErrCodeNotFoundInDB       int = 31301
-	ErrCodeFailedDeleteData   int = 31302
-	ErrCodeReportByDB         int = 31303
-	ErrCodeSaveAppInfoFailed  int = 31304
-
+	ErrCodeInsertDataFailed  int = 31300
+	ErrCodeNotFoundInDB      int = 31301
+	ErrCodeDeleteDataFailed  int = 31302
+	ErrCodeRecordNotExist    int = 31303
+	ErrCodeReportByDB        int = 31305
+	ErrCodeSaveAppInfoFailed int = 31304
 
 	//Instantiate Error Code
 	ErrCodePluginInstFailed  int = 31601
