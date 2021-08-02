@@ -593,7 +593,7 @@ func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string
 			Controller: queryBeegoControllerv2}}
 
 		// Test query
-		queryControllerv2.GetWorkloadDescriptionV2()
+		queryControllerv2.GetWorkloadDescription()
 	})
 }
 
