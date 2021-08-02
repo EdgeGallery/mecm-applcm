@@ -72,6 +72,16 @@ func init() {
 	initAPI(util.Lcmcontrollerv2, "QueryMepCapabilities", "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities", util.GET)
 	initAPI(util.Lcmcontrollerv2, "QueryMepCapabilities", "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId", util.GET)
 	initAPI(util.Lcmcontrollerv2, "GetWorkloadDescription", "/v2/tenants/:tenantId/app_instances/:appInstanceId/workload/events", util.GET)
+	initAPI(util.Lcmcontrollerv2, "SynchronizeUpdatedRecord", "/v2/tenants/:tenantId/app_instances/sync_updated", util.GET)
+	initAPI(util.Lcmcontrollerv2, "SynchronizeStaleRecord", "/v2/tenants/:tenantId/app_instances/sync_deleted", util.GET)
+	initAPI(util.Lcmcontrollerv2, "DeletePackage", util.PkgUrlPathV2, util.DELETE)
+	initAPI(util.Lcmcontrollerv2, "DeletePackageOnHost", "/v2/tenants/:tenantId/packages/:packageId/hosts/:hostIp", util.DELETE)
+	initAPI(util.Lcmcontrollerv2, "DistributePackage",   util.PkgUrlPathV2, util.POST)
+	initAPI(util.Lcmcontrollerv2, "DistributionStatus", util.PkgUrlPathV2, util.GET)
+	initAPI(util.Lcmcontrollerv2, "DistributionStatus", "/v2/tenants/:tenantId/packages", util.GET)
+	initAPI(util.Lcmcontrollerv2, "SynchronizeAppPackageUpdatedRecord","/v2/tenants/:tenantId/packages/sync_updated", util.GET)
+	initAPI(util.Lcmcontrollerv2, "SynchronizeAppPackageStaleRecord",  "/v2/tenants/:tenantId/packages/sync_deleted", util.GET)
+
 }
 
 func initAPI(controllerName, methodName, path, operationType string,) {
