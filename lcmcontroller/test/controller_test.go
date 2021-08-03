@@ -180,6 +180,8 @@ func TestLcmOperation(t *testing.T) {
 	// Test delete package
 	testDeletePackage(t, extraParams, testDb)
 
+	testDeletePackageV2(t, extraParams, testDb)
+
 	// Test Batch terminate
 	testBatchTerminate(t, nil, testDb)
 
@@ -327,7 +329,7 @@ func testSyncUpdatedAppInstRec(t *testing.T, extraParams map[string]string, path
 			Controller: queryBeegoControllerv2}}
 
 		// Test query
-		queryControllerv2.SynchronizeUpdatedRecordV2()
+		queryControllerv2.SynchronizeUpdatedRecord()
 	})
 }
 
@@ -962,7 +964,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 			Controller: instantiateBeegoControllerv2}}
 
 		instantiateControllerv2.UploadPackageV2()
-		//assert.Equal(t, 401, instantiateControllerv2.Ctx.ResponseWriter.Status, "Upload package failed")
+		assert.Equal(t, 200, instantiateControllerv2.Ctx.ResponseWriter.Status, "Upload package failed")
 
 
 	})
@@ -1249,6 +1251,45 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
+			deleteMecHostSuccess)
+	})
+}
+
+
+func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
+
+	t.Run("TestDeletePackage", func(t *testing.T) {
+
+		// POST Request
+		instantiateRequest, _ := getHttpRequest(tenantsPath +
+			tenantIdentifier + "/packages/" +
+			packageId + "/hosts/" + ipAddress, extraParams,
+			"file", "", deleteOper, []byte(""))
+
+		// Prepare Input
+		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}}
+		setParam(instantiateInput)
+
+		// Prepare beego controller
+		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: instantiateInput,
+			Request: instantiateRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		//for V2
+		// Create LCM controller with mocked DB and prepared Beego controller
+		instantiateControllerV2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
+
+		patch2 := gomonkey.ApplyFunc(os.Open, func(name string) (*os.File, error) {
+			return nil,nil
+		})
+		defer patch2.Reset()
+
+		// Test instantiate
+		instantiateControllerV2.DeletePackage()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 500, instantiateControllerV2.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
 	})
 }
