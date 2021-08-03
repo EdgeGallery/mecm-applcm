@@ -104,6 +104,7 @@ func doTest(t *testing.T) {
 
 	//Distribute package
 	testDistributePackage(t, extraParams, testDb)
+	testDistributePackageV2(t, extraParams, testDb)
 
 	// Test instantiate
 	testInstantiate(t, extraParams, testDb)
@@ -128,6 +129,7 @@ func doTest(t *testing.T) {
 
 	// Test delete package
 	testDeletePackageOnHost(t, extraParams, testDb)
+	testDeletePackageOnHostV2(t, extraParams, testDb)
 
 	// Update path to config file
 	path, _ = os.Getwd()

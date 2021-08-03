@@ -75,6 +75,7 @@ const (
 	AppNameIsNotValid               = "AppName is invalid"
 	HostIpIsInvalid                 = "MecHost address is invalid"
 	PackageIdIsInvalid              = "package id is invalid"
+	TenantIdIsInvalid              = "package id is invalid"
 	OriginIsInvalid                 = "Origin is invalid"
 	RecordDoesNotExist              = "Records does not exist"
 	RequestBodyTooLarge             = "request body too large"
@@ -150,6 +151,8 @@ const (
 	ErrCodeFailedGetPlugin    int = 31201
 	ErrCodePluginReportFailed int = 31202
 	ErrCodeGetWorkloadFailed  int = 31203
+	ErrCodeFailedGetClient    int = 31204
+	ErrCodeUploadToPluginFailed int = 31205
 
 	//DB Error Code
 	ErrCodeInsertDataFailed  int = 31300
@@ -164,7 +167,8 @@ const (
 	ErrCodeDeleteAuthCfgFail int = 31602
 
 
-	ErrCodeInternalServer     int = 31503
+	ErrCodeInternalServer    int = 31503
+	ErrCodeBadRequest        int = 31400
 
 	UuidRegex     = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 	NameRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-]*[\\d\\p{L}]$"
