@@ -743,20 +743,7 @@ func (c *LcmController) Query() {
 	}
 
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost)
-	if err != nil {
-		res := strings.Contains(err.Error(), util.NotFound)
-		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
-			return
-		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
+	c.errorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Query workload statistics is successful")
 }
 
@@ -770,30 +757,7 @@ func (c *LcmController) Query() {
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmController) QueryKPI() {
 	log.Info("Application query kpi request received.")
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		util.ClearByteArray(bKey)
-		return
-	}
-	util.ClearByteArray(bKey)
+	clientIp,bKey,accessToken,err := c.getClientIpNew()
 
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
@@ -814,20 +778,7 @@ func (c *LcmController) QueryKPI() {
 
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
-	if err != nil {
-		res := strings.Contains(err.Error(), util.NotFound)
-		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
-			return
-		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
+	c.errorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Query kpi is successful")
 }
 
@@ -841,31 +792,8 @@ func (c *LcmController) QueryKPI() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmController) QueryMepCapabilities() {
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		util.ClearByteArray(bKey)
-		return
-	}
-
+	clientIp,bKey, _,err :=  c.getClientIpNew()
 	util.ClearByteArray(bKey)
-
 	_, err = c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
@@ -1191,20 +1119,7 @@ func (c *LcmController) GetWorkloadDescription() {
 	}
 	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
 	util.ClearByteArray(bKey)
-	if err != nil {
-		res := strings.Contains(err.Error(), util.NotFound)
-		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
-			return
-		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
+	c.errorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
 
@@ -1221,30 +1136,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 	var appInstancesSync []models.AppInfoRecord
 	var appInstanceSyncRecords models.AppInfoUpdatedRecords
 	var appInstanceRes []models.AppInfoRec
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
-
+	clientIp,err := c.getClientIp()
 	_, _ = c.Db.QueryTable("app_info_record", &appInstances, "")
 	for _, appInstance := range appInstances {
 		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
@@ -1300,30 +1192,7 @@ func (c *LcmController) SynchronizeStaleRecord() {
 
 	var appInstStaleRecs []models.AppInstanceStaleRec
 	var appInstanceStaleRecords models.AppInstanceStaleRecords
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
+	clientIp,err := c.getClientIp()
 	_, _ = c.Db.QueryTable("app_instance_stale_rec", &appInstStaleRecs, "")
 
 	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
@@ -1981,30 +1850,7 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 
 	var appPackages []*models.AppPackageRecord
 	var appPackagesSync []*models.AppPackageRecord
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
+	clientIp,err := c.getClientIp()
 
 	_, _ = c.Db.QueryTable("app_package_record", &appPackages, "")
 	for _, appPackage := range appPackages {
@@ -2042,31 +1888,7 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 	var appPackageStaleRecs []models.AppPackageStaleRec
 	var appPkgHostStaleRecs []models.AppPackageHostStaleRec
 	var appDistPkgHostStaleRecords models.AppDistPkgHostStaleRecords
-
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
+	clientIp,err := c.getClientIp()
 	_, _ = c.Db.QueryTable("app_package_stale_rec", &appPackageStaleRecs, "")
 	_, _ = c.Db.QueryTable("app_package_host_stale_rec", &appPkgHostStaleRecs, "")
 
@@ -2422,4 +2244,72 @@ func (c *LcmController) getClientIpAndValidateAccessToken(receiveMsg string, all
 	}
 	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
 	return clientIp, bKey, accessToken, nil
+}
+
+func (c *LcmController) errorLog(clientIp string,err error,response string) {
+	if err != nil {
+		res := strings.Contains(err.Error(), util.NotFound)
+		if res {
+			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
+			return
+		}
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+}
+
+func (c *LcmController) getClientIp() (clientIp string,err error){
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+	return clientIp,err
+}
+func (c *LcmController) getClientIpNew() (clientIp string, bKey []byte,
+	accessToken string, err error) {
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		util.ClearByteArray(bKey)
+		return
+	}
+	return clientIp,bKey,accessToken,err
 }
