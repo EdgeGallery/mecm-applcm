@@ -864,7 +864,6 @@ func (c *LcmControllerV2) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 			util.ErrCodePackNumUptoMax)
 		return errors.New("maximum number of app package records are exceeded for given tenant")
 	}
-	log.Info("Add app package record: %+v", appPkgRecord)
 	err = c.Db.InsertOrUpdateData(appPkgRecord, util.AppPkgId)
 	if err != nil && err.Error() != "LastInsertId is not supported by this driver" {
 		log.Error("Failed to save app package record to database.")
@@ -1316,7 +1315,7 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /tenants/:tenantId/app_instances/sync_deleted [get]
-func (c *LcmControllerV2) SynchronizeStaleRecordV2() {
+func (c *LcmControllerV2) SynchronizeStaleRecord() {
 	log.Info("Sync app instances stale request received.")
 
 	var appInstStaleRecs []models.AppInstanceStaleRec
