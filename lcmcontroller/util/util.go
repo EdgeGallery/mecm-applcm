@@ -120,7 +120,7 @@ const (
 	ErrCodeAppIdInvalid      int = 31007
 	ErrCodePackageIdInvalid  int = 31008
 	ErrCodeTenantIdInvalid   int = 31009
-	ErrCodeAPPNAmeInvalid    int = 31010
+	ErrCodeAppNameInvalid    int = 31010
 	ErrCodePackDistributed   int = 31012
 	ErrCodeInstanceIsExist   int = 31013
 	ErrCodeProcessAkSkFailed int = 31014
@@ -132,7 +132,6 @@ const (
 	ErrCodeFailedToMarshal   int = 31023
 	ErrCodeFailedToUnMarshal int = 31024
 	ErrCodeTenantNumUpToMax  int = 31025
-	ErrCodeAppNameInvalid    int = 31026
 	ErrCodeInvalidRequest    int = 31027
 	ErrCodeOriginInvalid     int = 31029
 	ErrCodeGetVimFailed      int = 31032

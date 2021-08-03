@@ -54,6 +54,7 @@ var (
 		"\"consumers\": [{\"applicationInstanceId\":\"88922760-861b-4578-aae5-77b8fcb06142\"}]}]\"}}"
 	capabilityIdOutput = "{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\"," +
 		"\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}"
+	capabilityIdOutputV2 = "{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\",\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\",\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}{\"data\":null,\"retCode\":0,\"message\":\"Upload config is successful\",\"params\":null}"
 	queryUrl  = "https://edgegallery:8094/lcmcontroller/v1/tenants/"
 	serveJson = "ServeJSON"
 	csar      = "/positioning_with_mepagent_new.csar"
@@ -133,6 +134,7 @@ func TestKpi(t *testing.T) {
 
 		response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, finalOutput, response.Body.String(), queryFailed)
+
 	})
 }
 
@@ -247,6 +249,19 @@ func TestMepCapabilitiesId(t *testing.T) {
 			"status failed")
 		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, capabilityIdOutput, response.Body.String(), "Get Capability data failed")
+
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		capabilityControllerV2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+			Controller: capabilityBeegoController}}
+		// Test Capability
+		capabilityControllerV2.QueryMepCapabilities()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 200, capabilityController.Ctx.ResponseWriter.Status, "Get Capability "+
+			"status failed")
+		response = capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, capabilityIdOutputV2, response.Body.String(), "Get Capability data failed")
 	})
 }
 
