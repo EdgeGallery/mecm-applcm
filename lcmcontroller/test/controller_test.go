@@ -513,7 +513,7 @@ func testSynchronizeStaleRecord(t *testing.T, extraParams map[string]string, pat
 			Controller: queryBeegoControllerv2}}
 
 		// Test query
-		queryControllerv2.SynchronizeStaleRecordV2()
+		queryControllerv2.SynchronizeStaleRecord()
 	})
 }
 
