@@ -99,6 +99,7 @@ func doTest(t *testing.T) {
 
 	//Upload package
 	testUploadPackage(t, extraParams, path, testDb)
+	testUploadPackageV2(t, extraParams, path, testDb)
 
 	testAddMecHost(t, extraParams, testDb)
 
@@ -108,6 +109,7 @@ func doTest(t *testing.T) {
 
 	// Test instantiate
 	testInstantiate(t, extraParams, testDb)
+	testInstantiateV2(t, extraParams, testDb)
 
 	// Test work load events
 	testWorkloadEvents(t, nil, "", testDb, "Success")
@@ -137,9 +139,11 @@ func doTest(t *testing.T) {
 
 	// Test upload
 	testUpload(t, extraParams, path, testDb)
+	testUploadV2(t, extraParams, path, testDb)
 
 	// Test removal
 	testRemoval(t, extraParams, path, testDb)
+	testRemovalV2(t, extraParams, path, testDb)
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)

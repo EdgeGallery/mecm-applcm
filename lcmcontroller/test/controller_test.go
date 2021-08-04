@@ -53,8 +53,9 @@ var (
 	packageName           = "package"
 	packages              = "/packages"
 	tenantsPath           = "https://edgegallery:8094/lcmcontroller/v1/tenants/"
-	tenantsPathv2           = "https://edgegallery:8094/lcmcontroller/v2/tenants/"
+	tenantsPathV2         = "https://edgegallery:8094/lcmcontroller/v2/tenants/"
 	appUrlPath            = tenantsPath + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/"
+	appUrlPathV2          = tenantsPathV2 + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/"
 	appUrlPathId          = tenantsPath + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/" + appInstanceIdentifier
 	originKey             = "origin"
 	originVal             = "MEPM"
@@ -63,9 +64,9 @@ var (
 	hostIpKey             = "hostIp"
     sync_deleted_request  = "https://edgegallery:8094/lcmcontroller/v1/tenants/hosts/sync_deleted"
     configuration_request = "https://edgegallery:8094/lcmcontroller/v1/configuration"
+	uploadConfigRequestV2 = "https://edgegallery:8094/lcmcontroller/v2/configuration"
     configfile            = "configFile"
 	deletePackageSuccess = "{\"data\":null,\"retCode\":0,\"message\":\"Deleted host application package successfully\",\"params\":null}"
-
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -113,6 +114,7 @@ func TestLcmOperation(t *testing.T) {
 
 	//Upload package
 	testUploadPackage(t, extraParams, path, testDb)
+	testUploadPackageV2(t, extraParams, path, testDb)
 
 	// Test Add mec host
 	testAddMecHost(t, extraParams, testDb)
@@ -178,15 +180,14 @@ func TestLcmOperation(t *testing.T) {
 
 	// Test instantiate
 	testInstantiate(t, extraParams, testDb)
+	testInstantiateV2(t, extraParams, testDb)
 
 	// Test delete package on host
 	testDeletePackageOnHost(t, extraParams, testDb)
-
 	testDeletePackageOnHostV2(t, extraParams, testDb)
 
 	// Test delete package
 	testDeletePackage(t, extraParams, testDb)
-
 	testDeletePackageV2(t, extraParams, testDb)
 
 	// Test Batch terminate
@@ -232,9 +233,11 @@ func TestConfigOperation(t *testing.T) {
 
 	// Test upload
 	testUpload(t, extraParams, path, testDb)
+	testUploadV2(t, extraParams, path, testDb)
 
 	// Test removal
 	testRemoval(t, extraParams, path, testDb)
+	testRemovalV2(t, extraParams, path, testDb)
 }
 
 func testQuery(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
@@ -396,7 +399,7 @@ func testSynchronizeAppPackageStaleRecordv2(t *testing.T, extraParams map[string
 	t.Run("TestSynchronizeAppPackageStaleRecordv2", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest(tenantsPathv2 + tenantIdentifier + "/packages/sync_deleted", extraParams, "file", path, "GET", []byte(""))
+		queryRequest, _ := getHttpRequest(tenantsPathV2+ tenantIdentifier + "/packages/sync_deleted", extraParams, "file", path, "GET", []byte(""))
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -781,7 +784,28 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Instantiation failed")
+	})
+}
 
+
+func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
+
+	t.Run("TestAppInstanceInstantiate", func(t *testing.T) {
+
+		// POST Request
+		instantiateRequest, _ := getHttpRequest(appUrlPathV2 + "instantiate", extraParams,
+			"file", "", "POST", []byte(""))
+
+		requestBody, _ := json.Marshal(map[string]string{
+			hostIpKey: ipAddress,
+			packageIdKey: packageId,
+			appNameKey: "testApplication",
+			originKey: originVal,
+		})
+
+		// Prepare Input
+		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}, RequestBody: requestBody}
+		setParam(instantiateInput)
 		//for v2
 
 		// POST Request
@@ -1011,32 +1035,42 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		rate, _ := limiter.NewRateFromFormatted("200-S")
 		r.GeneralLimiter = limiter.New(memory.NewStore(), rate)
 		util.RateLimit(r, instantiateController.Ctx)
+	})
+}
 
-		//for v2
+
+func testUploadPackageV2(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+
+	t.Run("TestUploadPackage", func(t *testing.T) {
 
 		// Get Request
-		uploadPkgRequestv2, _ := getHttpRequest(url, extraParams,
+		url := tenantsPathV2 + tenantIdentifier + packages
+		uploadPkgRequest, _ := getHttpRequest(url, extraParams,
 			packageName, path, "POST", []byte(""))
 
 		// Prepare Input
-		uploadPkgInputv2 := &context.BeegoInput{Context: &context.Context{Request: uploadPkgRequestv2}}
-		setParam(uploadPkgInputv2)
+		uploadPkgInput := &context.BeegoInput{Context: &context.Context{Request: uploadPkgRequest}}
+		setParam(uploadPkgInput)
 
 		// Prepare beego controller
-		instantiateBeegoControllerv2 := beego.Controller{Ctx: &context.Context{Input: uploadPkgInputv2,
-			Request: uploadPkgRequestv2, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: uploadPkgInput,
+			Request: uploadPkgRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		instantiateControllerv2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
-			Controller: instantiateBeegoControllerv2}}
+		instantiateController := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
 
-		instantiateControllerv2.UploadPackageV2()
-		assert.Equal(t, 200, instantiateControllerv2.Ctx.ResponseWriter.Status, "Upload package failed")
+
+		// Test upload package
+		instantiateController.UploadPackageV2()
+
+		assert.Equal(t, 200, instantiateController.Ctx.ResponseWriter.Status, "Upload package failed")
 
 
 	})
 }
+
 
 func testAddMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
@@ -1183,6 +1217,7 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 			deleteMecHostSuccess)
 	})
 }
+
 
 func testErrorScenarios(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
@@ -1528,28 +1563,54 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 		// Check for success case wherein the status value will be default i.e. 0
 //		assert.Equal(t, 0, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
 
-		//for v2
+	})
+}
+
+
+func testUploadV2(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+
+	t.Run("TestConfigUploadV2", func(_ *testing.T) {
 
 		// Get Request
-		uploadRequestv2, _ := getHttpRequest(configuration_request, extraParams,
+		uploadRequest, _ := getHttpRequest(uploadConfigRequestV2, extraParams,
 			configfile, path, "POST", []byte(""))
 
 		// Prepare Input
-		uploadInputv2 := &context.BeegoInput{Context: &context.Context{Request: uploadRequestv2}}
-		setParam(uploadInputv2)
+		uploadInput := &context.BeegoInput{Context: &context.Context{Request: uploadRequest}}
+		setParam(uploadInput)
 
 		// Prepare beego controller
-		uploadBeegoControllerv2 := beego.Controller{Ctx: &context.Context{Input: uploadInputv2, Request: uploadRequestv2,
+		uploadBeegoController := beego.Controller{Ctx: &context.Context{Input: uploadInput, Request: uploadRequest,
 			ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		uploadControllerv2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
-			Controller: uploadBeegoControllerv2}}
+		uploadController := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+			Controller: uploadBeegoController}}
 
 		// Test instantiate
-		uploadControllerv2.UploadConfigV2()
+		uploadController.UploadConfigV2()
 
+		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
+
+		// Get Request
+		validParams :=  map[string]string{
+			"hostIp":  "1.1.1.x",
+			"appName": "postioning-service",
+			"packageId": "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
+			"appId": "e261211d80d04cb6aed00e5cd1f2cd11",
+		}
+		uploadRequest, _ = getHttpRequest(uploadConfigRequestV2, validParams,
+			configfile, path, "POST", []byte(""))
+
+		// Prepare Input
+		uploadInput = &context.BeegoInput{Context: &context.Context{Request: uploadRequest}}
+		setParam(uploadInput)
+
+		// Test instantiate
+		uploadController.UploadConfigV2()
+
+		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
 	})
 }
 
@@ -1574,9 +1635,14 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string, testD
 
 		// Test instantiate
 		removeController.RemoveConfig()
+	})
+}
+
+func testRemovalV2(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+	t.Run("TestConfigRemovalV2", func(_ *testing.T) {
 
 		// Get Request
-		removeRequestv2, _ := getHttpRequest(configuration_request, extraParams,
+		removeRequestv2, _ := getHttpRequest(uploadConfigRequestV2, extraParams,
 			configfile, path, deleteOper, []byte(""))
 
 		// Prepare Input
