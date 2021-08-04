@@ -147,6 +147,7 @@ func doTest(t *testing.T) {
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
+	testTerminateV2(t, nil, "", testDb)
 
 	// Common cleaning state
 	// Clear the created artifacts
