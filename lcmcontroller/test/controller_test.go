@@ -57,6 +57,7 @@ var (
 	appUrlPath            = tenantsPath + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/"
 	appUrlPathV2          = tenantsPathV2 + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/"
 	appUrlPathId          = tenantsPath + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/" + appInstanceIdentifier
+	appUrlPathIdV2        = tenantsPathV2 + "e921ce54-82c8-4532-b5c6-8516cf75f7a6/app_instances/" + appInstanceIdentifier
 	originKey             = "origin"
 	originVal             = "MEPM"
 	appNameKey            = "appName"
@@ -134,6 +135,7 @@ func TestLcmOperation(t *testing.T) {
 
 	// Test Distribution status
 	testDistributionStatus(t, extraParams, testDb)
+	testDistributionStatusV2(t, extraParams, testDb)
 
 	// Test instantiate
 	testInstantiate(t, extraParams, testDb)
@@ -171,6 +173,7 @@ func TestLcmOperation(t *testing.T) {
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
+	testTerminateV2(t, nil, "", testDb)
 
 	//Test sync stale app information records
 	testSynchronizeStaleRecord(t, nil, "", testDb)
@@ -481,7 +484,7 @@ func testSynchronizeAppPackageUpdatedRecordV2(t *testing.T, extraParams map[stri
 	t.Run("TestSynchronizeAppPackageUpdatedRecord", func(t *testing.T) {
 
 		// Get Request
-		queryRequest, _ := getHttpRequest(tenantsPath + tenantIdentifier +  "/packages/sync_updated", extraParams,
+		queryRequest, _ := getHttpRequest(tenantsPathV2 + tenantIdentifier +  "/packages/sync_updated", extraParams,
 			"file", path, "GET", []byte(""))
 
 		// Prepare Input
@@ -494,14 +497,14 @@ func testSynchronizeAppPackageUpdatedRecordV2(t *testing.T, extraParams map[stri
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		queryController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+		queryController := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
 			Controller: queryBeegoController}}
 
 		// Test query
 		queryController.SynchronizeAppPackageUpdatedRecord()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
+		assert.Equal(t, 200, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		_ = queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 	})
 }
@@ -695,11 +698,23 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, terminateController.Ctx.ResponseWriter.Status, "Terminate failed")
+	})
+}
 
-		//for v2
+
+func testTerminateV2(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
+	t.Run("TestAppInstanceTerminate", func(t *testing.T) {
 
 		// Terminate Request
-		terminateRequestv2, _ := getHttpRequest(appUrlPathId + "terminate", extraParams, "file",
+		terminateRequest, _ := getHttpRequest(appUrlPathId + "terminate", extraParams, "file",
+			path, "POST", []byte(""))
+
+		// Prepare Input
+		terminateInput := &context.BeegoInput{Context: &context.Context{Request: terminateRequest}}
+		setParam(terminateInput)
+
+		// Terminate Request
+		terminateRequestv2, _ := getHttpRequest(appUrlPathIdV2 + "terminate", extraParams, "file",
 			path, "POST", []byte(""))
 
 		// Prepare Input
@@ -712,11 +727,14 @@ func testTerminate(t *testing.T, extraParams map[string]string, path string, tes
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		terminateControllerv2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+		terminateController := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
 			Controller: terminateBeegoControllerv2}}
 
 		// Test query
-		terminateControllerv2.TerminateV2()
+		terminateController.TerminateV2()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 404, terminateController.Ctx.ResponseWriter.Status, "Terminate failed")
 	})
 }
 
@@ -1394,13 +1412,12 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 	})
 }
 
-
 func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
 	t.Run("TestDeletePackage", func(t *testing.T) {
 
 		// POST Request
-		instantiateRequest, _ := getHttpRequest(tenantsPath +
+		instantiateRequest, _ := getHttpRequest(tenantsPathV2 +
 			tenantIdentifier + "/packages/" +
 			packageId + "/hosts/" + ipAddress, extraParams,
 			"file", "", deleteOper, []byte(""))
@@ -1414,9 +1431,8 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 			Request: instantiateRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
 			Data: make(map[interface{}]interface{})}
 
-		//for V2
 		// Create LCM controller with mocked DB and prepared Beego controller
-		instantiateControllerV2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+		instantiateController := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
 			Controller: instantiateBeegoController}}
 
 		patch2 := gomonkey.ApplyFunc(os.Open, func(name string) (*os.File, error) {
@@ -1425,10 +1441,10 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		defer patch2.Reset()
 
 		// Test instantiate
-		instantiateControllerV2.DeletePackage()
+		instantiateController.DeletePackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 500, instantiateControllerV2.Ctx.ResponseWriter.Status,
+		assert.Equal(t, 500, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
 	})
 }
@@ -1533,6 +1549,41 @@ func testDistributionStatus(t *testing.T, extraParams map[string]string, testDb 
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Distribute package failed")
+	})
+}
+
+
+func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
+
+	t.Run("TestDistributionStatus", func(t *testing.T) {
+
+		requestBody, _ := json.Marshal(map[string][]string{
+			hostIpKey: {ipAddress},
+		})
+		// Get Request
+		url := tenantsPathV2 + tenantIdentifier + packages + packageId
+		distributePkgRequest, _ := getHttpRequest(url, extraParams,
+			packageName, "", "POST", []byte(""))
+
+		// Prepare Input
+		distributePkgInput := &context.BeegoInput{Context: &context.Context{Request: distributePkgRequest}, RequestBody: requestBody}
+
+		setParam(distributePkgInput)
+
+		// Prepare beego controller
+		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: distributePkgInput,
+			Request: distributePkgRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		instantiateController := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
+
+		// Test instantiate
+		instantiateController.DistributionStatus()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 200, instantiateController.Ctx.ResponseWriter.Status, "Distribute package failed")
 	})
 }
 
