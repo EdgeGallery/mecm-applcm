@@ -91,7 +91,7 @@ func doTest(t *testing.T) {
 		"appId": "e261211d80d04cb6aed00e5cd1f2cd11",
 	}
 
-	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
+	testDb := &MockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
 		tenantRecords: make(map[string]models.TenantInfoRecord),
 		appPackageRecords: make(map[string]models.AppPackageRecord),
 		mecHostRecords: make(map[string]models.MecHost),

@@ -47,7 +47,7 @@ func TestMep(t *testing.T) {
 	baseDir, _ := os.Getwd()
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
-	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
+	testDb := &MockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
 		tenantRecords:         make(map[string]models.TenantInfoRecord),
 		appPackageRecords:     make(map[string]models.AppPackageRecord),
 		mecHostRecords:        make(map[string]models.MecHost),

@@ -142,13 +142,13 @@ func (c *LcmControllerV2) UploadPackageV2() {
 		return
 	}
 
-	appId, packageId, tenantId, err := c.getInputParametersForUploadPkg(clientIp)
+	appId, packageId, tenantId, err := c.GetInputParametersForUploadPkg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	origin, err := c.getOrigin(clientIp)
+	origin, err := c.GetOrigin(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -178,7 +178,7 @@ func (c *LcmControllerV2) UploadPackageV2() {
 		return
 	}
 
-	pkgFilePath, err := c.saveApplicationPackage(clientIp, tenantId, packageId, header, file)
+	pkgFilePath, err := c.SaveApplicationPackage(clientIp, tenantId, packageId, header, file)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
@@ -193,20 +193,20 @@ func (c *LcmControllerV2) UploadPackageV2() {
 		return
 	}
 
-	pkgDetails, err := c.getPackageDetailsFromPackage(clientIp, pkgDir)
+	pkgDetails, err := c.GetPackageDetailsFromPackage(clientIp, pkgDir)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		c.HandleForErrorCode(clientIp, util.BadRequest, util.GetPackageDetailsFailed, util.ErrCodeFailedGetDetails)
 		return
 	}
 
-	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	err = c.InsertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	err = c.insertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails, origin)
+	err = c.InsertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails, origin)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -229,7 +229,7 @@ func (c *LcmControllerV2) handleLoggingForSuccess(object interface{}, clientIp s
 }
 
 // Get input parameters for upload package
-func (c *LcmControllerV2) getInputParametersForUploadPkg(clientIp string) (string, string, string, error) {
+func (c *LcmControllerV2) GetInputParametersForUploadPkg(clientIp string) (string, string, string, error) {
 
 	appId, err := c.getAppId(clientIp)
 	if err != nil {
@@ -282,7 +282,7 @@ func (c *LcmControllerV2) getPackageId(clientIp string) (string, error) {
 }
 
 // Get origin
-func (c *LcmControllerV2) getOrigin(clientIp string) (string, error) {
+func (c *LcmControllerV2) GetOrigin(clientIp string) (string, error) {
 	origin := c.GetString("origin")
 	originVar, err := util.ValidateName(origin, util.NameRegex)
 	if err != nil || !originVar {
@@ -292,7 +292,7 @@ func (c *LcmControllerV2) getOrigin(clientIp string) (string, error) {
 	return origin, nil
 }
 
-func (c *LcmControllerV2) saveApplicationPackage(clientIp string, tenantId string, packageId string,
+func (c *LcmControllerV2) SaveApplicationPackage(clientIp string, tenantId string, packageId string,
 	header *multipart.FileHeader, file multipart.File) (string, error) {
 
 	err := createDirectory(PackageFolderPath + tenantId)
@@ -354,7 +354,7 @@ func (c *LcmControllerV2) getUrlPackageId(clientIp string) (string, error) {
 }
 
 // Get application package details
-func (c *LcmControllerV2) getPackageDetailsFromPackage(clientIp string,
+func (c *LcmControllerV2) GetPackageDetailsFromPackage(clientIp string,
 	packageDir string) (models.AppPkgDetails, error) {
 
 	var pkgDetails models.AppPkgDetails
@@ -647,7 +647,7 @@ func (c *LcmControllerV2) InstantiateV2() {
 		AccessToken: accessToken,
 	}
 
-	doPrepareParams(c, appParams, bKey, req)
+	doPrepareParams(c, appParams, bKey)
 	doInstantiate(c, appParams, bKey, req)
 }
 
@@ -710,7 +710,7 @@ func (c *LcmControllerV2) ValidateInstantiateInputParameters(clientIp string, re
 	return appInsId, tenantId, hostIp, packageId, appName, nil
 }
 
-func doPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte, req models.InstantiateRequest) {
+func doPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
 		PkgHostKey: params.AppPackageId + params.TenantId + params.MecHost,
 	}
@@ -766,7 +766,7 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 		return
 	}
 
-	err = c.insertOrUpdateTenantRecord(params.ClientIP, params.TenantId)
+	err = c.InsertOrUpdateTenantRecord(params.ClientIP, params.TenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -780,7 +780,7 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 	appInfoParams.AppName = params.AppName
 	appInfoParams.Origin = req.Origin
 
-	err = c.insertOrUpdateTenantRecord(params.ClientIP, appInfoParams.TenantId)
+	err = c.InsertOrUpdateTenantRecord(params.ClientIP, appInfoParams.TenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -805,7 +805,7 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 }
 
 // Insert or update tenant info record
-func (c *LcmControllerV2) insertOrUpdateTenantRecord(clientIp, tenantId string) error {
+func (c *LcmControllerV2) InsertOrUpdateTenantRecord(clientIp, tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
 		TenantId: tenantId,
 	}
@@ -832,7 +832,7 @@ func (c *LcmControllerV2) insertOrUpdateTenantRecord(clientIp, tenantId string) 
 
 
 // Insert or update application package record
-func (c *LcmControllerV2) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
+func (c *LcmControllerV2) InsertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 	packageId string, pkgDetails models.AppPkgDetails, origin string) error {
 
 	syncStatus := true
@@ -1730,7 +1730,7 @@ func (c *LcmControllerV2) getVimAndHostIpFromPkgHostRec(clientIp, packageId, ten
 // Update app package records
 func (c *LcmControllerV2) updateAppPkgRecord(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, hostIp, status string) error {
-	err := c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	err := c.InsertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return err
 	}
@@ -1804,7 +1804,7 @@ func (c *LcmControllerV2) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenan
 }
 
 // Get input parameters for distribution status
-func (c *LcmControllerV2) getInputParametersForDistributionStatus(clientIp string) (string, string, error) {
+func (c *LcmControllerV2) GetInputParametersForDistributionStatus(clientIp string) (string, string, error) {
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
 		return "", "", err
@@ -1869,7 +1869,7 @@ func (c *LcmControllerV2) delAppPkgRecords(clientIp, packageId, tenantId, hostIp
 // @Failure 400 bad request
 // @router /packages/:packageId [post]
 func (c *LcmControllerV2) DistributePackage() {
-	clientIp, bKey, accessToken, _, err := c.getClientIpAndIsPermitted("Distribute application package request received.")
+	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Distribute application package request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
@@ -1905,7 +1905,7 @@ func (c *LcmControllerV2) DistributePackage() {
 		return
 	}
 
-	err = c.processUploadPackage(hosts, clientIp, tenantId, packageId, accessToken)
+	err = c.ProcessUploadPackage(hosts, clientIp, tenantId, packageId, accessToken)
 	if err != nil {
 		return
 	}
@@ -1944,7 +1944,7 @@ func (c *LcmControllerV2) ValidateDistributeInputParameters(clientIp string, req
 }
 
 
-func (c *LcmControllerV2) getClientIpAndIsPermitted(receiveMsg string) (clientIp string, bKey []byte,
+func (c *LcmControllerV2) GetClientIpAndIsPermitted(receiveMsg string) (clientIp string, bKey []byte,
 	accessToken string, tenantId string, err error) {
 	log.Info(receiveMsg)
 	clientIp = c.Ctx.Input.IP()
@@ -1966,7 +1966,7 @@ func (c *LcmControllerV2) getClientIpAndIsPermitted(receiveMsg string) (clientIp
 
 
 // Process upload package
-func (c *LcmControllerV2) processUploadPackage(hosts models.DistributeRequest,
+func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, accessToken string) error {
 	for _, hostIp := range hosts.HostIp {
 		vim, err := c.getVim(clientIp, hostIp)
@@ -2015,13 +2015,13 @@ func (c *LcmControllerV2) processUploadPackage(hosts models.DistributeRequest,
 // @Failure 400 bad request
 // @router /packages/:packageId [get]
 func (c *LcmControllerV2) DistributionStatus() {
-	clientIp, bKey, _, _, err := c.getClientIpAndIsPermitted("Distribute status request received.")
+	clientIp, bKey, _, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
 	}
 
-	tenantId, packageId, err := c.getInputParametersForDistributionStatus(clientIp)
+	tenantId, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
 	if err != nil {
 		return
 	}
