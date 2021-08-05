@@ -26,10 +26,15 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8splugin/config"
 	"k8splugin/models"
 	"k8splugin/pkg/adapter"
@@ -417,3 +422,253 @@ func TestSplitManifestYaml(t *testing.T) {
 	_, result := adapter.SplitManifestYaml(bytes)
 	assert.NotEmpty(t, result, "Test get label selector execution result")
 }
+
+
+func TestGetClientSet(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	var i *action.Status
+	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(i), "Run",
+		func(*action.Status, string) (*release.Release, error) {
+			go func() {
+				// do nothing
+			}()
+			return &release.Release{}, errors.New("error")
+		})
+	defer patch4.Reset()
+
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+	_, _, result  := client.GetClientSet("release", "test")
+	assert.NotEmpty(t, result, "Test get client set execution result")
+}
+
+
+func TestGetClientSet1(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	var i *action.Status
+	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(i), "Run",
+		func(*action.Status, string) (*release.Release, error) {
+			go func() {
+				// do nothing
+			}()
+			return &release.Release{}, nil
+		})
+	defer patch4.Reset()
+
+	patch5 := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(_ string, _ string) (*restclient.Config, error) {
+		// do nothing
+
+		kubeconfig, _ := restclient.InClusterConfig()
+		return kubeconfig, errors.New("error")
+	})
+	defer patch5.Reset()
+
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+	_, _, result  := client.GetClientSet("release", "test")
+	assert.NotEmpty(t, result, "Test get label selector execution result")
+}
+
+
+func TestGetClientSet2(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	var i *action.Status
+	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(i), "Run",
+		func(*action.Status, string) (*release.Release, error) {
+			go func() {
+				// do nothing
+			}()
+			return &release.Release{}, nil
+		})
+	defer patch4.Reset()
+
+	patch5 := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(_ string, _ string) (*restclient.Config, error) {
+		// do nothing
+
+		kubeconfig, _ := restclient.InClusterConfig()
+		return kubeconfig, nil
+	})
+	defer patch5.Reset()
+
+	patch6 := gomonkey.ApplyFunc(kubernetes.NewForConfig, func(*restclient.Config) (*kubernetes.Clientset, error) {
+		// do nothing
+
+		var cs *kubernetes.Clientset
+		return cs, errors.New("error")
+	})
+	defer patch6.Reset()
+
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+	_, _, result  := client.GetClientSet("release", "test")
+	assert.NotEmpty(t, result, "Test get label selector execution result")
+}
+
+
+func TestGetClientSet3(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	var i *action.Status
+	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(i), "Run",
+		func(*action.Status, string) (*release.Release, error) {
+			go func() {
+				// do nothing
+			}()
+			return &release.Release{}, nil
+		})
+	defer patch4.Reset()
+
+	patch5 := gomonkey.ApplyFunc(adapter.SplitManifestYaml, func(data []byte) (manifest []adapter.Manifest, err error) {
+
+		return manifest, errors.New("error")
+	})
+	defer patch5.Reset()
+
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+	_, _, result  := client.GetClientSet("release", "test")
+	assert.NotEmpty(t, result, "Test get label selector execution result")
+}
+
+func TestGetPodInfo(t *testing.T) {
+
+	var pod v1.Pod
+	pod.Kind = "Deployment"
+	pod.Namespace = "default"
+	pod.Name = "pod1"
+	pod.APIVersion= "v1"
+
+	podList := &v1.PodList{
+		TypeMeta: metav1.TypeMeta{},
+		ListMeta: metav1.ListMeta{},
+	}
+	podList.Items = append(podList.Items, pod)
+
+	patch5 := gomonkey.ApplyFunc(adapter.GetPodMetrics, func(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
+		podMetrics = &v1beta1.PodMetrics{Containers: []v1beta1.ContainerMetrics{
+		{
+			Name: "container1-1",
+			Usage: v1.ResourceList{
+				v1.ResourceCPU:     *resource.NewMilliQuantity(1, resource.DecimalSI),
+				v1.ResourceMemory:  *resource.NewQuantity(2*(1024*1024), resource.DecimalSI),
+				v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
+			},
+		},
+	}, }
+		return podMetrics, nil
+	})
+	defer patch5.Reset()
+
+	patch6 := gomonkey.ApplyFunc(adapter.GetTotalCpuDiskMemory, func(clientset *kubernetes.Clientset) (string, string, string, error) {
+
+		return "1", "2", "4", nil
+	})
+	defer patch6.Reset()
+
+	_, result := adapter.GetPodInfo(podList,nil, nil, "config")
+	assert.Nil(t, result, "Test Get Pod Info execution result")
+}
+
+
+func TestGetPodInfo1(t *testing.T) {
+
+	var pod v1.Pod
+	pod.Kind = "Deployment"
+	pod.Namespace = "default"
+	pod.Name = "pod1"
+	pod.APIVersion= "v1"
+
+	podList := &v1.PodList{
+		TypeMeta: metav1.TypeMeta{},
+		ListMeta: metav1.ListMeta{},
+	}
+	podList.Items = append(podList.Items, pod)
+
+	patch5 := gomonkey.ApplyFunc(adapter.GetPodMetrics, func(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
+		podMetrics = &v1beta1.PodMetrics{Containers: []v1beta1.ContainerMetrics{
+			{
+				Name: "container1-1",
+				Usage: v1.ResourceList{
+					v1.ResourceCPU:     *resource.NewMilliQuantity(1, resource.DecimalSI),
+					v1.ResourceMemory:  *resource.NewQuantity(2*(1024*1024), resource.DecimalSI),
+					v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
+				},
+			},
+		}, }
+		return podMetrics, errors.New("error")
+	})
+	defer patch5.Reset()
+
+	patch6 := gomonkey.ApplyFunc(adapter.GetTotalCpuDiskMemory, func(clientset *kubernetes.Clientset) (string, string, string, error) {
+
+		return "1", "2", "4", nil
+	})
+	defer patch6.Reset()
+
+	_, result := adapter.GetPodInfo(podList,nil, nil, "config")
+	assert.Nil(t, result, "Test Get Pod Info execution result")
+}
+
+
+func TestGetPodInfo2(t *testing.T) {
+
+	var pod v1.Pod
+	pod.Kind = "Deployment"
+	pod.Namespace = "default"
+	pod.Name = "pod1"
+	pod.APIVersion= "v1"
+
+	podList := &v1.PodList{
+		TypeMeta: metav1.TypeMeta{},
+		ListMeta: metav1.ListMeta{},
+	}
+	podList.Items = append(podList.Items, pod)
+
+	patch5 := gomonkey.ApplyFunc(adapter.GetPodMetrics, func(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
+		podMetrics = &v1beta1.PodMetrics{Containers: []v1beta1.ContainerMetrics{
+			{
+				Name: "container1-1",
+				Usage: v1.ResourceList{
+					v1.ResourceCPU:     *resource.NewMilliQuantity(1, resource.DecimalSI),
+					v1.ResourceMemory:  *resource.NewQuantity(2*(1024*1024), resource.DecimalSI),
+					v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
+				},
+			},
+		}, }
+		return podMetrics, nil
+	})
+	defer patch5.Reset()
+
+	patch6 := gomonkey.ApplyFunc(adapter.GetTotalCpuDiskMemory, func(clientset *kubernetes.Clientset) (string, string, string, error) {
+
+		return "1", "2", "4", errors.New("error")
+	})
+	defer patch6.Reset()
+
+	_, result := adapter.GetPodInfo(podList,nil, nil, "config")
+	assert.Error(t, result, "Test Get Pod Info execution result")
+}
+

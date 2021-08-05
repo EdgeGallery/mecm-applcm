@@ -451,7 +451,7 @@ func (hc *HelmClient) WorkloadEvents(relName, namespace string) (string, error) 
 	log.Info("In Workload describe function")
 	var podDesc models.PodDescribeInfo
 
-	clientset, manifest, err := hc.getClientSet(relName, namespace)
+	clientset, manifest, err := hc.GetClientSet(relName, namespace)
 	if nil != err {
 		return "", err
 	}
@@ -510,7 +510,7 @@ func GetDeploymentArtifact(dir string, ext string) (string, error) {
 	return "", err
 }
 
-func (hc *HelmClient) getClientSet(relName, namespace string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
+func (hc *HelmClient) GetClientSet(relName, namespace string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
 
 	actionConfig := new(action.Configuration)
 	if err = actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", namespace), namespace,
@@ -680,7 +680,7 @@ func updatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *k
 			return appInfo, response, nil
 		}
 
-		podInfo, err := getPodInfo(pods, clientset, config, namespace)
+		podInfo, err := GetPodInfo(pods, clientset, config, namespace)
 		if err != nil {
 			return appInfo, nil, err
 		}
@@ -714,11 +714,11 @@ func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions,
 }
 
 // Get pod information
-func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config, namespace string) (podInfo models.PodInfo, err error) {
+func GetPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config, namespace string) (podInfo models.PodInfo, err error) {
 	var containerInfo models.ContainerInfo
 	for _, pod := range pods.Items {
 		podName := pod.GetObjectMeta().GetName()
-		podMetrics, err := getPodMetrics(config, podName, namespace)
+		podMetrics, err := GetPodMetrics(config, podName, namespace)
 		if err != nil {
 			podInfo.PodName = podName
 			podInfo.PodStatus = string(pod.Status.Phase)
@@ -746,7 +746,7 @@ func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.
 // Update container information
 func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.Clientset, podInfo models.PodInfo) (models.PodInfo, error) {
 	var containerInfo models.ContainerInfo
-	totalCpuUsage, totalMemUsage, totalDiskUsage, err := getTotalCpuDiskMemory(clientset)
+	totalCpuUsage, totalMemUsage, totalDiskUsage, err := GetTotalCpuDiskMemory(clientset)
 	if err != nil {
 		return podInfo, err
 	}
@@ -769,7 +769,7 @@ func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.C
 }
 
 // Get Pod metrics
-func getPodMetrics(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
+func GetPodMetrics(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
 	mc, err := metrics.NewForConfig(config)
 	if err != nil {
 		return podMetrics, err
@@ -784,7 +784,7 @@ func getPodMetrics(config *rest.Config, podName, namespace string) (podMetrics *
 }
 
 // Get total cpu disk and memory metrics
-func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, string, error) {
+func GetTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, string, error) {
 	var totalDiskUsage string
 	var totalMemUsage string
 	var totalCpuUsage string

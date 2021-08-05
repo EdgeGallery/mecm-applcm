@@ -92,8 +92,8 @@ func TestServer(t *testing.T) {
 	testQueryKpiInfo(t, config)
 	testPodDescribe(t, config)
 	testTerminate(t, config)
-
 	testRemoval(t, config)
+
 
 	// Cleanup
 	_ = os.RemoveAll(baseDir + directory)
