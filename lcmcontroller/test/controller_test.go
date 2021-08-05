@@ -1975,7 +1975,7 @@ func testUploadV2(t *testing.T, extraParams map[string]string, path string, test
 		// Test instantiate
 		uploadController.UploadConfigV2()
 
-		assert.Equal(t, 500, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
+		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
 
 		// Get Request
 		validParams :=  map[string]string{
@@ -1994,7 +1994,7 @@ func testUploadV2(t *testing.T, extraParams map[string]string, path string, test
 		// Test instantiate
 		uploadController.UploadConfigV2()
 
-		assert.Equal(t, 500, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
+		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
 	})
 }
 
