@@ -287,7 +287,7 @@ func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 
 	labelSelector := GetLabelSelector(manifest)
 
-	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig, namespace)
+	appInfo, response, err := GetResourcesBySelector(labelSelector, clientset, kubeConfig, namespace)
 	if err != nil {
 		log.Error("Failed to get pod statistics")
 		return "", err
@@ -639,11 +639,11 @@ func GetJSONResponse(appInfo models.AppInfo, response map[string]string) (string
 }
 
 // Get resources by selector
-func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
+func GetResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
 	config *rest.Config, namespace string) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
-		appInfo, response, err = updatePodInfo(appInfo, &label, clientset, config, namespace)
+		appInfo, response, err = UpdatePodInfo(appInfo, &label, clientset, config, namespace)
 		if err != nil {
 			return appInfo, response, err
 		}
@@ -652,7 +652,7 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
 			}
-			serviceInfo, err := getServiceInfo(clientset, options, namespace)
+			serviceInfo, err := GetServiceInfo(clientset, options, namespace)
 			if err != nil {
 				return appInfo, nil, err
 			}
@@ -663,18 +663,15 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	return appInfo, nil, nil
 }
 
-func updatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
+func UpdatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
 	config *rest.Config,
 	namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
 	if label.Kind == util.Pod || label.Kind == util.Deployment {
-		options := metav1.ListOptions{
-			LabelSelector: label.Selector,
-		}
-
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
+		pods, err := GetPods(clientset, namespace, label)
 		if err != nil {
 			return appInfo, nil, err
 		}
+
 		if len(pods.Items) == 0 {
 			response = map[string]string{"status": "not running"}
 			return appInfo, response, nil
@@ -689,7 +686,18 @@ func updatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *k
 	return appInfo, nil, nil
 }
 
-func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
+func GetPods(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (*v1.PodList, error){
+	options := metav1.ListOptions{
+		LabelSelector: label.Selector,
+	}
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
+	if err != nil {
+		return pods, err
+	}
+	return pods, nil
+}
+
+func GetServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
 	services, err := clientset.CoreV1().Services(namespace).List(context.Background(), options)
 	if err != nil {
 		return serviceInfo, err
@@ -789,7 +797,7 @@ func GetTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 	var totalMemUsage string
 	var totalCpuUsage string
 
-	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	nodeList, err := GetNodeList(clientset)
 	if err == nil {
 		if len(nodeList.Items) > 0 {
 			node := &nodeList.Items[0]
@@ -806,6 +814,11 @@ func GetTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 		return totalCpuUsage, totalMemUsage, totalDiskUsage, err
 	}
 	return "", "", "", err
+}
+
+func GetNodeList(clientset *kubernetes.Clientset) (nodeList *v1.NodeList, err error) {
+	nodeList, err = clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	return nodeList, err
 }
 
 // Split manifest yaml file

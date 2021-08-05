@@ -214,16 +214,7 @@ func TestInitDbFailure4(t *testing.T) {
 		return nil
 	})
 	defer patch5.Reset()
-	//var c *pgdb.PgDb
-	/*
-	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(orm.Ormer()), "InitOrmer", func(*pgdb.PgDb) (error) {
-		go func() {
-			// do nothing
-		}()
-		return errors.New("failed to init ormer")
-	})
-	defer patch3.Reset()
-*/
+
 	db := &pgdb.PgDb{}
 	dir, _ := os.Getwd()
 	config, err := util.GetConfiguration(dir)

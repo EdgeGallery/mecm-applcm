@@ -40,6 +40,7 @@ import (
 	"k8splugin/pkg/adapter"
 	"k8splugin/util"
 	"math/rand"
+	"net"
 	"net/url"
 	"os"
 	"reflect"
@@ -672,3 +673,327 @@ func TestGetPodInfo2(t *testing.T) {
 	assert.Error(t, result, "Test Get Pod Info execution result")
 }
 
+
+func TestGetResourcesBySelector(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	patch2 := gomonkey.ApplyFunc(adapter.UpdatePodInfo, func(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
+		config *rest.Config,
+		namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
+
+		return appInformation, response, nil
+	})
+	defer patch2.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetServiceInfo, func(clientset *kubernetes.Clientset,
+		options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
+
+		return serviceInfo, nil
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	kubeconfig := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken:     token,
+	}
+	var labelSelector models.LabelSelector
+	var label models.LabelList
+	var cs *kubernetes.Clientset
+
+	label.Kind = "Service"
+	label.Selector = "appName"
+	labelSelector.Label = append(labelSelector.Label, label)
+	_, _, result := adapter.GetResourcesBySelector(labelSelector, cs, kubeconfig, "default")
+	assert.Nil(t, result, "Test Get resources by selector result")
+}
+
+func TestGetResourcesBySelector1(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	patch2 := gomonkey.ApplyFunc(adapter.UpdatePodInfo, func(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
+		config *rest.Config,
+		namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
+
+		return appInformation, response, nil
+	})
+	defer patch2.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetServiceInfo, func(clientset *kubernetes.Clientset,
+		options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
+
+		return serviceInfo, errors.New("error")
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	kubeconfig := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken:     token,
+	}
+	var labelSelector models.LabelSelector
+	var label models.LabelList
+	var cs *kubernetes.Clientset
+
+	label.Kind = "Service"
+	label.Selector = "appName"
+	labelSelector.Label = append(labelSelector.Label, label)
+	_, _, result := adapter.GetResourcesBySelector(labelSelector, cs, kubeconfig, "default")
+	assert.Error(t, result, "Test Get resources by selector result")
+}
+
+func TestGetResourcesBySelector2(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+	patch2 := gomonkey.ApplyFunc(adapter.UpdatePodInfo, func(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
+		config *rest.Config,
+		namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
+
+		return appInformation, response, errors.New("error")
+	})
+	defer patch2.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetServiceInfo, func(clientset *kubernetes.Clientset,
+		options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
+
+		return serviceInfo, nil
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	kubeconfig := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken:     token,
+	}
+	var labelSelector models.LabelSelector
+	var label models.LabelList
+	var cs *kubernetes.Clientset
+
+	label.Kind = "Service"
+	label.Selector = "appName"
+	labelSelector.Label = append(labelSelector.Label, label)
+	_, _, result := adapter.GetResourcesBySelector(labelSelector, cs, kubeconfig, "default")
+	assert.Error(t, result, "Test Get resources by selector result")
+}
+
+
+func TestUpdatePodInfo(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetPods, func(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (podList *v1.PodList, err error) {
+		podList = &v1.PodList{Items:
+		[]v1.Pod{
+
+		},
+		}
+		return podList, nil
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	kubeconfig := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken:     token,
+	}
+//	var labelSelector models.LabelSelector
+	var label models.LabelList
+	var cs *kubernetes.Clientset
+	var appInfo models.AppInfo
+
+	label.Kind = "Pod"
+	label.Selector = "appName"
+
+	_, _, result := adapter.UpdatePodInfo(appInfo, &label, cs, kubeconfig, "default")
+	assert.Nil(t, result, "Test Update Pod Info result")
+}
+
+func TestUpdatePodInfo2(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetPods, func(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (podList *v1.PodList, err error) {
+		podList = &v1.PodList{Items: []v1.Pod{
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "name",
+					Namespace: "ns",
+				},
+			},
+		},
+		}
+		return podList, nil
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	kubeconfig := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken:     token,
+	}
+	//	var labelSelector models.LabelSelector
+	var label models.LabelList
+	var cs *kubernetes.Clientset
+	var appInfo models.AppInfo
+
+	label.Kind = "Pod"
+	label.Selector = "appName"
+
+	_, _, result := adapter.UpdatePodInfo(appInfo, &label, cs, kubeconfig, "default")
+	assert.Nil(t, result, "Test Update Pod Info result")
+}
+
+
+func TestUpdatePodInfo3(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetPods, func(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (podList *v1.PodList, err error) {
+		podList = &v1.PodList{Items: []v1.Pod{
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "name",
+					Namespace: "ns",
+				},
+			},
+		},
+		}
+		return podList, errors.New("error")
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	kubeconfig := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken:     token,
+	}
+	//	var labelSelector models.LabelSelector
+	var label models.LabelList
+	var cs *kubernetes.Clientset
+	var appInfo models.AppInfo
+
+	label.Kind = util.Deployment
+	label.Selector = "appName"
+
+	_, _, result := adapter.UpdatePodInfo(appInfo, &label, cs, kubeconfig, "default")
+	assert.Error(t, result, "Test Update Pod Info result")
+}
+
+
+func TestGetTotalCpuDiskMemory(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetNodeList, func(clientset *kubernetes.Clientset) (nodeList *v1.NodeList, err error) {
+		nodeList = &v1.NodeList{Items: []v1.Node{
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "name",
+					Namespace: "ns",
+				},
+			},
+		},
+		}
+		return nodeList, nil
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	var cs *kubernetes.Clientset
+
+	_, _, _, result := adapter.GetTotalCpuDiskMemory(cs)
+	assert.Nil(t, result, "Test Get Total Cpu Disk Memory result")
+}
+
+
+func TestGetTotalCpuDiskMemory2(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	})
+	defer patch1.Reset()
+
+
+	patch3 := gomonkey.ApplyFunc(adapter.GetNodeList, func(clientset *kubernetes.Clientset) (nodeList *v1.NodeList, err error) {
+		nodeList = &v1.NodeList{Items: []v1.Node{
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "name",
+					Namespace: "ns",
+				},
+			},
+		},
+		}
+		return nodeList, errors.New("error")
+	})
+	defer patch3.Reset()
+	client, _ := adapter.NewHelmClient(hostIpAddress)
+	baseDir, _ := os.Getwd()
+	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+
+	var cs *kubernetes.Clientset
+
+	_, _, _, result := adapter.GetTotalCpuDiskMemory(cs)
+	assert.Error(t, result, "Test Get Total Cpu Disk Memory result")
+}
