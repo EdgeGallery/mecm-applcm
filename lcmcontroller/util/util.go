@@ -234,7 +234,19 @@ const (
 	MepServiceQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/services"
 	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
 	MepSubscribeStatistic string = "https://mep-mm5.mep:80/mep/service_govern/v1/subscribe_statistic"
+
+	PkgDtlMetadata       = "metadata"
+	PkgDtlAppName        = "app_product_name"
+	PkgDtlAppId          = "app_provider_id"
+	PkgDtlAppVersion     = "app_package_version"
+	PkgDtlAppRlsTime     = "app_release_data_time"
+	PkgDtlAppType        = "app_type"
+	PkgDtlAppClass       = "app_class"
+	PkgDtlAppDescription = "app_package_description"
+
 )
+
+
 
 var VmImageMap = make(map[int32][]byte, 150000)
 
