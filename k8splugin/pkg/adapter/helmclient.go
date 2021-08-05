@@ -460,7 +460,7 @@ func (hc *HelmClient) WorkloadEvents(relName, namespace string) (string, error) 
 
 	for _, label := range labelSelector.Label {
 		if label.Kind == util.Pod || label.Kind == util.Deployment {
-			podDesc, err = updatePodDescInfo(podDesc, clientset, label, namespace)
+			podDesc, err = UpdatePodDescInfo(podDesc, clientset, label, namespace)
 			if err != nil {
 				return "", err
 			}
@@ -546,7 +546,7 @@ func (hc *HelmClient) GetClientSet(relName, namespace string) (clientset *kubern
 	return clientset, manifest, nil
 }
 
-func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
+func UpdatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
 	label models.LabelList, namespace string) (models.PodDescribeInfo, error) {
 	options := metav1.ListOptions{
 		LabelSelector: label.Selector,
@@ -566,20 +566,20 @@ func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Cli
 			log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
 			return podDesc, err
 		} else {
-			podDescInfo := getPodDescInfo(ref, pod, clientset, podName, namespace)
+			podDescInfo := GetPodDescInfo(ref, pod, clientset, podName, namespace)
 			podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
 		}
 	}
 	return podDesc, nil
 }
 
-func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
+func GetPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
 	podName, namespace string) (podDescInfo models.PodDescList) {
 	ref.Kind = ""
 	if _, isMirrorPod := pod.Annotations[corev1.MirrorPodAnnotationKey]; isMirrorPod {
 		ref.UID = types.UID(pod.Annotations[corev1.MirrorPodAnnotationKey])
 	}
-	events, _ := clientset.CoreV1().Events(namespace).Search(scheme.Scheme, ref)
+	events := GetEvents(clientset, namespace, ref)
 	podDescInfo.PodName = podName
 	if len(events.Items) == 0 {
 		podDescInfo.PodEventsList = append(podDescInfo.PodEventsList,
@@ -589,6 +589,11 @@ func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 		podDescInfo.PodEventsList = append(podDescInfo.PodEventsList, strings.TrimSpace(e.Message))
 	}
 	return podDescInfo
+}
+
+func GetEvents(clientset *kubernetes.Clientset, namespace string, ref *v1.ObjectReference) *v1.EventList {
+	events, _ := clientset.CoreV1().Events(namespace).Search(scheme.Scheme, ref)
+	return events
 }
 
 // Get label selector
