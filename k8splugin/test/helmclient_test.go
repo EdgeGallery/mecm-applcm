@@ -17,6 +17,7 @@
 package test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/agiledragon/gomonkey"
@@ -50,8 +51,8 @@ var (
 	addValues             = "AddValues"
 	configFile            = "/usr/app/artificats/config/"
 	namespace             = "default"
-	failedToGetClientSet  = "failed to get clientset"
-	outputSuccess         = "{\"Output\":\"Success\"}"
+	failedToGetClientSet = "failed to get clientset"
+	outputSuccess        = "{\"Output\":\"Success\"}"
 )
 
 func testDeploySuccess(t *testing.T) {
@@ -349,4 +350,70 @@ func testQueryKpi(t *testing.T) {
 
 	result, _ := client.QueryKPI()
 	assert.Equal(t, "{\"cpuusage\":{\"total\":0,\"used\":0},\"memusage\":{\"total\":0,\"used\":0}}", result, "Test query kpi execution result")
+}
+
+func TestGetLabelSelector(t *testing.T) {
+	manifestBuf := []adapter.Manifest{}
+	manifest := adapter.Manifest{
+		APIVersion: "v1",
+		Kind: "Deployment",
+	}
+	manifest.Metadata.Labels.App = "appName"
+	manifest.Metadata.Name = "name"
+	manifest.Metadata.Namespace ="default"
+
+	manifestBuf = append(manifestBuf, manifest)
+	result := adapter.GetLabelSelector(manifestBuf)
+	assert.NotEmpty(t, result, "Test get label selector execution result")
+}
+
+func TestGetJSONResponse1(t *testing.T) {
+	var appInfo models.AppInfo
+	patch3 := gomonkey.ApplyFunc(json.Marshal, func(_ interface{}) (b []byte, err error) {
+		// do nothing
+		return b, errors.New("error")
+	})
+	defer patch3.Reset()
+	m := map[string]string{}
+	m["key1"] = "value1"
+
+	_, result := adapter.GetJSONResponse(appInfo, m)
+	assert.NotEmpty(t, result, "Test get json response result")
+
+}
+
+func TestGetJSONResponse2(t *testing.T) {
+	var appInfo models.AppInfo
+	m := map[string]string{}
+	m["key1"] = "value1"
+
+	result , _ := adapter.GetJSONResponse(appInfo, m)
+	assert.Equal(t, "{\"key1\":\"value1\"}", result, "Test get json response result")
+}
+
+func TestGetJSONResponse3(t *testing.T) {
+	var appInfo models.AppInfo
+	patch3 := gomonkey.ApplyFunc(json.Marshal, func(_ interface{}) (b []byte, err error) {
+		// do nothing
+		return b, errors.New("error")
+	})
+	defer patch3.Reset()
+	result , _ := adapter.GetJSONResponse(appInfo, nil)
+	assert.Equal(t, "", result, "Test get json response result for null response")
+}
+
+func TestGetDeploymentArtifact(t *testing.T) {
+	patch := gomonkey.ApplyFunc(json.Marshal, func(_ interface{}) (b []byte, err error) {
+		// do nothing
+		return b, errors.New("error")
+	})
+	defer patch.Reset()
+	_, result := adapter.GetDeploymentArtifact("path", "ext")
+	assert.NotEmpty(t, result, "Test get json response result")
+}
+
+func TestSplitManifestYaml(t *testing.T) {
+	bytes := []byte("manifest")
+	_, result := adapter.SplitManifestYaml(bytes)
+	assert.NotEmpty(t, result, "Test get label selector execution result")
 }

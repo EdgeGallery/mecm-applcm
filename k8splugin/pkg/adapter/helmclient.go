@@ -267,7 +267,7 @@ func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 		log.Error("Unable to query chart with release name")
 		return "", err
 	}
-	manifest, err := splitManifestYaml([]byte(res.Manifest))
+	manifest, err := SplitManifestYaml([]byte(res.Manifest))
 	if err != nil {
 		log.Errorf("Query response processing failed release name: %s. Err: %s",
 			relName, err)
@@ -285,7 +285,7 @@ func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 		return "", err
 	}
 
-	labelSelector := getLabelSelector(manifest)
+	labelSelector := GetLabelSelector(manifest)
 
 	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig, namespace)
 	if err != nil {
@@ -293,7 +293,7 @@ func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 		return "", err
 	}
 
-	appInfoJson, err := getJSONResponse(appInfo, response)
+	appInfoJson, err := GetJSONResponse(appInfo, response)
 	if err != nil {
 		return "", err
 	}
@@ -456,7 +456,7 @@ func (hc *HelmClient) WorkloadEvents(relName, namespace string) (string, error) 
 		return "", err
 	}
 
-	labelSelector := getLabelSelector(manifest)
+	labelSelector := GetLabelSelector(manifest)
 
 	for _, label := range labelSelector.Label {
 		if label.Kind == util.Pod || label.Kind == util.Deployment {
@@ -478,7 +478,7 @@ func (hc *HelmClient) WorkloadEvents(relName, namespace string) (string, error) 
 func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, error) {
 
 	pkgPath := appPackagesBasePath + tenantId + "/" + packageId + hostIp + "/Artifacts/Deployment/Charts"
-	artifact, _ := getDeploymentArtifact(pkgPath, ".tar")
+	artifact, _ := GetDeploymentArtifact(pkgPath, ".tar")
 	if artifact == "" {
 		log.Error("Artifact not available in application package.")
 		return "", errors.New("Helm chart not available in application package.")
@@ -487,7 +487,7 @@ func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, e
 }
 
 // Gets deployment artifact
-func getDeploymentArtifact(dir string, ext string) (string, error) {
+func GetDeploymentArtifact(dir string, ext string) (string, error) {
 	d, err := os.Open(dir)
 	if err != nil {
 		log.Info("failed to open the directory")
@@ -526,7 +526,7 @@ func (hc *HelmClient) getClientSet(relName, namespace string) (clientset *kubern
 		log.Error("Unable to query chart with release name")
 		return clientset, manifest, err
 	}
-	manifest, err = splitManifestYaml([]byte(res.Manifest))
+	manifest, err = SplitManifestYaml([]byte(res.Manifest))
 	if err != nil {
 		log.Errorf("Query response processing failed release name: %s. Err: %s",
 			relName, err)
@@ -592,7 +592,7 @@ func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 }
 
 // Get label selector
-func getLabelSelector(manifest []Manifest) models.LabelSelector {
+func GetLabelSelector(manifest []Manifest) models.LabelSelector {
 	var labelSelector models.LabelSelector
 	var label models.LabelList
 	var selector string
@@ -619,7 +619,7 @@ func getLabelSelector(manifest []Manifest) models.LabelSelector {
 }
 
 // get JSON response
-func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string, error) {
+func GetJSONResponse(appInfo models.AppInfo, response map[string]string) (string, error) {
 	if response != nil {
 		appInfoJson, err := json.Marshal(response)
 		if err != nil {
@@ -809,7 +809,7 @@ func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 }
 
 // Split manifest yaml file
-func splitManifestYaml(data []byte) (manifest []Manifest, err error) {
+func SplitManifestYaml(data []byte) (manifest []Manifest, err error) {
 	manifestBuf := []Manifest{}
 
 	yamlSeparator := "\n---"
