@@ -236,10 +236,14 @@ func (c *LcmController) GetPackageDetailsFromPackage(clientIp string,
 	}
 	defer mfYaml.Close()
 
-	mfFileBytes, _ := ioutil.ReadAll(mfYaml)
-
-	data, err := yaml.YAMLToJSON(mfFileBytes)
+	mfFileBytes, err := readMfBytes(mfYaml)
 	if err != nil {
+		log.Error("Failed to get info, pls check mf file if struct is not correct.")
+		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
+	}
+	
+	data, err := yaml.YAMLToJSON(mfFileBytes)
+	if err != nil{
 		log.Error(util.FailedToCovertYamlToJson + ", pls check mf file if struct is not correct.")
 		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
 	}
@@ -252,6 +256,7 @@ func (c *LcmController) GetPackageDetailsFromPackage(clientIp string,
 	}
 	return pkgDetails, nil
 }
+
 
 // @Title Remove Config
 // @Description Remove Config
