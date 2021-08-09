@@ -1549,8 +1549,6 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 200, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
-		response := instantiateController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, deletePackageSuccess, response.Body.String(), queryFailed)
 	})
 }
 

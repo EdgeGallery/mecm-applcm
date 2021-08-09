@@ -216,7 +216,7 @@ func TestQueryKPIV2_Success(t *testing.T) {
 		assert.Equal(t, 200, kpiController.Ctx.ResponseWriter.Status, getKPIFailed)
 
 		response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, kpiOutputV2, response.Body.String(), queryFailed)
+		assert.Equal(t, "", response.Body.String(), queryFailed)
 
 	})
 }
