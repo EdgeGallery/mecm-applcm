@@ -54,6 +54,8 @@ import (
 var (
 	kubeconfigPath   = "/usr/app/artifacts/config/"
 	appPackagesBasePath = "/usr/app/artifacts/packages/"
+	totalCpu1 float64 = 0
+	totalMem1 float64 = 0
 )
 
 // Helm client
@@ -676,7 +678,6 @@ func UpdatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *k
 		if err != nil {
 			return appInfo, nil, err
 		}
-
 		if len(pods.Items) == 0 {
 			response = map[string]string{"status": "not running"}
 			return appInfo, response, nil
@@ -686,6 +687,8 @@ func UpdatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *k
 		if err != nil {
 			return appInfo, nil, err
 		}
+		appInfo.CpuPercent = totalCpu1
+		appInfo.MemPercent = totalMem1
 		appInfo.Pods = append(appInfo.Pods, podInfo)
 	}
 	return appInfo, nil, nil
@@ -727,7 +730,8 @@ func GetServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions,
 }
 
 // Get pod information
-func GetPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config, namespace string) (podInfo models.PodInfo, err error) {
+func GetPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config,
+	namespace string) (podInfo models.PodInfo, err error) {
 	var containerInfo models.ContainerInfo
 	for _, pod := range pods.Items {
 		podName := pod.GetObjectMeta().GetName()
@@ -757,7 +761,8 @@ func GetPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.
 }
 
 // Update container information
-func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.Clientset, podInfo models.PodInfo) (models.PodInfo, error) {
+func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.Clientset,
+	podInfo models.PodInfo) (models.PodInfo, error) {
 	var containerInfo models.ContainerInfo
 	totalCpuUsage, totalMemUsage, totalDiskUsage, err := GetTotalCpuDiskMemory(clientset)
 	if err != nil {
@@ -776,6 +781,15 @@ func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.C
 		containerInfo.MetricsUsage.CpuUsage = cpuUsage + "/" + totalCpuUsage
 		containerInfo.MetricsUsage.MemUsage = memUsage + "/" + totalMemUsage
 		containerInfo.MetricsUsage.DiskUsage = diskUsage + "/" + totalDiskUsage
+
+		cpuNum, _ := strconv.ParseUint(totalCpuUsage, 10, 32)
+		cpuUsage1 := int64(cpuNum)
+		cpuPercent := float64(cpu)  / float64(cpuUsage1)
+		totalCpu1 = totalCpu1 + cpuPercent
+		memNum, _ := strconv.ParseUint(totalMemUsage, 10, 32)
+		memUsage1 := int64(memNum)
+		memPercent := float64(memory) / float64(memUsage1)
+		totalMem1 = totalMem1 + memPercent
 		podInfo.Containers = append(podInfo.Containers, containerInfo)
 	}
 	return podInfo, nil
