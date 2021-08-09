@@ -1139,13 +1139,12 @@ func (c *LcmControllerV2) QueryKPI() {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrorReportByPlugin)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
-
-		return
-	}
-	c.handleLoggingForSuccess(nil, clientIp, "Query kpi is successful")
+	//_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	//if err != nil {
+	//	c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
+	//	return
+	//}
+	c.handleLoggingForSuccess(response, clientIp, "Query kpi is successful")
 }
 
 // Get host IP from url
@@ -1686,7 +1685,6 @@ func (c *LcmControllerV2) DeletePackageOnHost() {
 	}
 
 	c.handleLoggingForSuccess(nil, clientIp, "Deleted host application package successfully")
-	c.ServeJSON()
 }
 
 // Get input parameters for delete package on host
