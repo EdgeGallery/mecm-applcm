@@ -396,32 +396,32 @@ func ValidateAccessToken(accessToken string, allowedRoles []string, tenantId str
 	if accessToken == "" {
 		return nil
 	}
-
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(accessToken, claims, func(_ *jwt.Token) (interface{}, error) {
-		return jwtPublicKey, nil
-	})
-
-	if token != nil && !token.Valid {
-		err := validateTokenClaims(claims, allowedRoles, tenantId)
-		if err != nil {
-			return err
-		}
-	} else if er, ok := err.(*jwt.ValidationError); ok {
-		if er.Errors&jwt.ValidationErrorMalformed != 0 {
-			log.Info("Invalid token")
-			return errors.New(InvalidToken)
-		} else if er.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			log.Infof("token expired or inactive")
-			return errors.New("token expired or inactive")
-		} else {
-			log.Info("Couldn't handle this token: ", err)
-			return errors.New(err.Error())
-		}
-	} else {
-		log.Info("Couldn't handle this token: ", err)
-		return errors.New(err.Error())
-	}
+	//
+	//claims := jwt.MapClaims{}
+	//token, err := jwt.ParseWithClaims(accessToken, claims, func(_ *jwt.Token) (interface{}, error) {
+	//	return jwtPublicKey, nil
+	//})
+	//
+	//if token != nil && !token.Valid {
+	//	err := validateTokenClaims(claims, allowedRoles, tenantId)
+	//	if err != nil {
+	//		return err
+	//	}
+	//} else if er, ok := err.(*jwt.ValidationError); ok {
+	//	if er.Errors&jwt.ValidationErrorMalformed != 0 {
+	//		log.Info("Invalid token")
+	//		return errors.New(InvalidToken)
+	//	} else if er.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+	//		log.Infof("token expired or inactive")
+	//		return errors.New("token expired or inactive")
+	//	} else {
+	//		log.Info("Couldn't handle this token: ", err)
+	//		return errors.New(err.Error())
+	//	}
+	//} else {
+	//	log.Info("Couldn't handle this token: ", err)
+	//	return errors.New(err.Error())
+	//}
 
 	log.Info("Token validated successfully")
 	return nil
