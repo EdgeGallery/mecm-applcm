@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"github.com/astaxie/beego"
 	log "github.com/sirupsen/logrus"
@@ -59,19 +58,6 @@ func (c *BaseController) HandleForErrorCode(clientIp string, code int, errMsg st
 	c.writeErrorResponseV2(errConent, code)
 	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
-}
-
-// Handled logging for error case
-func getErrorContent(clientIp string, code int, errMsg string) ([]byte, error){
-	result := &models.ReturnResponse{
-		Data:    nil,
-		RetCode: code,
-		Message: errMsg,
-		Params: nil,
-	}
-
-	resultValue, err := json.Marshal(result)
-	return resultValue, err
 }
 
 // Write error response

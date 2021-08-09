@@ -19,6 +19,7 @@ package pluginAdapter
 import (
 	"bytes"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"io"
 	"lcmcontroller/internal/lcmservice"
@@ -30,7 +31,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip"
 )
 

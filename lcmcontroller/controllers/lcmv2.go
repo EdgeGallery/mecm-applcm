@@ -110,7 +110,7 @@ func (c *LcmControllerV2) UploadConfigV2() {
 		return
 	}
 
-	returnContent, _ := handleSuccessReturn(nil, util.UploadConfigSuccess)
+	returnContent:= handleSuccessReturn(nil, util.UploadConfigSuccess)
 	c.handleLoggingForSuccess(returnContent, clientIp, util.UploadConfigSuccess)
 }
 
@@ -221,8 +221,8 @@ func (c *LcmControllerV2) UploadPackageV2() {
 func (c *LcmControllerV2) handleLoggingForSuccess(object interface{}, clientIp string, msg string) {
 	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
-	returnContent, _ := handleSuccessReturn(object, msg)
-	c.Ctx.ResponseWriter.Write(returnContent)
+	returnContent := handleSuccessReturn(object, msg)
+	c.Data["json"] = returnContent
 	c.Ctx.ResponseWriter.WriteHeader(util.SuccessCode)
 	c.ServeJSON()
 }
@@ -2282,16 +2282,14 @@ func (c *LcmControllerV2) SynchronizeAppPackageStaleRecord() {
 	c.handleLoggingForSuccess(nil, clientIp, "Stale app package records synchronization is successful")
 }
 
-func handleSuccessReturn(object interface{}, msg string) ([]byte, error) {
+func handleSuccessReturn(object interface{}, msg string) *models.ReturnResponse {
 	result := &models.ReturnResponse{
 		Data:    object,
 		RetCode: 0,
 		Message: msg,
 		Params: nil,
 	}
-
-	resultValue, err := json.Marshal(result)
-	return resultValue, err
+	return result
 }
 
 func (c *LcmControllerV2) isPermitted(accessToken, clientIp string) (string, error) {
