@@ -182,3 +182,44 @@ func TestInitDbFailure3(t *testing.T) {
 	err = db.InitDatabase(&config.Server)
 	assert.Error(t, err, "TestGetGetClientFailure execution result")
 }
+
+
+func TestInitDbFailure4(t *testing.T) {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(driverName string, typ orm.DriverType) error {
+		// do nothing
+		return nil
+	})
+	defer patch1.Reset()
+
+	patch2 := gomonkey.ApplyFunc(orm.RunSyncdb, func(_ string, _ bool, _ bool) error {
+		// do nothing
+		return nil
+	})
+	defer patch2.Reset()
+
+	patch3 := gomonkey.ApplyFunc(orm.RegisterDataBase, func(_, _, _ string, _ ...int) error {
+		// do nothing
+		return nil
+	})
+	defer patch3.Reset()
+
+	patch4 := gomonkey.ApplyFunc(orm.NewOrm, func() orm.Ormer {
+		// do nothing
+		return nil
+	})
+	defer patch4.Reset()
+
+	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(ormer orm.Ormer, str string) error {
+		// do nothing
+		return nil
+	})
+	defer patch5.Reset()
+
+	db := &pgdb.PgDb{}
+	dir, _ := os.Getwd()
+	config, err := util.GetConfiguration(dir)
+	config.Server.DbAdapter = "default"
+	os.Setenv("K8S_PLUGIN_DB_PASSWORD", "fe0Hmv%sbq")
+	err = db.InitDatabase(&config.Server)
+	assert.Error(t, err, "TestGetGetClientFailure execution result")
+}

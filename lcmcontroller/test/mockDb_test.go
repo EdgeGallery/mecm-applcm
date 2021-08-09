@@ -23,7 +23,7 @@ import (
 	"reflect"
 )
 
-type mockDb struct {
+type MockDb struct {
 	appInstanceRecords map[string]models.AppInfoRecord
 	tenantRecords      map[string]models.TenantInfoRecord
 	appPackageRecords  map[string]models.AppPackageRecord
@@ -32,11 +32,11 @@ type mockDb struct {
 
 }
 
-func (db *mockDb) InitDatabase() error {
+func (db *MockDb) InitDatabase() error {
 	panic("implement me")
 }
 
-func (db *mockDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
+func (db *MockDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
@@ -73,7 +73,7 @@ func (db *mockDb) InsertOrUpdateData(data interface{}, cols ...string) (err erro
 	return nil
 }
 
-func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
+func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
@@ -144,7 +144,7 @@ func (db *mockDb) ReadData(data interface{}, cols ...string) (err error) {
 	return nil
 }
 
-func (db *mockDb) DeleteData(data interface{}, cols ...string) (err error) {
+func (db *MockDb) DeleteData(data interface{}, cols ...string) (err error) {
 	if cols[0] == util.AppInsId {
 		appInstance, ok := data.(*models.AppInfoRecord)
 		if ok {
@@ -200,11 +200,11 @@ func (db *mockDb) DeleteData(data interface{}, cols ...string) (err error) {
 	return nil
 }
 
-func (db *mockDb) QueryCount(tableName string) (int64, error) {
+func (db *MockDb) QueryCount(tableName string) (int64, error) {
 	return 0, nil
 }
 
-func (db *mockDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
+func (db *MockDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
 	if tableName == "app_info_record" {
 		var count int64
 		for _, _ = range db.appInstanceRecords {
@@ -215,7 +215,7 @@ func (db *mockDb) QueryCountForTable(tableName, fieldName, fieldValue string) (i
 	return 0, nil
 }
 
-func (db *mockDb) QueryTable(tableName string, container interface{}, field string, container1 ...interface{}) (int64, error) {
+func (db *MockDb) QueryTable(tableName string, container interface{}, field string, container1 ...interface{}) (int64, error) {
 	if tableName == "app_info_record" {
 		for _, appInfoRec := range db.appInstanceRecords {
 			container = appInfoRec
@@ -233,7 +233,7 @@ func (db *mockDb) QueryTable(tableName string, container interface{}, field stri
 	return 0, nil
 }
 
-func (db *mockDb) LoadRelated(md interface{}, name string) (int64, error) {
+func (db *MockDb) LoadRelated(md interface{}, name string) (int64, error) {
 	return 0, nil
 }
 

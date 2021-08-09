@@ -267,7 +267,7 @@ func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 		log.Error("Unable to query chart with release name")
 		return "", err
 	}
-	manifest, err := splitManifestYaml([]byte(res.Manifest))
+	manifest, err := SplitManifestYaml([]byte(res.Manifest))
 	if err != nil {
 		log.Errorf("Query response processing failed release name: %s. Err: %s",
 			relName, err)
@@ -285,15 +285,15 @@ func (hc *HelmClient) Query(relName, namespace string) (string, error) {
 		return "", err
 	}
 
-	labelSelector := getLabelSelector(manifest)
+	labelSelector := GetLabelSelector(manifest)
 
-	appInfo, response, err := getResourcesBySelector(labelSelector, clientset, kubeConfig, namespace)
+	appInfo, response, err := GetResourcesBySelector(labelSelector, clientset, kubeConfig, namespace)
 	if err != nil {
 		log.Error("Failed to get pod statistics")
 		return "", err
 	}
 
-	appInfoJson, err := getJSONResponse(appInfo, response)
+	appInfoJson, err := GetJSONResponse(appInfo, response)
 	if err != nil {
 		return "", err
 	}
@@ -451,16 +451,16 @@ func (hc *HelmClient) WorkloadEvents(relName, namespace string) (string, error) 
 	log.Info("In Workload describe function")
 	var podDesc models.PodDescribeInfo
 
-	clientset, manifest, err := hc.getClientSet(relName, namespace)
+	clientset, manifest, err := hc.GetClientSet(relName, namespace)
 	if nil != err {
 		return "", err
 	}
 
-	labelSelector := getLabelSelector(manifest)
+	labelSelector := GetLabelSelector(manifest)
 
 	for _, label := range labelSelector.Label {
 		if label.Kind == util.Pod || label.Kind == util.Deployment {
-			podDesc, err = updatePodDescInfo(podDesc, clientset, label, namespace)
+			podDesc, err = UpdatePodDescInfo(podDesc, clientset, label, namespace)
 			if err != nil {
 				return "", err
 			}
@@ -478,7 +478,7 @@ func (hc *HelmClient) WorkloadEvents(relName, namespace string) (string, error) 
 func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, error) {
 
 	pkgPath := appPackagesBasePath + tenantId + "/" + packageId + hostIp + "/Artifacts/Deployment/Charts"
-	artifact, _ := getDeploymentArtifact(pkgPath, ".tar")
+	artifact, _ := GetDeploymentArtifact(pkgPath, ".tar")
 	if artifact == "" {
 		log.Error("Artifact not available in application package.")
 		return "", errors.New("Helm chart not available in application package.")
@@ -487,7 +487,7 @@ func (c *HelmClient) getHelmChart(tenantId, hostIp, packageId string) (string, e
 }
 
 // Gets deployment artifact
-func getDeploymentArtifact(dir string, ext string) (string, error) {
+func GetDeploymentArtifact(dir string, ext string) (string, error) {
 	d, err := os.Open(dir)
 	if err != nil {
 		log.Info("failed to open the directory")
@@ -510,7 +510,7 @@ func getDeploymentArtifact(dir string, ext string) (string, error) {
 	return "", err
 }
 
-func (hc *HelmClient) getClientSet(relName, namespace string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
+func (hc *HelmClient) GetClientSet(relName, namespace string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
 
 	actionConfig := new(action.Configuration)
 	if err = actionConfig.Init(kube.GetConfig(hc.Kubeconfig, "", namespace), namespace,
@@ -526,7 +526,7 @@ func (hc *HelmClient) getClientSet(relName, namespace string) (clientset *kubern
 		log.Error("Unable to query chart with release name")
 		return clientset, manifest, err
 	}
-	manifest, err = splitManifestYaml([]byte(res.Manifest))
+	manifest, err = SplitManifestYaml([]byte(res.Manifest))
 	if err != nil {
 		log.Errorf("Query response processing failed release name: %s. Err: %s",
 			relName, err)
@@ -546,7 +546,7 @@ func (hc *HelmClient) getClientSet(relName, namespace string) (clientset *kubern
 	return clientset, manifest, nil
 }
 
-func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
+func UpdatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
 	label models.LabelList, namespace string) (models.PodDescribeInfo, error) {
 	options := metav1.ListOptions{
 		LabelSelector: label.Selector,
@@ -566,20 +566,20 @@ func updatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Cli
 			log.Errorf("Unable to construct reference to '%#v': %v", pod, err)
 			return podDesc, err
 		} else {
-			podDescInfo := getPodDescInfo(ref, pod, clientset, podName, namespace)
+			podDescInfo := GetPodDescInfo(ref, pod, clientset, podName, namespace)
 			podDesc.PodDescInfo = append(podDesc.PodDescInfo, podDescInfo)
 		}
 	}
 	return podDesc, nil
 }
 
-func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
+func GetPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
 	podName, namespace string) (podDescInfo models.PodDescList) {
 	ref.Kind = ""
 	if _, isMirrorPod := pod.Annotations[corev1.MirrorPodAnnotationKey]; isMirrorPod {
 		ref.UID = types.UID(pod.Annotations[corev1.MirrorPodAnnotationKey])
 	}
-	events, _ := clientset.CoreV1().Events(namespace).Search(scheme.Scheme, ref)
+	events := GetEvents(clientset, namespace, ref)
 	podDescInfo.PodName = podName
 	if len(events.Items) == 0 {
 		podDescInfo.PodEventsList = append(podDescInfo.PodEventsList,
@@ -591,8 +591,13 @@ func getPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 	return podDescInfo
 }
 
+func GetEvents(clientset *kubernetes.Clientset, namespace string, ref *v1.ObjectReference) *v1.EventList {
+	events, _ := clientset.CoreV1().Events(namespace).Search(scheme.Scheme, ref)
+	return events
+}
+
 // Get label selector
-func getLabelSelector(manifest []Manifest) models.LabelSelector {
+func GetLabelSelector(manifest []Manifest) models.LabelSelector {
 	var labelSelector models.LabelSelector
 	var label models.LabelList
 	var selector string
@@ -619,7 +624,7 @@ func getLabelSelector(manifest []Manifest) models.LabelSelector {
 }
 
 // get JSON response
-func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string, error) {
+func GetJSONResponse(appInfo models.AppInfo, response map[string]string) (string, error) {
 	if response != nil {
 		appInfoJson, err := json.Marshal(response)
 		if err != nil {
@@ -639,11 +644,11 @@ func getJSONResponse(appInfo models.AppInfo, response map[string]string) (string
 }
 
 // Get resources by selector
-func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
+func GetResourcesBySelector(labelSelector models.LabelSelector, clientset *kubernetes.Clientset,
 	config *rest.Config, namespace string) (appInfo models.AppInfo, response map[string]string, err error) {
 
 	for _, label := range labelSelector.Label {
-		appInfo, response, err = updatePodInfo(appInfo, &label, clientset, config, namespace)
+		appInfo, response, err = UpdatePodInfo(appInfo, &label, clientset, config, namespace)
 		if err != nil {
 			return appInfo, response, err
 		}
@@ -652,7 +657,7 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 			options := metav1.ListOptions{
 				LabelSelector: label.Selector,
 			}
-			serviceInfo, err := getServiceInfo(clientset, options, namespace)
+			serviceInfo, err := GetServiceInfo(clientset, options, namespace)
 			if err != nil {
 				return appInfo, nil, err
 			}
@@ -663,24 +668,21 @@ func getResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	return appInfo, nil, nil
 }
 
-func updatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
+func UpdatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
 	config *rest.Config,
 	namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
 	if label.Kind == util.Pod || label.Kind == util.Deployment {
-		options := metav1.ListOptions{
-			LabelSelector: label.Selector,
-		}
-
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
+		pods, err := GetPods(clientset, namespace, label)
 		if err != nil {
 			return appInfo, nil, err
 		}
+
 		if len(pods.Items) == 0 {
 			response = map[string]string{"status": "not running"}
 			return appInfo, response, nil
 		}
 
-		podInfo, err := getPodInfo(pods, clientset, config, namespace)
+		podInfo, err := GetPodInfo(pods, clientset, config, namespace)
 		if err != nil {
 			return appInfo, nil, err
 		}
@@ -689,7 +691,18 @@ func updatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *k
 	return appInfo, nil, nil
 }
 
-func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
+func GetPods(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (*v1.PodList, error){
+	options := metav1.ListOptions{
+		LabelSelector: label.Selector,
+	}
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), options)
+	if err != nil {
+		return pods, err
+	}
+	return pods, nil
+}
+
+func GetServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
 	services, err := clientset.CoreV1().Services(namespace).List(context.Background(), options)
 	if err != nil {
 		return serviceInfo, err
@@ -714,11 +727,11 @@ func getServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions,
 }
 
 // Get pod information
-func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config, namespace string) (podInfo models.PodInfo, err error) {
+func GetPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.Config, namespace string) (podInfo models.PodInfo, err error) {
 	var containerInfo models.ContainerInfo
 	for _, pod := range pods.Items {
 		podName := pod.GetObjectMeta().GetName()
-		podMetrics, err := getPodMetrics(config, podName, namespace)
+		podMetrics, err := GetPodMetrics(config, podName, namespace)
 		if err != nil {
 			podInfo.PodName = podName
 			podInfo.PodStatus = string(pod.Status.Phase)
@@ -746,7 +759,7 @@ func getPodInfo(pods *v1.PodList, clientset *kubernetes.Clientset, config *rest.
 // Update container information
 func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.Clientset, podInfo models.PodInfo) (models.PodInfo, error) {
 	var containerInfo models.ContainerInfo
-	totalCpuUsage, totalMemUsage, totalDiskUsage, err := getTotalCpuDiskMemory(clientset)
+	totalCpuUsage, totalMemUsage, totalDiskUsage, err := GetTotalCpuDiskMemory(clientset)
 	if err != nil {
 		return podInfo, err
 	}
@@ -769,7 +782,7 @@ func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.C
 }
 
 // Get Pod metrics
-func getPodMetrics(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
+func GetPodMetrics(config *rest.Config, podName, namespace string) (podMetrics *v1beta1.PodMetrics, err error) {
 	mc, err := metrics.NewForConfig(config)
 	if err != nil {
 		return podMetrics, err
@@ -784,12 +797,12 @@ func getPodMetrics(config *rest.Config, podName, namespace string) (podMetrics *
 }
 
 // Get total cpu disk and memory metrics
-func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, string, error) {
+func GetTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, string, error) {
 	var totalDiskUsage string
 	var totalMemUsage string
 	var totalCpuUsage string
 
-	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	nodeList, err := GetNodeList(clientset)
 	if err == nil {
 		if len(nodeList.Items) > 0 {
 			node := &nodeList.Items[0]
@@ -808,8 +821,13 @@ func getTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 	return "", "", "", err
 }
 
+func GetNodeList(clientset *kubernetes.Clientset) (nodeList *v1.NodeList, err error) {
+	nodeList, err = clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	return nodeList, err
+}
+
 // Split manifest yaml file
-func splitManifestYaml(data []byte) (manifest []Manifest, err error) {
+func SplitManifestYaml(data []byte) (manifest []Manifest, err error) {
 	manifestBuf := []Manifest{}
 
 	yamlSeparator := "\n---"

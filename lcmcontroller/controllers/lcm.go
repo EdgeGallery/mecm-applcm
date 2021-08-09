@@ -59,7 +59,7 @@ type LcmController struct {
 // @router /configuration [post]
 func (c *LcmController) UploadConfig() {
 
-	clientIp, bKey, accessToken, _, err := c.getClientIpAndIsPermitted("Add configuration request received.")
+	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Add configuration request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
@@ -218,7 +218,7 @@ func (c *LcmController) getFileContainsExtension(clientIp string, pkgDir string,
 }
 
 // Get application package details
-func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
+func (c *LcmController) GetPackageDetailsFromPackage(clientIp string,
 	packageDir string) (models.AppPkgDetails, error) {
 
 	var pkgDetails models.AppPkgDetails
@@ -398,7 +398,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	err = c.InsertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -568,7 +568,7 @@ func getApplicationConfigFile(tenantId string, packageId string) (string, error)
 // @router /tenants/:tenantId/app_instances/:appInstanceId/terminate [post]
 func (c *LcmController) Terminate() {
 
-	clientIp, bKey, accessToken, tenantId, err := c.getClientIpAndIsPermitted("Application termination request received.")
+	clientIp, bKey, accessToken, tenantId, err := c.GetClientIpAndIsPermitted("Application termination request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
@@ -748,20 +748,7 @@ func (c *LcmController) Query() {
 	}
 
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost)
-	if err != nil {
-		res := strings.Contains(err.Error(), util.NotFound)
-		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
-			return
-		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
+	c.errorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Query workload statistics is successful")
 }
 
@@ -775,30 +762,7 @@ func (c *LcmController) Query() {
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmController) QueryKPI() {
 	log.Info("Application query kpi request received.")
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		util.ClearByteArray(bKey)
-		return
-	}
-	util.ClearByteArray(bKey)
+	clientIp, bKey, accessToken, err := c.getClientIpNew()
 
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
@@ -819,20 +783,7 @@ func (c *LcmController) QueryKPI() {
 
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
-	if err != nil {
-		res := strings.Contains(err.Error(), util.NotFound)
-		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
-			return
-		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
+	c.errorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Query kpi is successful")
 }
 
@@ -846,31 +797,8 @@ func (c *LcmController) QueryKPI() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmController) QueryMepCapabilities() {
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		util.ClearByteArray(bKey)
-		return
-	}
-
+	clientIp, bKey, _, err :=  c.getClientIpNew()
 	util.ClearByteArray(bKey)
-
 	_, err = c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
@@ -914,7 +842,7 @@ func (c *LcmController) getHostIP(clientIp string) (string, error) {
 }
 
 // Get origin
-func (c *LcmController) getOrigin(clientIp string) (string, error) {
+func (c *LcmController) GetOrigin(clientIp string) (string, error) {
 	origin := c.GetString("origin")
 	originVar, err := util.ValidateName(origin, util.NameRegex)
 	if err != nil || !originVar {
@@ -1060,7 +988,7 @@ func (c *LcmController) insertOrUpdateAppInfoRecord(clientIp string, appInfoPara
 }
 
 // Insert or update tenant info record
-func (c *LcmController) insertOrUpdateTenantRecord(clientIp, tenantId string) error {
+func (c *LcmController) InsertOrUpdateTenantRecord(clientIp, tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
 		TenantId: tenantId,
 	}
@@ -1115,7 +1043,7 @@ func createDirectory(dir string) error {
 	return nil
 }
 
-func (c *LcmController) saveApplicationPackage(clientIp string, tenantId string, packageId string,
+func (c *LcmController) SaveApplicationPackage(clientIp string, tenantId string, packageId string,
 	header *multipart.FileHeader, file multipart.File) (string, error) {
 
 	err := createDirectory(PackageFolderPath + tenantId)
@@ -1196,20 +1124,7 @@ func (c *LcmController) GetWorkloadDescription() {
 	}
 	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
 	util.ClearByteArray(bKey)
-	if err != nil {
-		res := strings.Contains(err.Error(), util.NotFound)
-		if res {
-			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
-			return
-		}
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		return
-	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
-		return
-	}
+	c.errorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
 
@@ -1226,30 +1141,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 	var appInstancesSync []models.AppInfoRecord
 	var appInstanceSyncRecords models.AppInfoUpdatedRecords
 	var appInstanceRes []models.AppInfoRec
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
-
+	clientIp,err := c.getClientIp()
 	_, _ = c.Db.QueryTable("app_info_record", &appInstances, "")
 	for _, appInstance := range appInstances {
 		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
@@ -1305,30 +1197,7 @@ func (c *LcmController) SynchronizeStaleRecord() {
 
 	var appInstStaleRecs []models.AppInstanceStaleRec
 	var appInstanceStaleRecords models.AppInstanceStaleRecords
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
+	clientIp,err := c.getClientIp()
 	_, _ = c.Db.QueryTable("app_instance_stale_rec", &appInstStaleRecs, "")
 
 	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
@@ -1435,18 +1304,18 @@ func (c *LcmController) getInputParametersForRemoveCfg(clientIp string) (string,
 // @Failure 400 bad request
 // @router /packages [post]
 func (c *LcmController) UploadPackage() {
-	clientIp, bKey, _, _, err := c.getClientIpAndIsPermitted("Upload application package request received.")
+	clientIp, bKey, _, _, err := c.GetClientIpAndIsPermitted("Upload application package request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
 	}
 
-	appId, packageId, tenantId, err := c.getInputParametersForUploadPkg(clientIp)
+	appId, packageId, tenantId, err := c.GetInputParametersForUploadPkg(clientIp)
 	if err != nil {
 		return
 	}
 
-	origin, err := c.getOrigin(clientIp)
+	origin, err := c.GetOrigin(clientIp)
 	if err != nil {
 		return
 	}
@@ -1470,7 +1339,7 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
-	pkgFilePath, err := c.saveApplicationPackage(clientIp, tenantId, packageId, header, file)
+	pkgFilePath, err := c.SaveApplicationPackage(clientIp, tenantId, packageId, header, file)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
 		return
@@ -1481,18 +1350,18 @@ func (c *LcmController) UploadPackage() {
 		return
 	}
 
-	pkgDetails, err := c.getPackageDetailsFromPackage(clientIp, pkgDir)
+	pkgDetails, err := c.GetPackageDetailsFromPackage(clientIp, pkgDir)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.BadRequest, "failed to get app package details")
 		return
 	}
 
-	err = c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	err = c.InsertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return
 	}
 
-	err = c.insertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails, origin)
+	err = c.InsertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails, origin)
 	if err != nil {
 		return
 	}
@@ -1581,7 +1450,7 @@ func (c *LcmController) ValidateInstantiateInputParameters(clientIp string, req 
 // @Failure 400 bad request
 // @router /packages/:packageId [post]
 func (c *LcmController) DistributePackage() {
-	clientIp, bKey, accessToken, _, err := c.getClientIpAndIsPermitted("Distribute application package request received.")
+	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Distribute application package request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
@@ -1617,7 +1486,7 @@ func (c *LcmController) DistributePackage() {
 		return
 	}
 
-	err = c.processUploadPackage(hosts, clientIp, tenantId, packageId, accessToken)
+	err = c.ProcessUploadPackage(hosts, clientIp, tenantId, packageId, accessToken)
 	if err != nil {
 		return
 	}
@@ -1755,7 +1624,7 @@ func (c *LcmController) DeletePackage() {
 }
 
 // Insert or update application package record
-func (c *LcmController) insertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
+func (c *LcmController) InsertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 	packageId string, pkgDetails models.AppPkgDetails, origin string) error {
 
 	syncStatus := true
@@ -1864,13 +1733,13 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 // @Failure 400 bad request
 // @router /packages/:packageId [get]
 func (c *LcmController) DistributionStatus() {
-	clientIp, bKey, _, _, err := c.getClientIpAndIsPermitted("Distribute status request received.")
+	clientIp, bKey, _, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
 	}
 
-	tenantId, packageId, err := c.getInputParametersForDistributionStatus(clientIp)
+	tenantId, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
 	if err != nil {
 		return
 	}
@@ -1936,7 +1805,7 @@ func (c *LcmController) DistributionStatus() {
 }
 
 // Get input parameters for distribution status
-func (c *LcmController) getInputParametersForDistributionStatus(clientIp string) (string, string, error) {
+func (c *LcmController) GetInputParametersForDistributionStatus(clientIp string) (string, string, error) {
 	tenantId, err := c.getTenantId(clientIp)
 	if err != nil {
 		return "", "", err
@@ -1950,7 +1819,7 @@ func (c *LcmController) getInputParametersForDistributionStatus(clientIp string)
 }
 
 // Get input parameters for upload package
-func (c *LcmController) getInputParametersForUploadPkg(clientIp string) (string, string, string, error) {
+func (c *LcmController) GetInputParametersForUploadPkg(clientIp string) (string, string, string, error) {
 
 	appId, err := c.getAppId(clientIp)
 	if err != nil {
@@ -1986,30 +1855,7 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 
 	var appPackages []*models.AppPackageRecord
 	var appPackagesSync []*models.AppPackageRecord
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
+	clientIp,err := c.getClientIp()
 
 	_, _ = c.Db.QueryTable("app_package_record", &appPackages, "")
 	for _, appPackage := range appPackages {
@@ -2047,31 +1893,7 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 	var appPackageStaleRecs []models.AppPackageStaleRec
 	var appPkgHostStaleRecs []models.AppPackageHostStaleRec
 	var appDistPkgHostStaleRecords models.AppDistPkgHostStaleRecords
-
-
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
-	util.ClearByteArray(bKey)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-		return
-	}
+	clientIp,err := c.getClientIp()
 	_, _ = c.Db.QueryTable("app_package_stale_rec", &appPackageStaleRecs, "")
 	_, _ = c.Db.QueryTable("app_package_host_stale_rec", &appPkgHostStaleRecs, "")
 
@@ -2111,7 +1933,7 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 }
 
 // Process upload package
-func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
+func (c *LcmController) ProcessUploadPackage(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, accessToken string) error {
 	for _, hostIp := range hosts.HostIp {
 		vim, err := c.getVim(clientIp, hostIp)
@@ -2153,7 +1975,7 @@ func (c *LcmController) processUploadPackage(hosts models.DistributeRequest,
 // Update app package records
 func (c *LcmController) updateAppPkgRecord(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, hostIp, status string) error {
-	err := c.insertOrUpdateTenantRecord(clientIp, tenantId)
+	err := c.InsertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return err
 	}
@@ -2389,7 +2211,7 @@ func (c *LcmController) deletePackage(appPkgHost *models.AppPackageHostRecord,
 	return nil
 }
 
-func (c *LcmController) getClientIpAndIsPermitted(receiveMsg string) (clientIp string, bKey []byte,
+func (c *LcmController) GetClientIpAndIsPermitted(receiveMsg string) (clientIp string, bKey []byte,
 	accessToken string, tenantId string, err error) {
 	log.Info(receiveMsg)
 	clientIp = c.Ctx.Input.IP()
@@ -2427,4 +2249,72 @@ func (c *LcmController) getClientIpAndValidateAccessToken(receiveMsg string, all
 	}
 	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
 	return clientIp, bKey, accessToken, nil
+}
+
+func (c *LcmController) errorLog(clientIp string,err error,response string) {
+	if err != nil {
+		res := strings.Contains(err.Error(), util.NotFound)
+		if res {
+			c.HandleLoggingForError(clientIp, util.StatusNotFound, err.Error())
+			return
+		}
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return
+	}
+}
+
+func (c *LcmController) getClientIp() (clientIp string,err error){
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmAdminRole}, tenantId)
+	util.ClearByteArray(bKey)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		return
+	}
+	return clientIp,err
+}
+func (c *LcmController) getClientIpNew() (clientIp string, bKey []byte,
+	accessToken string, err error) {
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+		util.ClearByteArray(bKey)
+		return
+	}
+	return clientIp, bKey, accessToken, err
 }
