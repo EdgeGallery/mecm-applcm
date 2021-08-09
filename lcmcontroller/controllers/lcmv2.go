@@ -110,8 +110,7 @@ func (c *LcmControllerV2) UploadConfigV2() {
 		return
 	}
 
-	returnContent:= handleSuccessReturn(nil, util.UploadConfigSuccess)
-	c.handleLoggingForSuccess(returnContent, clientIp, util.UploadConfigSuccess)
+	c.handleLoggingForSuccess(nil, clientIp, util.UploadConfigSuccess)
 }
 
 // @Title Upload package
