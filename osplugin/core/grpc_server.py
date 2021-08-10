@@ -51,21 +51,22 @@ def serve():
 
     listen_addr = config.listen_ip + ":" + str(_LISTEN_PORT)
 
-    if config.ssl_enabled:
-        with open(config.private_key_certificate_chain_pairs[0], 'rb') as file:
-            private_key = file.read()
-        with open(config.private_key_certificate_chain_pairs[1], 'rb') as file:
-            certificate_chain = file.read()
-        with open(config.root_certificates, 'rb') as file:
-            root_certificates = file.read()
-        cert_config = grpc.ssl_server_credentials(
-            private_key_certificate_chain_pairs=((private_key, certificate_chain), ),
-            root_certificates=root_certificates,
-            require_client_auth=False
-        )
-        server.add_secure_port(listen_addr, cert_config)
-    else:
-        server.add_insecure_port(listen_addr)
+    server.add_insecure_port(listen_addr)
+    # if config.ssl_enabled:
+    #     with open(config.private_key_certificate_chain_pairs[0], 'rb') as file:
+    #         private_key = file.read()
+    #     with open(config.private_key_certificate_chain_pairs[1], 'rb') as file:
+    #         certificate_chain = file.read()
+    #     with open(config.root_certificates, 'rb') as file:
+    #         root_certificates = file.read()
+    #     cert_config = grpc.ssl_server_credentials(
+    #         private_key_certificate_chain_pairs=((private_key, certificate_chain), ),
+    #         root_certificates=root_certificates,
+    #         require_client_auth=False
+    #     )
+    #     server.add_secure_port(listen_addr, cert_config)
+    # else:
+    #
 
     try:
         server.start()
