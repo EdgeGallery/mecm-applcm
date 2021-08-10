@@ -92,11 +92,11 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 			return tenantId, err
 		}
 	}
-	//err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
-	//if err != nil {
-	//	c.HandleLoggingForTokenFailure(clientIp, err.Error())
-	//	return tenantId, err
-	//}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+	if err != nil {
+		c.HandleLoggingForTokenFailure(clientIp, err.Error())
+		return tenantId, err
+	}
 	return tenantId, nil
 }
 
