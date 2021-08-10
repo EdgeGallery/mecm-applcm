@@ -69,38 +69,38 @@ const (
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
 
-	FailedToMakeDir                 = "failed to make directory"
-	FileNameNotFound                = "file name not found with "
-	AppIdIsNotValid                 = "AppName is invalid"
-	AppNameIsNotValid               = "AppName is invalid"
-	HostIpIsInvalid                 = "MecHost address is invalid"
-	PackageIdIsInvalid              = "package id is invalid"
+	FailedToMakeDir                = "failed to make directory"
+	FileNameNotFound               = "file name not found with "
+	AppIdIsNotValid                = "AppName is invalid"
+	AppNameIsNotValid              = "AppName is invalid"
+	HostIpIsInvalid                = "MecHost address is invalid"
+	PackageIdIsInvalid             = "package id is invalid"
 	TenantIdIsInvalid              = "package id is invalid"
-	OriginIsInvalid                 = "Origin is invalid"
-	RecordDoesNotExist              = "Records does not exist"
-	RequestBodyTooLarge             = "request body too large"
-	FailedToUploadToPlugin          = "failed to upload package to plugin"
-	UploadPackageSuccess            = "Uploaded application package successfully"
-	FailedToInstantiate             = "failed to instantiate app"
-	FailedToCovertYamlToJson        = "failed to convert yaml to json"
-	NotFound                        = "not found"	
-	UploadConfigSuccess             = "Upload config is successful"
-	GetPackageDetailsFailed         = "failed to get app package details"
-	PluginErrorReport               = "Failed to do operate on Plugin"
-	InsertDBWithError               = "Failed to insert data to DB"
-    PackageNumUpToMax               = "Maximum number of app package records are exceeded for given tenant"
-	TenantNumUpToMax                = "Maximum number of tenant records are exceeded"
-	FailedToSaveAppInfo             = "Failed to save app info record to database."
-	MaxSize                  int    = 20
-	MaxBackups               int    = 50
-	MaxAge                          = 30
-	MaxConfigFile            int64  = 5242880
-	MaxAppPackageFile        int64  = 536870912
-	Timeout                         = 180
-	MaxNumberOfRecords              = 500
-	MaxNumberOfTenantRecords        = 20
-	MaxNumberOfHostRecords          = 20
-	MaxFileNameSize                 = 128
+	OriginIsInvalid                = "Origin is invalid"
+	RecordDoesNotExist             = "Records does not exist"
+	RequestBodyTooLarge            = "request body too large"
+	FailedToUploadToPlugin         = "failed to upload package to plugin"
+	UploadPackageSuccess           = "Uploaded application package successfully"
+	FailedToInstantiate            = "failed to instantiate app"
+	FailedToCovertYamlToJson       = "failed to convert yaml to json"
+	NotFound                       = "not found"
+	UploadConfigSuccess            = "Upload config is successful"
+	GetPackageDetailsFailed        = "failed to get app package details"
+	PluginErrorReport              = "Failed to do operate on Plugin"
+	InsertDBWithError              = "Failed to insert data to DB"
+	PackageNumUpToMax              = "Maximum number of app package records are exceeded for given tenant"
+	TenantNumUpToMax               = "Maximum number of tenant records are exceeded"
+	FailedToSaveAppInfo            = "Failed to save app info record to database."
+	MaxSize                  int   = 20
+	MaxBackups               int   = 50
+	MaxAge                         = 30
+	MaxConfigFile            int64 = 5242880
+	MaxAppPackageFile        int64 = 536870912
+	Timeout                        = 180
+	MaxNumberOfRecords             = 500
+	MaxNumberOfTenantRecords       = 20
+	MaxNumberOfHostRecords         = 20
+	MaxFileNameSize                = 128
 
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
@@ -109,7 +109,7 @@ const (
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
 
-	SuccessCode               int = 200
+	SuccessCode int = 200
 
 	//Base Error Code
 	ErrCodeForbidden         int = 31000
@@ -148,10 +148,10 @@ const (
 	ErrCodePackNumUptoMax   int = 31107
 
 	//Plugin Error Code
-	ErrCodeFailedGetPlugin    int = 31201
-	ErrCodePluginReportFailed int = 31202
-	ErrCodeGetWorkloadFailed  int = 31203
-	ErrCodeFailedGetClient    int = 31204
+	ErrCodeFailedGetPlugin      int = 31201
+	ErrCodePluginReportFailed   int = 31202
+	ErrCodeGetWorkloadFailed    int = 31203
+	ErrCodeFailedGetClient      int = 31204
 	ErrCodeUploadToPluginFailed int = 31205
 
 	//DB Error Code
@@ -167,8 +167,8 @@ const (
 	ErrCodeDeleteAuthCfgFail int = 31602
 
 
-	ErrCodeInternalServer    int = 31503
-	ErrCodeBadRequest        int = 31400
+	ErrCodeInternalServer int = 31503
+	ErrCodeBadRequest     int = 31400
 
 	UuidRegex     = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 	NameRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-]*[\\d\\p{L}]$"
@@ -227,12 +227,12 @@ const (
 	PkgId                = "package_id"
 	PkgUrlPath           = "/v1/tenants/:tenantId/packages/:packageId"
 
-	PkgUrlPathV2         = "/v2/tenants/:tenantId/packages/:packageId"
+	PkgUrlPathV2 = "/v2/tenants/:tenantId/packages/:packageId"
 
 	//mep service calling
-	ErrCallFromMep  string = "failed to execute rest calling, check if mep service is ready."
-	MepServiceQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/services"
-	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
+	ErrCallFromMep        string = "failed to execute rest calling, check if mep service is ready."
+	MepServiceQuery       string = "https://mep-mm5.mep:80/mep/service_govern/v1/services"
+	MepKongLogQuery       string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
 	MepSubscribeStatistic string = "https://mep-mm5.mep:80/mep/service_govern/v1/subscribe_statistic"
 
 	PkgDtlMetadata       = "metadata"
@@ -396,7 +396,6 @@ func ValidateAccessToken(accessToken string, allowedRoles []string, tenantId str
 	if accessToken == "" {
 		return nil
 	}
-
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(accessToken, claims, func(_ *jwt.Token) (interface{}, error) {
 		return jwtPublicKey, nil

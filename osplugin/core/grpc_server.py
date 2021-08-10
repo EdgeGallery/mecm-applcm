@@ -51,6 +51,7 @@ def serve():
 
     listen_addr = config.listen_ip + ":" + str(_LISTEN_PORT)
 
+
     if config.ssl_enabled:
         with open(config.private_key_certificate_chain_pairs[0], 'rb') as file:
             private_key = file.read()
