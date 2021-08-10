@@ -121,20 +121,20 @@ def validate_access_token(access_token):
     """
     校验token
     """
-    # if access_token is None:
-    #     return False
-    # try:
-    #     payload = jwt.decode(access_token, jwt_public_key, algorithms=['RS256'])
-    #     if 'authorities' not in payload:
-    #         return False
-    #     if 'userId' not in payload:
-    #         return False
-    #     if 'user_name' not in payload:
-    #         return False
-    # except PyJWTError:
-    #     LOG.debug("skip accessToken check")
-    #     # test, change false future
-    #     return True
+    if access_token is None:
+        return False
+    try:
+        payload = jwt.decode(access_token, jwt_public_key, algorithms=['RS256'])
+        if 'authorities' not in payload:
+            return False
+        if 'userId' not in payload:
+            return False
+        if 'user_name' not in payload:
+            return False
+    except PyJWTError:
+        LOG.debug("skip accessToken check")
+        # test, change false future
+        return True
     return True
 
 
