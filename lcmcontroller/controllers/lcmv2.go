@@ -1162,29 +1162,8 @@ func (c *LcmControllerV2) QueryV2() {
 func (c *LcmControllerV2) QueryKPI() {
 	log.Info("Application query kpi request received.")
 
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, util.AccessTokenIsInvalid)
-		util.ClearByteArray(bKey)
-		return
-	}
-	util.ClearByteArray(bKey)
+	log.Info("Application query kpi request received.")
+	clientIp, bKey, accessToken, err := c.getClientIpNew()
 
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
@@ -1202,10 +1181,52 @@ func (c *LcmControllerV2) QueryKPI() {
 		util.ClearByteArray(bKey)
 		return
 	}
-
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
-	c.handleLoggingForSuccess(response, clientIp, "Query kpi is successful")
+	c.handleKPI(clientIp, err, response)
+
+}
+
+func (c *LcmControllerV2) getClientIpNew() (clientIp string, bKey []byte,
+	accessToken string, err error) {
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	err = util.ValidateAccessToken(accessToken,
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusUnauthorized, util.AuthorizationFailed, util.ErrCodeTokenInvalid)
+		util.ClearByteArray(bKey)
+		return
+	}
+	return clientIp, bKey, accessToken, err
+}
+
+func (c *LcmControllerV2) handleKPI(clientIp string, err error, response string) {
+	if err != nil {
+		res := strings.Contains(err.Error(), util.NotFound)
+		if res {
+			c.HandleForErrorCode(clientIp, util.StatusNotFound, err.Error(), util.ErrCodePluginNotFound)
+			return
+		}
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodePluginReportFailed)
+		return
+	} else {
+		strings.Replace(response, "\\n", "", -1)
+		c.handleLoggingForSuccess(response, clientIp, "Query kpi is successful")
+	}
 }
 
 // Get host IP from url
@@ -1230,29 +1251,7 @@ func (c *LcmControllerV2) getUrlHostIP(clientIp string) (string, error) {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmControllerV2) QueryMepCapabilities() {
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
-		return
-	}
-	c.displayReceivedMsg(clientIp)
-
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, util.AccessTokenIsInvalid)
-		util.ClearByteArray(bKey)
-		return
-	}
-
+	clientIp, bKey, _, err := c.getClientIpNew()
 	util.ClearByteArray(bKey)
 
 	_, err = c.getUrlHostIP(clientIp)
@@ -1278,11 +1277,7 @@ func (c *LcmControllerV2) QueryMepCapabilities() {
 		return
 	}
 
-	//_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
-	//if err != nil {
-	//	c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
-	//	return
-	//}
+	strings.Replace(mepCapabilities, "\\n", "", -1)
 	c.handleLoggingForSuccess(mepCapabilities, clientIp, "Query mep capabilities is successful")
 }
 

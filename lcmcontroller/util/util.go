@@ -154,6 +154,7 @@ const (
 	ErrCodeGetWorkloadFailed    int = 31203
 	ErrCodeFailedGetClient      int = 31204
 	ErrCodeUploadToPluginFailed int = 31205
+	ErrCodePluginNotFound       int = 31206
 
 	//DB Error Code
 	ErrCodeInsertDataFailed  int = 31300
