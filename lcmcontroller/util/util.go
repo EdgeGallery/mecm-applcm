@@ -137,6 +137,7 @@ const (
 	ErrCodeOriginInvalid     int = 31029
 	ErrCodeGetVimFailed      int = 31032
 	ErrCodeDeleteFileFailed  int = 31034
+	ErrCodeInstanceIdInvalid int = 31035
 
 	//File Error Code
 	ErrCodeFileCanNotRead   int = 31100

@@ -235,7 +235,7 @@ func (c *PluginAdapter) UploadPackage(tenantId string, appPkg string, host strin
 
 	status, err := c.client.UploadPackage(ctx, tenantId, appPkg, host, packageId, accessToken)
 	if err != nil {
-		log.Error("failed to upload configuration")
+		log.Error("failed to upload Package")
 		return util.Failure, err
 	}
 
