@@ -13,4 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-/usr/app/venv/python3 main.py
+cd /usr/app
+umask 0027
+$HOME/main.py
