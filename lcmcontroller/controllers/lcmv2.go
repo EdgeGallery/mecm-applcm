@@ -652,65 +652,6 @@ func (c *LcmControllerV2) InstantiateV2() {
 	doInstantiate(c, appParams, bKey, req)
 }
 
-func (c *LcmControllerV2) validateToken(accessToken string, req models.InstantiateRequest, clientIp string) (string, string, string, string, string, error) {
-
-	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.RequestBodyTooLarge, util.ErrCodeBodyTooLarge)
-		return "", "", "", "", "", errors.New(util.RequestBodyTooLarge)
-	}
-
-	appInsId, tenantId, hostIp, packageId, appName, err := c.ValidateInstantiateInputParameters(clientIp, req)
-	if err != nil {
-		return "", "", "", "", "", err
-	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
-		return "", "", "", "", "", err
-	}
-	return appInsId, tenantId, hostIp, packageId, appName, nil
-}
-
-func (c *LcmControllerV2) ValidateInstantiateInputParameters(clientIp string, req models.InstantiateRequest) (string, string, string, string, string, error) {
-
-	hostIp := req.HostIp
-	err := util.ValidateIpv4Address(hostIp)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.HostIpIsInvalid, util.ErrCodeMecHostInvalid)
-		return "", "", "", "", "", err
-	}
-
-	packageId := req.PackageId
-	if len(packageId) == 0 {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.PackageIdIsInvalid, util.ErrCodePackageIdInvalid)
-		return "", "", "", "", "", err
-	}
-
-	if len(packageId) > 64 {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.PackageIdIsInvalid, util.ErrCodePackageIdInvalid)
-		return "", "", "", "", "", errors.New("package id length exceeds max limit")
-	}
-
-	appName := req.AppName
-	name, err := util.ValidateName(appName, util.NameRegex)
-	if err != nil || !name {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.AppNameIsNotValid, util.ErrCodeAppNameInvalid)
-		return "", "", "", "", "", errors.New(util.AppNameIsNotValid)
-	}
-
-	appInsId, err := c.getAppInstId(clientIp)
-	if err != nil {
-		return "", "", "", "", "", err
-	}
-
-	tenantId, err := c.getTenantId(clientIp)
-	if err != nil {
-		return "", "", "", "", "", err
-	}
-
-	return appInsId, tenantId, hostIp, packageId, appName, nil
-}
-
 func doPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
 		PkgHostKey: params.AppPackageId + params.TenantId + params.MecHost,
@@ -780,7 +721,7 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 	appInfoParams.AppName = params.AppName
 	appInfoParams.Origin = req.Origin
 
-	err = c.InsertOrUpdateTenantRecord(params.ClientIP, appInfoParams.TenantId)
+	err = c.insertOrUpdateAppInfoRecord(params.ClientIP, appInfoParams)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -803,6 +744,119 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 	}
 	c.handleLoggingForSuccess(nil, params.ClientIP, "Application instantiated successfully")
 }
+
+func (c *LcmControllerV2) validateToken(accessToken string, req models.InstantiateRequest, clientIp string) (string, string, string, string, string, error) {
+
+	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.RequestBodyTooLarge, util.ErrCodeBodyTooLarge)
+		return "", "", "", "", "", errors.New(util.RequestBodyTooLarge)
+	}
+
+	appInsId, tenantId, hostIp, packageId, appName, err := c.ValidateInstantiateInputParameters(clientIp, req)
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+	if err != nil {
+		c.HandleLoggingForTokenFailure(clientIp, err.Error())
+		return "", "", "", "", "", err
+	}
+	return appInsId, tenantId, hostIp, packageId, appName, nil
+}
+
+func (c *LcmControllerV2) ValidateInstantiateInputParameters(clientIp string, req models.InstantiateRequest) (string, string, string, string, string, error) {
+
+	hostIp := req.HostIp
+	err := util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.HostIpIsInvalid, util.ErrCodeMecHostInvalid)
+		return "", "", "", "", "", err
+	}
+
+	packageId := req.PackageId
+	if len(packageId) == 0 {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.PackageIdIsInvalid, util.ErrCodePackageIdInvalid)
+		return "", "", "", "", "", err
+	}
+
+	if len(packageId) > 64 {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.PackageIdIsInvalid, util.ErrCodePackageIdInvalid)
+		return "", "", "", "", "", errors.New("package id length exceeds max limit")
+	}
+
+	appName := req.AppName
+	name, err := util.ValidateName(appName, util.NameRegex)
+	if err != nil || !name {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.AppNameIsNotValid, util.ErrCodeAppNameInvalid)
+		return "", "", "", "", "", errors.New(util.AppNameIsNotValid)
+	}
+
+	appInsId, err := c.getAppInstId(clientIp)
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+
+	tenantId, err := c.getTenantId(clientIp)
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+
+	return appInsId, tenantId, hostIp, packageId, appName, nil
+}
+
+
+// Insert or update application info record
+func (c *LcmControllerV2) insertOrUpdateAppInfoRecord(clientIp string, appInfoParams models.AppInfoRecord) error {
+	origin := appInfoParams.Origin
+	if origin == "" {
+		origin = "MEO"
+	}
+	hostInfoRec := &models.MecHost{
+		MecHostId: appInfoParams.MecHost,
+	}
+
+	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	if readErr != nil {
+		c.HandleForErrorCode(clientIp, util.StatusNotFound,
+			util.MecHostRecDoesNotExist, util.ErrCodeNotFoundInDB)
+		return readErr
+	}
+	syncStatus := true
+	if origin == "MEPM" {
+		syncStatus = false
+	}
+	appInfoRecord := &models.AppInfoRecord{
+		AppInstanceId: appInfoParams.AppInstanceId,
+		MecHost:       appInfoParams.MecHost,
+
+		TenantId:     appInfoParams.TenantId,
+		AppPackageId: appInfoParams.AppPackageId,
+		AppName:      appInfoParams.AppName,
+		Origin:       origin,
+		SyncStatus:   syncStatus,
+		MecHostRec:   hostInfoRec,
+	}
+
+	count, err := c.Db.QueryCountForTable("app_info_record", util.TenantId, appInfoParams.TenantId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeReportByDB)
+		return err
+	}
+
+	if count >= util.MaxNumberOfRecords {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PackageNumUpToMax,
+			util.ErrCodePackNumUptoMax)
+		return errors.New("maximum number of app package records are exceeded for given tenant")
+	}
+
+	err = c.Db.InsertOrUpdateData(appInfoRecord, util.AppInsId)
+	if err != nil && err.Error() != util.LastInsertIdNotSupported {
+		log.Error("Failed to save app info record to database.")
+		return err
+	}
+	return nil
+}
+
 
 // Insert or update tenant info record
 func (c *LcmControllerV2) InsertOrUpdateTenantRecord(clientIp, tenantId string) error {
