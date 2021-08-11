@@ -1151,20 +1151,6 @@ func (c *LcmControllerV2) QueryKPI() {
 
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
-	if err != nil {
-		res := strings.Contains(err.Error(), util.NotFound)
-		if res {
-			c.HandleForErrorCode(clientIp, util.StatusNotFound, err.Error(), util.ErrCodeHostNotFoundInPlg)
-			return
-		}
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrorReportByPlugin)
-		return
-	}
-	//_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	//if err != nil {
-	//	c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
-	//	return
-	//}
 	c.handleLoggingForSuccess([]byte(response), clientIp, "Query kpi is successful")
 }
 
@@ -1238,12 +1224,12 @@ func (c *LcmControllerV2) QueryMepCapabilities() {
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
-		return
-	}
-	c.handleLoggingForSuccess(nil, clientIp, "Query mep capabilities is successful")
+	//_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
+	//if err != nil {
+	//	c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
+	//	return
+	//}
+	c.handleLoggingForSuccess(mepCapabilities, clientIp, "Query mep capabilities is successful")
 }
 
 // Get mep capability id from url
