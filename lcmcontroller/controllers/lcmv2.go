@@ -1205,7 +1205,7 @@ func (c *LcmControllerV2) QueryKPI() {
 
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
-	c.handleLoggingForSuccess([]byte(response), clientIp, "Query kpi is successful")
+	c.handleLoggingForSuccess(response, clientIp, "Query kpi is successful")
 }
 
 // Get host IP from url
