@@ -981,7 +981,33 @@ func (c *LcmControllerV2) TerminateV2() {
 	}
 
 	c.handleLoggingForSuccess(nil, clientIp, "Termination is successful")
-	c.ServeJSON()
+}
+
+
+// Get app Instance Id
+func (c *LcmControllerV2) getAppInstId(clientIp string) (string, error) {
+	appInsId := c.Ctx.Input.Param(":appInstanceId")
+	err := util.ValidateUUID(appInsId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, "App instance is invalid", util.ErrCodeInstanceIdInvalid)
+		return "", err
+	}
+	return appInsId, nil
+}
+
+// Get app info record
+func (c *LcmControllerV2) getAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {
+	appInfoRecord := &models.AppInfoRecord{
+		AppInstanceId: appInsId,
+	}
+
+	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
+	if readErr != nil {
+		c.HandleForErrorCode(clientIp, util.StatusNotFound,
+			"App info record does not exist in database", util.ErrCodeNotFoundInDB)
+		return nil, readErr
+	}
+	return appInfoRecord, nil
 }
 
 // Handle logging
@@ -1139,7 +1165,7 @@ func (c *LcmControllerV2) QueryKPI() {
 	//	c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
 	//	return
 	//}
-	c.handleLoggingForSuccess(response, clientIp, "Query kpi is successful")
+	c.handleLoggingForSuccess([]byte(response), clientIp, "Query kpi is successful")
 }
 
 // Get host IP from url
@@ -1899,7 +1925,6 @@ func (c *LcmControllerV2) DistributePackage() {
 	}
 
 	c.handleLoggingForSuccess(nil, clientIp, "Distributed application package successfully")
-	c.ServeJSON()
 }
 
 func (c *LcmControllerV2) ValidateDistributeInputParameters(clientIp string, req models.DistributeRequest) (string, error) {
@@ -2068,7 +2093,6 @@ func (c *LcmControllerV2) DistributionStatus() {
 	}
 
 	c.handleLoggingForSuccess(nil, clientIp, "Query app package records successful")
-	return
 }
 
 // @Title Sync app package records
