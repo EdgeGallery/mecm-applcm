@@ -1779,6 +1779,21 @@ func (c *LcmControllerV2) getVimAndHostIpFromPkgHostRec(clientIp, packageId, ten
 	return appPkgHostRecord.HostIp, vim, err
 }
 
+// Get app package host record
+func (c *LcmControllerV2) getAppPackageHostRecord(hostIp, appPkgId, tenantId, clientIp string) (*models.AppPackageHostRecord, error) {
+	appPkgHostRecord := &models.AppPackageHostRecord{
+		PkgHostKey: appPkgId + tenantId + hostIp,
+	}
+
+	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
+	if readErr != nil {
+		c.HandleForErrorCode(clientIp, util.StatusNotFound,
+			"App package host record does not exist in database", util.ErrCodeRecordNotExist)
+		return nil, readErr
+	}
+	return appPkgHostRecord, nil
+}
+
 // Update app package records
 func (c *LcmControllerV2) updateAppPkgRecord(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, hostIp, status string) error {
@@ -2114,20 +2129,7 @@ func (c *LcmControllerV2) DistributionStatus() {
 		appPkgs = append(appPkgs, p)
 	}
 
-	res, err := json.Marshal(appPkgs)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.FailedToMarshal, util.ErrCodeFailedToMarshal)
-		return
-	}
-
-	_, err = c.Ctx.ResponseWriter.Write(res)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes,
-			util.ErrCodeWriteResFailed)
-		return
-	}
-
-	c.handleLoggingForSuccess(nil, clientIp, "Query app package records successful")
+	c.handleLoggingForSuccess(appPkgs, clientIp, "Query app package records successful")
 }
 
 // @Title Sync app package records
