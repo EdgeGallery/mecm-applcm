@@ -45,8 +45,10 @@ type AppPackage struct {
 
 // AppInfo Information
 type AppInfo struct {
-	Pods []PodInfo `json:"pods"`
-	Services []ServiceInfo `json:"services"`
+	Pods       []PodInfo     `json:"pods"`
+	Services   []ServiceInfo `json:"services"`
+	CpuPercent float64       `json:"cpupercent"`
+	MemPercent float64       `json:"mempercent"`
 }
 
 // PodInfo Information

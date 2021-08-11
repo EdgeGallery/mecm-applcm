@@ -309,7 +309,7 @@ func testQueryInfo(t *testing.T) {
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	result, _ := client.Query(relName, namespace)
-	assert.Equal(t, "{\"pods\":null,\"services\":null}", result, "Test query info execution result")
+	assert.Equal(t, "{\"pods\":null,\"services\":null,\"cpupercent\":0,\"mempercent\":0}", result, "Test query info execution result")
 }
 
 func testQueryKpi(t *testing.T) {
