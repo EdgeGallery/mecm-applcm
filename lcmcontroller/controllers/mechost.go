@@ -282,12 +282,12 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
+	vim, err := c.GetVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		return err
 	}
 
-	adapter, err := c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+	adapter, err := c.GetPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
 	if err != nil {
 		return err
 	}
@@ -307,13 +307,13 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 
 	var origin = appInfoRecord.Origin
 	var tenantId = appInfoRecord.TenantId
-	err = c.deleteAppInfoRecord(appInfoRecord.AppInstanceId)
+	err = c.DeleteAppInfoRecord(appInfoRecord.AppInstanceId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 
-	err = c.deleteTenantRecord(clientIp, appInfoRecord.TenantId)
+	err = c.DeleteTenantRecord(clientIp, appInfoRecord.TenantId)
 	if err != nil {
 		return err
 	}

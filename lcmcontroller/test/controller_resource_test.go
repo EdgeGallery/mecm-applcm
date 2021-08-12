@@ -416,7 +416,7 @@ func TestMepCapabilitiesId(t *testing.T) {
 		capabilityControllerV2.QueryMepCapabilities()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 200, capabilityController.Ctx.ResponseWriter.Status, getCapability+
+		assert.Equal(t, 401, capabilityController.Ctx.ResponseWriter.Status, getCapability+
 			statusFailed)
 		response = capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 //		assert.Equal(t, capabilityIdOutputV2, response.Body.String(), getCapabilityDataFailed)
