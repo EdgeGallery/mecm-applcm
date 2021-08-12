@@ -932,13 +932,13 @@ func (c *LcmControllerV2) handleErrorForInstantiateApp(acm config.AppConfigAdapt
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteAuthCfgFail)
 		return
 	}
-	err = c.deleteAppInfoRecord(appInsId)
+	err = c.DeleteAppInfoRecord(appInsId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteDataFailed)
 		return
 	}
 
-	err = c.deleteTenantRecord(clientIp, tenantId)
+	err = c.DeleteTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return
 	}
@@ -1011,13 +1011,13 @@ func (c *LcmControllerV2) TerminateV2() {
 
 	var origin = appInfoRecord.Origin
 
-	err = c.deleteAppInfoRecord(appInsId)
+	err = c.DeleteAppInfoRecord(appInsId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteDataFailed)
 		return
 	}
 
-	err = c.deleteTenantRecord(clientIp, tenantId)
+	err = c.DeleteTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return
 	}
@@ -1108,7 +1108,7 @@ func (c *LcmControllerV2) QueryV2() {
 		return
 	}
 
-	appInsId, err := c.getAppInstId(clientIp)
+	appInsId, err := c.GetAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1326,7 +1326,7 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 		return
 	}
 
-	appInsId, err := c.getAppInstId(clientIp)
+	appInsId, err := c.GetAppInstId(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1617,7 +1617,7 @@ func (c *LcmControllerV2) deleteAppPkgRecords(packageId, tenantId, clientIp stri
 		return err
 	}
 
-	err = c.deleteTenantRecord(clientIp, tenantId)
+	err = c.DeleteTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return err
 	}
@@ -1903,7 +1903,7 @@ func (c *LcmControllerV2) delAppPkgRecords(clientIp, packageId, tenantId, hostIp
 		return err
 	}
 
-	err = c.deleteTenantRecord(clientIp, tenantId)
+	err = c.DeleteTenantRecord(clientIp, tenantId)
 	if err != nil {
 		return err
 	}

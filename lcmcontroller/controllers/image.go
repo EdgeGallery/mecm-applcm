@@ -242,7 +242,7 @@ func (c *ImageController) getInputParams(chunkNum int32) (accessToken string, bK
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
 
-	appInsId, err := c.getAppInstId(clientIp)
+	appInsId, err := c.GetAppInstId(clientIp)
 	if err != nil {
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
@@ -252,13 +252,13 @@ func (c *ImageController) getInputParams(chunkNum int32) (accessToken string, bK
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
+	vim, err := c.GetVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
 
 	if chunkNum == 0 {
-		adapter, err = c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+		adapter, err = c.GetPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
 		if err != nil {
 			return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 		}

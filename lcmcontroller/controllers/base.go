@@ -118,7 +118,7 @@ func (c *BaseController) isTenantAvailable() bool {
 }
 
 // Get app Instance Id
-func (c *BaseController) getAppInstId(clientIp string) (string, error) {
+func (c *BaseController) GetAppInstId(clientIp string) (string, error) {
 	appInsId := c.Ctx.Input.Param(":appInstanceId")
 	err := util.ValidateUUID(appInsId)
 	if err != nil {
@@ -174,7 +174,7 @@ func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, cli
 }
 
 // Get vim name
-func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) {
+func (c *BaseController) GetVim(clientIp string, hostIp string) (string, error) {
 
 	mecHostInfoRec, err := c.getMecHostInfoRecord(hostIp, clientIp)
 	if err != nil {
@@ -192,7 +192,7 @@ func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) 
 	return vim, nil
 }
 
-func (c *BaseController) getPluginAdapter(_, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+func (c *BaseController) GetPluginAdapter(_, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
 	error) {
 	var pluginInfo string
 
@@ -236,7 +236,7 @@ func (c *BaseController) HandleLoggingForFailure(clientIp string, errorString st
 }
 
 // Delete app info record
-func (c *BaseController) deleteAppInfoRecord(appInsId string) error {
+func (c *BaseController) DeleteAppInfoRecord(appInsId string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInstanceId: appInsId,
 	}
@@ -275,7 +275,7 @@ func (c *BaseController) deleteAppPackageHostRecord(hostIp, appPkgId, tenantId s
 }
 
 // Delete tenant record
-func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
+func (c *BaseController) DeleteTenantRecord(clientIp, tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
 		TenantId: tenantId,
 	}
