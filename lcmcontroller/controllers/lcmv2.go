@@ -1161,10 +1161,10 @@ func (c *LcmControllerV2) QueryV2() {
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmControllerV2) QueryKPI() {
 	log.Info("Application query kpi request received.")
-
-	log.Info("Application query kpi request received.")
 	clientIp, bKey, accessToken, err := c.getClientIpNew()
-
+	if err != nil {
+		return
+	}
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
@@ -1184,7 +1184,6 @@ func (c *LcmControllerV2) QueryKPI() {
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
 	c.handleKPI(clientIp, err, response)
-
 }
 
 func (c *LcmControllerV2) getClientIpNew() (clientIp string, bKey []byte,
