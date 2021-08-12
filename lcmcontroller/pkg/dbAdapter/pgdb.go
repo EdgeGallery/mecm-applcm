@@ -45,6 +45,7 @@ func (db *PgDb) InitOrmer() (err1 error) {
 	o := orm.NewOrm()
 	err1 = o.Using(util.Default)
 	if err1 != nil {
+		log.Error("Error using default:", err1)
 		return err1
 	}
 	db.ormer = o
@@ -79,6 +80,10 @@ func (db *PgDb) QueryCount(tableName string) (int64, error) {
 // Query count based on fieldname and fieldvalue
 func (db *PgDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
 	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
+	if err != nil {
+		log.Error("Failed to Query count based on fieldname and fieldvalue")
+		return num,err
+	}
 	return num, err
 }
 
@@ -114,6 +119,7 @@ func (db *PgDb) InitDatabase() error {
 	util.ClearByteArray(dbPwd)
 	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbPwdStr)
 	if validateDbParamsErr != nil || !dbParamsAreValid {
+		log.Error("Failed to validate db parameters:",validateDbParamsErr)
 		return errors.New("failed to validate db parameters")
 	}
 	registerDriverErr := orm.RegisterDriver(util.DriverName, orm.DRPostgres)
