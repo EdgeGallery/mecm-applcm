@@ -8,4 +8,4 @@ config
 log
 package
 ssl
-./config.ini
+config.ini
