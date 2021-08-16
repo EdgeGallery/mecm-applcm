@@ -36,7 +36,7 @@ RUN $HOME/venv/bin/pip3 install -r $HOME/requirements.txt
 
 RUN chmod -R 550 $HOME/core $HOME/internal $HOME/service $HOME/task $HOME/venv &&\
     chmod 550 $HOME/*.py $HOME/start.sh &&\
-    chmod 640 $HOME/conf/config-pro.ini
+    chmod 640 $HOME/config-pro.ini
 
 # 构建运行时镜像
 FROM base
