@@ -12,6 +12,16 @@ python3 -m grpc_tools.protoc --python_out=internal/lcmservice --grpc_python_out=
 pip install -r requirements.txt
 ```
 
+## 本地启动
+
++ 修改环境变量配置BASE_DIR
+
++ 拷贝 ./config-pro.ini 到 $BASE_DIR/config.ini
+
++ 修改config.ini的配置为本地配置
+
++ python3 main.py
+
 ## 启动环境变量
 |变量名|类型|说明|默认值|
 |---|---|----|----|
@@ -23,7 +33,7 @@ pip install -r requirements.txt
 |DB_HOST|ip|数据库host|127.0.0.1|
 |DB_PORT|number|数据库端口|5432|
 |DB_NAME|string|数据库名称|osplugindb|
-|BASE_DIR|path|基础路径|/app|
-|LOG_DIR|path|日志路径|/app/log|
+|BASE_DIR|path|基础路径|.|
+|LOG_DIR|path|日志路径|$BASE_DIR/log|
 |IMAGE_CHUNK_SIZE|byte|镜像分片大小(单位: 字节)|1 * 1024 * 1024|
 |SERVER_CA_VERIFY_DIR|path/false|openstack ssl配置(信任证书路径或false不校验证书)|false|

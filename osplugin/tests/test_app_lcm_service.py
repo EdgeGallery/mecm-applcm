@@ -189,8 +189,8 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         测试上传配置
         """
-        if not os.path.exists('target/config'):
-            os.mkdir('target/config')
+        if not os.path.exists('config'):
+            os.mkdir('config')
 
         with open('resources/test_config.rc', 'rb') as f:
             config_file = f.read()

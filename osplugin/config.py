@@ -19,9 +19,9 @@
 import os
 import configparser
 
-base_dir = os.getenv('BASE_DIR', '/app/usr')
+base_dir = os.getenv('BASE_DIR', '.')
 
-conf = configparser.ConfigParser()
+conf = configparser.RawConfigParser()
 conf.read(base_dir + '/config.ini')
 
 env = conf.get('default', 'env')
