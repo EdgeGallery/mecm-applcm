@@ -14,8 +14,6 @@
 # limitations under the License.
 
 """
-
-# !/usr/app/venv/python3
 # -*- coding: utf-8 -*-
 from core import grpc_server
 

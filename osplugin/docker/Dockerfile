@@ -25,7 +25,7 @@ ENV HOME=/usr/app
 
 RUN apt-get update && \
     apt-get install -y python3-pip python3-dev gcc libpq-dev && \
-    python3 -m venv /venv && \
+    python3 -m venv $HOME/venv && \
     $HOME/venv/bin/pip3 install --upgrade pip
 
 COPY . $HOME
@@ -35,14 +35,14 @@ WORKDIR $HOME
 RUN $HOME/venv/bin/pip3 install -r $HOME/requirements.txt
 
 RUN chmod -R 550 $HOME/core $HOME/internal $HOME/service $HOME/task $HOME/venv &&\
-    chmod 550 $HOME/*.py $HOME/configs/start.sh
+    chmod 550 $HOME/*.py $HOME/start.sh &&\
     chmod 640 $HOME/conf/config-pro.ini
 
 # 构建运行时镜像
 FROM base
 
 RUN sed -i "s|umask 022|umask 027|g" /etc/profile
-RUN mkdir -p /usr/app/log /usr/app/config /usr/app/package
+RUN mkdir /usr/app/bin /usr/app/src
 
 ENV HOME=/usr/app
 ENV UID=166
@@ -56,22 +56,23 @@ RUN groupadd -r -g $GID $GROUP_NAME &&\
 
 WORKDIR $HOME
 
+COPY --from=development $HOME/core $HOME/src/core
+COPY --from=development $HOME/internal $HOME/src/internal
+COPY --from=development $HOME/service $HOME/src/service
+COPY --from=development $HOME/task $HOME/src/task
+COPY --from=development $HOME/*.py $HOME/src/
+COPY --from=development $HOME/conf/config-pro.ini $HOME/config.ini
+COPY --from=development $HOME/start.sh $HOME/bin
+COPY --from=development $HOME/venv $HOME/venv
+
 RUN chmod 750 $HOME &&\
-    chmod 550 -R $HOME/bin &&\
+    chmod 550 $HOME/bin &&\
+    chmod 550 $HOME/src &&\
     mkdir -p -m 700 $HOME/ssl &&\
     mkdir -p -m 750 $HOME/log &&\
     mkdir -p -m 750 $HOME/config &&\
     mkdir -p -m 750 $HOME/package &&\
     chown -hR $USER_NAME:$GROUP_NAME $HOME
-
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/core $HOME/core
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/internal $HOME/internal
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/service $HOME/service
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/task $HOME/task
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/*.py $HOME/
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/conf/config-pro.ini $HOME/config.ini
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/start.sh $HOME/bin
-COPY --from=development --chown=$USER_NAME:$GROUP_NAME /venv $HOME/venv
 
 USER $USER_NAME
 

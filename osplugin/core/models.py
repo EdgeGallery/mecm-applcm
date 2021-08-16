@@ -23,7 +23,7 @@ import utils
 from core.log import logger
 from core.orm.adapter import db
 
-_APP_TASK_PATH = config.base_dir + '/tmp/tasks'
+_APP_TASK_PATH = '/tmp/osplugin/tasks'
 LOG = logger
 
 

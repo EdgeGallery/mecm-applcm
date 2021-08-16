@@ -15,4 +15,4 @@
 
 cd /usr/app
 umask 0027
-$HOME/main.py
+$HOME/venv/python3 $HOME/src/main.py
