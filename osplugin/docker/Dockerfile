@@ -42,7 +42,7 @@ RUN chmod -R 550 $HOME/core $HOME/internal $HOME/service $HOME/task $HOME/venv &
 FROM base
 
 RUN sed -i "s|umask 022|umask 027|g" /etc/profile
-RUN mkdir /usr/app/bin /usr/app/src
+RUN mkdir /usr/app /usr/app/bin /usr/app/src
 
 ENV HOME=/usr/app
 ENV UID=166
