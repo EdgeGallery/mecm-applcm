@@ -61,7 +61,7 @@ COPY --from=development $HOME/internal $HOME/src/internal
 COPY --from=development $HOME/service $HOME/src/service
 COPY --from=development $HOME/task $HOME/src/task
 COPY --from=development $HOME/*.py $HOME/src/
-COPY --from=development $HOME/conf/config-pro.ini $HOME/config.ini
+COPY --from=development $HOME/config-pro.ini $HOME/config.ini
 COPY --from=development $HOME/start.sh $HOME/bin
 COPY --from=development $HOME/venv $HOME/venv
 
