@@ -1,4 +1,4 @@
-#!/bin/sh
+"""
 # Copyright 2021 21CN Corporation Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd /usr/app
-umask 0027
-$HOME/venv/bin/python3 $HOME/bin/main.py
+"""
+# -*- coding: utf-8 -*-
+from internal.lcmservice import lcmservice_pb2
+from tests.grpc.client import app_lcm_stub
+from tests.resources.gen_token import test_access_token
+
+with open('../resources/test_config.rc', 'rb') as file:
+    data = file.read()
+
+request = iter([
+    lcmservice_pb2.UploadCfgRequest(accessToken=test_access_token),
+    lcmservice_pb2.UploadCfgRequest(hostIp='10.10.10.10'),
+    lcmservice_pb2.UploadCfgRequest(configFile=data)
+])
+
+if __name__ == '__main__':
+    response = app_lcm_stub.uploadConfig(request)
+    print(response)

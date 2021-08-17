@@ -28,21 +28,17 @@ RUN apt-get update && \
     python3 -m venv $HOME/venv && \
     $HOME/venv/bin/pip3 install --upgrade pip
 
-COPY . $HOME
-
 WORKDIR $HOME
 
-RUN $HOME/venv/bin/pip3 install -r $HOME/requirements.txt
+COPY requirements.txt $HOME/
 
-RUN chmod -R 550 $HOME/core $HOME/internal $HOME/service $HOME/task $HOME/venv &&\
-    chmod 550 $HOME/*.py $HOME/start.sh &&\
-    chmod 640 $HOME/config-pro.ini
+RUN $HOME/venv/bin/pip3 install -r $HOME/requirements.txt
 
 # 构建运行时镜像
 FROM base
 
 RUN sed -i "s|umask 022|umask 027|g" /etc/profile
-RUN mkdir /usr/app /usr/app/bin /usr/app/src
+RUN mkdir -p /usr/app/bin
 
 ENV HOME=/usr/app
 ENV UID=166
@@ -56,22 +52,19 @@ RUN groupadd -r -g $GID $GROUP_NAME &&\
 
 WORKDIR $HOME
 
-COPY --from=development $HOME/core $HOME/src/core
-COPY --from=development $HOME/internal $HOME/src/internal
-COPY --from=development $HOME/service $HOME/src/service
-COPY --from=development $HOME/task $HOME/src/task
-COPY --from=development $HOME/*.py $HOME/src/
-COPY --from=development $HOME/config-pro.ini $HOME/config.ini
-COPY --from=development $HOME/start.sh $HOME/bin
 COPY --from=development $HOME/venv $HOME/venv
 
-RUN chmod 750 $HOME &&\
-    chmod 550 $HOME/bin &&\
-    chmod 550 $HOME/src &&\
-    mkdir -p -m 700 $HOME/ssl &&\
-    mkdir -p -m 750 $HOME/log &&\
-    mkdir -p -m 750 $HOME/config &&\
-    mkdir -p -m 750 $HOME/package &&\
+COPY . $HOME/bin
+
+RUN rm -rf bin/tests bin/.gitignore bin/README.MD bin/requirements.txt bin/docker &&\
+    mv $HOME/bin/config-pro.ini $HOME/config.ini && chmod 640 $HOME/config.ini &&\
+    chmod 750 $HOME &&\
+    chmod -R 550 $HOME/bin &&\
+    chmod -R 550 $HOME/venv && \
+    mkdir -m 700 $HOME/ssl &&\
+    mkdir -m 750 $HOME/log &&\
+    mkdir -m 750 $HOME/config &&\
+    mkdir -m 750 $HOME/package &&\
     chown -hR $USER_NAME:$GROUP_NAME $HOME
 
 USER $USER_NAME
