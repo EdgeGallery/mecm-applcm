@@ -243,6 +243,7 @@ func (c *BaseController) DeleteAppInfoRecord(appInsId string) error {
 
 	err := c.Db.DeleteData(appInfoRecord, util.AppInsId)
 	if err != nil {
+		c.HandleLoggingForError(appInsId, util.StatusInternalServerError, err.Error())
 		return err
 	}
 	return nil
@@ -256,6 +257,7 @@ func (c *BaseController) deleteAppPackageRecord(appPkgId string, tenantId string
 
 	err := c.Db.DeleteData(appPkgRecord, util.AppPkgId)
 	if err != nil {
+		c.HandleLoggingForError(appPkgId, util.StatusInternalServerError, err.Error())
 		return err
 	}
 	return nil
@@ -269,6 +271,7 @@ func (c *BaseController) deleteAppPackageHostRecord(hostIp, appPkgId, tenantId s
 
 	err := c.Db.DeleteData(appPkgHostRecord, util.PkgHostKey)
 	if err != nil {
+		c.HandleLoggingForError(hostIp, util.StatusInternalServerError, err.Error())
 		return err
 	}
 	return nil

@@ -23,7 +23,7 @@ import (
 // Init Db adapter
 func GetDbAdapter() (Database, error) {
 	dbAdapter := util.GetAppConfig("dbAdapter")
-	dbAdapter = "pgDb"
+	//dbAdapter = "pgDb"
 	switch dbAdapter {
 	case "pgDb":
 		db := &PgDb{}
