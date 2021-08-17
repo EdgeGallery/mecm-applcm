@@ -22,7 +22,7 @@ import uuid
 from core import openstack_utils
 from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
-from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest,\
+from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
 from core.openstack_utils import create_glance_client, create_heat_client
 
@@ -34,7 +34,7 @@ from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
     RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
-    WorkloadEventsResponse, InstantiateResponse
+    WorkloadEventsResponse, InstantiateResponse, QueryKPIResponse
 
 from pony.orm import db_session, rollback, commit
 from task.app_instance_task import start_check_stack_status
@@ -98,6 +98,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
     """
     AppLcmService
     """
+
     @db_session
     def uploadPackage(self, request_iterator, context):
         """
@@ -371,11 +372,58 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
     @db_session
     def queryPackage(self, request, context):
-        pass
+        """
+        查询app包加载状态
+        Args:
+            request:
+            context:
+
+        Returns:
+
+        """
+        LOG.info('receive query app package msg...')
+        resp = QueryResponse(response=utils.FAILURE_JSON)
+
+        LOG.debug('校验access token, host ip')
+        host_ip = validate_input_params(BaseRequest(request))
+        if host_ip is None:
+            resp.response = '{"code":400}'
+            return resp
+
+        LOG.debug('检查app包状态')
+        app_pkg_mapper = AppPkgMapper.get(app_package_id=request.packageId,
+                                          host_ip=host_ip)
+        if app_pkg_mapper is None:
+            LOG.error('app pkg %s not found', request.packageId)
+            resp.response = '{"code":404}'
+            return resp
+
+        image_infos = VmImageInfoMapper.select(app_package_id=request.packageId, host_ip=host_ip)
+
+        response_data = {
+            'code': 200,
+            'appPackageId': app_pkg_mapper.app_package_id,
+            'hostIp': app_pkg_mapper.host_ip,
+            'status': app_pkg_mapper.status,
+            'imageInfos': list(map(lambda x: {'imageName': x.image_name, 'status': x.status}, image_infos))
+        }
+
+        resp.response = json.dumps(response_data)
+        return resp
 
     @db_session
     def queryKPI(self, request, context):
-        pass
+        """
+        查询host资源信息
+        Args:
+            request:
+            context:
+
+        Returns:
+
+        """
+        resp = QueryKPIResponse(response=utils.FAILURE_JSON)
+        return resp
 
     @db_session
     def workloadEvents(self, request, context):

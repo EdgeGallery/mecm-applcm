@@ -51,19 +51,15 @@ def _check_package_status(package_id, host_ip):
 
     """
     time.sleep(5)
-    try:
-        package = AppPkgMapper.get(app_package_id=package_id, host_ip=host_ip)
-        if package is None:
-            logger.debug("package record %s not found", package_id)
-            return
-        image_infos = VmImageInfoMapper.select(app_package_id=package_id, host_ip=host_ip)
-    except Exception as exception:
-        logger.error(exception, exc_info=True)
+    package = AppPkgMapper.get(app_package_id=package_id, host_ip=host_ip)
+    if package is None:
+        logger.debug("package record %s not found", package_id)
         return
+    image_infos = VmImageInfoMapper.select(app_package_id=package_id, host_ip=host_ip)
     for image_info in image_infos:
         if image_info.status == utils.ACTIVE:
             continue
-        if image_info.status == utils.KILLED:
+        elif image_info.status == utils.KILLED:
             package.status = utils.FAILURE
         else:
             package.status = utils.SAVING

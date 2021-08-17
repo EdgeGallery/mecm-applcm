@@ -17,6 +17,7 @@
 
 # -*- coding: utf-8 -*-
 import time
+import warnings
 
 import urllib3
 from pony.orm import db_session, commit
@@ -173,6 +174,7 @@ def _import_image_by_os_func(image_id, host_ip, uri):
     """
     使用Openstack自带功能上传远端镜像
     """
+    warnings.warn("此方法已废弃，不推荐使用", DeprecationWarning)
     glance = create_glance_client(host_ip)
     try:
         glance.images.image_import(image_id, method='web-download', uri=uri)
