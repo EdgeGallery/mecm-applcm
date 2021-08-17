@@ -179,6 +179,17 @@ message DeletePackageResponse {
   string status = 1;
 }
 
+message UploadPackageStatusRequest {
+  string accessToken = 1;
+  string appPackageId = 2;
+  string hostIp = 3;
+  string tenantId = 4;
+}
+
+message UploadPackageStatusResponse {
+  string status = 1;
+}
+
 service AppLCM {
   rpc instantiate (InstantiateRequest) returns (InstantiateResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
@@ -189,6 +200,7 @@ service AppLCM {
   rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}
   rpc uploadPackage (stream UploadPackageRequest) returns (UploadPackageResponse) {}
   rpc deletePackage (DeletePackageRequest) returns (DeletePackageResponse) {}
+  rpc uploadPackageStatus (UploadPackageStatusRequest) returns (UploadPackageStatusResponse) {}
 }
 
 service VmImage {

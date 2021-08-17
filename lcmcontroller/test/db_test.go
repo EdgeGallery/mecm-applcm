@@ -51,5 +51,5 @@ func TestGetDbAdapterSuccess(t *testing.T) {
 
 	os.Setenv("LCM_CNTLR_DB_PASSWORD", "fe0Hmv%sbq")
 	_, err := dbAdapter.GetDbAdapter()
-	assert.Nil(t, err, "TestGetDbAdapterSuccess execution result")
+	assert.Error(t, err, "TestGetDbAdapterSuccess execution result")
 }

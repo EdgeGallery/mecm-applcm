@@ -140,6 +140,13 @@ func (a AppLCMServer) WorkloadEvents(ctx context.Context, request *lcmservice.Wo
 	return resp, nil
 }
 
+func (a AppLCMServer) UploadPackageStatus(ctx context.Context, request *lcmservice.UploadPackageStatusRequest) (*lcmservice.UploadPackageStatusResponse, error) {
+	resp := &lcmservice.UploadPackageStatusResponse{
+		Status: SUCCESS_RETURN,
+	}
+	return resp, nil
+}
+
 func (a AppLCMServer) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer) error {
 	for {
 		req, err := stream.Recv()

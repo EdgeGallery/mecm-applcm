@@ -525,3 +525,26 @@ func (c *ClientGRPC) DeletePackage(ctx context.Context, tenantId string, hostIP 
 	}
 	return resp.Status, err
 }
+
+
+// Upload Package status
+func (c *ClientGRPC) UploadPackageStatus(ctx context.Context, tenantId string, hostIP string, packageId string, accessToken string) (status string, error error) {
+	req := &lcmservice.UploadPackageStatusRequest{
+		AccessToken:  accessToken,
+		AppPackageId: packageId,
+		HostIp:       hostIP,
+		TenantId:     tenantId,
+	}
+
+	log.WithFields(log.Fields{
+		"tenant":     tenantId,
+		"hostIp":     hostIP,
+		"packageId":  packageId,
+	}).Info("Upload Package Status!")
+
+	resp, err := c.client.UploadPackageStatus(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Status, err
+}
