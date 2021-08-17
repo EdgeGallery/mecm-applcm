@@ -15,8 +15,19 @@
 
 """
 # -*- coding: utf-8 -*-
-from core import grpc_server
+from internal.lcmservice import lcmservice_pb2
+from tests.grpc.client import app_lcm_stub
+from tests.resources.gen_token import test_access_token
 
+with open('../resources/test_config.rc', 'rb') as file:
+    data = file.read()
 
-if __name__ == "__main__":
-    grpc_server.serve()
+request = iter([
+    lcmservice_pb2.UploadCfgRequest(accessToken=test_access_token),
+    lcmservice_pb2.UploadCfgRequest(hostIp='10.10.10.10'),
+    lcmservice_pb2.UploadCfgRequest(configFile=data)
+])
+
+if __name__ == '__main__':
+    response = app_lcm_stub.uploadConfig(request)
+    print(response)

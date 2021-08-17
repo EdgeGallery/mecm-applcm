@@ -19,30 +19,56 @@ RUN apt-get update && \
     apt-get install -y python3 python3-venv libpq5
 
 # 构建pip3依赖镜像并下载依赖
-FROM base AS developement
+FROM base AS development
+
+ENV HOME=/usr/app
 
 RUN apt-get update && \
     apt-get install -y python3-pip python3-dev gcc libpq-dev && \
-    python3 -m venv /venv && \
-    /venv/bin/pip3 install --upgrade pip
+    python3 -m venv $HOME/venv && \
+    $HOME/venv/bin/pip3 install --upgrade pip
 
-COPY requirements.txt /requirements.txt
+WORKDIR $HOME
 
-RUN /venv/bin/pip3 install -r /requirements.txt
+COPY requirements.txt $HOME/
+
+RUN $HOME/venv/bin/pip3 install -r $HOME/requirements.txt
 
 # 构建运行时镜像
 FROM base
 
-RUN mkdir -p /usr/app/log /usr/app/config /usr/app/package
-WORKDIR /usr/app
+RUN sed -i "s|umask 022|umask 027|g" /etc/profile
+RUN mkdir -p /usr/app/bin
 
-COPY core ./core
-COPY internal ./internal
-COPY service ./service
-COPY task ./task
-COPY *.py ./
-COPY configs/config-pro.ini ./config.ini
+ENV HOME=/usr/app
+ENV UID=166
+ENV GID=166
+ENV USER_NAME=eguser
+ENV GROUP_NAME=eggroup
+ENV ENV="/etc/profile"
 
-COPY --from=developement /venv ./venv
+RUN groupadd -r -g $GID $GROUP_NAME &&\
+    useradd -r -u $UID -g $GID -d $HOME -s /sbin/nologin -c "Docker image user" $USER_NAME
 
-CMD ./venv/bin/python3 main.py
+WORKDIR $HOME
+
+COPY --from=development $HOME/venv $HOME/venv
+
+COPY . $HOME/bin
+
+RUN rm -rf bin/tests bin/.gitignore bin/README.MD bin/requirements.txt bin/docker &&\
+    mv $HOME/bin/config-pro.ini $HOME/config.ini && chmod 640 $HOME/config.ini &&\
+    chmod 750 $HOME &&\
+    chmod -R 550 $HOME/bin &&\
+    chmod -R 550 $HOME/venv && \
+    mkdir -m 700 $HOME/ssl &&\
+    mkdir -m 750 $HOME/log &&\
+    mkdir -m 750 $HOME/config &&\
+    mkdir -m 750 $HOME/package &&\
+    chown -hR $USER_NAME:$GROUP_NAME $HOME
+
+USER $USER_NAME
+
+EXPOSE 8234
+
+CMD ["sh", "-c", "$HOME/bin/start.sh"]

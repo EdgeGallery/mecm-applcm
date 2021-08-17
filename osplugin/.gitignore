@@ -1,6 +1,11 @@
 venv
 .idea
-target
 *pycache*
 .coverage
-./config.ini
+
+# app temp file
+config
+log
+package
+ssl
+config.ini
