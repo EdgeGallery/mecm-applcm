@@ -218,7 +218,7 @@ func (c *ImageController) getImageId(clientIp string) (string, error) {
 // Get Chunk number
 func (c *ImageController) getChunkNum() (int32, error) {
 	chunkString := c.Ctx.Request.Header.Get("chunk_num")
-
+	log.Info("chunk_num is:" + chunkString)
 	i, err := strconv.ParseInt(chunkString, 10, 32)
 	if err != nil {
 		return 0, errors.New("Chunk number is invalid")
@@ -242,7 +242,7 @@ func (c *ImageController) getInputParams(chunkNum int32) (accessToken string, bK
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
 
-	appInsId, err := c.getAppInstId(clientIp)
+	appInsId, err := c.GetAppInstId(clientIp)
 	if err != nil {
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
@@ -252,13 +252,13 @@ func (c *ImageController) getInputParams(chunkNum int32) (accessToken string, bK
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
 
-	vim, err := c.getVim(clientIp, appInfoRecord.MecHost)
+	vim, err := c.GetVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
 
 	if chunkNum == 0 {
-		adapter, err = c.getPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
+		adapter, err = c.GetPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
 		if err != nil {
 			return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 		}

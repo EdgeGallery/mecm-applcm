@@ -325,6 +325,7 @@ type AppPkgDetails struct {
 	App_package_version  string `json:"app_package_version"`
 	App_release_data_time   string `json:"app_release_data_time"`
 	App_type string `json:"app_type"`
+	App_class string `json:"app_class"`
 	App_package_description  string `json:"app_package_description"`
 }
 
@@ -332,4 +333,25 @@ type AppPkgDetails struct {
 type AppPackageResponse struct {
 	AppId     string `json:"appId"`
 	PackageId string `json:"packageId"`
+}
+
+type ReturnResponse struct {
+	Data    interface{} `json:"data"`
+	RetCode int         `json:"retCode"`
+	Message string      `json:"message"`
+	Params  []string    `json:"params"`
+}
+
+// AppInfoParams info record for Instantiate
+type AppInfoParams struct {
+	AppInstanceId string
+	MecHost       string
+	DeployType    string
+	TenantId      string
+	AppPackageId  string
+	AppName       string
+	Origin        string
+	SyncStatus    bool
+	ClientIP      string
+	AccessToken   string
 }

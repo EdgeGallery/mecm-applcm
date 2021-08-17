@@ -91,7 +91,7 @@ func doTest(t *testing.T) {
 		"appId": "e261211d80d04cb6aed00e5cd1f2cd11",
 	}
 
-	testDb := &mockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
+	testDb := &MockDb{appInstanceRecords: make(map[string]models.AppInfoRecord),
 		tenantRecords: make(map[string]models.TenantInfoRecord),
 		appPackageRecords: make(map[string]models.AppPackageRecord),
 		mecHostRecords: make(map[string]models.MecHost),
@@ -99,14 +99,17 @@ func doTest(t *testing.T) {
 
 	//Upload package
 	testUploadPackage(t, extraParams, path, testDb)
+	testUploadPackageV2(t, extraParams, path, testDb)
 
 	testAddMecHost(t, extraParams, testDb)
 
 	//Distribute package
 	testDistributePackage(t, extraParams, testDb)
+	testDistributePackageV2(t, extraParams, testDb)
 
 	// Test instantiate
 	testInstantiate(t, extraParams, testDb)
+	testInstantiateV2(t, extraParams, testDb)
 
 	// Test work load events
 	testWorkloadEvents(t, nil, "", testDb, "Success")
@@ -128,6 +131,7 @@ func doTest(t *testing.T) {
 
 	// Test delete package
 	testDeletePackageOnHost(t, extraParams, testDb)
+	testDeletePackageOnHostV2(t, extraParams, testDb)
 
 	// Update path to config file
 	path, _ = os.Getwd()
@@ -135,12 +139,15 @@ func doTest(t *testing.T) {
 
 	// Test upload
 	testUpload(t, extraParams, path, testDb)
+	testUploadV2(t, extraParams, path, testDb)
 
 	// Test removal
 	testRemoval(t, extraParams, path, testDb)
+	testRemovalV2(t, extraParams, path, testDb)
 
 	// Test terminate
 	testTerminate(t, nil, "", testDb)
+	testTerminateV2(t, nil, "", testDb)
 
 	// Common cleaning state
 	// Clear the created artifacts

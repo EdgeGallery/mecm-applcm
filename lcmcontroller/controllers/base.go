@@ -17,6 +17,7 @@
 package controllers
 
 import (
+	"bufio"
 	"errors"
 	"github.com/astaxie/beego"
 	log "github.com/sirupsen/logrus"
@@ -24,6 +25,7 @@ import (
 	"lcmcontroller/pkg/dbAdapter"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
+	"os"
 	"strings"
 )
 
@@ -46,14 +48,30 @@ func (c *BaseController) HandleLoggingForError(clientIp string, code int, errMsg
 		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 }
 
+func (c *BaseController) HandleForErrorCode(clientIp string, code int, errMsg string, errCode int) {
+	errConent := &models.ReturnResponse{
+		Data:    nil,
+		RetCode: errCode,
+		Message: errMsg,
+		Params: nil,
+	}
+	c.writeErrorResponseV2(errConent, code)
+	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
+}
+
 // Write error response
 func (c *BaseController) writeErrorResponse(errMsg string, code int) {
 	log.Error(errMsg)
 	c.writeResponse(errMsg, code)
 }
 
+func (c *BaseController) writeErrorResponseV2(conent *models.ReturnResponse, code int) {
+	c.writeResponse(conent, code)
+}
+
 // Write response
-func (c *BaseController) writeResponse(msg string, code int) {
+func (c *BaseController) writeResponse(msg interface{}, code int) {
 	c.Data["json"] = msg
 	c.Ctx.ResponseWriter.WriteHeader(code)
 	c.ServeJSON()
@@ -100,7 +118,7 @@ func (c *BaseController) isTenantAvailable() bool {
 }
 
 // Get app Instance Id
-func (c *BaseController) getAppInstId(clientIp string) (string, error) {
+func (c *BaseController) GetAppInstId(clientIp string) (string, error) {
 	appInsId := c.Ctx.Input.Param(":appInstanceId")
 	err := util.ValidateUUID(appInsId)
 	if err != nil {
@@ -156,7 +174,7 @@ func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, cli
 }
 
 // Get vim name
-func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) {
+func (c *BaseController) GetVim(clientIp string, hostIp string) (string, error) {
 
 	mecHostInfoRec, err := c.getMecHostInfoRecord(hostIp, clientIp)
 	if err != nil {
@@ -174,7 +192,7 @@ func (c *BaseController) getVim(clientIp string, hostIp string) (string, error) 
 	return vim, nil
 }
 
-func (c *BaseController) getPluginAdapter(_, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+func (c *BaseController) GetPluginAdapter(_, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
 	error) {
 	var pluginInfo string
 
@@ -218,7 +236,7 @@ func (c *BaseController) HandleLoggingForFailure(clientIp string, errorString st
 }
 
 // Delete app info record
-func (c *BaseController) deleteAppInfoRecord(appInsId string) error {
+func (c *BaseController) DeleteAppInfoRecord(appInsId string) error {
 	appInfoRecord := &models.AppInfoRecord{
 		AppInstanceId: appInsId,
 	}
@@ -257,21 +275,21 @@ func (c *BaseController) deleteAppPackageHostRecord(hostIp, appPkgId, tenantId s
 }
 
 // Delete tenant record
-func (c *BaseController) deleteTenantRecord(clientIp, tenantId string) error {
+func (c *BaseController) DeleteTenantRecord(clientIp, tenantId string) error {
 	tenantRecord := &models.TenantInfoRecord{
 		TenantId: tenantId,
 	}
 
 	count, err := c.Db.QueryCountForTable("app_info_record", util.TenantId, tenantId)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeNotFoundInDB)
 		return err
 	}
 
 	if count == 0 {
 		err = c.Db.DeleteData(tenantRecord, util.TenantId)
 		if err != nil {
-			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteDataFailed)
 			return err
 		}
 	}
@@ -286,8 +304,7 @@ func (c *BaseController) getMecHostInfoRecord(hostIp string, clientIp string) (*
 
 	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
 	if readErr != nil {
-		c.HandleLoggingForError(clientIp, util.StatusNotFound,
-			"Mec host info record does not exist in database")
+		c.HandleLoggingForError(clientIp, util.StatusNotFound, util.MecHostRecDoesNotExist)
 		return nil, readErr
 	}
 	return mecHostInfoRecord, nil
@@ -300,4 +317,58 @@ func (c *BaseController) HandleLoggingForTokenFailure(clientIp, errorString stri
 	} else {
 		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 	}
+}
+
+
+func readMfBytes(mfYaml *os.File) ([]byte, error) {
+	scanner := bufio.NewScanner(mfYaml)
+	scanner.Split(bufio.ScanLines)
+	// This is our buffer now
+	var lines []byte
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if checkLineStart(line) {
+			lines = append(lines, []byte(line)...)
+			lines = append(lines, []byte("\n")...)
+		}
+	}
+	return lines, nil
+}
+
+func checkLineStart(line string) bool {
+	res := false
+	res = strings.HasPrefix(line, util.PkgDtlMetadata)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppName)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppId)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppVersion)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppRlsTime)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppType)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppClass)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppDescription)
+	if res {
+		return true
+	}
+	return res
 }

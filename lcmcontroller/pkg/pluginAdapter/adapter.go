@@ -70,6 +70,23 @@ func (c *PluginAdapter) Query(accessToken, appInsId, host string) (response stri
 	return response, nil
 }
 
+
+// Query application
+func (c *PluginAdapter) QueryKPI(accessToken, host string) (response string, error error) {
+	log.Info("Query KPI started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.QueryKPI(ctx, accessToken, host)
+	if err != nil {
+		log.Errorf("failed to query kpi information")
+		return "", err
+	}
+	log.Info("Query kpi completed with status: Success")
+	return response, nil
+}
+
 // Terminate application
 func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId string) (status string, error error) {
 	log.Info("Terminate started")
@@ -198,7 +215,7 @@ func (c *PluginAdapter) DownloadVmImage(imgCtrlr *beegoCtx.Response, host string
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Hour)
 	defer cancel()
 
-	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum, imgCtrlr)
+	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum)
 	if err != nil {
 		log.Error("failed to download VM image chunk")
 		return response, err
@@ -218,7 +235,7 @@ func (c *PluginAdapter) UploadPackage(tenantId string, appPkg string, host strin
 
 	status, err := c.client.UploadPackage(ctx, tenantId, appPkg, host, packageId, accessToken)
 	if err != nil {
-		log.Error("failed to upload configuration")
+		log.Error("failed to upload Package")
 		return util.Failure, err
 	}
 

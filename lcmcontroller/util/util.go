@@ -68,26 +68,39 @@ const (
 	HostIp                          = "mec_host_id"
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
-	FailedToMakeDir                 = "failed to make directory"
-	FileNameNotFound                = "file name not found with "
-	AppNameIsNotValid               = "AppName is invalid"
-	HostIpIsInvalid                 = "MecHost address is invalid"
-	PackageIdIsInvalid              = "package id is invalid"
-	OriginIsInvalid                 = "Origin is invalid"
-	RecordDoesNotExist              = "Records does not exist"
-	RequestBodyTooLarge             = "request body too large"
-	FailedToUploadToPlugin          = "failed to upload package to plugin"
-	FailedToInstantiate             = "failed to instantiate app"
-	MaxSize                  int    = 20
-	MaxBackups               int    = 50
-	MaxAge                          = 30
-	MaxConfigFile            int64  = 5242880
-	MaxAppPackageFile        int64  = 536870912
-	Timeout                         = 180
-	MaxNumberOfRecords              = 50
-	MaxNumberOfTenantRecords        = 20
-	MaxNumberOfHostRecords          = 20
-	MaxFileNameSize                 = 128
+
+	FailedToMakeDir                = "failed to make directory"
+	FileNameNotFound               = "file name not found with "
+	AppIdIsNotValid                = "AppName is invalid"
+	AppNameIsNotValid              = "AppName is invalid"
+	HostIpIsInvalid                = "MecHost address is invalid"
+	PackageIdIsInvalid             = "package id is invalid"
+	TenantIdIsInvalid              = "package id is invalid"
+	OriginIsInvalid                = "Origin is invalid"
+	RecordDoesNotExist             = "Records does not exist"
+	RequestBodyTooLarge            = "request body too large"
+	FailedToUploadToPlugin         = "failed to upload package to plugin"
+	UploadPackageSuccess           = "Uploaded application package successfully"
+	FailedToInstantiate            = "failed to instantiate app"
+	FailedToCovertYamlToJson       = "failed to convert yaml to json"
+	NotFound                       = "not found"
+	UploadConfigSuccess            = "Upload config is successful"
+	GetPackageDetailsFailed        = "failed to get app package details"
+	PluginErrorReport              = "Failed to do operate on Plugin"
+	InsertDBWithError              = "Failed to insert data to DB"
+	PackageNumUpToMax              = "Maximum number of app package records are exceeded for given tenant"
+	TenantNumUpToMax               = "Maximum number of tenant records are exceeded"
+	FailedToSaveAppInfo            = "Failed to save app info record to database."
+	MaxSize                  int   = 20
+	MaxBackups               int   = 50
+	MaxAge                         = 30
+	MaxConfigFile            int64 = 5242880
+	MaxAppPackageFile        int64 = 536870912
+	Timeout                        = 180
+	MaxNumberOfRecords             = 500
+	MaxNumberOfTenantRecords       = 20
+	MaxNumberOfHostRecords         = 20
+	MaxFileNameSize                = 128
 
 	BadRequest                int = 400
 	StatusUnauthorized        int = 401
@@ -95,6 +108,69 @@ const (
 	StatusNotFound            int = 404
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
+
+	SuccessCode int = 200
+
+	//Base Error Code
+	ErrCodeForbidden         int = 31000
+	ErrCodeTokenInvalid      int = 31001
+	ErrCodeIPInvalid         int = 31002
+	ErrCodeMecHostInvalid    int = 31003
+	ErrCodeBodyTooLarge      int = 31005
+	ErrCodeHostNotExist      int = 31006
+	ErrCodeAppIdInvalid      int = 31007
+	ErrCodePackageIdInvalid  int = 31008
+	ErrCodeTenantIdInvalid   int = 31009
+	ErrCodeAppNameInvalid    int = 31010
+	ErrCodePackDistributed   int = 31012
+	ErrCodeInstanceIsExist   int = 31013
+	ErrCodeProcessAkSkFailed int = 31014
+	ErrCodeHostNotFoundInPlg int = 31015
+	ErrorReportByPlugin      int = 31016
+	ErrCodeWriteResFailed    int = 31018
+	ErrCodeInvalidCapId      int = 31020
+	ErrCodeCallForMep        int = 31022
+	ErrCodeFailedToMarshal   int = 31023
+	ErrCodeFailedToUnMarshal int = 31024
+	ErrCodeTenantNumUpToMax  int = 31025
+	ErrCodeInvalidRequest    int = 31027
+	ErrCodeOriginInvalid     int = 31029
+	ErrCodeGetVimFailed      int = 31032
+	ErrCodeDeleteFileFailed  int = 31034
+	ErrCodeInstanceIdInvalid int = 31035
+
+	//File Error Code
+	ErrCodeFileCanNotRead   int = 31100
+	ErrCodeFileNameTooLang  int = 31102
+	ErrCodeFileToBig        int = 31103
+	ErrCodeFailedToSaveFile int = 31104
+	ErrCodeFailedToExtract  int = 31105
+	ErrCodeFailedGetDetails int = 31106
+	ErrCodePackNumUptoMax   int = 31107
+
+	//Plugin Error Code
+	ErrCodeFailedGetPlugin      int = 31201
+	ErrCodePluginReportFailed   int = 31202
+	ErrCodeGetWorkloadFailed    int = 31203
+	ErrCodeFailedGetClient      int = 31204
+	ErrCodeUploadToPluginFailed int = 31205
+	ErrCodePluginNotFound       int = 31206
+
+	//DB Error Code
+	ErrCodeInsertDataFailed  int = 31300
+	ErrCodeNotFoundInDB      int = 31301
+	ErrCodeDeleteDataFailed  int = 31302
+	ErrCodeRecordNotExist    int = 31303
+	ErrCodeReportByDB        int = 31305
+	ErrCodeSaveAppInfoFailed int = 31304
+
+	//Instantiate Error Code
+	ErrCodePluginInstFailed  int = 31601
+	ErrCodeDeleteAuthCfgFail int = 31602
+
+
+	ErrCodeInternalServer int = 31503
+	ErrCodeBadRequest     int = 31400
 
 	UuidRegex     = `^[a-fA-F0-9]{8}[a-fA-F0-9]{4}4[a-fA-F0-9]{3}[8|9|aA|bB][a-fA-F0-9]{3}[a-fA-F0-9]{12}$`
 	NameRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-]*[\\d\\p{L}]$"
@@ -135,10 +211,11 @@ const (
 	PrometheusServerName = "PROMETHEUS_SERVER_NAME"
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
+	Lcmcontrollerv2      = "lcmcontroller/controllers:LcmControllerV2"
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Mepcontroller        = "lcmcontroller/controllers:MepController"
-	Hosts                = "/hosts"
+	Hosts                = "/v1/hosts"
 	DELETE               = "delete"
 	GET                  = "get"
 	POST                 = "post"
@@ -150,14 +227,28 @@ const (
 	Accept               = "Accept"
 	MecHostInfo          = "MecHostInfo"
 	PkgId                = "package_id"
-	PkgUrlPath           = "/tenants/:tenantId/packages/:packageId"
+	PkgUrlPath           = "/v1/tenants/:tenantId/packages/:packageId"
+
+	PkgUrlPathV2 = "/v2/tenants/:tenantId/packages/:packageId"
 
 	//mep service calling
-	ErrCallFromMep  string = "failed to execute rest calling, check if mep service is ready."
-	MepServiceQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/services"
-	MepKongLogQuery string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
+	ErrCallFromMep        string = "failed to execute rest calling, check if mep service is ready."
+	MepServiceQuery       string = "https://mep-mm5.mep:80/mep/service_govern/v1/services"
+	MepKongLogQuery       string = "https://mep-mm5.mep:80/mep/service_govern/v1/kong_log"
 	MepSubscribeStatistic string = "https://mep-mm5.mep:80/mep/service_govern/v1/subscribe_statistic"
+
+	PkgDtlMetadata       = "metadata"
+	PkgDtlAppName        = "app_product_name"
+	PkgDtlAppId          = "app_provider_id"
+	PkgDtlAppVersion     = "app_package_version"
+	PkgDtlAppRlsTime     = "app_release_data_time"
+	PkgDtlAppType        = "app_type"
+	PkgDtlAppClass       = "app_class"
+	PkgDtlAppDescription = "app_package_description"
+
 )
+
+
 
 var VmImageMap = make(map[int32][]byte, 150000)
 
@@ -307,7 +398,6 @@ func ValidateAccessToken(accessToken string, allowedRoles []string, tenantId str
 	if accessToken == "" {
 		return nil
 	}
-
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(accessToken, claims, func(_ *jwt.Token) (interface{}, error) {
 		return jwtPublicKey, nil

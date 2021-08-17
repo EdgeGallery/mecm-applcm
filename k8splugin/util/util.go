@@ -79,6 +79,7 @@ const (
 	AppPkgRecordDoesNotExit   = "app package record does not exist in database"
 	WorkloadEvents       = "WorkloadEvents"
 	Query                  = "Query"
+	QueryKPI               = "QueryKPI"
 	Instantiate            = "Instantiate"
 	Terminate              = "Terminate"
 	UploadConfig           = "UploadConfig"

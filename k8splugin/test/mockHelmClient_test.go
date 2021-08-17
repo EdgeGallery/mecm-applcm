@@ -35,11 +35,17 @@ func (hc *mockedHelmClient) UnDeploy(relName, namespace string) error {
 
 func (hc *mockedHelmClient) Query(relName, namespace string) (string, error) {
 	// Output to be checked
-	return "{\"Output\":\"Success\"}", nil
+	return outputSuccess, nil
+}
+
+
+func (hc *mockedHelmClient) QueryKPI() (string, error) {
+	// Output to be checked
+	return outputSuccess, nil
 }
 
 func (hc *mockedHelmClient) WorkloadEvents(relName, namespace string) (string, error) {
 	// Output to be checked
-	return "{\"Output\":\"Success\"}", nil
+	return outputSuccess, nil
 }
 

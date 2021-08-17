@@ -26,5 +26,6 @@ type ClientIntf interface {
 	Deploy(appPkgRecord *models.AppPackage, appInsId string, ak string, sk string, db pgdb.Database) (string, string, error)
 	UnDeploy(relName, namespace string) error
 	Query(relName, namespace string) (string, error)
+	QueryKPI() (string, error)
 	WorkloadEvents(relName, namespace string) (string, error)
 }
