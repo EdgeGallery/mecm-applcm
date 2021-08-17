@@ -1143,12 +1143,7 @@ func (c *LcmControllerV2) QueryV2() {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrorReportByPlugin)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
-		return
-	}
-	c.handleLoggingForSuccess(nil, clientIp, "Query workload statistics is successful")
+	c.handleLoggingForSuccess(response, clientIp, "Query workload statistics is successful")
 }
 
 // @Title Query kpi
@@ -1161,10 +1156,10 @@ func (c *LcmControllerV2) QueryV2() {
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmControllerV2) QueryKPI() {
 	log.Info("Application query kpi request received.")
-
-	log.Info("Application query kpi request received.")
 	clientIp, bKey, accessToken, err := c.getClientIpNew()
-
+	if err != nil {
+		return
+	}
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
 		return
@@ -1184,7 +1179,6 @@ func (c *LcmControllerV2) QueryKPI() {
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
 	c.handleKPI(clientIp, err, response)
-
 }
 
 func (c *LcmControllerV2) getClientIpNew() (clientIp string, bKey []byte,
@@ -1360,12 +1354,7 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetWorkloadFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
-		return
-	}
-	c.handleLoggingForSuccess(nil, clientIp, "Workload description is successful")
+	c.handleLoggingForSuccess(response, clientIp, "Workload description is successful")
 }
 
 // @Title Sync app instances stale records
@@ -1405,19 +1394,11 @@ func (c *LcmControllerV2) SynchronizeStaleRecord() {
 	_, _ = c.Db.QueryTable("app_instance_stale_rec", &appInstStaleRecs, "")
 
 	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
-	res, err := json.Marshal(appInstanceStaleRecords)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.FailedToMarshal, util.ErrCodeFailedToMarshal)
-		return
-	}
+
 
 	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
 	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
-	_, err = c.Ctx.ResponseWriter.Write(res)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeWriteResFailed)
-		return
-	}
+
 	for _, appInstStaleRec := range appInstStaleRecs {
 		err = c.Db.DeleteData(&appInstStaleRec, util.AppInsId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
@@ -1425,7 +1406,7 @@ func (c *LcmControllerV2) SynchronizeStaleRecord() {
 			return
 		}
 	}
-	c.handleLoggingForSuccess(nil, clientIp, "Stale appInstance records synchronization is successful")
+	c.handleLoggingForSuccess(appInstanceStaleRecords, clientIp, "Stale appInstance records synchronization is successful")
 }
 
 // @Title Sync app instances records
@@ -1493,11 +1474,7 @@ func (c *LcmControllerV2) SynchronizeUpdatedRecord() {
 
 	c.Ctx.ResponseWriter.Header().Set(util.ContentType, util.ApplicationJson)
 	c.Ctx.ResponseWriter.Header().Set(util.Accept, util.ApplicationJson)
-	_, err = c.Ctx.ResponseWriter.Write(res)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeWriteResFailed)
-		return
-	}
+
 
 	for _, appInstance := range appInstancesSync {
 		appInstance.SyncStatus = true
@@ -1507,7 +1484,7 @@ func (c *LcmControllerV2) SynchronizeUpdatedRecord() {
 			return
 		}
 	}
-	c.handleLoggingForSuccess(nil, clientIp, "AppInstance synchronization is successful")
+	c.handleLoggingForSuccess(appInstanceSyncRecords, clientIp, "AppInstance synchronization is successful")
 }
 
 // @Title Delete package
