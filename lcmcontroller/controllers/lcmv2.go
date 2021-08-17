@@ -2051,7 +2051,8 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 // @Failure 400 bad request
 // @router /packages/:packageId [get]
 func (c *LcmControllerV2) DistributionStatus() {
-	clientIp, bKey, _, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
+	var status string
+	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
@@ -2099,8 +2100,28 @@ func (c *LcmControllerV2) DistributionStatus() {
 			//fill app package host info
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
+			if packageId != "" {
+				_, vim, err := c.getVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, ph.HostIp)
+				if err != nil {
+					return
+				}
+
+				pluginInfo := util.GetPluginInfo(vim)
+				client, err := pluginAdapter.GetClient(pluginInfo)
+				if err != nil {
+					c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+						util.ErrCodeFailedGetPlugin)
+					return
+				}
+				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+				status, err = adapter.UploadPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+				if err != nil {
+					c.HandleLoggingForFailure(clientIp, err.Error())
+					return
+				}
+			}
 			ph.Error = appPkgHost.Error
-			ph.Status = appPkgHost.Status
+			ph.Status = status
 			p.MecHostInfo = append(p.MecHostInfo, ph)
 		}
 		appPkgs = append(appPkgs, p)

@@ -77,7 +77,7 @@ var (
         file                    =  "file"
         instantiate             =  "instantiate"
         uploadPackageFailed     =  "Upload package failed"
-	distributePackageFailed = "Distribute package failed"
+    	distributePackageFailed = "Distribute package failed"
 )
 
 func TestLcmOperation(t *testing.T) {

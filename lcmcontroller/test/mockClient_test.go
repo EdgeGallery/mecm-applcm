@@ -91,4 +91,10 @@ func (mc *mockClient) DeletePackage(ctx context.Context, tenantId string, hostIP
 	return SUCCESS_RETURN, nil
 }
 
+func (mc *mockClient) UploadPackageStatus(ctx context.Context, tenantId string, hostIP string,
+	packageId string, accessToken string) (status string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
+
 
