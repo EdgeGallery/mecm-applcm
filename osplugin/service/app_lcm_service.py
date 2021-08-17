@@ -131,7 +131,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         AppPkgMapper(
             app_package_id=app_package_id,
             host_ip=host_ip,
-            status=utils.SAVING
+            status=utils.UPLOADING
         )
         commit()
 
@@ -227,8 +227,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.debug('检查app包状态')
         app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id,
                                           host_ip=host_ip)
-        if app_pkg_mapper is None or app_pkg_mapper.status != utils.ACTIVE:
-            LOG.error('app pkg %s not active', parameter.app_package_id)
+        if app_pkg_mapper is None or app_pkg_mapper.status != utils.UPLOADED:
+            LOG.error('app pkg %s not uploaded', parameter.app_package_id)
             return resp
 
         LOG.debug('读取包的hot文件')

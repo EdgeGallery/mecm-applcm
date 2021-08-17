@@ -60,11 +60,11 @@ def _check_package_status(package_id, host_ip):
         if image_info.status == utils.ACTIVE:
             continue
         elif image_info.status == utils.KILLED:
-            package.status = utils.FAILURE
+            package.status = utils.ERROR
         else:
-            package.status = utils.SAVING
+            package.status = utils.UPLOADING
             start_check_package_status(package_id, host_ip)
         commit()
         return
-    package.status = utils.ACTIVE
+    package.status = utils.UPLOADED
     commit()
