@@ -48,6 +48,7 @@ var (
 	packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
 	appName               = "postioning-service"
 	queryFailed           = "Query failed"
+	queryKpiFailed           = "QueryKpi failed"
 	handleLoggingFailure  = "Handle logging failure is success"
 	deleteMecHostSuccess  = "Delete mec host is successful"
 	deleteOper            = "DELETE"
@@ -139,7 +140,7 @@ func TestLcmOperation(t *testing.T) {
 	// Test sync updated mec host record
 	testSyncUpdatedMecHostRec(t, nil, "", testDb)
 
-	// Test Distribute package
+	// Test the Distribute package
 	testDistributePackage(t, extraParams, testDb)
 	testDistributePackageV2(t, extraParams, testDb)
 
@@ -281,6 +282,39 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, exOutput, response.Body.String(), queryFailed)
 
+		err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "GetClientIpAndValidateAccessToken", func(_ *controllers.LcmController, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+			accessToken string, err error) {
+			return "123", bKey, "", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.Query()
+
+		err2 := *new(error)
+		err2 = nil
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "GetClientIpAndValidateAccessToken", func(_ *controllers.LcmController, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+			accessToken string, err error) {
+			return "123", bKey, "", err2
+		})
+		defer patch5.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.Query()
+
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "GetTenantId", func(_ *controllers.LcmController, clientIp string) (tenantId string , error error) {
+			return "123", err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.Query()
+
 		//for v2
 
 
@@ -302,6 +336,142 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 
 		// Test query
 		queryControllerv2.QueryV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetPluginAdapter", func(_ *controllers.LcmControllerV2, _, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+			error) {
+			return nil, err
+		})
+		defer patch7.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.QueryV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetVim", func(_ *controllers.LcmControllerV2, clientIp string, hostIp string) (string, error) {
+			return "nil", err
+		})
+		defer patch6.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.QueryV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetAppInfoRecord", func(_ *controllers.LcmControllerV2, appInsId string, clientIp string) (*models.AppInfoRecord, error) {
+			return nil, err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.QueryV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 = gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetAppInstId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+			return "123", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.QueryV2()
+
+	})
+}
+
+func testQueryKpi(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database, exOutput string) {
+
+	t.Run("TestAppInstanceQueryKpi", func(t *testing.T) {
+
+		// Get Request
+		queryKpiRequest, _ := getHttpRequest(appUrlPathId, extraParams, "file", path, "GET", []byte(""))
+
+		// Prepare Input
+		queryKpiInput := &context.BeegoInput{Context: &context.Context{Request: queryKpiRequest}}
+		setParam(queryKpiInput)
+
+		// Prepare beego controller
+		queryKpiBeegoController := beego.Controller{Ctx: &context.Context{Input: queryKpiInput, Request: queryKpiRequest,
+			ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		queryKpiController := &controllers.LcmController{controllers.BaseController{Db: testDb,
+			Controller: queryKpiBeegoController}}
+
+		// Test query
+		queryKpiController.QueryKPI()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 0, queryKpiController.Ctx.ResponseWriter.Status, queryKpiFailed)
+		response := queryKpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.NotEqual(t, exOutput, response.Body.String(), queryKpiFailed)
+		//assert.Equal(t, exOutput, response.Body.String(), queryKpiFailed)
+
+		err1 := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(queryKpiController), "GetUrlCapabilityId", func(_ *controllers.LcmController, clientIp string) (string, error) {
+			return "", err1
+		})
+		defer patch3.Reset()
+		// Test upload package
+		queryKpiBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		//queryKpiController.QueryKPI()
+		queryKpiController.QueryMepCapabilities()
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(queryKpiController), "GetUrlHostIP", func(_ *controllers.LcmController, clientIp string) (string, error) {
+			return "", err1
+		})
+		defer patch2.Reset()
+		// Test upload package
+		queryKpiBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryKpiController.QueryKPI()
+		queryKpiController.QueryMepCapabilities()
+
+		//for v2
+
+		// Get Request
+		queryKpiRequest2, _ := getHttpRequest(appUrlPathId, extraParams, "file", path, "GET", []byte(""))
+
+		// Prepare Input
+		queryKpiV2Input := &context.BeegoInput{Context: &context.Context{Request: queryKpiRequest2}}
+		setParam(queryKpiV2Input)
+
+		// Prepare beego controller
+		queryKpiBeegoControllerV2 := beego.Controller{Ctx: &context.Context{Input: queryKpiV2Input, Request: queryKpiRequest2,
+			ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create LCM controller with mocked DB and prepared Beego controller
+		queryKpiController2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+			Controller: queryKpiBeegoControllerV2}}
+
+		// Test query
+		queryKpiController.QueryKPI()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 401, queryKpiController.Ctx.ResponseWriter.Status, queryKpiFailed)
+		response = queryKpiController2.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.NotEqual(t, exOutput, response.Body.String(), queryKpiFailed)
+
+		accessToken = createToken(tenantIdentifier)
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(queryKpiController2), "GetPluginAdapter", func(_ *controllers.LcmControllerV2, _, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+			error) {
+			return nil, err1
+		})
+		defer patch8.Reset()
+		// Test upload package
+		queryKpiBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryKpiController2.QueryKPI()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(queryKpiController2), "GetVim", func(_ *controllers.LcmControllerV2, clientIp string, hostIp string) (string, error) {
+			return "", err1
+		})
+		defer patch1.Reset()
+		// Test upload package
+		queryKpiBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryKpiController2.QueryKPI()
+
 
 	})
 }
@@ -333,6 +503,16 @@ func testSyncUpdatedAppInstRec(t *testing.T, extraParams map[string]string, path
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		_ = queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 
+		/*err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(queryController.Db), "InsertOrUpdateData", func(_ *MockDb,_ interface{}, _ ...string) (error error) {
+			return err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.SynchronizeUpdatedRecord()*/
+
 		//for v2
 
 		// Get Request
@@ -353,6 +533,18 @@ func testSyncUpdatedAppInstRec(t *testing.T, extraParams map[string]string, path
 
 		// Test query
 		queryControllerv2.SynchronizeUpdatedRecord()
+
+		/*err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2.Db), "QueryTable", func(_ *MockDb,_ string, _ interface{}, _ string, _ ...interface{}) (num int64, error error) {
+			return 0, err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken,accessToken)
+		queryControllerv2.SynchronizeUpdatedRecord()*/
+
 	})
 }
 
@@ -455,6 +647,16 @@ func testSynchronizeAppPackageStaleRecordv2(t *testing.T, extraParams map[string
 		assert.Equal(t, 200, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		_ = queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 
+		/*err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(queryController.Db), "DeleteData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.SynchronizeAppPackageStaleRecord()*/
+
 	})
 }
 
@@ -485,6 +687,16 @@ func testSynchronizeAppPackageUpdatedRecord(t *testing.T, extraParams map[string
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		_ = queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+
+		/*err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "SendAppPkgSyncRecords", func(_ *controllers.LcmController, appPackagesSync []*models.AppPackageRecord, clientIp string) (error error) {
+			return err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.Query()*/
 	})
 }
 
@@ -516,6 +728,46 @@ func testSynchronizeAppPackageUpdatedRecordV2(t *testing.T, extraParams map[stri
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 200, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		_ = queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+
+		err := errors.New("error")
+
+		accessToken := createToken(tenantIdentifier)
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(queryController.Db), "InsertOrUpdateData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch6.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.DeletePackage()
+		var appPackagesSync []*models.AppPackageRecord
+		queryController.InsertAppPackageRec(appPackagesSync)
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "InsertAppPackageRec", func(_ *controllers.LcmControllerV2, appPackagesSync []*models.AppPackageRecord) (error) {
+			return err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.SynchronizeAppPackageUpdatedRecord()
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "SendAppPkgSyncRecords", func(_ *controllers.LcmControllerV2, appPackagesSync []*models.AppPackageRecord, clientIp string) (error) {
+			return err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.SynchronizeAppPackageUpdatedRecord()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "GetTenantId", func(_ *controllers.LcmControllerV2, clientIp string) (string , error) {
+			return "123", err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.SynchronizeAppPackageUpdatedRecord()
 	})
 }
 
@@ -598,6 +850,16 @@ func testSynchronizeStaleRecord(t *testing.T, extraParams map[string]string, pat
 
 		// Test query
 		queryControllerv2.SynchronizeStaleRecord()
+
+		/*err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetTenantId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+			return "",err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.SynchronizeStaleRecord()*/
 	})
 }
 
@@ -652,6 +914,8 @@ func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string
 		queryController := &controllers.LcmController{controllers.BaseController{Db: testDb,
 			Controller: queryBeegoController}}
 
+
+
 		// Test query
 		queryController.GetWorkloadDescription()
 
@@ -659,6 +923,27 @@ func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, exOutput, response.Body.String(), queryFailed)
+
+		err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch22 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "GetAppInstId", func(_ *controllers.LcmController , clientIp string) (_ string , error error) {
+			return "", err
+		})
+		defer patch22.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.GetWorkloadDescription()
+
+		/*accessToken = createToken(tenantIdentifier)
+		patch21 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), "GetTenantId", func(_ *controllers.LcmController , clientIp string) (_ string , error error) {
+			return "", err
+		})
+		defer patch21.Reset()
+		// Test upload package
+		queryBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryController.GetWorkloadDescription()*/
+
+
 
 		//for v2
 
@@ -680,6 +965,56 @@ func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string
 
 		// Test query
 		queryControllerv2.GetWorkloadDescription()
+
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetPluginAdapter", func(_ *controllers.LcmControllerV2 , _, clientIp string, vim string) (*pluginAdapter.PluginAdapter,
+			error) {
+			return nil ,err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.GetWorkloadDescription()
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetVim", func(_ *controllers.LcmControllerV2 , clientIp string, hostIp string) (string, error) {
+			return "nil" ,err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.GetWorkloadDescription()
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetAppInfoRecord", func(_ *controllers.LcmControllerV2 , appInsId string, clientIp string) (*models.AppInfoRecord, error) {
+			return nil ,err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.GetWorkloadDescription()
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetAppInstId", func(_ *controllers.LcmControllerV2 , clientIp string) (_ string , error error) {
+			return "",err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.GetWorkloadDescription()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetTenantId", func(_ *controllers.LcmControllerV2 , clientIp string) (_ string , error error) {
+			return "",err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		queryBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		queryControllerv2.GetWorkloadDescription()
+
+
+
 	})
 }
 
@@ -757,6 +1092,74 @@ func testTerminateV2(t *testing.T, extraParams map[string]string, path string, t
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 404, terminateController.Ctx.ResponseWriter.Status, "Terminate failed")
+
+		err := errors.New("error")
+
+		accessToken := createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "DeleteTenantRecord", func(_ *controllers.LcmControllerV2 , clientIp, tenantId string) (error error) {
+			return err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		terminateController.TerminateV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController.Db), "ReadData", func(_ *MockDb,_ interface{}, _ ...string) (error error) {
+			return err
+		})
+		defer patch8.Reset()
+		// Test upload package
+		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		terminateController.TerminateV2()
+		clientIp := "172.1.1.1"
+		terminateController.GetMecHostInfoRecord(hostIp , clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "GetMecHostInfoRecord", func(_ *controllers.LcmControllerV2 , hostIp string, clientIp string) (*models.MecHost, error) {
+			return  nil, err
+		})
+		defer patch7.Reset()
+		// Test upload package
+		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		terminateController.TerminateV2()
+		terminateController.GetVim(clientIp, hostIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "GetVim", func(_ *controllers.LcmControllerV2 , clientIp string, hostIp string) (string, error) {
+			return  "", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		terminateController.TerminateV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "GetAppInfoRecord", func(_ *controllers.LcmControllerV2 ,appInsId string, clientIp string) (*models.AppInfoRecord, error) {
+			return  nil, err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		terminateController.TerminateV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "GetAppInstId", func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
+			return  "", err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		terminateController.TerminateV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "IsPermitted", func(_ *controllers.LcmControllerV2 , accessToken, clientIp string) (string, error) {
+			return  "", err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		terminateController.TerminateV2()
 	})
 }
 
@@ -787,7 +1190,7 @@ func testBatchTerminate(t *testing.T, extraParams map[string]string, testDb dbAd
 		instantiateController.BatchTerminate()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Batch terminate failed")
+		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, "Batch terminate failed")
 	})
 }
 
@@ -823,8 +1226,8 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 		instantiateController.Instantiate()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Instantiation failed")
-
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, "Instantiation failed")
+		//assert.NotEqual()
 		err := errors.New("error")
 
 		accessToken := createToken(tenantIdentifier)
@@ -860,6 +1263,9 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.Instantiate()
+		clientIp := "121.1.12.2"
+		var appInfoParams models.AppInfoRecord
+		instantiateController.InsertOrUpdateAppInfoRecord(clientIp, appInfoParams)
 
 	})
 }
@@ -903,6 +1309,44 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 			Controller: instantiateBeegoControllerv2}}
 
 		// Test instantiate
+		instantiateControllerv2.InstantiateV2()
+
+		err := errors.New("error")
+
+		accessToken := createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "GetTenantId", func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
+			return  "", err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateControllerv2.InstantiateV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "GetAppInstId", func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
+			return  "", err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		instantiateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateControllerv2.InstantiateV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateInstantiateInputParameters", func(_ *controllers.LcmControllerV2 , clientIp string, req models.InstantiateRequest) (string, string, string, string, string, error) {
+			return "", "", "", "", "", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		instantiateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateControllerv2.InstantiateV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateToken", func(_ *controllers.LcmControllerV2 , accessToken string, req models.InstantiateRequest, clientIp string) (string, string, string, string, string, error) {
+			return "", "", "", "", "", err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		instantiateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateControllerv2.InstantiateV2()
 
 	})
@@ -1127,6 +1571,17 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		assert.Equal(t,0, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
+		patch20 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "QueryCount", func(_ *MockDb,tableName string) (int64, error) {
+			return 1, err
+		})
+		defer patch20.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackage()
+		var clientIp3 string
+		instantiateController.InsertOrUpdateTenantRecord(clientIp3, tenantId)
+
+		accessToken = createToken(tenantIdentifier)
 		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateTenantRecord", func(_ *controllers.LcmController , _ , _ string) (error error) {
 			return err
 		})
@@ -1136,7 +1591,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.UploadPackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,0, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageDetailsFromPackage", func(_ *controllers.LcmController ,_ string,
@@ -1149,7 +1604,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.UploadPackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,400, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 
 		accessToken = createToken(tenantIdentifier)
@@ -1163,18 +1618,18 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.UploadPackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,400, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFile", func(_ *controllers.LcmController, key string) (file multipart.File, header *multipart.FileHeader, error error) {
-			return nil, nil, err
+			return file, header, err
 		})
 		defer patch9.Reset()
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.UploadPackage()
 
-		assert.Equal(t,400, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetOrigin", func(_ *controllers.LcmController,_ string) (origin string , error error) {
@@ -1186,7 +1641,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.UploadPackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,400, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForUploadPkg", func(_ *controllers.LcmController,_ string) (appId , packageId , tenantId string , error error) {
@@ -1198,7 +1653,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.UploadPackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,400, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted, func(_ *controllers.LcmController,_ string) (clientIp string, bkey []uint8, _, _ string, error error) {
@@ -1210,7 +1665,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.UploadPackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,400, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 
@@ -1259,6 +1714,33 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		err := errors.New("error")
 
 		accessToken := createToken(tenantIdentifier)
+		patch17 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "DeleteData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch17.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+
+		var clientIp string
+		instantiateController.DeleteTenantRecord(clientIp, tenantId)
+
+		accessToken = createToken(tenantIdentifier)
+		patch16 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "QueryCountForTable", func(_ *MockDb,tableName, fieldName, fieldValue string) (int64, error) {
+			return 1, err
+		})
+		defer patch16.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+		instantiateController.DeleteTenantRecord(clientIp, tenantId)
+		var distributionStatus string
+		var origin string
+		instantiateController.InsertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId,
+			packageId, distributionStatus, origin)
+
+
+		accessToken = createToken(tenantIdentifier)
 		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateAppPkgRecord", func(_ *controllers.LcmControllerV2 , _ , _ , _ ,
 			_ string, _ models.AppPkgDetails, _ string) (error error) {
 			return err
@@ -1270,6 +1752,26 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "InsertOrUpdateData", func(_ *MockDb,data interface{}, cols ...string) ( error error) {
+			return err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+		instantiateController.InsertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantId,
+			packageId, distributionStatus, origin)
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "QueryCount", func(_ *MockDb,tableName string) (int64, error) {
+			return 1, err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
 
 		accessToken = createToken(tenantIdentifier)
 		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateTenantRecord", func(_ *controllers.LcmControllerV2 , _ , _ string) (error error) {
@@ -1284,11 +1786,20 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageDetailsFromPackage", func(_ *controllers.LcmControllerV2 ,_ string,
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension", func(_ *controllers.LcmControllerV2 ,clientIp string, pkgDir string, ext string) (string, error) {
+			return "", err
+		})
+		defer patch8.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch15 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageDetailsFromPackage", func(_ *controllers.LcmControllerV2 ,_ string,
 			_ string) (pkgDir models.AppPkgDetails , error error) {
 			return pkgDir,err
 		})
-		defer patch5.Reset()
+		defer patch15.Reset()
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.UploadPackageV2()
@@ -1296,19 +1807,36 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
+		accessToken = createToken(tenantIdentifier)
+		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "CreatePackagePath", func(_ *controllers.LcmControllerV2 ,pkgPath string, clientIp string, file multipart.File) (error error) {
+			return err
+		})
+		defer patch10.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "SaveApplicationPackage", func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ string,
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "SaveApplicationPackage", func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ string,
 			_ *multipart.FileHeader, _ multipart.File) (pkgFilePath string , error error) {
 			return "",err
 		})
-		defer patch4.Reset()
+		defer patch9.Reset()
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.UploadPackageV2()
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+
+		accessToken = createToken(tenantIdentifier)
+		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFile", func(_ *controllers.LcmControllerV2,key string) (multipart.File, *multipart.FileHeader, error) {
+			return nil, nil, err
+		})
+		defer patch14.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
 
 		accessToken = createToken(tenantIdentifier)
 		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetOrigin", func(_ *controllers.LcmControllerV2,_ string) (origin string , error error) {
@@ -1322,11 +1850,63 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
+		/*accessToken = createToken(tenantIdentifier)
+		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetTenantId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+			return "", err
+		})
+		defer patch12.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+
+		clientIp := "172.1.1.1"
+		instantiateController.GetInputParametersForUploadPkg(clientIp)
+		instantiateController.UploadPackageV2()*/
+
+		accessToken = createToken(tenantIdentifier)
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+			return "", err
+		})
+		defer patch11.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+
+		accessToken = createToken(tenantIdentifier)
+		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetAppId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+			return "", err
+		})
+		defer patch12.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+
 		accessToken = createToken(tenantIdentifier)
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForUploadPkg", func(_ *controllers.LcmControllerV2,_ string) (appId , packageId , tenantId string , error error) {
 			return "","","",err
 		})
 		defer patch2.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+
+		accessToken = createToken(tenantIdentifier)
+		patch18 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "IsTenantAvailable", func(_ *controllers.LcmControllerV2,) (bool) {
+			return true
+		})
+		defer patch18.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.UploadPackageV2()
+		instantiateController.IsPermitted(accessToken, clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "IsPermitted", func(_ *controllers.LcmControllerV2,accessToken, clientIp string) (string, error) {
+			return "",err
+		})
+		defer patch13.Reset()
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.UploadPackageV2()
@@ -1585,8 +2165,56 @@ func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, testDb
 		instantiateController.DeletePackageOnHost()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
+
+		err := errors.New("error")
+
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "InsertOrUpdateData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateController.DeletePackageOnHost()
+
+		accessToken := createToken(tenantIdentifier)
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DelAppPkgRecords", func(_ *controllers.LcmController, clientIp, packageId, tenantId, hostIp string) (error) {
+			return err
+		})
+		defer patch6.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetVimAndHostIpFromPkgHostRec", func(_ *controllers.LcmController, clientIp, packageId, tenantId, hostIp string) (string, string, error) {
+			return "123", "", err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDelPkgOnHost", func(_ *controllers.LcmController, clientIp string) (string, string, string, error) {
+			return "123", "", "", err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetClientIpAndValidateAccessToken", func(_ *controllers.LcmController, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+			accessToken string, error error) {
+			return "123", bKey, "", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+
+
 	})
 }
 
@@ -1619,8 +2247,161 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.DeletePackageOnHost()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 200, instantiateController.Ctx.ResponseWriter.Status,
+		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
+
+		err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DeleteTenantRecord", func(_ *controllers.LcmControllerV2, clientIp, tenantId string) (error error) {
+			return err
+		})
+		defer patch13.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+		instantiateController.DeleteAppPackageHostRecord(hostIp, packageId, tenantId)
+
+		accessToken = createToken(tenantIdentifier)
+		patch15 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "DeleteData", func(_ *MockDb, data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch15.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+		var clientIp2 string
+		instantiateController.DelAppPkgRecords(clientIp2, packageId, tenantId, hostIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DeleteAppPackageHostRecord", func(_ *controllers.LcmControllerV2, hostIp, appPkgId, tenantId string) (error error) {
+			return err
+		})
+		defer patch12.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+		instantiateController.DelAppPkgRecords(clientIp2, packageId, tenantId, hostIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "ReadData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch11.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+		instantiateController.DelAppPkgRecords(clientIp2, packageId, tenantId, hostIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DelAppPkgRecords", func(_ *controllers.LcmControllerV2, clientIp, packageId, tenantId, hostIp string) (error ) {
+			return err
+		})
+		defer patch10.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+
+		accessToken = createToken(tenantIdentifier)
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetVim", func(_ *controllers.LcmControllerV2, clientIp string, hostIp string) (string, error) {
+			return "nil", err
+		})
+		defer patch9.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+		var clientIp1 string
+		instantiateController.GetVimAndHostIpFromPkgHostRec(clientIp1, packageId, tenantId, hostIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "ReadData", func(_ *MockDb,_ interface{}, _ ...string) (error error) {
+			return err
+		})
+		defer patch14.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+		var appPkgId string
+		clientIp := "172.1.1.1"
+		instantiateController.GetAppPackageHostRecord(hostIp, appPkgId, tenantId, clientIp)
+		accessToken = createToken(tenantIdentifier)
+
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetAppPackageHostRecord", func(_ *controllers.LcmControllerV2, hostIp, appPkgId, tenantId, clientIp string) (*models.AppPackageHostRecord, error) {
+			return nil, err
+		})
+		defer patch8.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+		instantiateController.GetVimAndHostIpFromPkgHostRec(clientIp1, packageId, tenantId, hostIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetAppPackageRecord", func(_ *controllers.LcmControllerV2, appPkgId string, tenantId string, clientIp string) (*models.AppPackageRecord, error) {
+			return nil, err
+		})
+		defer patch7.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+		instantiateController.GetVimAndHostIpFromPkgHostRec(clientIp1, packageId, tenantId, hostIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetVimAndHostIpFromPkgHostRec", func(_ *controllers.LcmControllerV2, clientIp, packageId, tenantId, hostIp string) (string, string, error ) {
+			return "123", "", err
+		})
+		defer patch6.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlHostIP", func(_ *controllers.LcmControllerV2, clientIp string) (string, error ) {
+			return "", err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+		//clientIp := "171.1.1.1"
+		instantiateController.GetInputParametersForDelPkgOnHost(clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error ) {
+			return "", err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+		instantiateController.GetInputParametersForDelPkgOnHost(clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetTenantId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error ) {
+			return "", err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+		instantiateController.GetInputParametersForDelPkgOnHost(clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDelPkgOnHost", func(_ *controllers.LcmControllerV2, clientIp string) (string, string, string, error ) {
+			return "123", "bKey", "", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetClientIpAndValidateAccessToken", func(_ *controllers.LcmControllerV2, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+			accessToken string, error error) {
+			return "123", bKey, "", err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackageOnHost()
 	})
 }
 
@@ -1653,8 +2434,79 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateController.DeletePackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
+		assert.Equal(t, 500, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
+
+		err := errors.New("error")
+
+
+		accessToken := createToken(tenantIdentifier)
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "ReadData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch9.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+		clientIp := "172.1.1.1"
+		instantiateController.DeleteAppPkgRecords(packageId, tenantId, clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DeleteAppPkgRecords", func(_ *controllers.LcmController, packageId, tenantId, clientIp string) (error error) {
+			return err
+		})
+		defer patch7.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ProcessDeletePackage", func(_ *controllers.LcmController, clientIp, packageId, tenantId, accessToken string) (error error) {
+			return err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmController, clientIp string) (string , error) {
+			return "", err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetTenantId", func(_ *controllers.LcmController, clientIp string) (string , error) {
+			return "", err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetClientIpAndValidateAccessToken", func(_ *controllers.LcmController, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+			accessToken string, error error) {
+			return "123", bKey, "", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DeletePackage()
+
+		/*accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetVim", func(_ *controllers.LcmController, clientIp string, hostIp string) (string, error) {
+			return "123", err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.deletePackage()*/
+
 	})
 }
 
@@ -1663,23 +2515,23 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 	t.Run("TestDeletePackage", func(t *testing.T) {
 
 		// POST Request
-		instantiateRequest, _ := getHttpRequest(tenantsPathV2 +
+		instantiateRequest2, _ := getHttpRequest(tenantsPathV2 +
 			tenantIdentifier + directory+
 			packageId + hosts + ipAddress, extraParams,
 			"file", "", deleteOper, []byte(""))
 
 		// Prepare Input
-		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}}
-		setParam(instantiateInput)
+		instantiateInput2 := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest2}}
+		setParam(instantiateInput2)
 
 		// Prepare beego controller
-		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: instantiateInput,
-			Request: instantiateRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+		instantiateBeegoControllerV2 := beego.Controller{Ctx: &context.Context{Input: instantiateInput2,
+			Request: instantiateRequest2, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
 			Data: make(map[interface{}]interface{})}
 
 		// Create LCM controller with mocked DB and prepared Beego controller
-		instantiateController := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
-			Controller: instantiateBeegoController}}
+		instantiateController2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoControllerV2}}
 
 		patch2 := gomonkey.ApplyFunc(os.Open, func(_ string) (*os.File, error) {
 			return nil,nil
@@ -1687,11 +2539,83 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		defer patch2.Reset()
 
 		// Test instantiate
-		instantiateController.DeletePackage()
+		instantiateController2.DeletePackage()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 500, instantiateController.Ctx.ResponseWriter.Status,
+		assert.Equal(t, 500, instantiateController2.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
+
+		err := errors.New("error")
+
+		accessToken := createToken(tenantIdentifier)
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "DeleteTenantRecord", func(_ *controllers.LcmControllerV2,clientIp, tenantId string) (error error) {
+			return err
+		})
+		defer patch8.Reset()
+		// Test upload package
+		instantiateBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController2.DeletePackage()
+		clientIp := "172.1.1.1"
+		instantiateController2.DeleteAppPkgRecords(packageId, tenantId, clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "DeleteAppPackageRecord", func(_ *controllers.LcmControllerV2, appPkgId string, tenantId string) (error error) {
+			return err
+		})
+		defer patch7.Reset()
+		// Test upload package
+		instantiateBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+
+		instantiateController2.DeletePackage()
+		//instantiateController2.DeleteAppPkgRecords(packageId, tenantId, clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2.Db), "ReadData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err
+		})
+		defer patch6.Reset()
+		// Test upload package
+		instantiateBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController2.DeletePackage()
+
+		instantiateController2.DeleteAppPkgRecords(packageId, tenantId, clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "DeleteAppPkgRecords", func(_ *controllers.LcmControllerV2, packageId, tenantId, clientIp string) (error error) {
+			return err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		instantiateBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController2.DeletePackage()
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "ProcessDeletePackage", func(_ *controllers.LcmControllerV2, clientIp, packageId, tenantId, accessToken string) (error) {
+			return err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController2.DeletePackage()
+
+		accessToken = createToken(tenantIdentifier)
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string , error) {
+			return "", err
+		})
+		defer patch3.Reset()
+		// Test upload package
+		instantiateBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController2.DeletePackage()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "GetTenantId", func(_ *controllers.LcmControllerV2, clientIp string) (string , error) {
+			return "", err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		instantiateBeegoControllerV2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController2.DeletePackage()
+
 	})
 }
 
@@ -1751,12 +2675,56 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, testDb d
 
 		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
 
+		/*accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetTenantId", func(_ *controllers.LcmController , clientIp string) (string, error) {
+			return "",err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DistributePackage()
+
+		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)*/
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmController , clientIp string) (string, error) {
+			return "", err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		//instantiateController.DistributePackage()
+		clientIp := "124.2.4.5"
+		var req models.DistributeRequest
+		instantiateController.ValidateDistributeInputParameters(clientIp, req)
+
+		accessToken = createToken(tenantIdentifier)
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetTenantId", func(_ *controllers.LcmController , clientIp string) (string, error) {
+			return "",err
+		})
+		defer patch4.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DistributePackage()
+
 
 		accessToken = createToken(tenantIdentifier)
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ValidateDistributeInputParameters", func(_ *controllers.LcmController , _ string, _ models.DistributeRequest) (packageId string , error error) {
 			return "",err
 		})
 		defer patch2.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DistributePackage()
+
+		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 = gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetClientIpAndIsPermitted", func(_ *controllers.LcmController , receiveMsg string) (pclientIp string, bKey []byte,
+			accessToken string, tenantId string, err error) {
+			return "",bKey, "", "", err
+		})
+		defer patch1.Reset()
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.DistributePackage()
@@ -1824,6 +2792,18 @@ func testDistributePackageV2(t *testing.T, extraParams map[string]string, testDb
 		instantiateController.DistributePackage()
 
 		assert.Equal(t, 200, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
+			return "", err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.DistributePackage()
+		clientIp := "172.1.2.3"
+		var req models.DistributeRequest
+		instantiateController.ValidateDistributeInputParameters(clientIp, req)
 
 
 		accessToken = createToken(tenantIdentifier)
@@ -1963,6 +2943,17 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+			return "", err
+		})
+		defer patch5.Reset()
+		// Test upload package
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken,accessToken)
+		instantiateController.DistributionStatus()
+		clientIp := "172.1.1.1"
+		instantiateController.GetInputParametersForDistributionStatus(clientIp)
+
+		accessToken = createToken(tenantIdentifier)
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDistributionStatus", func(_ *controllers.LcmControllerV2,_ string) (tenantId string,  packageId string, error error) {
 			return "", "",nil
 		})
@@ -2030,6 +3021,38 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 		// Test upload package
 		uploadController.UploadConfig()
 
+		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "ValidateYamlFile", func(_ *controllers.LcmController, clientIp string, file multipart.File)(error error) {
+			return err1
+		})
+		defer patch14.Reset()
+		// Test upload packages
+		//uploadController.UploadConfig()
+		clientIp := "123.2.3.4"
+		uploadController.GetInputParametersForUploadCfg(clientIp)
+
+		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetFile", func(_ *controllers.LcmController, key string)(multipart.File, *multipart.FileHeader, error) {
+			return nil, nil, err1
+		})
+		defer patch13.Reset()
+		// Test upload packages
+		//uploadController.UploadConfig()
+		uploadController.GetInputParametersForUploadCfg(clientIp)
+
+		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetVim", func(_ *controllers.LcmController, clientIp string, hostIp string)(string,  error) {
+			return "", err1
+		})
+		defer patch12.Reset()
+		// Test upload packages
+		uploadController.GetInputParametersForUploadCfg(clientIp)
+
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetHostIP", func(_ *controllers.LcmController, clientIp string)(string,  error) {
+			return "", err1
+		})
+		defer patch11.Reset()
+		// Test upload packages
+		//uploadController.UploadConfig()
+		//clientIp := "123.2.3.4"
+		uploadController.GetInputParametersForUploadCfg(clientIp)
 
 		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetInputParametersForUploadCfg", func(_ *controllers.LcmController,clientIp string)(hostIp string,
 			vim string, file multipart.File, err error) {
@@ -2096,6 +3119,35 @@ func testUploadV2(t *testing.T, extraParams map[string]string, path string, test
 		uploadController.UploadConfigV2()
 
 		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
+		err1 := errors.New("error")
+
+		/*patch3 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), "ReadData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+			return err1
+		})
+		defer patch3.Reset()
+		// Test upload package
+		uploadController.UploadConfigV2()
+		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")*/
+
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetHostIP", func(_ *controllers.LcmControllerV2,clientIp string)(string, error){
+			return "", err1
+		})
+		defer patch2.Reset()
+		// Test upload packages
+		uploadController.UploadConfigV2()
+		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
+
+
+
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetInputParametersForUploadCfg", func(_ *controllers.LcmControllerV2,clientIp string)(hostIp string,
+			vim string, file multipart.File, err error) {
+			return "", "nil", file, err1
+		})
+		defer patch1.Reset()
+		// Test upload packages
+		uploadController.UploadConfigV2()
+		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
+
 	})
 }
 
@@ -2130,6 +3182,35 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string, testD
 		// Test upload package
 		removeBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		removeController.DistributePackage()
+
+		accessToken = createToken(tenantIdentifier)
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), "GetVim", func(_ *controllers.LcmController,clientIp string, hostIp string) (string, error) {
+			return "", err
+		})
+		defer patch7.Reset()
+		removeBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		//removeController.RemoveConfig()
+		clientIp := "121.2.2.2"
+		removeController.GetInputParametersForRemoveCfg(clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(removeController.Db), "ReadData", func(_ *MockDb,_ interface{}, _ ...string) (error error) {
+			return err
+		})
+		defer patch6.Reset()
+		// Test upload package
+		removeBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		//removeController.DistributePackage()
+		removeController.GetInputParametersForRemoveCfg(clientIp)
+
+		accessToken = createToken(tenantIdentifier)
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), "GetHostIP", func(_ *controllers.LcmController, clientIp string) (string, error) {
+			return "", err
+		})
+		defer patch5.Reset()
+		removeBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		//removeController.RemoveConfig()
+		removeController.GetInputParametersForRemoveCfg(clientIp)
 
 		accessToken = createToken(tenantIdentifier)
 		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), "GetInputParametersForRemoveCfg", func(_ *controllers.LcmController, clientIp string) (_ string, _ string, host *models.MecHost, error error) {

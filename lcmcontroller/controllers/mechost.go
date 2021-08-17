@@ -26,7 +26,7 @@ import (
 	"strings"
 )
 
-// Mec host Controller
+// Mec Host Controller
 type MecHostController struct {
 	BaseController
 }
@@ -388,7 +388,7 @@ func (c *MecHostController) GetAppInstance() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	tenantId, err := c.getTenantId(clientIp)
+	tenantId, err := c.GetTenantId(clientIp)
 	if err != nil {
 		return
 	}
@@ -430,7 +430,7 @@ func (c *MecHostController) BatchTerminate() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	_, err = c.getTenantId(clientIp)
+	_, err = c.GetTenantId(clientIp)
 	if err != nil {
 		return
 	}

@@ -75,7 +75,7 @@ func doTest(t *testing.T) {
 	})
 	defer patch3.Reset()
 
-	// Set environment variables for lcmcontroller for k8spluging
+	// Set the environment variables for lcmcontroller for k8spluging
 	_ = os.Setenv("K8S_PLUGIN", k8sPluginAddr)
 	_ = os.Setenv("K8S_PLUGIN_PORT", k8sPluginPort)
 
@@ -128,7 +128,7 @@ func doTest(t *testing.T) {
 
 	// Test query
 	testQuery(t, nil, "", testDb, "{\"Output\":\"Success\"}")
-
+	testQueryKpi(t, nil, "", testDb, "{\"Output\":\"Success\"}")
 	// Test delete package
 	testDeletePackageOnHost(t, extraParams, testDb)
 	testDeletePackageOnHostV2(t, extraParams, testDb)

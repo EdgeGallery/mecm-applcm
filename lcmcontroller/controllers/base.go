@@ -70,7 +70,7 @@ func (c *BaseController) writeErrorResponseV2(conent *models.ReturnResponse, cod
 	c.writeResponse(conent, code)
 }
 
-// Write response
+// Write response here
 func (c *BaseController) writeResponse(msg interface{}, code int) {
 	c.Data["json"] = msg
 	c.Ctx.ResponseWriter.WriteHeader(code)
@@ -86,8 +86,8 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 		return "", errors.New(util.RequestBodyTooLarge)
 	}
 
-	if c.isTenantAvailable() {
-		tenantId, err = c.getTenantId(clientIp)
+	if c.IsTenantAvailable() {
+		tenantId, err = c.GetTenantId(clientIp)
 		if err != nil {
 			return tenantId, err
 		}
@@ -101,7 +101,7 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 }
 
 // Get app Instance Id
-func (c *BaseController) getTenantId(clientIp string) (string, error) {
+func (c *BaseController) GetTenantId(clientIp string) (string, error) {
 	tenantId := c.Ctx.Input.Param(":tenantId")
 	err := util.ValidateUUID(tenantId)
 	if err != nil {
@@ -112,7 +112,7 @@ func (c *BaseController) getTenantId(clientIp string) (string, error) {
 }
 
 // Get app Instance Id
-func (c *BaseController) isTenantAvailable() bool {
+func (c *BaseController) IsTenantAvailable() bool {
 	tenantId := c.Ctx.Input.Param(":tenantId")
 	return tenantId != ""
 }
@@ -144,7 +144,7 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 }
 
 // Get app package record
-func (c *BaseController) getAppPackageRecord(appPkgId string, tenantId string, clientIp string) (*models.AppPackageRecord, error) {
+func (c *BaseController) GetAppPackageRecord(appPkgId string, tenantId string, clientIp string) (*models.AppPackageRecord, error) {
 	appPkgRecord := &models.AppPackageRecord{
 		AppPkgId: appPkgId + tenantId,
 	}
@@ -250,7 +250,7 @@ func (c *BaseController) DeleteAppInfoRecord(appInsId string) error {
 }
 
 // Delete app package record
-func (c *BaseController) deleteAppPackageRecord(appPkgId string, tenantId string) error {
+func (c *BaseController) DeleteAppPackageRecord(appPkgId string, tenantId string) error {
 	appPkgRecord := &models.AppPackageRecord{
 		AppPkgId: appPkgId + tenantId,
 	}
@@ -264,7 +264,7 @@ func (c *BaseController) deleteAppPackageRecord(appPkgId string, tenantId string
 }
 
 // Delete app package host record
-func (c *BaseController) deleteAppPackageHostRecord(hostIp, appPkgId, tenantId string) error {
+func (c *BaseController) DeleteAppPackageHostRecord(hostIp, appPkgId, tenantId string) error {
 	appPkgHostRecord := &models.AppPackageHostRecord{
 		PkgHostKey: appPkgId + tenantId + hostIp,
 	}
