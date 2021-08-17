@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import internal.lcmservice.lcmservice_pb2 as lcmservice__pb2
+import lcmservice_pb2 as lcmservice__pb2
 
 
 class AppLCMStub(object):
@@ -28,6 +28,16 @@ class AppLCMStub(object):
                 '/lcmservice.AppLCM/query',
                 request_serializer=lcmservice__pb2.QueryRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.QueryResponse.FromString,
+                )
+        self.queryKPI = channel.unary_unary(
+                '/lcmservice.AppLCM/queryKPI',
+                request_serializer=lcmservice__pb2.QueryKPIRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.QueryKPIResponse.FromString,
+                )
+        self.queryPackage = channel.unary_unary(
+                '/lcmservice.AppLCM/queryPackage',
+                request_serializer=lcmservice__pb2.QueryPackageRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.QueryPackageResponse.FromString,
                 )
         self.uploadConfig = channel.stream_unary(
                 '/lcmservice.AppLCM/uploadConfig',
@@ -72,6 +82,18 @@ class AppLCMServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def query(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def queryKPI(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def queryPackage(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -124,6 +146,16 @@ def add_AppLCMServicer_to_server(servicer, server):
                     servicer.query,
                     request_deserializer=lcmservice__pb2.QueryRequest.FromString,
                     response_serializer=lcmservice__pb2.QueryResponse.SerializeToString,
+            ),
+            'queryKPI': grpc.unary_unary_rpc_method_handler(
+                    servicer.queryKPI,
+                    request_deserializer=lcmservice__pb2.QueryKPIRequest.FromString,
+                    response_serializer=lcmservice__pb2.QueryKPIResponse.SerializeToString,
+            ),
+            'queryPackage': grpc.unary_unary_rpc_method_handler(
+                    servicer.queryPackage,
+                    request_deserializer=lcmservice__pb2.QueryPackageRequest.FromString,
+                    response_serializer=lcmservice__pb2.QueryPackageResponse.SerializeToString,
             ),
             'uploadConfig': grpc.stream_unary_rpc_method_handler(
                     servicer.uploadConfig,
@@ -208,6 +240,40 @@ class AppLCM(object):
         return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/query',
             lcmservice__pb2.QueryRequest.SerializeToString,
             lcmservice__pb2.QueryResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def queryKPI(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/queryKPI',
+            lcmservice__pb2.QueryKPIRequest.SerializeToString,
+            lcmservice__pb2.QueryKPIResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def queryPackage(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/queryPackage',
+            lcmservice__pb2.QueryPackageRequest.SerializeToString,
+            lcmservice__pb2.QueryPackageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

@@ -370,6 +370,14 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     @db_session
+    def queryPackage(self, request, context):
+        pass
+
+    @db_session
+    def queryKPI(self, request, context):
+        pass
+
+    @db_session
     def workloadEvents(self, request, context):
         """
         工作负载事件查询
