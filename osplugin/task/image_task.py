@@ -103,12 +103,12 @@ def create_image_record(sw_image, app_package_id, host_ip):
                                  architecture=sw_image.architecture,
                                  hw_disk_bus=sw_image.hw_disk_bus,
                                  file_format=sw_image.disk_format,
-                                 __os_version=sw_image.operatingSystem,
+                                 __os_version=sw_image.operating_system,
                                  __quick_start='false',
-                                 __os_type=sw_image.supportedVirtualizationEnvironment,
+                                 __os_type=sw_image.supported_virtualization_environment,
                                  cloudinit='true',
                                  virtual_env_type='KVM',
-                                 hw_watchdog_action=None,
+                                 hw_watchdog_action='none',
                                  disk_format=sw_image.disk_format)
     VmImageInfoMapper(
         image_id=image['id'],
