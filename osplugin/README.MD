@@ -4,6 +4,7 @@
 
 ```
 python3 -m grpc_tools.protoc --python_out=internal/lcmservice --grpc_python_out=internal/lcmservice -I internal/lcmservice lcmservice.proto
+sed -i 's/import lcmservice_pb2 as lcmservice__pb2/import internal.lcmservice.lcmservice_pb2 as lcmservice__pb2/g' internal/lcmservice/lcmservice_pb2_grpc.py
 ```
 
 ## 依赖

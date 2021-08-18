@@ -22,7 +22,7 @@ message InstantiateRequest {
   string appInstanceId = 3;
   string appPackageId = 4;
   string hostIp = 5;
-  map<string, string> parameters = 6;
+  map<string,string> parameters = 6;
   bool akSkLcmGen = 7;
 }
 
@@ -47,6 +47,25 @@ message QueryRequest {
 }
 
 message QueryResponse {
+  string response = 1;
+}
+
+message QueryKPIRequest {
+    string accessToken = 1;
+    string hostIp = 2;
+}
+
+message QueryKPIResponse {
+  string response = 1;
+}
+
+message QueryPackageRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string packageId = 3;
+}
+
+message QueryPackageResponse {
   string response = 1;
 }
 
@@ -174,6 +193,8 @@ service AppLCM {
   rpc instantiate (InstantiateRequest) returns (InstantiateResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc query (QueryRequest) returns (QueryResponse) {}
+  rpc queryKPI (QueryKPIRequest) returns (QueryKPIResponse) {}
+  rpc queryPackage (QueryPackageRequest) returns (QueryPackageResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
   rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}
