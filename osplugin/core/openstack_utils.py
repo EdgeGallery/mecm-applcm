@@ -605,17 +605,15 @@ class SecurityGroup(HOTBase):
         if self.name not in hot_file['resources']:
             hot_file['resources'][self.name] = create_security_group_template()
         for port in self.template['members']:
-            if port in hot_file['resources'] and\
-                    'security_groups' in hot_file['resources'][port]['properties']:
-                hot_file['resources'][port]['properties']['security_groups'].append({
+            if port in hot_file['resources']:
+                if 'security_groups' in hot_file['resources'][port]['properties']:
+                    hot_file['resources'][port]['properties']['security_groups'].append({
                         'get_resource': self.name
                     })
-            else:
-                hot_file['resources'][port]['properties']['security_groups'] = [
-                    {
+                else:
+                    hot_file['resources'][port]['properties']['security_groups'] = [{
                         'get_resource': self.name
-                    }
-                ]
+                    }]
 
 
 class SecurityGroupRule(HOTBase):
