@@ -18,6 +18,7 @@
 
 import re
 
+from core.log import logger
 from heatclient.v1.client import Client as HeatClient
 from glanceclient.v2.client import Client as GlanceClient
 from keystoneauth1 import identity, session
@@ -210,6 +211,7 @@ class HOTBase:
     """
     hot模板基础类型
     """
+
     def __init__(self, hot_type):
         self.type = hot_type
 
@@ -306,7 +308,7 @@ class NovaServer(HOTBase):
             if 'params' in self.template['properties']['bootdata']['user_data'] and \
                     self.template['properties']['bootdata']['user_data']['params'] is not None:
                 params = {}
-                for key, param in self.template['properties']['bootdata']['user_data']['params']\
+                for key, param in self.template['properties']['bootdata']['user_data']['params'] \
                         .items():
                     params['$' + key + '$'] = param
                 user_data['str_replace']['params'] = params
@@ -473,6 +475,7 @@ class VirtualPort(HOTBase):
     """
     hot port类型
     """
+
     def __init__(self, name, template):
         super().__init__('OS::Neutron::Port')
         self.name = name
@@ -531,6 +534,7 @@ class Flavor(HOTBase):
     """
     flavor 类型
     """
+
     def __init__(self, name, template):
         super().__init__('OS::Nova::Flavor')
         self.name = name
@@ -559,8 +563,17 @@ class Flavor(HOTBase):
         self.properties['disk'] = sys_disk
 
         if 'flavor_extra_specs' in self.template['properties']['vdu_profile']:
-            self.properties['extra_specs'] = self.template['properties'][
-                'vdu_profile']['flavor_extra_specs']
+            flavor_extra_specs = self.template['properties']['vdu_profile']['flavor_extra_specs']
+            self.properties['extra_specs'] = {}
+            for key in flavor_extra_specs:
+                if isinstance(flavor_extra_specs[key], bool):
+                    self.properties['extra_specs'][key] = 'true' if flavor_extra_specs[key] else 'false'
+                elif isinstance(flavor_extra_specs[key], int) or \
+                        isinstance(flavor_extra_specs[key], float):
+                    self.properties['extra_specs'][key] = str(flavor_extra_specs[key])
+                else:
+                    logger.info(flavor_extra_specs[key])
+                    self.properties['extra_specs'][key] = flavor_extra_specs[key]
 
         _change_function(self.properties)
         hot_file['resources'][self.name] = {
@@ -586,6 +599,7 @@ class SecurityGroup(HOTBase):
     """
     安全组
     """
+
     def __init__(self, name, template):
         super().__init__('OS::Neutron::SecurityGroup')
         self.name = name
@@ -620,6 +634,7 @@ class SecurityGroupRule(HOTBase):
     """
     安全组规则
     """
+
     def __init__(self, name, template):
         super().__init__('UNKNOWN::TYPE')
         self.name = name
