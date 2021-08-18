@@ -37,14 +37,14 @@ type BaseController struct {
 
 // To display log for received message
 func (c *BaseController) displayReceivedMsg(clientIp string) {
-	log.Info("Received message from ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+	log.Info(util.ResponseForClient + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "]")
 }
 
 // Handled logging for error case
 func (c *BaseController) HandleLoggingForError(clientIp string, code int, errMsg string) {
 	c.writeErrorResponse(errMsg, code)
-	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+	log.Info(util.ResponseForClient + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 }
 
@@ -56,7 +56,7 @@ func (c *BaseController) HandleForErrorCode(clientIp string, code int, errMsg st
 		Params: nil,
 	}
 	c.writeErrorResponseV2(errConent, code)
-	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+	log.Info(util.ResponseForClient + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Failure: " + errMsg + ".]")
 }
 

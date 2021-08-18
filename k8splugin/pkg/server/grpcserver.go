@@ -1119,20 +1119,20 @@ func (s *ServerGRPC) DeletePackage(ctx context.Context,
 }
 
 // Upload package status
-func (s *ServerGRPC) UploadPackageStatus(ctx context.Context,
-	request *lcmservice.UploadPackageStatusRequest) (*lcmservice.UploadPackageStatusResponse, error) {
+func (s *ServerGRPC) QueryPackageStatus(ctx context.Context,
+	request *lcmservice.QueryPackageStatusRequest) (*lcmservice.QueryPackageStatusResponse, error) {
 
-	resp := &lcmservice.UploadPackageStatusResponse{
+	resp := &lcmservice.QueryPackageStatusResponse{
 		Status: "Distributed",
 	}
 
-	err := s.displayReceivedMsg(ctx, util.UploadPackageStatus)
+	err := s.displayReceivedMsg(ctx, util.QueryPackageStatus)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.UploadPackageStatus, util.FailedToDispRecvMsg)
+		s.displayResponseMsg(ctx, util.QueryPackageStatus, util.FailedToDispRecvMsg)
 		return resp, err
 	}
 
-	s.handleLoggingForSuccess(ctx, util.UploadPackageStatus, "Return upload package status successfully")
+	s.handleLoggingForSuccess(ctx, util.QueryPackageStatus, "Return upload package status successfully")
 	return resp, nil
 }
 

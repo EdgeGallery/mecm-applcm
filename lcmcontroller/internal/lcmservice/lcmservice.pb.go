@@ -2479,7 +2479,7 @@ type AppLCMClient interface {
 	WorkloadEvents(ctx context.Context, in *WorkloadEventsRequest, opts ...grpc.CallOption) (*WorkloadEventsResponse, error)
 	UploadPackage(ctx context.Context, opts ...grpc.CallOption) (AppLCM_UploadPackageClient, error)
 	DeletePackage(ctx context.Context, in *DeletePackageRequest, opts ...grpc.CallOption) (*DeletePackageResponse, error)
-	UploadPackageStatus(ctx context.Context, in *UploadPackageStatusRequest, opts ...grpc.CallOption) (*UploadPackageStatusResponse, error)
+	QueryPackageStatus(ctx context.Context, in *UploadPackageStatusRequest, opts ...grpc.CallOption) (*UploadPackageStatusResponse, error)
 }
 
 type appLCMClient struct {
@@ -2621,7 +2621,7 @@ func (c *appLCMClient) DeletePackage(ctx context.Context, in *DeletePackageReque
 	return out, nil
 }
 
-func (c *appLCMClient) UploadPackageStatus(ctx context.Context, in *UploadPackageStatusRequest, opts ...grpc.CallOption) (*UploadPackageStatusResponse, error) {
+func (c *appLCMClient) QueryPackageStatus(ctx context.Context, in *UploadPackageStatusRequest, opts ...grpc.CallOption) (*UploadPackageStatusResponse, error) {
 	out := new(UploadPackageStatusResponse)
 	err := c.cc.Invoke(ctx, "/lcmservice.AppLCM/uploadPackageStatus", in, out, opts...)
 	if err != nil {

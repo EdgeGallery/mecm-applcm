@@ -86,7 +86,7 @@ const (
 	UploadPackage          = "UploadPackage"
 	RemoveConfig           = "RemoveConfig"
 	DeletePackage          = "DeletePackage"
-	UploadPackageStatus    = "UploadPackageStatus"
+	QueryPackageStatus    = "QueryPackageStatus"
 	MecmTenantRole         = "ROLE_MECM_TENANT"
 	MecmAdminRole          = "ROLE_MECM_ADMIN"
 	MecmGuestRole          = "ROLE_MECM_GUEST"

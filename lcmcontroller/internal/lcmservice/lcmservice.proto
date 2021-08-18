@@ -179,14 +179,14 @@ message DeletePackageResponse {
   string status = 1;
 }
 
-message UploadPackageStatusRequest {
+message QueryPackageStatusRequest {
   string accessToken = 1;
   string appPackageId = 2;
   string hostIp = 3;
   string tenantId = 4;
 }
 
-message UploadPackageStatusResponse {
+message QueryPackageStatusResponse {
   string status = 1;
 }
 
