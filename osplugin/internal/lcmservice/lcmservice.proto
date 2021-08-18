@@ -59,13 +59,13 @@ message QueryKPIResponse {
   string response = 1;
 }
 
-message QueryPackageRequest {
+message QueryPackageStatusRequest {
   string accessToken = 1;
   string hostIp = 2;
   string packageId = 3;
 }
 
-message QueryPackageResponse {
+message QueryPackageStatusResponse {
   string response = 1;
 }
 
@@ -194,7 +194,7 @@ service AppLCM {
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc query (QueryRequest) returns (QueryResponse) {}
   rpc queryKPI (QueryKPIRequest) returns (QueryKPIResponse) {}
-  rpc queryPackage (QueryPackageRequest) returns (QueryPackageResponse) {}
+  rpc queryPackageStatus (QueryPackageStatusRequest) returns (QueryPackageStatusResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
   rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}

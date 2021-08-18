@@ -34,10 +34,10 @@ class AppLCMStub(object):
                 request_serializer=lcmservice__pb2.QueryKPIRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.QueryKPIResponse.FromString,
                 )
-        self.queryPackage = channel.unary_unary(
-                '/lcmservice.AppLCM/queryPackage',
-                request_serializer=lcmservice__pb2.QueryPackageRequest.SerializeToString,
-                response_deserializer=lcmservice__pb2.QueryPackageResponse.FromString,
+        self.queryPackageStatus = channel.unary_unary(
+                '/lcmservice.AppLCM/queryPackageStatus',
+                request_serializer=lcmservice__pb2.QueryPackageStatusRequest.SerializeToString,
+                response_deserializer=lcmservice__pb2.QueryPackageStatusResponse.FromString,
                 )
         self.uploadConfig = channel.stream_unary(
                 '/lcmservice.AppLCM/uploadConfig',
@@ -93,7 +93,7 @@ class AppLCMServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def queryPackage(self, request, context):
+    def queryPackageStatus(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -152,10 +152,10 @@ def add_AppLCMServicer_to_server(servicer, server):
                     request_deserializer=lcmservice__pb2.QueryKPIRequest.FromString,
                     response_serializer=lcmservice__pb2.QueryKPIResponse.SerializeToString,
             ),
-            'queryPackage': grpc.unary_unary_rpc_method_handler(
-                    servicer.queryPackage,
-                    request_deserializer=lcmservice__pb2.QueryPackageRequest.FromString,
-                    response_serializer=lcmservice__pb2.QueryPackageResponse.SerializeToString,
+            'queryPackageStatus': grpc.unary_unary_rpc_method_handler(
+                    servicer.queryPackageStatus,
+                    request_deserializer=lcmservice__pb2.QueryPackageStatusRequest.FromString,
+                    response_serializer=lcmservice__pb2.QueryPackageStatusResponse.SerializeToString,
             ),
             'uploadConfig': grpc.stream_unary_rpc_method_handler(
                     servicer.uploadConfig,
@@ -261,7 +261,7 @@ class AppLCM(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def queryPackage(request,
+    def queryPackageStatus(request,
             target,
             options=(),
             channel_credentials=None,
@@ -271,9 +271,9 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/queryPackage',
-            lcmservice__pb2.QueryPackageRequest.SerializeToString,
-            lcmservice__pb2.QueryPackageResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/queryPackageStatus',
+            lcmservice__pb2.QueryPackageStatusRequest.SerializeToString,
+            lcmservice__pb2.QueryPackageStatusResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
