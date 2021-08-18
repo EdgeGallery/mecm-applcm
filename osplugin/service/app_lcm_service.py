@@ -34,7 +34,7 @@ from internal.lcmservice import lcmservice_pb2_grpc
 from internal.lcmservice.lcmservice_pb2 import TerminateResponse, \
     QueryResponse, UploadCfgResponse, \
     RemoveCfgResponse, DeletePackageResponse, UploadPackageResponse, \
-    WorkloadEventsResponse, InstantiateResponse, QueryKPIResponse
+    WorkloadEventsResponse, InstantiateResponse, QueryKPIResponse, QueryPackageStatusResponse
 
 from pony.orm import db_session, rollback, commit
 from task.app_instance_task import start_check_stack_status
@@ -371,7 +371,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         return res
 
     @db_session
-    def queryPackage(self, request, context):
+    def queryPackageStatus(self, request, context):
         """
         查询app包加载状态
         Args:
@@ -382,7 +382,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         """
         LOG.info('receive query app package msg...')
-        resp = QueryResponse(response=utils.FAILURE_JSON)
+        resp = QueryPackageStatusResponse(response=utils.FAILURE_JSON)
 
         LOG.debug('校验access token, host ip')
         host_ip = validate_input_params(BaseRequest(request))
