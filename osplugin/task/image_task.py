@@ -101,6 +101,14 @@ def create_image_record(sw_image, app_package_id, host_ip):
                                  min_ram=sw_image.min_ram,
                                  min_disk=sw_image.min_disk,
                                  architecture=sw_image.architecture,
+                                 hw_disk_bus=sw_image.hw_disk_bus,
+                                 file_format=sw_image.disk_format,
+                                 __os_version=sw_image.operatingSystem,
+                                 __quick_start='false',
+                                 __os_type=sw_image.supportedVirtualizationEnvironment,
+                                 cloudinit='true',
+                                 virtual_env_type='KVM',
+                                 hw_watchdog_action=None,
                                  disk_format=sw_image.disk_format)
     VmImageInfoMapper(
         image_id=image['id'],
