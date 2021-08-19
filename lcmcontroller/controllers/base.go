@@ -17,6 +17,7 @@
 package controllers
 
 import (
+	"bufio"
 	"errors"
 	"github.com/astaxie/beego"
 	log "github.com/sirupsen/logrus"
@@ -24,6 +25,7 @@ import (
 	"lcmcontroller/pkg/dbAdapter"
 	"lcmcontroller/pkg/pluginAdapter"
 	"lcmcontroller/util"
+	"os"
 	"strings"
 )
 
@@ -300,4 +302,59 @@ func (c *BaseController) HandleLoggingForTokenFailure(clientIp, errorString stri
 	} else {
 		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 	}
+}
+
+
+
+func readMfBytes(mfYaml *os.File) ([]byte, error) {
+	scanner := bufio.NewScanner(mfYaml)
+	scanner.Split(bufio.ScanLines)
+	// This is our buffer now
+	var lines []byte
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if checkLineStart(line) {
+			lines = append(lines, []byte(line)...)
+			lines = append(lines, []byte("\n")...)
+		}
+	}
+	return lines, nil
+}
+
+func checkLineStart(line string) bool {
+	res := false
+	res = strings.HasPrefix(line, util.PkgDtlMetadata)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppName)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppId)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppVersion)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppRlsTime)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppType)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppClass)
+	if res {
+		return true
+	}
+	res = strings.HasPrefix(line, util.PkgDtlAppDescription)
+	if res {
+		return true
+	}
+	return res
 }

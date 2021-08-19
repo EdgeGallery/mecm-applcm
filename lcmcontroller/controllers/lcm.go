@@ -247,7 +247,11 @@ func (c *LcmController) getPackageDetailsFromPackage(clientIp string,
 	}
 	defer mfYaml.Close()
 
-	mfFileBytes, _ := ioutil.ReadAll(mfYaml)
+	mfFileBytes, err := readMfBytes(mfYaml)
+	if err != nil {
+		log.Error("Failed to get info, pls check mf file if struct is not correct.")
+		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
+	}
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil {
