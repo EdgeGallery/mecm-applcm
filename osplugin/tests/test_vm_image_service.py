@@ -155,8 +155,8 @@ class VmImageServiceTest(unittest.TestCase):
                                               image_id="f95bcbb1-e1e2-4aaf-872c-f0c7657862c1")
 
         response = self.vm_image_service.downloadVmImage(request, None)
-        with open('target/image.qcow2', 'ab') as file:
+        with open('image.qcow2', 'ab') as file:
             for res in response:
                 file.write(res.content)
 
-        os.remove('target/image.qcow2')
+        os.remove('image.qcow2')

@@ -18,6 +18,7 @@
 
 import re
 
+from core.log import logger
 from heatclient.v1.client import Client as HeatClient
 from glanceclient.v2.client import Client as GlanceClient
 from keystoneauth1 import identity, session
@@ -306,7 +307,7 @@ class NovaServer(HOTBase):
             if 'params' in self.template['properties']['bootdata']['user_data'] and \
                     self.template['properties']['bootdata']['user_data']['params'] is not None:
                 params = {}
-                for key, param in self.template['properties']['bootdata']['user_data']['params']\
+                for key, param in self.template['properties']['bootdata']['user_data']['params'] \
                         .items():
                     params['$' + key + '$'] = param
                 user_data['str_replace']['params'] = params
@@ -559,14 +560,36 @@ class Flavor(HOTBase):
         self.properties['disk'] = sys_disk
 
         if 'flavor_extra_specs' in self.template['properties']['vdu_profile']:
-            self.properties['extra_specs'] = self.template['properties'][
-                'vdu_profile']['flavor_extra_specs']
+            flavor_extra_specs = self.template['properties']['vdu_profile']['flavor_extra_specs']
+            self.properties['extra_specs'] = {}
+            for key in flavor_extra_specs:
+                if isinstance(flavor_extra_specs[key], bool):
+                    self.properties['extra_specs'][key] = 'true' if flavor_extra_specs[key] else 'false'
+                elif isinstance(flavor_extra_specs[key], int) or \
+                        isinstance(flavor_extra_specs[key], float):
+                    self.properties['extra_specs'][key] = str(flavor_extra_specs[key])
+                else:
+                    logger.info(flavor_extra_specs[key])
+                    self.properties['extra_specs'][key] = flavor_extra_specs[key]
 
         _change_function(self.properties)
         hot_file['resources'][self.name] = {
             'type': self.type,
             'properties': self.properties
         }
+
+
+def create_security_group_template():
+    return {
+        'type': 'OS::Neutron::SecurityGroup',
+        'properties': {
+            'rules': [
+                {'protocol': 'tcp', 'remote_mode': 'remote_group_id'},
+                {'protocol': 'udp', 'remote_mode': 'remote_group_id'},
+                {'protocol': 'icmp', 'remote_mode': 'remote_group_id'}
+            ]
+        }
+    }
 
 
 class SecurityGroup(HOTBase):
@@ -589,62 +612,27 @@ class SecurityGroup(HOTBase):
 
         """
         hot_file = kwargs['hot_file']
-        hot_file['resources'][self.name] = {
-            'type': self.type
-        }
+        if self.name not in hot_file['resources']:
+            hot_file['resources'][self.name] = create_security_group_template()
         for port in self.template['members']:
             if port in hot_file['resources']:
-                hot_file['resources'][port]['properties']['security_groups'] = [
-                    {
+                if 'security_groups' in hot_file['resources'][port]['properties']:
+                    hot_file['resources'][port]['properties']['security_groups'].append({
                         'get_resource': self.name
-                    }
-                ]
-        hot_file['resources'][self.name + 'DefaultTcpRule'] = {
-            'type': SECURITY_GROUP_RULE,
-            'properties': {
-                'protocol': 'tcp',
-                'remote_group': {
-                    'get_resource': self.name
-                },
-                'security_group': {
-                    'get_resource': self.name
-                }
-            }
-        }
-
-        hot_file['resources'][self.name + 'DefaultUdpRule'] = {
-            'type': SECURITY_GROUP_RULE,
-            'properties': {
-                'protocol': 'udp',
-                'remote_group': {
-                    'get_resource': self.name
-                },
-                'security_group': {
-                    'get_resource': self.name
-                }
-            }
-        }
-
-        hot_file['resources'][self.name + 'DefaultIcmpRule'] = {
-            'type': SECURITY_GROUP_RULE,
-            'properties': {
-                'protocol': 'icmp',
-                'remote_group': {
-                    'get_resource': self.name
-                },
-                'security_group': {
-                    'get_resource': self.name
-                }
-            }
-        }
+                    })
+                else:
+                    hot_file['resources'][port]['properties']['security_groups'] = [{
+                        'get_resource': self.name
+                    }]
 
 
 class SecurityGroupRule(HOTBase):
     """
     安全组规则
     """
+
     def __init__(self, name, template):
-        super().__init__(SECURITY_GROUP_RULE)
+        super().__init__('UNKNOWN::TYPE')
         self.name = name
         self.template = template
         self.properties = {}
@@ -667,15 +655,13 @@ class SecurityGroupRule(HOTBase):
         if 'remote_ip_prefix' in self.template['properties']:
             self.properties['remote_ip_prefix'] = \
                 self.template['properties']['remote_ip_prefix']
-        self.properties['security_group'] = {
-            'get_resource': self.template['targets'][0]
-        }
 
         _change_function(self.properties)
-        hot_file['resources'][self.name] = {
-            'type': self.type,
-            'properties': self.properties
-        }
+
+        for target in self.template['targets']:
+            if target not in hot_file['resources']:
+                hot_file['resources'][target] = create_security_group_template()
+            hot_file['resources'][target]['properties']['rules'].append(self.properties)
 
 
 TOSCA_TYPE_CLASS = {
@@ -691,5 +677,3 @@ TOSCA_GROUP_CLASS = {
 TOSCA_POLICY_CLASS = {
     'tosca.policies.nfv.SecurityGroupRule': SecurityGroupRule
 }
-
-SECURITY_GROUP_RULE = 'OS::Neutron::SecurityGroupRule'

@@ -19,8 +19,10 @@
 import os
 import configparser
 
-conf = configparser.ConfigParser()
-conf.read('config.ini')
+base_dir = os.getenv('BASE_DIR', '.')
+
+conf = configparser.RawConfigParser()
+conf.read(base_dir + '/config.ini')
 
 env = conf.get('default', 'env')
 
@@ -28,7 +30,6 @@ ssl_enabled = os.getenv('ENABLE_SSL', conf.get('default', 'enable_ssl')) != 'fal
 
 listen_ip = os.getenv('LISTEN_IP', '[::]')
 
-base_dir = os.getenv('BASE_DIR', conf.get('default', 'base_dir'))
 log_dir = os.getenv("LOG_DIR", base_dir + '/log')
 private_key_certificate_chain_pairs = (
     base_dir + '/ssl/server_tls.key',

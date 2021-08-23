@@ -40,6 +40,8 @@ UPLOADING = 'uploading'
 ACTIVE = 'active'
 KILLED = 'killed'
 
+UPLOADED = 'uploaded'
+ERROR = 'error'
 
 INSTANTIATING = 'Instantiating'
 INSTANTIATED = 'Instantiated'

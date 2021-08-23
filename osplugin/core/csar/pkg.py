@@ -235,7 +235,7 @@ class CsarPkg:
         self._translate_topology_template(appd, hot)
 
         with open(self.hot_path, 'w') as file:
-            yaml.dump(hot, file)
+            yaml.dump(data=hot, stream=file, Dumper=yaml.SafeDumper)
 
     def _translate_topology_template(self, appd, hot):
         """

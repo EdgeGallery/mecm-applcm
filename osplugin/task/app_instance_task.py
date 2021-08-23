@@ -18,7 +18,7 @@
 # -*- coding: utf-8 -*-
 import time
 
-from pony.orm import db_session
+from pony.orm import db_session, commit
 
 import utils
 from core import openstack_utils
@@ -55,6 +55,7 @@ def _check_stack_status(app_instance_id):
     if stack_resp is None and app_ins_mapper.operational_status == 'Terminating':
         app_ins_mapper.delete()
         LOG.debug('finish terminate app ins %s', app_instance_id)
+        commit()
         return
     if stack_resp.status == 'COMPLETE' or stack_resp.status == 'FAILED':
         LOG.debug('app ins: %s, stack_status: %s, reason: %s',
@@ -72,6 +73,7 @@ def _check_stack_status(app_instance_id):
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
             app_ins_mapper.operational_status = utils.FAILURE
             LOG.debug('failed action %s app ins %s', stack_resp.action, app_instance_id)
+        commit()
     else:
         LOG.debug('app ins %s status not updated, waite next...')
         start_check_stack_status(app_instance_id)

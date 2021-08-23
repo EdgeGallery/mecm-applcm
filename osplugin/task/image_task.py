@@ -17,6 +17,7 @@
 
 # -*- coding: utf-8 -*-
 import time
+import warnings
 
 import urllib3
 from pony.orm import db_session, commit
@@ -100,6 +101,14 @@ def create_image_record(sw_image, app_package_id, host_ip):
                                  min_ram=sw_image.min_ram,
                                  min_disk=sw_image.min_disk,
                                  architecture=sw_image.architecture,
+                                 hw_disk_bus=sw_image.hw_disk_bus,
+                                 file_format=sw_image.disk_format,
+                                 __os_version=sw_image.operating_system,
+                                 __quick_start='false',
+                                 __os_type=sw_image.supported_virtualization_environment,
+                                 cloudinit='true',
+                                 virtual_env_type='KVM',
+                                 hw_watchdog_action='none',
                                  disk_format=sw_image.disk_format)
     VmImageInfoMapper(
         image_id=image['id'],
@@ -173,6 +182,7 @@ def _import_image_by_os_func(image_id, host_ip, uri):
     """
     使用Openstack自带功能上传远端镜像
     """
+    warnings.warn("此方法已废弃，不推荐使用", DeprecationWarning)
     glance = create_glance_client(host_ip)
     try:
         glance.images.image_import(image_id, method='web-download', uri=uri)

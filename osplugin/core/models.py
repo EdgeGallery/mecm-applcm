@@ -23,7 +23,7 @@ import utils
 from core.log import logger
 from core.orm.adapter import db
 
-_APP_TASK_PATH = config.base_dir + '/tmp/tasks'
+_APP_TASK_PATH = '/tmp/osplugin/tasks'
 LOG = logger
 
 
@@ -69,17 +69,17 @@ class UploadPackageRequest:
         self._tmp_package_dir = _APP_TASK_PATH + '/' + task_id
         utils.create_dir(self._tmp_package_dir)
         self.tmp_package_file_path = self._tmp_package_dir + '/package.zip'
-        for request in request_iterator:
-            if request.accessToken:
-                self.access_token = request.accessToken
-            elif request.appPackageId:
-                self.app_package_id = request.appPackageId
-            elif request.hostIp:
-                self.host_ip = request.hostIp
-            elif request.tenantId:
-                self.tenant_id = request.tenantId
-            elif request.package:
-                with open(self.tmp_package_file_path, 'ab') as file:
+        with open(self.tmp_package_file_path, 'ab') as file:
+            for request in request_iterator:
+                if request.accessToken:
+                    self.access_token = request.accessToken
+                elif request.appPackageId:
+                    self.app_package_id = request.appPackageId
+                elif request.hostIp:
+                    self.host_ip = request.hostIp
+                elif request.tenantId:
+                    self.tenant_id = request.tenantId
+                elif request.package:
                     file.write(request.package)
 
     def delete_tmp(self):

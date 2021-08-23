@@ -116,7 +116,7 @@ class AppLcmServiceTest(unittest.TestCase):
             AppPkgMapper(
                 app_package_id='pkg001',
                 host_ip=self.host_ip,
-                status='active'
+                status='uploaded'
             )
             commit()
         get_hot_yaml_path.return_value = 'resources/test_hot.yaml'
@@ -128,7 +128,7 @@ class AppLcmServiceTest(unittest.TestCase):
             tenantId='tenant001',
             appInstanceId='test001',
             appPackageId='pkg001',
-            parameters = {
+            parameters={
                 'ak': 'ak',
                 'sk': 'sk'
             }
@@ -185,12 +185,47 @@ class AppLcmServiceTest(unittest.TestCase):
         response = self.app_lcm_service.query(data, None)
         LOG.info(response.response)
 
+    def test_query_package_status(self):
+        """
+        测试查询包状态
+        Returns:
+
+        """
+        with db_session:
+            AppPkgMapper(
+                app_package_id='pkgquery001',
+                host_ip=self.host_ip,
+                status='active'
+            )
+            VmImageInfoMapper(
+                image_id='image001',
+                host_ip=self.host_ip,
+                image_name='image001',
+                status='active',
+                app_package_id='pkgquery001'
+            )
+            VmImageInfoMapper(
+                image_id='image002',
+                host_ip=self.host_ip,
+                image_name='image002',
+                status='killed',
+                app_package_id='pkgquery001'
+            )
+            commit()
+        request = lcmservice_pb2.QueryPackageStatusRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            packageId='pkgquery001'
+        )
+        response = self.app_lcm_service.queryPackageStatus(request, None)
+        LOG.info(response.response)
+
     def test_upload_config(self):
         """
         测试上传配置
         """
-        if not os.path.exists('target/config'):
-            os.mkdir('target/config')
+        if not os.path.exists('config'):
+            os.mkdir('config')
 
         with open('resources/test_config.rc', 'rb') as f:
             config_file = f.read()
