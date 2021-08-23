@@ -44,6 +44,8 @@ func init() {
 	initAPI(util.Lcmcontroller, "DistributionStatus", "/v1/tenants/:tenantId/packages", util.GET)
 	initAPI(util.Lcmcontroller, "SynchronizeAppPackageUpdatedRecord","/v1/tenants/:tenantId/packages/sync_updated", util.GET)
 	initAPI(util.Lcmcontroller, "SynchronizeAppPackageStaleRecord",  "/v1/tenants/:tenantId/packages/sync_deleted", util.GET)
+	initAPI(util.Lcmcontroller, "ChangeKey", "/password", util.POST)
+	initAPI(util.Lcmcontroller, "LoginPage", "/login", util.POST)
 	initAPI(util.Imagecontroller, "CreateImage", "/v1/tenants/:tenantId/app_instances/:appInstanceId/images", util.POST)
 	initAPI(util.Imagecontroller, "DeleteImage", "/v1/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId", util.DELETE)
 	initAPI(util.Imagecontroller, "GetImage", "/v1/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId", util.GET)
