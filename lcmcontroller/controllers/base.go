@@ -92,10 +92,29 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 			return tenantId, err
 		}
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+	name, err := c.getUserName(clientIp)
 	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
 		return tenantId, err
+	}
+
+	key, err := c.getKey(clientIp)
+	if err != nil {
+		return tenantId, err
+	}
+
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+		if err != nil {
+			c.HandleLoggingForTokenFailure(clientIp, err.Error())
+			return tenantId, err
+		}
+	} else {
+		if name != "" && key != "" {
+			err := c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return tenantId, err
+			}
+		}
 	}
 	return tenantId, nil
 }
@@ -374,4 +393,51 @@ func checkLineStart(line string) bool {
 		return true
 	}
 	return res
+}
+
+// Get user name
+func (c *BaseController) getUserName(clientIp string) (string, error) {
+	userName := c.Ctx.Request.Header.Get("name")
+	if userName != "" {
+		name, err := util.ValidateUserName(userName, util.NameRegex)
+		if err != nil || !name {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
+			return "", errors.New("username is invalid")
+		}
+	}
+	return userName, nil
+}
+
+// Get key
+func (c *BaseController) getKey(clientIp string) (string, error) {
+	key := c.Ctx.Request.Header.Get("key")
+	if key != "" {
+		keyValid, err := util.ValidateDbParams(key)
+		if err != nil || !keyValid {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
+			return "", errors.New("key is invalid")
+		}
+	}
+	return key, nil
+}
+
+func (c *BaseController) validateCredentials(clientIp, userName, key string) error {
+
+	edgeAuthInfoRec := &models.EdgeAuthenticateRec{
+		Name: userName,
+	}
+
+	readErr := c.Db.ReadData(edgeAuthInfoRec, "name")
+	if readErr != nil {
+		c.HandleLoggingForError(clientIp, util.StatusNotFound,
+			"Edge auth info record does not exist in database")
+		return readErr
+	}
+
+	if strings.Compare(key, edgeAuthInfoRec.Key) != 0 {
+		c.HandleLoggingForError(clientIp, util.BadRequest,
+			"Password is not matched")
+		return errors.New("invalid credentials")
+	}
+	return nil
 }

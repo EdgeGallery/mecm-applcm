@@ -730,6 +730,14 @@ func ValidateName(name string, regex string) (bool, error) {
 	return regexp.MatchString(regex, name)
 }
 
+// Validate app name
+func ValidateUserName(name string, regex string) (bool, error) {
+	if len(name) > 15 {
+		return false, errors.New("name length is larger than max size")
+	}
+	return regexp.MatchString(regex, name)
+}
+
 // Handle number of REST requests per second
 func RateLimit(r *RateLimiter, ctx *context.Context) {
 	var (

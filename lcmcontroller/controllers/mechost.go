@@ -60,6 +60,29 @@ func (c *MecHostController) AddMecHost() {
 		return
 	}
 
+	userName := c.Ctx.Request.Header.Get("name")
+	if userName != "" {
+		name, err := util.ValidateUserName(userName, util.NameRegex)
+		if err != nil || !name {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
+			return
+		}
+	}
+	key := c.Ctx.Request.Header.Get("key")
+	if key != "" {
+		validKey, err := util.ValidateDbParams(key)
+		if err != nil || !validKey {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
+			return
+		}
+	}
+
+	if userName != "" && key != "" {
+		err = c.validateCredentials(clientIp, userName, key)
+		if err != nil {
+			return
+		}
+	}
 	err = c.InsertorUpdateMecHostRecord(clientIp, request)
 	if err != nil {
 		c.writeErrorResponse("failed to insert or update mec host record", util.BadRequest)
@@ -219,6 +242,30 @@ func (c *MecHostController) DeleteMecHost() {
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
+	}
+
+	userName := c.Ctx.Request.Header.Get("name")
+	if userName != "" {
+		name, err := util.ValidateUserName(userName, util.NameRegex)
+		if err != nil || !name {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
+			return
+		}
+	}
+	key := c.Ctx.Request.Header.Get("key")
+	if key != "" {
+		validKey, err := util.ValidateDbParams(key)
+		if err != nil || !validKey {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
+			return
+		}
+	}
+
+	if userName != "" && key != "" {
+		err = c.validateCredentials(clientIp, userName, key)
+		if err != nil {
+			return
+		}
 	}
 
 	err = c.deleteHostInfoRecord(clientIp, hostIp)

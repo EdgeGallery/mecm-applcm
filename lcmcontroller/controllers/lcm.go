@@ -448,10 +448,28 @@ func (c *LcmController) validateToken(accessToken string, req models.Instantiate
 	if err != nil {
 		return "", "", "", "", "", err
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+	name, err := c.getUserName(clientIp)
 	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
 		return "", "", "", "", "", err
+	}
+
+	key, err := c.getKey(clientIp)
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+		if err != nil {
+			c.HandleLoggingForTokenFailure(clientIp, err.Error())
+			return "", "", "", "", "", err
+		}
+	} else {
+		if name != "" && key != "" {
+			err := c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return "", "", "", "", "", err
+			}
+		}
 	}
 	return appInsId, tenantId, hostIp, packageId, appName, nil
 }
@@ -655,11 +673,29 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, "")
+	name, err := c.getUserName(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		return
+	}
+
+	key, err := c.getKey(clientIp)
+	if err != nil {
+		return
+	}
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken,
+			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, "")
+		if err != nil {
+			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+			return
+		}
+	} else {
+		if name != "" && key != "" {
+			err := c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
@@ -839,6 +875,45 @@ func (c *LcmController) GetHostIP(clientIp string) (string, error) {
 		return "", err
 	}
 	return hostIp, nil
+}
+
+// Get user name
+func (c *LcmController) getUserName(clientIp string) (string, error) {
+	userName := c.Ctx.Request.Header.Get("name")
+	if userName != "" {
+		name, err := util.ValidateUserName(userName, util.NameRegex)
+		if err != nil || !name {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
+			return "", errors.New("username is invalid")
+		}
+	}
+	return userName, nil
+}
+
+// Get key
+func (c *LcmController) getKey(clientIp string) (string, error) {
+	key := c.Ctx.Request.Header.Get("key")
+	if key != "" {
+		keyValid, err := util.ValidateDbParams(key)
+		if err != nil || !keyValid {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
+			return "", errors.New("key is invalid")
+		}
+	}
+	return key, nil
+}
+
+// Get new key
+func (c *LcmController) getNewKey(clientIp string) (string, error) {
+	newKey := c.Ctx.Request.Header.Get("newkey")
+	if newKey != "" {
+		newKeyValid, err := util.ValidateDbParams(newKey)
+		if err != nil || !newKeyValid {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "new key is invalid")
+			return "", errors.New("new key is invalid")
+		}
+	}
+	return newKey, nil
 }
 
 // Get origin
@@ -1091,12 +1166,32 @@ func (c *LcmController) GetWorkloadDescription() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+	name, err := c.getUserName(clientIp)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 		util.ClearByteArray(bKey)
 		return
+	}
+
+	key, err := c.getKey(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken,
+			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+		if err != nil {
+			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+			util.ClearByteArray(bKey)
+			return
+		}
+	} else {
+		if name != "" && key != "" {
+			err := c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	appInsId, err := c.GetAppInstId(clientIp)
@@ -2241,12 +2336,31 @@ func (c *LcmController) GetClientIpAndValidateAccessToken(receiveMsg string, all
 		return clientIp, bKey, accessToken, err
 	}
 	c.displayReceivedMsg(clientIp)
-	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, allowedRoles, tenantId)
+	name, err := c.getUserName(clientIp)
 	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
 		return clientIp, bKey, accessToken, err
 	}
+
+	key, err := c.getKey(clientIp)
+	if err != nil {
+		return clientIp, bKey, accessToken, err
+	}
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken, allowedRoles, tenantId)
+		if err != nil {
+			c.HandleLoggingForTokenFailure(clientIp, err.Error())
+			return clientIp, bKey, accessToken, err
+		}
+	} else {
+		if name != "" && key != "" {
+			err = c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return
+			}
+		}
+	}
+
 	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
 	return clientIp, bKey, accessToken, nil
 }
@@ -2317,4 +2431,124 @@ func (c *LcmController) getClientIpNew() (clientIp string, bKey []byte,
 		return
 	}
 	return clientIp, bKey, accessToken, err
+}
+
+// @Title Change key
+// @Description Change key
+// @Param	name		 formData 	string	true   "name"
+// @Param   key          formData   string  true   "key"
+// @Param   newkey       formData   string  true   "newkey"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /password [post]
+func (c *LcmController) ChangeKey() {
+	log.Info("Add change key request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	userName, key, newKey, err := c.getInputParametersForChangeKey(clientIp)
+	if err != nil {
+		return
+	}
+
+	if userName != "" {
+		edgeAuthInfoRec := &models.EdgeAuthenticateRec{
+			Name: userName,
+		}
+
+		readErr := c.Db.ReadData(edgeAuthInfoRec, "name")
+		if readErr != nil {
+			c.HandleLoggingForError(clientIp, util.StatusNotFound,
+				"Edge auth info record does not exist in database")
+			return
+		}
+
+		if strings.Compare(key, edgeAuthInfoRec.Key) != 0 {
+			c.HandleLoggingForError(clientIp, util.BadRequest,
+				"Old password is not matched")
+			return
+		}
+
+		edgeAuthInfoRec.Key = newKey
+		err = c.Db.InsertOrUpdateData(edgeAuthInfoRec, "authenticate_id")
+		if err != nil && err.Error() != util.LastInsertIdNotSupported {
+			c.HandleLoggingForError(clientIp, util.BadRequest,
+				"Failed to save edge auth info record to database.")
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Change key is successful")
+	c.ServeJSON()
+}
+
+
+// @Title Login Page
+// @Description Login Page
+// @Param	name		 formData 	string	true   "name"
+// @Param   key          formData   string  true   "key"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /login [post]
+func (c *LcmController) LoginPage() {
+	log.Info("Add change key request received.")
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+
+	userName, key, _, err := c.getInputParametersForChangeKey(clientIp)
+	if err != nil {
+		return
+	}
+
+	if userName != "" {
+		edgeAuthInfoRec := &models.EdgeAuthenticateRec{
+			Name: userName,
+		}
+
+		readErr := c.Db.ReadData(edgeAuthInfoRec, "name")
+		if readErr != nil {
+			c.HandleLoggingForError(clientIp, util.StatusNotFound,
+				"Edge auth info record does not exist in database")
+			return
+		}
+
+		if strings.Compare(key, edgeAuthInfoRec.Key) != 0 {
+			c.HandleLoggingForError(clientIp, util.BadRequest,
+				"Invalid credentials")
+			return
+		}
+	}
+	c.handleLoggingForSuccess(clientIp, "Login Page is is successful")
+	c.ServeJSON()
+}
+
+
+// Get in put parameters for upload configuration
+func (c *LcmController) getInputParametersForChangeKey(clientIp string) (name string,
+	key string, newKey string, err error) {
+	name, err = c.getUserName(clientIp)
+	if err != nil {
+		return name, key, newKey, err
+	}
+
+	key, err = c.getKey(clientIp)
+	if err != nil {
+		return name, key, newKey, err
+	}
+
+	newKey, err = c.getNewKey(clientIp)
+	if err != nil {
+		return name, key, newKey, err
+	}
+
+	return name, key, newKey, nil
 }

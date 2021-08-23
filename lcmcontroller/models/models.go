@@ -33,6 +33,7 @@ func init() {
 	orm.RegisterModel(new(AppPackageHostRecord))
 	orm.RegisterModel(new(AppPackageStaleRec))
 	orm.RegisterModel(new(AppPackageHostStaleRec))
+	orm.RegisterModel(new(EdgeAuthenticateRec))
 }
 
 // MEC host record
@@ -354,4 +355,11 @@ type AppInfoParams struct {
 	SyncStatus    bool
 	ClientIP      string
 	AccessToken   string
+}
+
+// Edge Authentication Info
+type EdgeAuthenticateRec struct {
+	AuthenticateId string `orm:"pk" json:"authenticate_id"`
+	Name           string `json:"name"`
+	Key            string `json:"key"`
 }
