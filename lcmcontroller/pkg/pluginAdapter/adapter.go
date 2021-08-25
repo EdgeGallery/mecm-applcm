@@ -243,6 +243,24 @@ func (c *PluginAdapter) UploadPackage(tenantId string, appPkg string, host strin
 	return status, nil
 }
 
+// Query Package Status
+func (c *PluginAdapter) QueryPackageStatus(tenantId string, host string, packageId string,
+	accessToken string) (status string, error error) {
+	log.Info("Distribute package started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.QueryPackageStatus(ctx, tenantId, host, packageId, accessToken)
+	if err != nil {
+		log.Error("failed to upload Package")
+		return util.Failure, err
+	}
+
+	log.Info("Package distribution is success with status: ", status)
+	return status, nil
+}
+
 // Remove configuration
 func (c *PluginAdapter) DeletePackage(tenantId string, host string, packageId string, accessToken string) (status string, error error) {
 	log.Info("Delete package started")
@@ -256,24 +274,5 @@ func (c *PluginAdapter) DeletePackage(tenantId string, host string, packageId st
 	}
 
 	log.Info("remove configuration is success with status: ", status)
-	return status, nil
-}
-
-
-// Upload configuration
-func (c *PluginAdapter) UploadPackageStatus(tenantId string, host string, packageId string,
-	accessToken string) (status string, error error) {
-	log.Info("Upload package status started")
-
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
-	defer cancel()
-
-	status, err := c.client.UploadPackageStatus(ctx, tenantId, host, packageId, accessToken)
-	if err != nil {
-		log.Error("failed to get upload Package status")
-		return util.Failure, err
-	}
-
-	log.Info("Package status is success with status: ", status)
 	return status, nil
 }

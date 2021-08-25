@@ -40,7 +40,7 @@ type ClientIntf interface {
 	UploadPackage(ctx context.Context, tenantId string, appPkg string, hostIP string,
 		packageId string, accessToken string) (status string, error error)
 	DeletePackage(ctx context.Context, tenantId string, hostIP string, accessToken string,  packageId string) (status string, error error)
-	UploadPackageStatus(ctx context.Context, tenantId string, hostIP string,
+	QueryPackageStatus(ctx context.Context, tenantId string, hostIP string,
 		packageId string, accessToken string) (status string, error error)
 
 

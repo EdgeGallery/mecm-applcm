@@ -219,7 +219,7 @@ func (c *LcmControllerV2) UploadPackageV2() {
 }
 
 func (c *LcmControllerV2) handleLoggingForSuccess(object interface{}, clientIp string, msg string) {
-	log.Info("Response message for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+	log.Info("Response for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 	returnContent := handleSuccessReturn(object, msg)
 	c.Data["json"] = returnContent
@@ -2114,7 +2114,7 @@ func (c *LcmControllerV2) DistributionStatus() {
 					return
 				}
 				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-				status, err = adapter.UploadPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+				status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
 				if err != nil {
 					c.HandleLoggingForFailure(clientIp, err.Error())
 					return

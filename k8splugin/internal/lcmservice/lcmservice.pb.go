@@ -1627,7 +1627,7 @@ func (x *DeletePackageResponse) GetStatus() string {
 	return ""
 }
 
-type UploadPackageStatusRequest struct {
+type QueryPackageStatusRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1638,8 +1638,8 @@ type UploadPackageStatusRequest struct {
 	TenantId     string `protobuf:"bytes,4,opt,name=tenantId,proto3" json:"tenantId,omitempty"`
 }
 
-func (x *UploadPackageStatusRequest) Reset() {
-	*x = UploadPackageStatusRequest{}
+func (x *QueryPackageStatusRequest) Reset() {
+	*x = QueryPackageStatusRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_lcmservice_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1647,13 +1647,13 @@ func (x *UploadPackageStatusRequest) Reset() {
 	}
 }
 
-func (x *UploadPackageStatusRequest) String() string {
+func (x *QueryPackageStatusRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UploadPackageStatusRequest) ProtoMessage() {}
+func (*QueryPackageStatusRequest) ProtoMessage() {}
 
-func (x *UploadPackageStatusRequest) ProtoReflect() protoreflect.Message {
+func (x *QueryPackageStatusRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_lcmservice_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1665,40 +1665,40 @@ func (x *UploadPackageStatusRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UploadPackageStatusRequest.ProtoReflect.Descriptor instead.
-func (*UploadPackageStatusRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryPackageStatusRequest.ProtoReflect.Descriptor instead.
+func (*QueryPackageStatusRequest) Descriptor() ([]byte, []int) {
 	return file_lcmservice_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *UploadPackageStatusRequest) GetAccessToken() string {
+func (x *QueryPackageStatusRequest) GetAccessToken() string {
 	if x != nil {
 		return x.AccessToken
 	}
 	return ""
 }
 
-func (x *UploadPackageStatusRequest) GetAppPackageId() string {
+func (x *QueryPackageStatusRequest) GetAppPackageId() string {
 	if x != nil {
 		return x.AppPackageId
 	}
 	return ""
 }
 
-func (x *UploadPackageStatusRequest) GetHostIp() string {
+func (x *QueryPackageStatusRequest) GetHostIp() string {
 	if x != nil {
 		return x.HostIp
 	}
 	return ""
 }
 
-func (x *UploadPackageStatusRequest) GetTenantId() string {
+func (x *QueryPackageStatusRequest) GetTenantId() string {
 	if x != nil {
 		return x.TenantId
 	}
 	return ""
 }
 
-type UploadPackageStatusResponse struct {
+type QueryPackageStatusResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1706,8 +1706,8 @@ type UploadPackageStatusResponse struct {
 	Status string `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 }
 
-func (x *UploadPackageStatusResponse) Reset() {
-	*x = UploadPackageStatusResponse{}
+func (x *QueryPackageStatusResponse) Reset() {
+	*x = QueryPackageStatusResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_lcmservice_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1715,13 +1715,13 @@ func (x *UploadPackageStatusResponse) Reset() {
 	}
 }
 
-func (x *UploadPackageStatusResponse) String() string {
+func (x *QueryPackageStatusResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UploadPackageStatusResponse) ProtoMessage() {}
+func (*QueryPackageStatusResponse) ProtoMessage() {}
 
-func (x *UploadPackageStatusResponse) ProtoReflect() protoreflect.Message {
+func (x *QueryPackageStatusResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_lcmservice_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1733,12 +1733,12 @@ func (x *UploadPackageStatusResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UploadPackageStatusResponse.ProtoReflect.Descriptor instead.
-func (*UploadPackageStatusResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryPackageStatusResponse.ProtoReflect.Descriptor instead.
+func (*QueryPackageStatusResponse) Descriptor() ([]byte, []int) {
 	return file_lcmservice_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *UploadPackageStatusResponse) GetStatus() string {
+func (x *QueryPackageStatusResponse) GetStatus() string {
 	if x != nil {
 		return x.Status
 	}
@@ -2042,8 +2042,8 @@ var file_lcmservice_proto_goTypes = []interface{}{
 	(*UploadPackageResponse)(nil),       // 23: lcmservice.UploadPackageResponse
 	(*DeletePackageRequest)(nil),        // 24: lcmservice.DeletePackageRequest
 	(*DeletePackageResponse)(nil),       // 25: lcmservice.DeletePackageResponse
-	(*UploadPackageStatusRequest)(nil),  // 26: lcmservice.UploadPackageStatusRequest
-	(*UploadPackageStatusResponse)(nil), // 27: lcmservice.UploadPackageStatusResponse
+	(*QueryPackageStatusRequest)(nil),  // 26: lcmservice.QueryPackageStatusRequest
+	(*QueryPackageStatusResponse)(nil), // 27: lcmservice.QueryPackageStatusResponse
 	nil,                                 // 28: lcmservice.InstantiateRequest.ParametersEntry
 }
 var file_lcmservice_proto_depIdxs = []int32{
@@ -2057,7 +2057,7 @@ var file_lcmservice_proto_depIdxs = []int32{
 	12, // 7: lcmservice.AppLCM.workloadEvents:input_type -> lcmservice.WorkloadEventsRequest
 	22, // 8: lcmservice.AppLCM.uploadPackage:input_type -> lcmservice.UploadPackageRequest
 	24, // 9: lcmservice.AppLCM.deletePackage:input_type -> lcmservice.DeletePackageRequest
-	26, // 10: lcmservice.AppLCM.uploadPackageStatus:input_type -> lcmservice.UploadPackageStatusRequest
+	26, // 10: lcmservice.AppLCM.QueryPackageStatus:input_type -> lcmservice.QueryPackageStatusRequest
 	14, // 11: lcmservice.VmImage.createVmImage:input_type -> lcmservice.CreateVmImageRequest
 	16, // 12: lcmservice.VmImage.queryVmImage:input_type -> lcmservice.QueryVmImageRequest
 	18, // 13: lcmservice.VmImage.deleteVmImage:input_type -> lcmservice.DeleteVmImageRequest
@@ -2071,7 +2071,7 @@ var file_lcmservice_proto_depIdxs = []int32{
 	13, // 21: lcmservice.AppLCM.workloadEvents:output_type -> lcmservice.WorkloadEventsResponse
 	23, // 22: lcmservice.AppLCM.uploadPackage:output_type -> lcmservice.UploadPackageResponse
 	25, // 23: lcmservice.AppLCM.deletePackage:output_type -> lcmservice.DeletePackageResponse
-	27, // 24: lcmservice.AppLCM.uploadPackageStatus:output_type -> lcmservice.UploadPackageStatusResponse
+	27, // 24: lcmservice.AppLCM.QueryPackageStatus:output_type -> lcmservice.QueryPackageStatusResponse
 	15, // 25: lcmservice.VmImage.createVmImage:output_type -> lcmservice.CreateVmImageResponse
 	17, // 26: lcmservice.VmImage.queryVmImage:output_type -> lcmservice.QueryVmImageResponse
 	19, // 27: lcmservice.VmImage.deleteVmImage:output_type -> lcmservice.DeleteVmImageResponse
@@ -2402,7 +2402,7 @@ func file_lcmservice_proto_init() {
 			}
 		}
 		file_lcmservice_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadPackageStatusRequest); i {
+			switch v := v.(*QueryPackageStatusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2414,7 +2414,7 @@ func file_lcmservice_proto_init() {
 			}
 		}
 		file_lcmservice_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadPackageStatusResponse); i {
+			switch v := v.(*QueryPackageStatusResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2479,7 +2479,7 @@ type AppLCMClient interface {
 	WorkloadEvents(ctx context.Context, in *WorkloadEventsRequest, opts ...grpc.CallOption) (*WorkloadEventsResponse, error)
 	UploadPackage(ctx context.Context, opts ...grpc.CallOption) (AppLCM_UploadPackageClient, error)
 	DeletePackage(ctx context.Context, in *DeletePackageRequest, opts ...grpc.CallOption) (*DeletePackageResponse, error)
-	UploadPackageStatus(ctx context.Context, in *UploadPackageStatusRequest, opts ...grpc.CallOption) (*UploadPackageStatusResponse, error)
+	QueryPackageStatus(ctx context.Context, in *QueryPackageStatusRequest, opts ...grpc.CallOption) (*QueryPackageStatusResponse, error)
 }
 
 type appLCMClient struct {
@@ -2621,9 +2621,9 @@ func (c *appLCMClient) DeletePackage(ctx context.Context, in *DeletePackageReque
 	return out, nil
 }
 
-func (c *appLCMClient) UploadPackageStatus(ctx context.Context, in *UploadPackageStatusRequest, opts ...grpc.CallOption) (*UploadPackageStatusResponse, error) {
-	out := new(UploadPackageStatusResponse)
-	err := c.cc.Invoke(ctx, "/lcmservice.AppLCM/uploadPackageStatus", in, out, opts...)
+func (c *appLCMClient) QueryPackageStatus(ctx context.Context, in *QueryPackageStatusRequest, opts ...grpc.CallOption) (*QueryPackageStatusResponse, error) {
+	out := new(QueryPackageStatusResponse)
+	err := c.cc.Invoke(ctx, "/lcmservice.AppLCM/QueryPackageStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2641,7 +2641,7 @@ type AppLCMServer interface {
 	WorkloadEvents(context.Context, *WorkloadEventsRequest) (*WorkloadEventsResponse, error)
 	UploadPackage(AppLCM_UploadPackageServer) error
 	DeletePackage(context.Context, *DeletePackageRequest) (*DeletePackageResponse, error)
-	UploadPackageStatus(context.Context, *UploadPackageStatusRequest) (*UploadPackageStatusResponse, error)
+	QueryPackageStatus(context.Context, *QueryPackageStatusRequest) (*QueryPackageStatusResponse, error)
 }
 
 // UnimplementedAppLCMServer can be embedded to have forward compatible implementations.
@@ -2675,8 +2675,8 @@ func (*UnimplementedAppLCMServer) UploadPackage(AppLCM_UploadPackageServer) erro
 func (*UnimplementedAppLCMServer) DeletePackage(context.Context, *DeletePackageRequest) (*DeletePackageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePackage not implemented")
 }
-func (*UnimplementedAppLCMServer) UploadPackageStatus(context.Context, *UploadPackageStatusRequest) (*UploadPackageStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UploadPackageStatus not implemented")
+func (*UnimplementedAppLCMServer) QueryPackageStatus(context.Context, *QueryPackageStatusRequest) (*QueryPackageStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryPackageStatus not implemented")
 }
 
 func RegisterAppLCMServer(s *grpc.Server, srv AppLCMServer) {
@@ -2861,20 +2861,20 @@ func _AppLCM_DeletePackage_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AppLCM_UploadPackageStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadPackageStatusRequest)
+func _AppLCM_QueryPackageStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPackageStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AppLCMServer).UploadPackageStatus(ctx, in)
+		return srv.(AppLCMServer).QueryPackageStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/lcmservice.AppLCM/UploadPackageStatus",
+		FullMethod: "/lcmservice.AppLCM/QueryPackageStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppLCMServer).UploadPackageStatus(ctx, req.(*UploadPackageStatusRequest))
+		return srv.(AppLCMServer).QueryPackageStatus(ctx, req.(*QueryPackageStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2912,8 +2912,8 @@ var _AppLCM_serviceDesc = grpc.ServiceDesc{
 			Handler:    _AppLCM_DeletePackage_Handler,
 		},
 		{
-			MethodName: "uploadPackageStatus",
-			Handler:    _AppLCM_UploadPackageStatus_Handler,
+			MethodName: "QueryPackageStatus",
+			Handler:    _AppLCM_QueryPackageStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

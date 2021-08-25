@@ -87,14 +87,15 @@ func (mc *mockClient) UploadPackage(ctx context.Context, tenantId string, appPkg
 	return SUCCESS_RETURN, nil
 }
 
+func (mc *mockClient) QueryPackageStatus(ctx context.Context, tenantId string, hostIP string,
+	packageId string, accessToken string) (status string, error error) {
+	return SUCCESS_RETURN, nil
+}
+
 func (mc *mockClient) DeletePackage(ctx context.Context, tenantId string, hostIP string, accessToken string,  packageId string) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) UploadPackageStatus(ctx context.Context, tenantId string, hostIP string,
-	packageId string, accessToken string) (status string, error error) {
-	return SUCCESS_RETURN, nil
-}
 
 
 

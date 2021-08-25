@@ -219,6 +219,7 @@ const (
 	DELETE               = "delete"
 	GET                  = "get"
 	POST                 = "post"
+	ResponseForClient    = 	"Response message for ClientIP ["
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
 	TempFile             = "/usr/app/temp"
@@ -230,6 +231,7 @@ const (
 	PkgUrlPath           = "/v1/tenants/:tenantId/packages/:packageId"
 
 	PkgUrlPathV2 = "/v2/tenants/:tenantId/packages/:packageId"
+	QueryMepCapabilities = "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities"
 
 	//mep service calling
 	ErrCallFromMep        string = "failed to execute rest calling, check if mep service is ready."
