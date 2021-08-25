@@ -41,7 +41,7 @@ COPY internal ./internal
 COPY service ./service
 COPY task ./task
 COPY *.py ./
-COPY configs/config-pro.ini ./config.ini
+COPY config-pro.ini ./config.ini
 
 COPY --from=developement /venv ./venv
 
