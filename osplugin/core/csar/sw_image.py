@@ -36,7 +36,7 @@ class SwImageDescription:
         self.hw_disk_bus = json_data.get('hw_disk_bus', None)
         self.operating_system = json_data.get('operatingSystem', None)
         self.supported_virtualization_environment = \
-            json_data.get('supportedVirtualizationEnvironment', None)
+            json_data.get('supportedVirtualisationEnvironment', None)
 
 
 def get_sw_image_desc_list(path):
