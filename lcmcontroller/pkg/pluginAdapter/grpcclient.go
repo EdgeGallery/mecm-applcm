@@ -529,7 +529,7 @@ func (c *ClientGRPC) DeletePackage(ctx context.Context, tenantId string, hostIP 
 
 // Upload Package status
 func (c *ClientGRPC) QueryPackageStatus(ctx context.Context, tenantId string, hostIP string, packageId string, accessToken string) (status string, error error) {
-	req := &lcmservice.UploadPackageStatusRequest{
+	req := &lcmservice.QueryPackageStatusRequest{
 		AccessToken:  accessToken,
 		AppPackageId: packageId,
 		HostIp:       hostIP,

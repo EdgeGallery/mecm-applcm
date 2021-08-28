@@ -200,7 +200,7 @@ service AppLCM {
   rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}
   rpc uploadPackage (stream UploadPackageRequest) returns (UploadPackageResponse) {}
   rpc deletePackage (DeletePackageRequest) returns (DeletePackageResponse) {}
-  rpc uploadPackageStatus (UploadPackageStatusRequest) returns (UploadPackageStatusResponse) {}
+  rpc queryPackageStatus (QueryPackageStatusRequest) returns (QueryPackageStatusResponse) {}
 }
 
 service VmImage {
