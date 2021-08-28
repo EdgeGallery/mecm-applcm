@@ -142,7 +142,7 @@ func (a AppLCMServer) WorkloadEvents(ctx context.Context, request *lcmservice.Wo
 
 func (a AppLCMServer) QueryPackageStatus(ctx context.Context, request *lcmservice.QueryPackageStatusRequest) (*lcmservice.QueryPackageStatusResponse, error) {
 	resp := &lcmservice.QueryPackageStatusResponse{
-		Status: SUCCESS_RETURN,
+		Response: SUCCESS_RETURN,
 	}
 	return resp, nil
 }
