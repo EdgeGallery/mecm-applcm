@@ -61,10 +61,12 @@ RUN rm -rf bin/tests bin/.gitignore bin/README.MD bin/requirements.txt bin/docke
     chmod 750 $HOME &&\
     chmod -R 550 $HOME/bin &&\
     chmod -R 550 $HOME/venv && \
+    chmod -R 550 etc/hosts &&\
     mkdir -m 700 $HOME/ssl &&\
     mkdir -m 750 $HOME/log &&\
     mkdir -m 750 $HOME/config &&\
     mkdir -m 750 $HOME/package &&\
+
     chown -hR $USER_NAME:$GROUP_NAME $HOME
 
 USER $USER_NAME
