@@ -2057,7 +2057,7 @@ var file_lcmservice_proto_depIdxs = []int32{
 	12, // 7: lcmservice.AppLCM.workloadEvents:input_type -> lcmservice.WorkloadEventsRequest
 	22, // 8: lcmservice.AppLCM.uploadPackage:input_type -> lcmservice.UploadPackageRequest
 	24, // 9: lcmservice.AppLCM.deletePackage:input_type -> lcmservice.DeletePackageRequest
-	26, // 10: lcmservice.AppLCM.QueryPackageStatus:input_type -> lcmservice.QueryPackageStatusRequest
+	26, // 10: lcmservice.AppLCM.queryPackageStatus:input_type -> lcmservice.QueryPackageStatusRequest
 	14, // 11: lcmservice.VmImage.createVmImage:input_type -> lcmservice.CreateVmImageRequest
 	16, // 12: lcmservice.VmImage.queryVmImage:input_type -> lcmservice.QueryVmImageRequest
 	18, // 13: lcmservice.VmImage.deleteVmImage:input_type -> lcmservice.DeleteVmImageRequest
@@ -2071,7 +2071,7 @@ var file_lcmservice_proto_depIdxs = []int32{
 	13, // 21: lcmservice.AppLCM.workloadEvents:output_type -> lcmservice.WorkloadEventsResponse
 	23, // 22: lcmservice.AppLCM.uploadPackage:output_type -> lcmservice.UploadPackageResponse
 	25, // 23: lcmservice.AppLCM.deletePackage:output_type -> lcmservice.DeletePackageResponse
-	27, // 24: lcmservice.AppLCM.QueryPackageStatus:output_type -> lcmservice.QueryPackageStatusResponse
+	27, // 24: lcmservice.AppLCM.queryPackageStatus:output_type -> lcmservice.QueryPackageStatusResponse
 	15, // 25: lcmservice.VmImage.createVmImage:output_type -> lcmservice.CreateVmImageResponse
 	17, // 26: lcmservice.VmImage.queryVmImage:output_type -> lcmservice.QueryVmImageResponse
 	19, // 27: lcmservice.VmImage.deleteVmImage:output_type -> lcmservice.DeleteVmImageResponse
@@ -2623,7 +2623,7 @@ func (c *appLCMClient) DeletePackage(ctx context.Context, in *DeletePackageReque
 
 func (c *appLCMClient) QueryPackageStatus(ctx context.Context, in *QueryPackageStatusRequest, opts ...grpc.CallOption) (*QueryPackageStatusResponse, error) {
 	out := new(QueryPackageStatusResponse)
-	err := c.cc.Invoke(ctx, "/lcmservice.AppLCM/QueryPackageStatus", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/lcmservice.AppLCM/queryPackageStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
