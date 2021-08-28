@@ -531,9 +531,8 @@ func (c *ClientGRPC) DeletePackage(ctx context.Context, tenantId string, hostIP 
 func (c *ClientGRPC) QueryPackageStatus(ctx context.Context, tenantId string, hostIP string, packageId string, accessToken string) (status string, error error) {
 	req := &lcmservice.QueryPackageStatusRequest{
 		AccessToken:  accessToken,
-		AppPackageId: packageId,
+		PackageId: packageId,
 		HostIp:       hostIP,
-		TenantId:     tenantId,
 	}
 
 	log.WithFields(log.Fields{
@@ -546,5 +545,5 @@ func (c *ClientGRPC) QueryPackageStatus(ctx context.Context, tenantId string, ho
 	if err != nil {
 		return "", err
 	}
-	return resp.Status, err
+	return resp.Response, err
 }
