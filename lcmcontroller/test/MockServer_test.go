@@ -140,8 +140,8 @@ func (a AppLCMServer) WorkloadEvents(ctx context.Context, request *lcmservice.Wo
 	return resp, nil
 }
 
-func (a AppLCMServer) UploadPackageStatus(ctx context.Context, request *lcmservice.UploadPackageStatusRequest) (*lcmservice.UploadPackageStatusResponse, error) {
-	resp := &lcmservice.UploadPackageStatusResponse{
+func (a AppLCMServer) QueryPackageStatus(ctx context.Context, request *lcmservice.QueryPackageStatusRequest) (*lcmservice.QueryPackageStatusResponse, error) {
+	resp := &lcmservice.QueryPackageStatusResponse{
 		Status: SUCCESS_RETURN,
 	}
 	return resp, nil

@@ -253,7 +253,7 @@ func (c *PluginAdapter) QueryPackageStatus(tenantId string, host string, package
 
 	status, err := c.client.QueryPackageStatus(ctx, tenantId, host, packageId, accessToken)
 	if err != nil {
-		log.Error("failed to upload Package")
+		log.Error("failed to query upload status")
 		return util.Failure, err
 	}
 
