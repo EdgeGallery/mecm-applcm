@@ -382,30 +382,19 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         """
         LOG.info('receive query app package msg...')
-        resp = QueryPackageStatusResponse(response=utils.FAILURE_JSON)
+        resp = QueryPackageStatusResponse(response=utils.ERROR)
 
         LOG.debug('校验access token, host ip')
         host_ip = validate_input_params(BaseRequest(request))
         if host_ip is None:
-            resp.response = '{"code":400}'
             return resp
 
         LOG.debug('检查app包状态')
         app_pkg_mapper = AppPkgMapper.get(app_package_id=request.packageId,
                                           host_ip=host_ip)
-        if app_pkg_mapper is None:
-            LOG.error('app pkg %s not found', request.packageId)
-            resp.response = '{"code":404}'
-            return resp
 
-        response_data = {
-            'code': 200,
-            'appPackageId': app_pkg_mapper.app_package_id,
-            'hostIp': app_pkg_mapper.host_ip,
-            'status': app_pkg_mapper.status
-        }
+        resp.response = app_pkg_mapper.status
 
-        resp.response = json.dumps(response_data)
         return resp
 
     @db_session
