@@ -398,14 +398,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             resp.response = '{"code":404}'
             return resp
 
-        image_infos = VmImageInfoMapper.select(app_package_id=request.packageId, host_ip=host_ip)
-
         response_data = {
             'code': 200,
             'appPackageId': app_pkg_mapper.app_package_id,
             'hostIp': app_pkg_mapper.host_ip,
-            'status': app_pkg_mapper.status,
-            'imageInfos': list(map(lambda x: {'imageName': x.image_name, 'status': x.status}, image_infos))
+            'status': app_pkg_mapper.status
         }
 
         resp.response = json.dumps(response_data)
