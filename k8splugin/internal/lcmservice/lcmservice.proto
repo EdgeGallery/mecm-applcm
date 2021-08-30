@@ -59,6 +59,16 @@ message QueryKPIResponse {
   string response = 1;
 }
 
+message QueryPackageStatusRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string packageId = 3;
+}
+
+message QueryPackageStatusResponse {
+  string response = 1;
+}
+
 message UploadCfgRequest {
   oneof data {
     string accessToken = 1;
@@ -179,28 +189,17 @@ message DeletePackageResponse {
   string status = 1;
 }
 
-message QueryPackageStatusRequest {
-  string accessToken = 1;
-  string appPackageId = 2;
-  string hostIp = 3;
-  string tenantId = 4;
-}
-
-message QueryPackageStatusResponse {
-  string status = 1;
-}
-
 service AppLCM {
   rpc instantiate (InstantiateRequest) returns (InstantiateResponse) {}
   rpc terminate (TerminateRequest) returns (TerminateResponse) {}
   rpc query (QueryRequest) returns (QueryResponse) {}
   rpc queryKPI (QueryKPIRequest) returns (QueryKPIResponse) {}
+  rpc queryPackageStatus (QueryPackageStatusRequest) returns (QueryPackageStatusResponse) {}
   rpc uploadConfig (stream UploadCfgRequest) returns (UploadCfgResponse) {}
   rpc removeConfig (RemoveCfgRequest) returns (RemoveCfgResponse) {}
   rpc workloadEvents (WorkloadEventsRequest) returns (WorkloadEventsResponse) {}
   rpc uploadPackage (stream UploadPackageRequest) returns (UploadPackageResponse) {}
   rpc deletePackage (DeletePackageRequest) returns (DeletePackageResponse) {}
-  rpc QueryPackageStatus (QueryPackageStatusRequest) returns (QueryPackageStatusResponse) {}
 }
 
 service VmImage {

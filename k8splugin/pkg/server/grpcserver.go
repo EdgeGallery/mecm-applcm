@@ -1123,7 +1123,7 @@ func (s *ServerGRPC) QueryPackageStatus(ctx context.Context,
 	request *lcmservice.QueryPackageStatusRequest) (*lcmservice.QueryPackageStatusResponse, error) {
 
 	resp := &lcmservice.QueryPackageStatusResponse{
-		Status: "Distributed",
+		Response: "Distributed",
 	}
 
 	err := s.displayReceivedMsg(ctx, util.QueryPackageStatus)
