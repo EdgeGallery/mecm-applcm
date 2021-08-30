@@ -21,9 +21,9 @@ import time
 from pony.orm import db_session, commit
 
 import utils
-from core import openstack_utils
 from core.log import logger
 from core.models import AppInsMapper
+from core.openstack_utils import create_heat_client
 from task import check_thread_pool
 
 LOG = logger
@@ -35,11 +35,11 @@ def start_check_stack_status(app_instance_id):
     Args:
         app_instance_id:
     """
-    check_thread_pool.submit(_check_stack_status, app_instance_id)
+    check_thread_pool.submit(check_stack_status, app_instance_id)
 
 
 @db_session
-def _check_stack_status(app_instance_id):
+def check_stack_status(app_instance_id):
     """
     check_stack_status
     Args:
@@ -50,7 +50,7 @@ def _check_stack_status(app_instance_id):
     if not app_ins_mapper:
         LOG.debug('app ins: %s db record not found', app_instance_id)
         return
-    heat = openstack_utils.create_heat_client(app_ins_mapper.host_ip)
+    heat = create_heat_client(app_ins_mapper.host_ip)
     stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
     if stack_resp is None and app_ins_mapper.operational_status == 'Terminating':
         app_ins_mapper.delete()
@@ -62,11 +62,11 @@ def _check_stack_status(app_instance_id):
                   app_instance_id,
                   stack_resp.stack_status,
                   stack_resp.stack_status_reason)
-        if stack_resp.action == 'CREATE' and stack_resp.stack_status == 'CREATE_COMPLETE':
+        if stack_resp.stack_status == 'CREATE_COMPLETE':
             app_ins_mapper.operational_status = utils.INSTANTIATED
             app_ins_mapper.operation_info = stack_resp.stack_status_reason
             LOG.debug('finish instantiate app ins %s', app_instance_id)
-        elif stack_resp.action == 'DELETE' and stack_resp.stack_status == 'DELETE_COMPLETE':
+        elif stack_resp.stack_status == 'DELETE_COMPLETE':
             app_ins_mapper.delete()
             LOG.debug('finish terminate app ins %s', app_instance_id)
         else:
