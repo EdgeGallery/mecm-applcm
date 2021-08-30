@@ -50,7 +50,23 @@ mock_glance_client.images.data.return_value = [
 """
 mock heat client 返回模拟数据
 """
+
+
+class MockStack:
+    def __init__(self, _dict):
+        self.status = _dict['status']
+        self.action = _dict['action']
+        self.stack_status = _dict['stack_status']
+        self.stack_status_reason = _dict['reason']
+
+
 mock_heat_client = Mock()
+mock_heat_client.stacks.get.return_value = MockStack({
+    'status': 'FAILED',
+    'action': 'CREATE',
+    'stack_status': 'CREATE_FAILED',
+    'reason': 'test create failed'
+})
 mock_heat_client.stacks.create.return_value = {
     'stack': {
         'id': 'created001'
