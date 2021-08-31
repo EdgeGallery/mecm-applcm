@@ -798,7 +798,7 @@ func (c *LcmController) Query() {
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmController) QueryKPI() {
 	log.Info("Application query kpi request received.")
-	clientIp, bKey, accessToken, err := c.getClientIpNew()
+	clientIp, bKey, accessToken, err := c.GetClientIpNew()
 
 	hostIp, err := c.GetUrlHostIP(clientIp)
 	if err != nil {
@@ -833,7 +833,7 @@ func (c *LcmController) QueryKPI() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmController) QueryMepCapabilities() {
-	clientIp, bKey, _, err :=  c.getClientIpNew()
+	clientIp, bKey, _, err :=  c.GetClientIpNew()
 	util.ClearByteArray(bKey)
 	_, err = c.GetUrlHostIP(clientIp)
 	if err != nil {
@@ -2427,7 +2427,7 @@ func (c *LcmController) getClientIp() (clientIp string,err error){
 	}
 	return clientIp,err
 }
-func (c *LcmController) getClientIpNew() (clientIp string, bKey []byte,
+func (c *LcmController) GetClientIpNew() (clientIp string, bKey []byte,
 	accessToken string, err error) {
 	clientIp = c.Ctx.Input.IP()
 	err = util.ValidateSrcAddress(clientIp)

@@ -17,6 +17,7 @@
 package test
 
 import (
+	"errors"
 	"lcmcontroller/controllers"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
@@ -146,7 +147,7 @@ func TestKpi(t *testing.T) {
 }
 
 
-func TestQueryKPIV2_Success(t *testing.T) {
+func TestQueryKPIV2Success(t *testing.T) {
 
 	// Mock the required API
 	patch2 := gomonkey.ApplyFunc(util.ClearByteArray, func(_ []byte) {
@@ -221,7 +222,7 @@ func TestQueryKPIV2_Success(t *testing.T) {
 	})
 }
 
-func TestQueryKPIV2_IPInvalid(t *testing.T) {
+func TestQueryKPIV2IPInvalid(t *testing.T) {
 
 	// Mock the required API
 	patch2 := gomonkey.ApplyFunc(util.ClearByteArray, func(_ []byte) {
@@ -481,5 +482,34 @@ func TestAppDeploymentStatus(t *testing.T) {
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, appDeployStatusController.Ctx.ResponseWriter.Status,
 			"Get application deployment status failed")
+
+		err := errors.New("error")
+		accessToken := createToken(tenantIdentifier)
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(appDeployStatusController.Db), "ReadData", func(_ *MockDb,_ interface{}, _ ...string) (error error) {
+			return err
+		})
+		defer patch6.Reset()
+		// Test upload package
+		appDeployStatusBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		appDeployStatusController.AppDeploymentStatus()
+
+		accessToken = createToken(tenantIdentifier)
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(appDeployStatusController), "GetUrlPackageId", func(_ *controllers.LcmController, _ string) (string, error ) {
+			return "", err
+		})
+		defer patch2.Reset()
+		// Test upload package
+		appDeployStatusBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		appDeployStatusController.AppDeploymentStatus()
+
+		accessToken = createToken(tenantIdentifier)
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(appDeployStatusController), "GetUrlHostIP", func(_ *controllers.LcmController, _ string) (string, error ) {
+			return "", err
+		})
+		defer patch1.Reset()
+		// Test upload package
+		appDeployStatusBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		appDeployStatusController.AppDeploymentStatus()
+
 	})
 }
