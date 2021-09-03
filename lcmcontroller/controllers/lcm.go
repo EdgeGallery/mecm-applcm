@@ -611,17 +611,17 @@ func (c *LcmController) Terminate() {
 	if err != nil {
 		return
 	}
-
-	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId)
-	if err != nil {
-		c.HandleLoggingForFailure(clientIp, err.Error())
-		return
-	}
-
+	
 	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{}, config.ApplicationConfig{})
 	err = acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+
+	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId)
+	if err != nil {
+		c.HandleLoggingForFailure(clientIp, err.Error())
 		return
 	}
 
