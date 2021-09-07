@@ -1829,7 +1829,12 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 // @router /packages/:packageId [get]
 func (c *LcmController) DistributionStatus() {
 	var status string
-	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
+	tenantId, err := c.GetTenantId("")
+	if err != nil {
+		return
+	}
+	clientIp, bKey, accessToken, err := c.GetClientIpAndValidateAccessToken("Package query request received.",
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
@@ -1841,7 +1846,14 @@ func (c *LcmController) DistributionStatus() {
 	}
 
 	var appPkgRecords []*models.AppPackageRecord
-	if packageId == "" {
+	edgeKey, _ := c.getKey(clientIp)
+	if edgeKey != "" {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
+		if count == 0 {
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			return
+		}
+	} else if packageId == ""  {
 		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
 		if count == 0 {
 			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
