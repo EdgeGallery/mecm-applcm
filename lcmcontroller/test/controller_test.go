@@ -90,6 +90,11 @@ var (
 	readData                          = "ReadData"
 	clientIp                          = "172.1.1.1"
 	err       						  = errors.New("error")
+	getInputParametersForChangeKey 	  = "GetInputParametersForChangeKey"
+	username                          = "testUser"
+	tenantRole						  = "ROLE_MECM_TENANT"
+	adminRole						  = "ROLE_MECM_ADMIN"
+	deleteData						  = "DeleteData"
 )
 
 func TestLcmOperation(t *testing.T) {

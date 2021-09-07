@@ -110,44 +110,44 @@ func testChangeKey(t *testing.T, extraParams map[string]string, path string, tes
 			Controller: keyBeegoController}}
 
 		//case-1
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return err
 		})
 		defer patch1.Reset()
 		keyController.ChangeKey()
 
 		//case-2
-		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch2.Reset()
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetInputParametersForChangeKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, _ string, _ string, error error) {
-				return "testUser", "", "", err
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getInputParametersForChangeKey,
+			func(_ *controllers.LcmController, _ string) (_ string, _ string, _ string, error error) {
+				return username, "", "", err
 			})
 		defer patch3.Reset()
 		keyController.ChangeKey()
 
 		//case-3
-		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch4.Reset()
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetInputParametersForChangeKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, _ string, _ string, error error) {
-				return "testUser", "", "", nil
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getInputParametersForChangeKey,
+			func(_ *controllers.LcmController, _ string) (_ string, _ string, _ string, error error) {
+				return username, "", "", nil
 			})
 		defer patch5.Reset()
 		keyController.ChangeKey()
 
 		//case-4
-		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch6.Reset()
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetInputParametersForChangeKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, _ string, _ string, error error) {
-				return "testUser", "testKey", "", nil
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getInputParametersForChangeKey,
+			func(_ *controllers.LcmController, _ string) (_ string, _ string, _ string, error error) {
+				return username, "testKey", "", nil
 			})
 		defer patch7.Reset()
 		keyController.ChangeKey()
@@ -182,7 +182,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 		//case-2
 		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetUserName",
 			func(_ *controllers.LcmController, clientIp string) (_ string, error error) {
-				return "testUser", err
+				return username, err
 			})
 		defer patch1.Reset()
 		_, _, _, result := keyController.GetInputParametersForChangeKey(clientIp)
@@ -190,17 +190,17 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 
 		//test case:1 for GetClientIpAndValidateAccessToken
 		_, _, _, clientResult := keyController.GetClientIpAndValidateAccessToken("msg",
-			[]string{"ROLE_MECM_TENANT", "ROLE_MECM_ADMIN"}, "123")
+			[]string{tenantRole, adminRole}, tenantIdentifier)
 		assert.NotEmpty(t, clientResult, "Error getting client ip and validating access token")
 
 		//case-3
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetUserName",
-			func(_ *controllers.LcmController, clientIp string) (_ string, error error) {
-				return "testUser", nil
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
+				return username, nil
 			})
 		defer patch2.Reset()
 		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return "testKey", err
 			})
 		defer patch3.Reset()
@@ -209,22 +209,22 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 
 		//test case:2 for GetClientIpAndValidateAccessToken
 		_, _, _, clientResult2 := keyController.GetClientIpAndValidateAccessToken("msg",
-			[]string{"ROLE_MECM_TENANT", "ROLE_MECM_ADMIN"}, "123")
+			[]string{tenantRole, adminRole}, tenantIdentifier)
 		assert.NotEmpty(t, clientResult2, "Error getting client ip and validating access token")
 
 		//case-4
 		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetUserName",
-			func(_ *controllers.LcmController, clientIp string) (_ string, error error) {
-				return "testUser", nil
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
+				return username, nil
 			})
 		defer patch4.Reset()
 		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return "testKey", nil
 			})
 		defer patch5.Reset()
 		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetNewKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return "newTestKey", err
 			})
 		defer patch6.Reset()
@@ -238,7 +238,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 		keyBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 
 		_, _, _, clientResult3 := baseController.GetClientIpAndValidateAccessToken("msg",
-			[]string{"ROLE_MECM_TENANT", "ROLE_MECM_ADMIN"}, "123")
+			[]string{tenantRole, adminRole}, tenantIdentifier)
 		assert.NotEmpty(t, clientResult3, "Error getting client ip and validating access token")
 	})
 }
@@ -264,7 +264,7 @@ func testLoginPage(t *testing.T, extraParams map[string]string, path string, tes
 			Controller: keyBeegoController}}
 
 		//case-1
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return err
 		})
 		defer patch1.Reset()
@@ -272,7 +272,7 @@ func testLoginPage(t *testing.T, extraParams map[string]string, path string, tes
 
 		//test case:4 for GetClientIpAndValidateAccessToken
 		_, _, _, result := keyController.GetClientIpAndValidateAccessToken("msg",
-			[]string{"ROLE_MECM_TENANT", "ROLE_MECM_ADMIN"}, "123")
+			[]string{tenantRole, adminRole}, tenantIdentifier)
 		assert.NotEmpty(t, result, "Error getting client ip and validating access token")
 
 		//test case:1 for GetClientIpAndValidateAccessToken
@@ -280,37 +280,37 @@ func testLoginPage(t *testing.T, extraParams map[string]string, path string, tes
 		assert.NotEmpty(t, result5, "Error getting client ip and permission")
 
 		//case-2
-		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch2.Reset()
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetInputParametersForChangeKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, _ string, _ string, error error) {
-				return "testUser", "", "", err
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getInputParametersForChangeKey,
+			func(_ *controllers.LcmController, _ string) (_ string, _ string, _ string, error error) {
+				return username, "", "", err
 			})
 		defer patch3.Reset()
 		keyController.LoginPage()
 
 		//case-3
-		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch4.Reset()
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetInputParametersForChangeKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, _ string, _ string, error error) {
-				return "testUser", "", "", nil
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getInputParametersForChangeKey,
+			func(_ *controllers.LcmController, _ string) (_ string, _ string, _ string, error error) {
+				return username, "", "", nil
 			})
 		defer patch5.Reset()
 		keyController.LoginPage()
 
 		//case-4
-		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch6.Reset()
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetInputParametersForChangeKey",
-			func(_ *controllers.LcmController, clientIp string) (_ string, _ string, _ string, error error) {
-				return "testUser", "testKey", "", nil
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getInputParametersForChangeKey,
+			func(_ *controllers.LcmController, _ string) (_ string, _ string, _ string, error error) {
+				return username, "testKey", "", nil
 			})
 		defer patch7.Reset()
 		keyController.LoginPage()
@@ -335,7 +335,7 @@ func testGetClientIpNew(t *testing.T, extraParams map[string]string, path string
 			Controller: keyBeegoController}}
 
 		//case-1
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return err
 		})
 		defer patch1.Reset()
@@ -343,11 +343,11 @@ func testGetClientIpNew(t *testing.T, extraParams map[string]string, path string
 		assert.NotEmpty(t, result, "Error getting new Client IP")
 
 		//case-2
-		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch2.Reset()
-		patch3 := gomonkey.ApplyFunc(util.ValidateUUID, func(id string) error {
+		patch3 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
 			return err
 		})
 		defer patch3.Reset()
@@ -355,12 +355,12 @@ func testGetClientIpNew(t *testing.T, extraParams map[string]string, path string
 		assert.NotEmpty(t, result2, "Error getting new Client IP")
 
 		//case-1 for GetClientIp
-		patch4 := gomonkey.ApplyFunc(util.ValidateUUID, func(id string) error {
+		patch4 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
 			return nil
 		})
 		defer patch4.Reset()
-		patch5 := gomonkey.ApplyFunc(util.ValidateAccessToken, func(accessToken string,
-			allowedRoles []string, tenantId string) error {
+		patch5 := gomonkey.ApplyFunc(util.ValidateAccessToken, func(_ string,
+			_ []string, _ string) error {
 			return err
 		})
 		defer patch5.Reset()
@@ -368,10 +368,10 @@ func testGetClientIpNew(t *testing.T, extraParams map[string]string, path string
 		assert.NotEmpty(t, result3, "Error getting Client IP")
 
 		//case-1 for errorLog
-		keyController.ErrorLog(clientIp, err, "not found")
+		keyController.ErrorLog(clientIp, err, "notFound")
 
 		//case-2
-		keyController.ErrorLog(clientIp, errors.New("not found"), "not found")
+		keyController.ErrorLog(clientIp, errors.New("not found"), "404")
 	})
 }
 
@@ -444,22 +444,22 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 		defer patch6.Reset()
 
 		//test case:1 for DeleteAppPkgRecords
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(deleteController.Db), "DeleteData",
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(deleteController.Db), deleteData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
 				return err
 			})
 		defer patch7.Reset()
-		result4 := deleteController.DeleteAppPkgRecords(packageId, "123", clientIp)
-		assert.NotEmpty(t, result4, "Error deleting App package records")
+		result4 := deleteController.DeleteAppPkgRecords(packageId, tenantIdentifier, clientIp)
+		assert.NotEmpty(t, result4, "Error on deleting App package records")
 
-		result6 := deleteController.DeleteAppPackageHostRecord(clientIp, packageId, "123")
+		result6 := deleteController.DeleteAppPackageHostRecord(clientIp, packageId, tenantIdentifier)
 		assert.NotEmpty(t, result6, "Error deleting App package host record")
 
 		result7 := deleteController.DeleteAppInfoRecord("instId")
 		assert.NotEmpty(t, result7, "Error deleting App Info record")
 
 		//case-2
-		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(deleteController.Db), "DeleteData",
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(deleteController.Db), deleteData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
 				return nil
 			})
@@ -470,11 +470,11 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 			})
 		defer patch9.Reset()
 
-		result5 := deleteController.DeleteAppPkgRecords(packageId, "123", clientIp)
-		assert.NotEmpty(t, result5, "Error deleting App package records")
+		result5 := deleteController.DeleteAppPkgRecords(packageId, tenantIdentifier, clientIp)
+		assert.NotEmpty(t, result5, "Error deleting Application package records")
 
 		//case-2
-		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(deleteController.Db), "DeleteData",
+		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(deleteController.Db), deleteData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
 				return nil
 			})
@@ -485,7 +485,7 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 			})
 		defer patch11.Reset()
 
-		result8 := deleteController.DeleteAppPkgRecords(packageId, "123", clientIp)
+		result8 := deleteController.DeleteAppPkgRecords(packageId, tenantIdentifier, clientIp)
 		assert.Empty(t, result8, "Error deleting App package records")
 	})
 }
@@ -544,7 +544,7 @@ func testTerminateApplication(t *testing.T, extraParams map[string]string, testD
 			return &mockClient{}, nil
 		})
 		defer patch6.Reset()
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController.Db), "DeleteData",
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController.Db), deleteData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
 				return err
 			})
@@ -590,19 +590,19 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 		assert.Equal(t, 400, instantiateController.Ctx.ResponseWriter.Status, "Add MEC host failed")
 
 		//case-2
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return err
 		})
 		defer patch1.Reset()
 		instantiateController.AddMecHost()
 
 		//case-3
-		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch2.Reset()
 		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ValidateAddMecHostRequest",
-			func(_ *controllers.MecHostController, clientIp string, request models.MecHostInfo) error {
+			func(_ *controllers.MecHostController, _ string, _ models.MecHostInfo) error {
 				return err
 			})
 		defer patch3.Reset()
@@ -620,13 +620,13 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 		mecHost.ConfigUploadStatus = "updated"
 
 		//mock for ValidateIpv4Address
-		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
 			return err
 		})
 		defer patch5.Reset()
 
 		//mock for ValidateName with hostname error
-		patch4 := gomonkey.ApplyFunc(util.ValidateName, func(name string, regex string) (bool, error) {
+		patch4 := gomonkey.ApplyFunc(util.ValidateName, func(_ string, _ string) (bool, error) {
 			return false, err
 		})
 		defer patch4.Reset()
@@ -654,7 +654,7 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 
 func testDeletePackageErr(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
 
-	t.Run("TestDeletePackage", func(t *testing.T) {
+	t.Run("TestDeletePackage", func(_ *testing.T) {
 
 		// POST Request
 		instantiateRequest, _ := getHttpRequest(tenantsPath+
@@ -701,7 +701,7 @@ func testSyncUpdatedMecHostRec2(t *testing.T, extraParams map[string]string, pat
 		queryController := &controllers.MecHostController{controllers.BaseController{Db: testDb,
 			Controller: queryBeegoController}}
 
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return errors.New("error")
 		})
 		defer patch1.Reset()
@@ -741,7 +741,7 @@ func testBatchTerminate2(t *testing.T, extraParams map[string]string, testDb dbA
 		instantiateController := &controllers.MecHostController{controllers.BaseController{Db: testDb,
 			Controller: instantiateBeegoController}}
 
-		patch2 := gomonkey.ApplyFunc(util.ValidateUUID, func(id string) error {
+		patch2 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
 			return errors.New("error")
 		})
 		defer patch2.Reset()
@@ -1193,7 +1193,7 @@ func testAddMecHosts(t *testing.T, extraParams map[string]string, testDb dbAdapt
 				return nil
 			})
 		defer patch5.Reset()
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(baseController.Db), "DeleteData",
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(baseController.Db), deleteData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
 				return err
 			})
