@@ -195,7 +195,7 @@ func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, cli
 // Get vim name
 func (c *BaseController) GetVim(clientIp string, hostIp string) (string, error) {
 
-	mecHostInfoRec, err := c.getMecHostInfoRecord(hostIp, clientIp)
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp)
 	if err != nil {
 		return "", err
 	}
@@ -319,7 +319,7 @@ func (c *BaseController) DeleteTenantRecord(clientIp, tenantId string) error {
 }
 
 // Get mec host info record
-func (c *BaseController) getMecHostInfoRecord(hostIp string, clientIp string) (*models.MecHost, error) {
+func (c *BaseController) GetMecHostInfoRecord(hostIp string, clientIp string) (*models.MecHost, error) {
 	mecHostInfoRecord := &models.MecHost{
 		MecHostId: hostIp,
 	}

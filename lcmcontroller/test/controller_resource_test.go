@@ -68,7 +68,8 @@ var (
 	getKPIFailed         = "Get KPI failed"
     getCapability        = "Get Capability "
     statusFailed         = "status failed"
-    getCapabilityDataFailed  = "Get Capability data failed"
+	getCapabilityDataFailed = "Get Capability data failed"
+	hwcapabilities          = "[{\"hwType\": \"GPU1\", \"hwVendor\": \"testvendor1\", \"hwModel\": \"testmodel1\"}]"
 )
 
 func TestKpi(t *testing.T) {

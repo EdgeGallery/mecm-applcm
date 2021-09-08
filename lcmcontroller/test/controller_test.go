@@ -89,6 +89,12 @@ var (
 	deleteTenantRecord                = "DeleteTenantRecord"
 	readData                          = "ReadData"
 	clientIp                          = "172.1.1.1"
+	err       						  = errors.New("error")
+	getInputParametersForChangeKey 	  = "GetInputParametersForChangeKey"
+	username                          = "testUser"
+	tenantRole						  = "ROLE_MECM_TENANT"
+	adminRole						  = "ROLE_MECM_ADMIN"
+	deleteData						  = "DeleteData"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -1141,6 +1147,24 @@ func testBatchTerminate(t *testing.T, extraParams map[string]string, testDb dbAd
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, "Batch terminate failed")
+
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return err
+		})
+		defer patch1.Reset()
+		instantiateController.BatchTerminate()
+
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return nil
+		})
+		defer patch2.Reset()
+
+		patch3 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
+			return err
+		})
+		defer patch3.Reset()
+		instantiateController.BatchTerminate()
+
 	})
 }
 
@@ -1213,6 +1237,21 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.Instantiate()
+
+		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return errors.New("error")
+		})
+		defer patch4.Reset()
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.Instantiate()
+
+		patch5 := gomonkey.ApplyFunc(util.ValidateName, func(name string, regex string) (bool, error) {
+			return true, err
+		})
+		defer patch5.Reset()
+		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		instantiateController.Instantiate()
+
 		clientIp := "121.1.12.2"
 		var appInfoParams models.AppInfoRecord
 		instantiateController.InsertOrUpdateAppInfoRecord(clientIp, appInfoParams)
@@ -1466,6 +1505,17 @@ func testGetAppInstance(t *testing.T, extraParams map[string]string, path string
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, "null", response.Body.String(), queryFailed)
+
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return errors.New("error")
+		})
+		defer patch1.Reset()
+
+		// Test query
+		queryController.GetAppInstance()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 400, queryController.Ctx.ResponseWriter.Status, queryFailed)
 	})
 }
 
@@ -1884,6 +1934,12 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.UploadPackageV2()
 		instantiateController.IsPermitted(accessToken, clientIp)
 
+		patch3 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
+			return err
+		})
+		defer patch3.Reset()
+		instantiateController.IsPermitted(accessToken, clientIp)
+
 		accessToken = createToken(tenantIdentifier)
 		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "IsPermitted", func(_ *controllers.LcmControllerV2,accessToken, clientIp string) (string, error) {
 			return "",err
@@ -1938,6 +1994,27 @@ func testAddMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapte
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Add MEC host failed")
+
+		//case-2
+		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+			return err
+		})
+		defer patch5.Reset()
+		instantiateController.AddMecHost()
+
+		//case-3
+		patch6 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+			return nil
+		})
+		defer patch6.Reset()
+		baseController := &controllers.MecHostController{controllers.BaseController{Db: testDb,
+			Controller: instantiateBeegoController}}
+		instantiateBeegoController.Ctx.Request.Header.Set("name", "testUser")
+		patch7 := gomonkey.ApplyFunc(util.ValidateUserName, func(_ string, _ string) (bool, error) {
+			return false, err
+		})
+		defer patch7.Reset()
+		baseController.AddMecHost()
 	})
 }
 
@@ -1980,6 +2057,13 @@ func testUpdateMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Update MEC host failed")
+
+		//case-2
+		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+			return err
+		})
+		defer patch5.Reset()
+		instantiateController.UpdateMecHost()
 	})
 }
 
@@ -2011,6 +2095,16 @@ func testGetMecHost(t *testing.T, extraParams map[string]string, path string, te
 		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, "null", response.Body.String(), queryFailed)
+
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return errors.New("error")
+		})
+		defer patch1.Reset()
+
+		queryController.GetMecHost()
+		assert.Equal(t, 400, queryController.Ctx.ResponseWriter.Status, queryFailed)
+
+
 	})
 }
 
@@ -2043,6 +2137,46 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
+
+		//case-2
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return err
+		})
+		defer patch1.Reset()
+		instantiateController.DeleteMecHost()
+		assert.NotEmpty(t, 400, instantiateController.Ctx.ResponseWriter.Status,
+			"Failed to delete mec host")
+
+		//case-3
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return nil
+		})
+		defer patch2.Reset()
+		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+			return err
+		})
+		defer patch5.Reset()
+		instantiateController.DeleteMecHost()
+		assert.NotEmpty(t, 400, instantiateController.Ctx.ResponseWriter.Status,
+			"Failed to delete mec host")
+
+		//case-4
+		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+			return nil
+		})
+		defer patch6.Reset()
+		patch7 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+			return nil
+		})
+		defer patch7.Reset()
+		patch8 := gomonkey.ApplyFunc(util.ValidateUserName, func(_ string, _ string) (bool, error) {
+			return false, err
+		})
+		defer patch8.Reset()
+		instantiateBeegoController.Ctx.Request.Header.Set("name", "testKey")
+		instantiateController.DeleteMecHost()
+		assert.NotEmpty(t, 400, instantiateController.Ctx.ResponseWriter.Status,
+			"username is invalid")
 	})
 }
 
