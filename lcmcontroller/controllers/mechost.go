@@ -113,7 +113,7 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 		return err
 	}
 
-	err = c.validateMecHostZipCodeCity(request, clientIp)
+	err = c.ValidateMecHostZipCodeCity(request, clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Clientip is invalid")
 		return err
@@ -268,7 +268,7 @@ func (c *MecHostController) DeleteMecHost() {
 		}
 	}
 
-	err = c.deleteHostInfoRecord(clientIp, hostIp)
+	err = c.DeleteHostInfoRecord(clientIp, hostIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.BadRequest, util.ClientIpaddressInvalid)
 		return
@@ -278,7 +278,7 @@ func (c *MecHostController) DeleteMecHost() {
 }
 
 // Delete host info record
-func (c *MecHostController) deleteHostInfoRecord(clientIp, hostIp string) error {
+func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error {
 
 	var appInstances []*models.AppInfoRecord
 	_, _ = c.Db.QueryTable("app_info_record", &appInstances, "mec_host", hostIp)
@@ -618,7 +618,7 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 }
 
 // Validate mec host, zip code and city
-func (c *MecHostController) validateMecHostZipCodeCity(request models.MecHostInfo, clientIp string) error {
+func (c *MecHostController) ValidateMecHostZipCodeCity(request models.MecHostInfo, clientIp string) error {
 	hostName, err := util.ValidateName(request.MechostName, util.NameRegex)
 	if err != nil || !hostName {
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Mec host name is invalid")

@@ -453,7 +453,7 @@ func (c *LcmControllerV2) GetInputParametersForUploadCfg(clientIp string) (hostI
 		return hostIp, vim, file, err
 	}
 
-	err = c.validateYamlFile(clientIp, file)
+	err = c.ValidateYamlFile(clientIp, file)
 	if err != nil {
 		return hostIp, vim, file, err
 	}
@@ -466,7 +466,7 @@ func (c *LcmControllerV2) GetInputParametersForUploadCfg(clientIp string) (hostI
 }
 
 // Validate kubeconfig file
-func (c *LcmControllerV2) validateYamlFile(clientIp string, file multipart.File) error {
+func (c *LcmControllerV2) ValidateYamlFile(clientIp string, file multipart.File) error {
 
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
@@ -700,7 +700,7 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 			util.ErrCodeFailedGetPlugin)
 		return
 	}
-	err, acm := processAkSkConfig(params.AppInstanceId, params.AppName, &req, params.ClientIP, params.TenantId)
+	err, acm := ProcessAkSkConfig(params.AppInstanceId, params.AppName, &req, params.ClientIP, params.TenantId)
 	if err != nil {
 		c.HandleForErrorCode(params.ClientIP, util.StatusInternalServerError, err.Error(), util.ErrCodeProcessAkSkFailed)
 		util.ClearByteArray(bKey)

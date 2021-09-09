@@ -391,7 +391,7 @@ func (c *LcmController) Instantiate() {
 		return
 	}
 
-	err, acm := processAkSkConfig(appInsId, appName, &req, clientIp, tenantId)
+	err, acm := ProcessAkSkConfig(appInsId, appName, &req, clientIp, tenantId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		util.ClearByteArray(bKey)
@@ -448,12 +448,12 @@ func (c *LcmController) validateToken(accessToken string, req models.Instantiate
 	if err != nil {
 		return "", "", "", "", "", err
 	}
-	name, err := c.getUserName(clientIp)
+	name, err := c.GetUserName(clientIp)
 	if err != nil {
 		return "", "", "", "", "", err
 	}
 
-	key, err := c.getKey(clientIp)
+	key, err := c.GetKey(clientIp)
 	if err != nil {
 		return "", "", "", "", "", err
 	}
@@ -475,7 +475,7 @@ func (c *LcmController) validateToken(accessToken string, req models.Instantiate
 }
 
 // Process Ak Sk configuration
-func processAkSkConfig(appInsId, appName string, req *models.InstantiateRequest, clientIp string,
+func ProcessAkSkConfig(appInsId, appName string, req *models.InstantiateRequest, clientIp string,
 	tenantId string) (error, config.AppConfigAdapter) {
 	var applicationConfig config.ApplicationConfig
 
@@ -611,17 +611,17 @@ func (c *LcmController) Terminate() {
 	if err != nil {
 		return
 	}
-
-	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId)
-	if err != nil {
-		c.HandleLoggingForFailure(clientIp, err.Error())
-		return
-	}
-
+	
 	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{}, config.ApplicationConfig{})
 	err = acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return
+	}
+
+	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId)
+	if err != nil {
+		c.HandleLoggingForFailure(clientIp, err.Error())
 		return
 	}
 
@@ -673,12 +673,12 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	name, err := c.getUserName(clientIp)
+	name, err := c.GetUserName(clientIp)
 	if err != nil {
 		return
 	}
 
-	key, err := c.getKey(clientIp)
+	key, err := c.GetKey(clientIp)
 	if err != nil {
 		return
 	}
@@ -784,7 +784,7 @@ func (c *LcmController) Query() {
 	}
 
 	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost)
-	c.errorLog(clientIp,err,response)
+	c.ErrorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Query workload statistics is successful")
 }
 
@@ -798,7 +798,7 @@ func (c *LcmController) Query() {
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmController) QueryKPI() {
 	log.Info("Application query kpi request received.")
-	clientIp, bKey, accessToken, err := c.getClientIpNew()
+	clientIp, bKey, accessToken, err := c.GetClientIpNew()
 
 	hostIp, err := c.GetUrlHostIP(clientIp)
 	if err != nil {
@@ -819,7 +819,7 @@ func (c *LcmController) QueryKPI() {
 
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
-	c.errorLog(clientIp,err,response)
+	c.ErrorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Query kpi is successful")
 }
 
@@ -833,7 +833,7 @@ func (c *LcmController) QueryKPI() {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmController) QueryMepCapabilities() {
-	clientIp, bKey, _, err :=  c.getClientIpNew()
+	clientIp, bKey, _, err :=  c.GetClientIpNew()
 	util.ClearByteArray(bKey)
 	_, err = c.GetUrlHostIP(clientIp)
 	if err != nil {
@@ -878,7 +878,7 @@ func (c *LcmController) GetHostIP(clientIp string) (string, error) {
 }
 
 // Get user name
-func (c *LcmController) getUserName(clientIp string) (string, error) {
+func (c *LcmController) GetUserName(clientIp string) (string, error) {
 	userName := c.Ctx.Request.Header.Get("name")
 	if userName != "" {
 		name, err := util.ValidateUserName(userName, util.NameRegex)
@@ -891,7 +891,7 @@ func (c *LcmController) getUserName(clientIp string) (string, error) {
 }
 
 // Get key
-func (c *LcmController) getKey(clientIp string) (string, error) {
+func (c *LcmController) GetKey(clientIp string) (string, error) {
 	key := c.Ctx.Request.Header.Get("key")
 	if key != "" {
 		keyValid, err := util.ValidateDbParams(key)
@@ -904,7 +904,7 @@ func (c *LcmController) getKey(clientIp string) (string, error) {
 }
 
 // Get new key
-func (c *LcmController) getNewKey(clientIp string) (string, error) {
+func (c *LcmController) GetNewKey(clientIp string) (string, error) {
 	newKey := c.Ctx.Request.Header.Get("newkey")
 	if newKey != "" {
 		newKeyValid, err := util.ValidateDbParams(newKey)
@@ -1166,13 +1166,13 @@ func (c *LcmController) GetWorkloadDescription() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	name, err := c.getUserName(clientIp)
+	name, err := c.GetUserName(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
 	}
 
-	key, err := c.getKey(clientIp)
+	key, err := c.GetKey(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1219,7 +1219,7 @@ func (c *LcmController) GetWorkloadDescription() {
 	}
 	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
 	util.ClearByteArray(bKey)
-	c.errorLog(clientIp,err,response)
+	c.ErrorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
 
@@ -1236,7 +1236,7 @@ func (c *LcmController) SynchronizeUpdatedRecord() {
 	var appInstancesSync []models.AppInfoRecord
 	var appInstanceSyncRecords models.AppInfoUpdatedRecords
 	var appInstanceRes []models.AppInfoRec
-	clientIp,err := c.getClientIp()
+	clientIp,err := c.GetClientIp()
 	_, _ = c.Db.QueryTable("app_info_record", &appInstances, "")
 	for _, appInstance := range appInstances {
 		if !appInstance.SyncStatus && strings.EqualFold(appInstance.Origin, "mepm") {
@@ -1292,7 +1292,7 @@ func (c *LcmController) SynchronizeStaleRecord() {
 
 	var appInstStaleRecs []models.AppInstanceStaleRec
 	var appInstanceStaleRecords models.AppInstanceStaleRecords
-	clientIp,err := c.getClientIp()
+	clientIp,err := c.GetClientIp()
 	_, _ = c.Db.QueryTable("app_instance_stale_rec", &appInstStaleRecs, "")
 
 	appInstanceStaleRecords.AppInstanceStaleRecs = append(appInstanceStaleRecords.AppInstanceStaleRecs, appInstStaleRecs...)
@@ -1829,7 +1829,12 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 // @router /packages/:packageId [get]
 func (c *LcmController) DistributionStatus() {
 	var status string
-	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
+	tenantId, err := c.GetTenantId("")
+	if err != nil {
+		return
+	}
+	clientIp, bKey, accessToken, err := c.GetClientIpAndValidateAccessToken("Package query request received.",
+		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
@@ -1841,7 +1846,14 @@ func (c *LcmController) DistributionStatus() {
 	}
 
 	var appPkgRecords []*models.AppPackageRecord
-	if packageId == "" {
+	edgeKey, _ := c.getKey(clientIp)
+	if edgeKey != "" {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
+		if count == 0 {
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			return
+		}
+	} else if packageId == ""  {
 		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
 		if count == 0 {
 			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
@@ -1971,7 +1983,7 @@ func (c *LcmController) SynchronizeAppPackageUpdatedRecord() {
 
 	var appPackages []*models.AppPackageRecord
 	var appPackagesSync []*models.AppPackageRecord
-	clientIp,err := c.getClientIp()
+	clientIp,err := c.GetClientIp()
 
 	_, _ = c.Db.QueryTable("app_package_record", &appPackages, "")
 	for _, appPackage := range appPackages {
@@ -2009,7 +2021,7 @@ func (c *LcmController) SynchronizeAppPackageStaleRecord() {
 	var appPackageStaleRecs []models.AppPackageStaleRec
 	var appPkgHostStaleRecs []models.AppPackageHostStaleRec
 	var appDistPkgHostStaleRecords models.AppDistPkgHostStaleRecords
-	clientIp,err := c.getClientIp()
+	clientIp,err := c.GetClientIp()
 	_, _ = c.Db.QueryTable("app_package_stale_rec", &appPackageStaleRecs, "")
 	_, _ = c.Db.QueryTable("app_package_host_stale_rec", &appPkgHostStaleRecs, "")
 
@@ -2068,7 +2080,7 @@ func (c *LcmController) ProcessUploadPackage(hosts models.DistributeRequest,
 
 		adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 		status, err := adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
-		//c.deletePackage(path.Dir(pkgFilePath))
+		//c.deletePakage(path.Dir(pkgFilePath))
 		if err != nil {
 			c.HandleLoggingForFailure(clientIp, err.Error())
 			err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")
@@ -2255,7 +2267,7 @@ func (c *LcmController) ProcessDeletePackage(clientIp, packageId, tenantId, acce
 
 	for _, appPkgRecord := range appPkgRecords {
 		for _, appPkgHost := range appPkgRecord.MecHostInfo {
-			err := c.deletePackage(appPkgHost, clientIp, packageId, accessToken)
+			err := c.DeletePkg(appPkgHost, clientIp, packageId, accessToken)
 			if err != nil {
 				return err
 			}
@@ -2304,7 +2316,7 @@ func (c *LcmController) DeleteAppPkgRecords(packageId, tenantId, clientIp string
 }
 
 // Send delete package
-func (c *LcmController) deletePackage(appPkgHost *models.AppPackageHostRecord,
+func (c *LcmController) DeletePkg(appPkgHost *models.AppPackageHostRecord,
 	clientIp, packageId, accessToken string) error {
 	vim, err := c.GetVim(clientIp, appPkgHost.HostIp)
 	if err != nil {
@@ -2357,12 +2369,12 @@ func (c *LcmController) GetClientIpAndValidateAccessToken(receiveMsg string, all
 		return clientIp, bKey, accessToken, err
 	}
 	c.displayReceivedMsg(clientIp)
-	name, err := c.getUserName(clientIp)
+	name, err := c.GetUserName(clientIp)
 	if err != nil {
 		return clientIp, bKey, accessToken, err
 	}
 
-	key, err := c.getKey(clientIp)
+	key, err := c.GetKey(clientIp)
 	if err != nil {
 		return clientIp, bKey, accessToken, err
 	}
@@ -2386,7 +2398,7 @@ func (c *LcmController) GetClientIpAndValidateAccessToken(receiveMsg string, all
 	return clientIp, bKey, accessToken, nil
 }
 
-func (c *LcmController) errorLog(clientIp string,err error,response string) {
+func (c *LcmController) ErrorLog(clientIp string,err error,response string) {
 	if err != nil {
 		res := strings.Contains(err.Error(), util.NotFound)
 		if res {
@@ -2403,7 +2415,7 @@ func (c *LcmController) errorLog(clientIp string,err error,response string) {
 	}
 }
 
-func (c *LcmController) getClientIp() (clientIp string,err error){
+func (c *LcmController) GetClientIp() (clientIp string,err error){
 	clientIp = c.Ctx.Input.IP()
 	err = util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -2427,7 +2439,7 @@ func (c *LcmController) getClientIp() (clientIp string,err error){
 	}
 	return clientIp,err
 }
-func (c *LcmController) getClientIpNew() (clientIp string, bKey []byte,
+func (c *LcmController) GetClientIpNew() (clientIp string, bKey []byte,
 	accessToken string, err error) {
 	clientIp = c.Ctx.Input.IP()
 	err = util.ValidateSrcAddress(clientIp)
@@ -2472,7 +2484,7 @@ func (c *LcmController) ChangeKey() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	userName, key, newKey, err := c.getInputParametersForChangeKey(clientIp)
+	userName, key, newKey, err := c.GetInputParametersForChangeKey(clientIp)
 	if err != nil {
 		return
 	}
@@ -2525,7 +2537,7 @@ func (c *LcmController) LoginPage() {
 	}
 	c.displayReceivedMsg(clientIp)
 
-	userName, key, _, err := c.getInputParametersForChangeKey(clientIp)
+	userName, key, _, err := c.GetInputParametersForChangeKey(clientIp)
 	if err != nil {
 		return
 	}
@@ -2559,19 +2571,19 @@ func (c *LcmController) LoginPage() {
 
 
 // Get in put parameters for upload configuration
-func (c *LcmController) getInputParametersForChangeKey(clientIp string) (name string,
+func (c *LcmController) GetInputParametersForChangeKey(clientIp string) (name string,
 	key string, newKey string, err error) {
-	name, err = c.getUserName(clientIp)
+	name, err = c.GetUserName(clientIp)
 	if err != nil {
 		return name, key, newKey, err
 	}
 
-	key, err = c.getKey(clientIp)
+	key, err = c.GetKey(clientIp)
 	if err != nil {
 		return name, key, newKey, err
 	}
 
-	newKey, err = c.getNewKey(clientIp)
+	newKey, err = c.GetNewKey(clientIp)
 	if err != nil {
 		return name, key, newKey, err
 	}
