@@ -334,7 +334,7 @@ func (c *LcmController) Instantiate() {
 		req.Parameters = make(map[string]string)
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	appInsId, tenantId, hostIp, packageId, appName, err := c.validateToken(accessToken, req, clientIp)
+	appInsId, tenantId, hostIp, packageId, appName, err := c.ValidateToken(accessToken, req, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -437,7 +437,7 @@ func (c *LcmController) Instantiate() {
 	c.ServeJSON()
 }
 
-func (c *LcmController) validateToken(accessToken string, req models.InstantiateRequest,  clientIp string) (string, string, string, string, string, error) {
+func (c *LcmController) ValidateToken(accessToken string, req models.InstantiateRequest,  clientIp string) (string, string, string, string, string, error) {
 
 	if len(c.Ctx.Input.RequestBody) > util.RequestBodyLength {
 		c.HandleLoggingForError(clientIp, util.BadRequest, util.RequestBodyTooLarge)

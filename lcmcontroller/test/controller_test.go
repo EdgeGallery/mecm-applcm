@@ -1300,7 +1300,13 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 		// Test instantiate
 		instantiateControllerv2.InstantiateV2()
 
-		err := errors.New("error")
+		//test case-1: for covering DoInstantiate
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2.Db), "QueryCount",
+			func(_ *MockDb, _ string) (int64, error) {
+				return 1, err
+			})
+		defer patch8.Reset()
+		instantiateControllerv2.InstantiateV2()
 
 		accessToken := createToken(tenantIdentifier)
 		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), getTenantId, func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
@@ -1338,6 +1344,25 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateControllerv2.InstantiateV2()
 
+		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
+			return err
+		})
+		defer patch6.Reset()
+		instantiateControllerv2.InstantiateV2()
+
+		patch7 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
+			return nil
+		})
+		defer patch7.Reset()
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateToken", func(_ *controllers.LcmControllerV2 , accessToken string, req models.InstantiateRequest, clientIp string) (string, string, string, string, string, error) {
+			return "", "", "", "", "", nil
+		})
+		defer patch9.Reset()
+		patch10 := gomonkey.ApplyFunc(util.ValidateName, func(_ string, _ string) (bool, error) {
+			return false, err
+		})
+		defer patch10.Reset()
+		instantiateControllerv2.InstantiateV2()
 	})
 }
 
@@ -1555,8 +1580,6 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		r.GeneralLimiter = limiter.New(memory.NewStore(), rate)
 		util.RateLimit(r, instantiateController.Ctx)
 
-		err := errors.New("error")
-
 		accessToken := createToken(tenantIdentifier)
 		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateAppPkgRecord", func(_ *controllers.LcmController , _, _, _,
 				_ string, _ models.AppPkgDetails, _ string) (error error) {
@@ -1600,7 +1623,6 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 
 		// Test instantiate		
 		packageDir := "abc"
-		//clientIp := "172.1.1.1"
 		instantiateController.GetPackageDetailsFromPackage(clientIp, packageDir)
 
 		accessToken = createToken(tenantIdentifier)
@@ -1696,7 +1718,6 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		defer patch10.Reset()
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
-		//clientIp := "172.1.1.1"
 		//packageDir := ""
 		instantiateController.GetPackageDetailsFromPackage(packageDir, clientIp)
 
@@ -2455,6 +2476,18 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 			return nil, err
 		})
 		defer patch7.Reset()
+
+		patch16 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), readData,
+			func(_ *MockDb, _ interface{}, _ ...string) error {
+				return nil
+			})
+		defer patch16.Reset()
+
+		patch17 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
+			return err
+		})
+		defer patch17.Reset()
+
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.DeletePackageOnHost()
@@ -2477,9 +2510,19 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		// Test upload package
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.DeletePackageOnHost()
-		//clientIp := "171.1.1.1"
 		instantiateController.GetInputParametersForDelPkgOnHost(clientIp)
 
+		patch20 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
+			return err
+		})
+		defer patch20.Reset()
+		_, _, _, result := instantiateController.GetInputParametersForDelPkgOnHost(clientIp)
+		assert.NotEmpty(t, result, "failed to get input parameters")
+
+		patch21 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
+			return nil
+		})
+		defer patch21.Reset()
 		accessToken = createToken(tenantIdentifier)
 		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error ) {
 			return "", err
@@ -3332,6 +3375,69 @@ func testRemovalV2(t *testing.T, extraParams map[string]string, path string, tes
 
 		// Test instantiate
 		removeControllerv2.RemoveConfigV2()
+
+		//case-2:
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
+			return err
+		})
+		defer patch1.Reset()
+		removeControllerv2.RemoveConfigV2()
+
+		//case-3:
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
+			return nil
+		})
+		defer patch2.Reset()
+		patch3 := gomonkey.ApplyFunc(util.ValidateAccessToken,
+			func(_ string, _ []string, _ string) error {
+				return err
+			})
+		defer patch3.Reset()
+		removeControllerv2.RemoveConfigV2()
+
+		//case-4:
+		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
+			return nil
+		})
+		defer patch4.Reset()
+		patch6 := gomonkey.ApplyFunc(util.ValidateAccessToken,
+			func(accessToken string, allowedRoles []string, _ string) error {
+				return nil
+			})
+		defer patch6.Reset()
+		/*patch5 := gomonkey.ApplyMethod(reflect.TypeOf(removeControllerv2), "GetInputParametersForRemoveCfg",
+			func(_ *controllers.LcmControllerV2, _ string) (_ string, _ string, _ *models.MecHost, error error) {
+				return username, "", nil, err
+			})
+		defer patch5.Reset()*/
+		patch5 := gomonkey.ApplyFunc(pluginAdapter.GetClient, func(_ string) (pluginAdapter.ClientIntf, error) {
+			return &mockClient{}, err
+		})
+		defer patch5.Reset()
+		removeControllerv2.RemoveConfigV2()
+
+		//case-5
+		patch7 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
+			return nil
+		})
+		defer patch7.Reset()
+		patch8 := gomonkey.ApplyFunc(util.ValidateAccessToken,
+			func(accessToken string, allowedRoles []string, _ string) error {
+				return nil
+			})
+		defer patch8.Reset()
+		patch9 := gomonkey.ApplyFunc(pluginAdapter.GetClient, func(_ string) (pluginAdapter.ClientIntf, error) {
+			return &mockClient{}, nil
+		})
+		defer patch9.Reset()
+		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(removeControllerv2.Db), "InsertOrUpdateData",
+			func(_ *MockDb, _ interface{}, _ ...string) error {
+				return err
+			})
+		defer patch10.Reset()
+		removeControllerv2.RemoveConfigV2()
+
+
 	})
 }
 
