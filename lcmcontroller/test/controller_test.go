@@ -95,6 +95,13 @@ var (
 	tenantRole						  = "ROLE_MECM_TENANT"
 	adminRole						  = "ROLE_MECM_ADMIN"
 	deleteData						  = "DeleteData"
+	getUserName						  = "GetUserName"
+	errorNotFond					  = "not found"
+	queryCountForTable				  = "QueryCountForTable"
+	getInputParametersForUploadCfg 	  = "GetInputParametersForUploadCfg"
+	isPermitted 					  = "IsPermitted"
+	queryCount						  = "QueryCount"
+	getPluginAdapter				  = "GetPluginAdapter"
 )
 
 func TestLcmOperation(t *testing.T) {
@@ -354,7 +361,7 @@ func testQuery(t *testing.T, extraParams map[string]string, path string, testDb 
 		queryControllerv2.QueryV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetPluginAdapter", func(_ *controllers.LcmControllerV2, _, _ string, _ string) (*pluginAdapter.PluginAdapter,
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), getPluginAdapter, func(_ *controllers.LcmControllerV2, _, _ string, _ string) (*pluginAdapter.PluginAdapter,
 			error) {
 			return nil, err
 		})
@@ -470,7 +477,7 @@ func testQueryKpi(t *testing.T, extraParams map[string]string, path string, test
 		assert.NotEqual(t, exOutput, response.Body.String(), queryKpiFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(queryKpiController2), "GetPluginAdapter", func(_ *controllers.LcmControllerV2, _, _ string, _ string) (*pluginAdapter.PluginAdapter,
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(queryKpiController2), getPluginAdapter, func(_ *controllers.LcmControllerV2, _, _ string, _ string) (*pluginAdapter.PluginAdapter,
 			error) {
 			return nil, err1
 		})
@@ -924,7 +931,7 @@ func testWorkloadEvents(t *testing.T, extraParams map[string]string, path string
 
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), "GetPluginAdapter", func(_ *controllers.LcmControllerV2 , _, _ string, _ string) (*pluginAdapter.PluginAdapter,
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(queryControllerv2), getPluginAdapter, func(_ *controllers.LcmControllerV2 , _, _ string, _ string) (*pluginAdapter.PluginAdapter,
 			error) {
 			return nil ,err
 		})
@@ -1148,13 +1155,13 @@ func testBatchTerminate(t *testing.T, extraParams map[string]string, testDb dbAd
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, "Batch terminate failed")
 
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return err
 		})
 		defer patch1.Reset()
 		instantiateController.BatchTerminate()
 
-		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch2.Reset()
@@ -1205,7 +1212,8 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 		err := errors.New("error")
 
 		accessToken := createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getVim, func(_ *controllers.LcmController, clientIp string, hostIp string) (_ string , error error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getVim,
+			func(_ *controllers.LcmController, _ string, _ string) (_ string , error error) {
 			return "",err
 		})
 		defer patch3.Reset()
@@ -1238,21 +1246,20 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.Instantiate()
 
-		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch4 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return errors.New("error")
 		})
 		defer patch4.Reset()
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.Instantiate()
 
-		patch5 := gomonkey.ApplyFunc(util.ValidateName, func(name string, regex string) (bool, error) {
+		patch5 := gomonkey.ApplyFunc(util.ValidateName, func(_ string, _ string) (bool, error) {
 			return true, err
 		})
 		defer patch5.Reset()
 		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		instantiateController.Instantiate()
 
-		clientIp := "121.1.12.2"
 		var appInfoParams models.AppInfoRecord
 		instantiateController.InsertOrUpdateAppInfoRecord(clientIp, appInfoParams)
 
@@ -1301,7 +1308,7 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateControllerv2.InstantiateV2()
 
 		//test case-1: for covering DoInstantiate
-		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2.Db), "QueryCount",
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2.Db), queryCount,
 			func(_ *MockDb, _ string) (int64, error) {
 				return 1, err
 			})
@@ -1309,7 +1316,8 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateControllerv2.InstantiateV2()
 
 		accessToken := createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), getTenantId, func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), getTenantId,
+			func(_ *controllers.LcmControllerV2 , _ string) (string, error) {
 			return  "", err
 		})
 		defer patch4.Reset()
@@ -1318,7 +1326,7 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateControllerv2.InstantiateV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), getAppInstId, func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), getAppInstId, func(_ *controllers.LcmControllerV2 , _ string) (string, error) {
 			return  "", err
 		})
 		defer patch3.Reset()
@@ -1327,7 +1335,8 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateControllerv2.InstantiateV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateInstantiateInputParameters", func(_ *controllers.LcmControllerV2 , clientIp string, req models.InstantiateRequest) (string, string, string, string, string, error) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateInstantiateInputParameters",
+			func(_ *controllers.LcmControllerV2 , _ string, req models.InstantiateRequest) (string, string, string, string, string, error) {
 			return "", "", "", "", "", err
 		})
 		defer patch2.Reset()
@@ -1336,7 +1345,8 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateControllerv2.InstantiateV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateToken", func(_ *controllers.LcmControllerV2 , accessToken string, req models.InstantiateRequest, clientIp string) (string, string, string, string, string, error) {
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateToken",
+			func(_ *controllers.LcmControllerV2 , _ string, _ models.InstantiateRequest, _ string) (string, string, string, string, string, error) {
 			return "", "", "", "", "", err
 		})
 		defer patch1.Reset()
@@ -1354,7 +1364,8 @@ func testInstantiateV2(t *testing.T, extraParams map[string]string, testDb dbAda
 			return nil
 		})
 		defer patch7.Reset()
-		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateToken", func(_ *controllers.LcmControllerV2 , accessToken string, req models.InstantiateRequest, clientIp string) (string, string, string, string, string, error) {
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateControllerv2), "ValidateToken",
+			func(_ *controllers.LcmControllerV2 , _ string, _ models.InstantiateRequest, _ string) (string, string, string, string, string, error) {
 			return "", "", "", "", "", nil
 		})
 		defer patch9.Reset()
@@ -1531,8 +1542,8 @@ func testGetAppInstance(t *testing.T, extraParams map[string]string, path string
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, "null", response.Body.String(), queryFailed)
 
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
-			return errors.New("error")
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
+			return err
 		})
 		defer patch1.Reset()
 
@@ -1581,7 +1592,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		util.RateLimit(r, instantiateController.Ctx)
 
 		accessToken := createToken(tenantIdentifier)
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateAppPkgRecord", func(_ *controllers.LcmController , _, _, _,
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateAppPkgRecord",
+			func(_ *controllers.LcmController , _, _, _,
 				_ string, _ models.AppPkgDetails, _ string) (error error) {
 			return err
 		})
@@ -1594,7 +1606,7 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		assert.Equal(t,0, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch20 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "QueryCount", func(_ *MockDb,tableName string) (int64, error) {
+		patch20 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), queryCount, func(_ *MockDb,_ string) (int64, error) {
 			return 1, err
 		})
 		defer patch20.Reset()
@@ -1605,7 +1617,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.InsertOrUpdateTenantRecord(clientIp3, tenantId)
 
 		accessToken = createToken(tenantIdentifier)
-		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateTenantRecord", func(_ *controllers.LcmController , _ , _ string) (error error) {
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "InsertOrUpdateTenantRecord",
+			func(_ *controllers.LcmController , _ , _ string) (error error) {
 			return err
 		})
 		defer patch6.Reset()
@@ -1626,7 +1639,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		instantiateController.GetPackageDetailsFromPackage(clientIp, packageDir)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageDetailsFromPackage", func(_ *controllers.LcmController ,_ string,
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageDetailsFromPackage",
+			func(_ *controllers.LcmController ,_ string,
 			_ string) (pkgDir models.AppPkgDetails , error error) {
 			return pkgDir,err
 		})
@@ -1640,7 +1654,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 
 
 		accessToken = createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "SaveApplicationPackage", func(_ *controllers.LcmController ,_ string, _ string, _ string,
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "SaveApplicationPackage",
+			func(_ *controllers.LcmController ,_ string, _ string, _ string,
 			_ *multipart.FileHeader, _ multipart.File) (pkgFilePath string , error error) {
 			return "",err
 		})
@@ -1653,7 +1668,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFile", func(_ *controllers.LcmController, key string) (file multipart.File, header *multipart.FileHeader, error error) {
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFile",
+			func(_ *controllers.LcmController, _ string) (file multipart.File, header *multipart.FileHeader, error error) {
 			return file, header, err
 		})
 		defer patch9.Reset()
@@ -1664,7 +1680,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetOrigin", func(_ *controllers.LcmController,_ string) (origin string , error error) {
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetOrigin",
+			func(_ *controllers.LcmController,_ string) (origin string , error error) {
 			return "",err
 		})
 		defer patch1.Reset()
@@ -1676,7 +1693,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForUploadPkg", func(_ *controllers.LcmController,_ string) (appId , packageId , tenantId string , error error) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForUploadPkg",
+			func(_ *controllers.LcmController,_ string) (appId , packageId , tenantId string , error error) {
 			return "","","",err
 		})
 		defer patch2.Reset()
@@ -1688,7 +1706,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 		assert.NotEqual(t, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted, func(_ *controllers.LcmController,_ string) (clientIp string, bkey []uint8, _, _ string, error error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted,
+			func(_ *controllers.LcmController,_ string) (clientIp string, bkey []uint8, _, _ string, error error) {
 			return "", bkey , "_" , "_" ,err
 		})
 		defer patch3.Reset()
@@ -1712,7 +1731,8 @@ func testUploadPackage(t *testing.T, extraParams map[string]string, path string,
 
 		accessToken = createToken(tenantIdentifier)
 
-		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension", func(_ *controllers.LcmController, clientIp string, pkgDir string, ext string) (_ string, error error) {
+		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension",
+			func(_ *controllers.LcmController, _ string, _ string, _ string) (_ string, error error) {
 			return "", err
 		})
 		defer patch10.Reset()
@@ -1756,7 +1776,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		err := errors.New("error")
 
 		accessToken := createToken(tenantIdentifier)
-		patch17 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "DeleteData", func(_ *MockDb,data interface{}, cols ...string) (error error) {
+		patch17 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "DeleteData", func(_ *MockDb,_ interface{}, _ ...string) (error error) {
 			return err
 		})
 		defer patch17.Reset()
@@ -1768,7 +1788,8 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.DeleteTenantRecord(clientIp, tenantId)
 
 		accessToken = createToken(tenantIdentifier)
-		patch16 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "QueryCountForTable", func(_ *MockDb,tableName, fieldName, fieldValue string) (int64, error) {
+		patch16 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "QueryCountForTable",
+			func(_ *MockDb,tableName, fieldName, fieldValue string) (int64, error) {
 			return 1, err
 		})
 		defer patch16.Reset()
@@ -1796,7 +1817,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), insertOrUpdateData, func(_ *MockDb,data interface{}, cols ...string) ( error error) {
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), insertOrUpdateData, func(_ *MockDb,_ interface{}, _ ...string) ( error error) {
 			return err
 		})
 		defer patch5.Reset()
@@ -1807,7 +1828,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 			packageId, distributionStatus, origin)
 
 		accessToken = createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "QueryCount", func(_ *MockDb,tableName string) (int64, error) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), queryCount, func(_ *MockDb,_ string) (int64, error) {
 			return 1, err
 		})
 		defer patch4.Reset()
@@ -1838,7 +1859,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.GetPackageDetailsFromPackage(clientIp, packageDir)
 		
 		accessToken = createToken(tenantIdentifier)
-		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension", func(_ *controllers.LcmControllerV2 ,clientIp string, pkgDir string, ext string) (string, error) {
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension", func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ string) (string, error) {
 			return "", err
 		})
 		defer patch8.Reset()
@@ -1860,7 +1881,8 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "CreatePackagePath", func(_ *controllers.LcmControllerV2 ,pkgPath string, clientIp string, file multipart.File) (error error) {
+		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "CreatePackagePath",
+			func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ multipart.File) (error error) {
 			return err
 		})
 		defer patch10.Reset()
@@ -1869,7 +1891,8 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.UploadPackageV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "SaveApplicationPackage", func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ string,
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "SaveApplicationPackage",
+			func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ string,
 			_ *multipart.FileHeader, _ multipart.File) (pkgFilePath string , error error) {
 			return "",err
 		})
@@ -1882,7 +1905,8 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFile", func(_ *controllers.LcmControllerV2,key string) (multipart.File, *multipart.FileHeader, error) {
+		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFile",
+			func(_ *controllers.LcmControllerV2, _ string) (multipart.File, *multipart.FileHeader, error) {
 			return nil, nil, err
 		})
 		defer patch14.Reset()
@@ -1891,7 +1915,8 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.UploadPackageV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetOrigin", func(_ *controllers.LcmControllerV2,_ string) (origin string , error error) {
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetOrigin",
+			func(_ *controllers.LcmControllerV2,_ string) (origin string , error error) {
 			return "",err
 		})
 		defer patch1.Reset()
@@ -1903,7 +1928,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch23 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+		patch23 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmControllerV2, _ string) (string, error) {
 			return "", err
 		})
 		defer patch23.Reset()
@@ -1916,7 +1941,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 
 
 		accessToken = createToken(tenantIdentifier)
-		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageId", func(_ *controllers.LcmControllerV2, _ string) (string, error) {
 			return "", err
 		})
 		defer patch11.Reset()
@@ -1925,7 +1950,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.UploadPackageV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetAppId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetAppId", func(_ *controllers.LcmControllerV2, _ string) (string, error) {
 			return "", err
 		})
 		defer patch12.Reset()
@@ -1934,7 +1959,8 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.UploadPackageV2()
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForUploadPkg", func(_ *controllers.LcmControllerV2,_ string) (appId , packageId , tenantId string , error error) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForUploadPkg",
+			func(_ *controllers.LcmControllerV2,_ string) (appId , packageId , tenantId string , error error) {
 			return appId, packageId, "", err
 		})
 		defer patch2.Reset()
@@ -1962,7 +1988,7 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		instantiateController.IsPermitted(accessToken, clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "IsPermitted", func(_ *controllers.LcmControllerV2,accessToken, clientIp string) (string, error) {
+		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "IsPermitted", func(_ *controllers.LcmControllerV2,accessToken, _ string) (string, error) {
 			return "",err
 		})
 		defer patch13.Reset()
@@ -2017,14 +2043,14 @@ func testAddMecHost(t *testing.T, extraParams map[string]string, testDb dbAdapte
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Add MEC host failed")
 
 		//case-2
-		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
 			return err
 		})
 		defer patch5.Reset()
 		instantiateController.AddMecHost()
 
 		//case-3
-		patch6 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+		patch6 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
 			return nil
 		})
 		defer patch6.Reset()
@@ -2080,7 +2106,7 @@ func testUpdateMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, "Update MEC host failed")
 
 		//case-2
-		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
 			return err
 		})
 		defer patch5.Reset()
@@ -2117,7 +2143,7 @@ func testGetMecHost(t *testing.T, extraParams map[string]string, path string, te
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, "null", response.Body.String(), queryFailed)
 
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return errors.New("error")
 		})
 		defer patch1.Reset()
@@ -2160,7 +2186,7 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 			deleteMecHostSuccess)
 
 		//case-2
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return err
 		})
 		defer patch1.Reset()
@@ -2169,11 +2195,11 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 			"Failed to delete mec host")
 
 		//case-3
-		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch2.Reset()
-		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
 			return err
 		})
 		defer patch5.Reset()
@@ -2182,11 +2208,11 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 			"Failed to delete mec host")
 
 		//case-4
-		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(id string) error {
+		patch6 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return nil
 		})
 		defer patch6.Reset()
-		patch7 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(id string) error {
+		patch7 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
 			return nil
 		})
 		defer patch7.Reset()
@@ -2307,7 +2333,8 @@ func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, testDb
 
 		err := errors.New("error")
 
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), insertOrUpdateData, func(_ *MockDb,data interface{}, cols ...string) (error error) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), insertOrUpdateData,
+			func(_ *MockDb,data interface{}, cols ...string) (error error) {
 			return err
 		})
 		defer patch4.Reset()
@@ -2315,7 +2342,8 @@ func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, testDb
 		instantiateController.DeletePackageOnHost()
 
 		accessToken := createToken(tenantIdentifier)
-		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DelAppPkgRecords", func(_ *controllers.LcmController, clientIp, packageId, tenantId, hostIp string) (error) {
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DelAppPkgRecords",
+			func(_ *controllers.LcmController, _, packageId, tenantId, hostIp string) (error) {
 			return err
 		})
 		defer patch6.Reset()
@@ -2324,7 +2352,8 @@ func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, testDb
 		instantiateController.DeletePackageOnHost()
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetVimAndHostIpFromPkgHostRec", func(_ *controllers.LcmController, clientIp, packageId, tenantId, hostIp string) (string, string, error) {
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetVimAndHostIpFromPkgHostRec",
+			func(_ *controllers.LcmController, clientIp, packageId, tenantId, hostIp string) (string, string, error) {
 			return "123", "", err
 		})
 		defer patch5.Reset()
@@ -2333,7 +2362,8 @@ func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, testDb
 		instantiateController.DeletePackageOnHost()
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDelPkgOnHost", func(_ *controllers.LcmController, clientIp string) (string, string, string, error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDelPkgOnHost",
+			func(_ *controllers.LcmController, _ string) (string, string, string, error) {
 			return "123", "", "", err
 		})
 		defer patch3.Reset()
@@ -2342,7 +2372,8 @@ func testDeletePackageOnHost(t *testing.T, extraParams map[string]string, testDb
 		instantiateController.DeletePackageOnHost()
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndValidateAccessToken, func(_ *controllers.LcmController, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndValidateAccessToken,
+			func(_ *controllers.LcmController, _ string, _ []string, _ string) (clientIp string, bKey []byte,
 			accessToken string, error error) {
 			return "123", bKey, "", err
 		})
@@ -2389,7 +2420,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 
 		err := errors.New("error")
 		accessToken := createToken(tenantIdentifier)
-		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), deleteTenantRecord, func(_ *controllers.LcmControllerV2, clientIp, tenantId string) (error error) {
+		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), deleteTenantRecord, func(_ *controllers.LcmControllerV2, _, _ string) (error error) {
 			return err
 		})
 		defer patch13.Reset()
@@ -2399,7 +2430,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.DeleteAppPackageHostRecord(hostIp, packageId, tenantId)
 
 		accessToken = createToken(tenantIdentifier)
-		patch15 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "DeleteData", func(_ *MockDb, data interface{}, cols ...string) (error error) {
+		patch15 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), "DeleteData", func(_ *MockDb, _ interface{}, _ ...string) (error error) {
 			return err
 		})
 		defer patch15.Reset()
@@ -2410,7 +2441,8 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.DelAppPkgRecords(clientIp2, packageId, tenantId, hostIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DeleteAppPackageHostRecord", func(_ *controllers.LcmControllerV2, hostIp, appPkgId, tenantId string) (error error) {
+		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DeleteAppPackageHostRecord",
+			func(_ *controllers.LcmControllerV2, _, _, _ string) (error error) {
 			return err
 		})
 		defer patch12.Reset()
@@ -2420,7 +2452,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.DelAppPkgRecords(clientIp2, packageId, tenantId, hostIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), readData, func(_ *MockDb,data interface{}, cols ...string) (error error) {
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), readData, func(_ *MockDb,_ interface{}, _ ...string) (error error) {
 			return err
 		})
 		defer patch11.Reset()
@@ -2430,7 +2462,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.DelAppPkgRecords(clientIp2, packageId, tenantId, hostIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DelAppPkgRecords", func(_ *controllers.LcmControllerV2, clientIp, packageId, tenantId, hostIp string) (error ) {
+		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DelAppPkgRecords", func(_ *controllers.LcmControllerV2, _, _, _, _ string) (error ) {
 			return err
 		})
 		defer patch10.Reset()
@@ -2439,7 +2471,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.DeletePackageOnHost()
 
 		accessToken = createToken(tenantIdentifier)
-		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getVim, func(_ *controllers.LcmControllerV2, clientIp string, hostIp string) (string, error) {
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getVim, func(_ *controllers.LcmControllerV2, _ string, _ string) (string, error) {
 			return "nil", err
 		})
 		defer patch9.Reset()
@@ -2524,7 +2556,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		})
 		defer patch21.Reset()
 		accessToken = createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error ) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, _ string) (string, error ) {
 			return "", err
 		})
 		defer patch4.Reset()
@@ -2534,7 +2566,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.GetInputParametersForDelPkgOnHost(clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmControllerV2, clientIp string) (string, error ) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmControllerV2, _ string) (string, error ) {
 			return "", err
 		})
 		defer patch3.Reset()
@@ -2544,7 +2576,7 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.GetInputParametersForDelPkgOnHost(clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDelPkgOnHost", func(_ *controllers.LcmControllerV2, clientIp string) (string, string, string, error ) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDelPkgOnHost", func(_ *controllers.LcmControllerV2, _ string) (string, string, string, error ) {
 			return "123", "bKey", "", err
 		})
 		defer patch2.Reset()
@@ -2553,7 +2585,8 @@ func testDeletePackageOnHostV2(t *testing.T, extraParams map[string]string, test
 		instantiateController.DeletePackageOnHost()
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndValidateAccessToken, func(_ *controllers.LcmControllerV2, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndValidateAccessToken,
+			func(_ *controllers.LcmControllerV2, _ string, _ []string, _ string) (clientIp string, bKey []byte,
 			accessToken string, error error) {
 			return "123", bKey, "", err
 		})
@@ -2600,7 +2633,7 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 
 
 		accessToken := createToken(tenantIdentifier)
-		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), readData, func(_ *MockDb,data interface{}, cols ...string) (error error) {
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController.Db), readData, func(_ *MockDb,_ interface{}, _ ...string) (error error) {
 			return err
 		})
 		defer patch9.Reset()
@@ -2611,7 +2644,7 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateController.DeleteAppPkgRecords(packageId, tenantId, clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DeleteAppPkgRecords", func(_ *controllers.LcmController, packageId, tenantId, clientIp string) (error error) {
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "DeleteAppPkgRecords", func(_ *controllers.LcmController, _, _, _ string) (error error) {
 			return err
 		})
 		defer patch7.Reset()
@@ -2620,7 +2653,7 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateController.DeletePackage()
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ProcessDeletePackage", func(_ *controllers.LcmController, clientIp, packageId, tenantId, accessToken string) (error error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ProcessDeletePackage", func(_ *controllers.LcmController, _, _, _, _ string) (error error) {
 			return err
 		})
 		defer patch3.Reset()
@@ -2629,7 +2662,7 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateController.DeletePackage()
 
 		accessToken = createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmController, clientIp string) (string , error) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmController, _ string) (string , error) {
 			return "", err
 		})
 		defer patch4.Reset()
@@ -2638,7 +2671,7 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateController.DeletePackage()
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmController, clientIp string) (string , error) {
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmController, _ string) (string , error) {
 			return "", err
 		})
 		defer patch1.Reset()
@@ -2648,7 +2681,8 @@ func testDeletePackage(t *testing.T, extraParams map[string]string, testDb dbAda
 
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndValidateAccessToken, func(_ *controllers.LcmController, receiveMsg string, allowedRoles []string, tenantId string) (clientIp string, bKey []byte,
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndValidateAccessToken,
+			func(_ *controllers.LcmController, _ string, _ []string, _ string) (clientIp string, bKey []byte,
 			accessToken string, error error) {
 			return "123", bKey, "", err
 		})
@@ -2698,7 +2732,7 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		err := errors.New("error")
 
 		accessToken := createToken(tenantIdentifier)
-		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), deleteTenantRecord, func(_ *controllers.LcmControllerV2,clientIp, tenantId string) (error error) {
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), deleteTenantRecord, func(_ *controllers.LcmControllerV2,_, _ string) (error error) {
 			return err
 		})
 		defer patch8.Reset()
@@ -2709,7 +2743,7 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		instantiateController2.DeleteAppPkgRecords(packageId, tenantId, clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "DeleteAppPackageRecord", func(_ *controllers.LcmControllerV2, appPkgId string, tenantId string) (error error) {
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "DeleteAppPackageRecord", func(_ *controllers.LcmControllerV2, _ string, _ string) (error error) {
 			return err
 		})
 		defer patch7.Reset()
@@ -2720,7 +2754,7 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		//instantiateController2.DeleteAppPkgRecords(packageId, tenantId, clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2.Db), readData, func(_ *MockDb,data interface{}, cols ...string) (error error) {
+		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2.Db), readData, func(_ *MockDb,_ interface{}, _ ...string) (error error) {
 			return err
 		})
 		defer patch6.Reset()
@@ -2731,7 +2765,7 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		instantiateController2.DeleteAppPkgRecords(packageId, tenantId, clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "DeleteAppPkgRecords", func(_ *controllers.LcmControllerV2, packageId, tenantId, clientIp string) (error error) {
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "DeleteAppPkgRecords", func(_ *controllers.LcmControllerV2, _, _, _ string) (error error) {
 			return err
 		})
 		defer patch5.Reset()
@@ -2740,7 +2774,7 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		instantiateController2.DeletePackage()
 
 		accessToken = createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "ProcessDeletePackage", func(_ *controllers.LcmControllerV2, clientIp, packageId, tenantId, accessToken string) (error) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "ProcessDeletePackage", func(_ *controllers.LcmControllerV2, _, _, _, _ string) (error) {
 			return err
 		})
 		defer patch4.Reset()
@@ -2749,7 +2783,7 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		instantiateController2.DeletePackage()
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string , error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, _ string) (string , error) {
 			return "", err
 		})
 		defer patch3.Reset()
@@ -2758,7 +2792,7 @@ func testDeletePackageV2(t *testing.T, extraParams map[string]string, testDb dbA
 		instantiateController2.DeletePackage()
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), getTenantId, func(_ *controllers.LcmControllerV2, clientIp string) (string , error) {
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController2), getTenantId, func(_ *controllers.LcmControllerV2, _ string) (string , error) {
 			return "", err
 		})
 		defer patch1.Reset()
@@ -2826,7 +2860,7 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, testDb d
 		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmController , clientIp string) (string, error) {
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmController , _ string) (string, error) {
 			return "", err
 		})
 		defer patch5.Reset()
@@ -2838,7 +2872,7 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, testDb d
 		instantiateController.ValidateDistributeInputParameters(clientIp, req)
 
 		accessToken = createToken(tenantIdentifier)
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmController , clientIp string) (string, error) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getTenantId, func(_ *controllers.LcmController , _ string) (string, error) {
 			return "",err
 		})
 		defer patch4.Reset()
@@ -2848,7 +2882,8 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, testDb d
 
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ValidateDistributeInputParameters", func(_ *controllers.LcmController , _ string, _ models.DistributeRequest) (packageId string , error error) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ValidateDistributeInputParameters",
+			func(_ *controllers.LcmController , _ string, _ models.DistributeRequest) (packageId string , error error) {
 			return "",err
 		})
 		defer patch2.Reset()
@@ -2859,7 +2894,8 @@ func testDistributePackage(t *testing.T, extraParams map[string]string, testDb d
 		assert.Equal(t, 404, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 = gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted, func(_ *controllers.LcmController , receiveMsg string) (pclientIp string, bKey []byte,
+		patch1 = gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted,
+			func(_ *controllers.LcmController , _ string) (pclientIp string, bKey []byte,
 			accessToken string, tenantId string, err error) {
 			return "",bKey, "", "", err
 		})
@@ -2933,7 +2969,7 @@ func testDistributePackageV2(t *testing.T, extraParams map[string]string, testDb
 		assert.Equal(t, 200, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2 , clientIp string) (string, error) {
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2 , _ string) (string, error) {
 			return "", err
 		})
 		defer patch5.Reset()
@@ -2946,7 +2982,8 @@ func testDistributePackageV2(t *testing.T, extraParams map[string]string, testDb
 
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ValidateDistributeInputParameters", func(_ *controllers.LcmControllerV2 , _ string, _ models.DistributeRequest) (packageId string , error error) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "ValidateDistributeInputParameters",
+			func(_ *controllers.LcmControllerV2 , _ string, _ models.DistributeRequest) (packageId string , error error) {
 			return "",err
 		})
 		defer patch2.Reset()
@@ -3007,7 +3044,8 @@ func testDistributionStatus(t *testing.T, extraParams map[string]string, testDb 
 		assert.Equal(t,404, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDistributionStatus", func(_ *controllers.LcmController,_ string) (tenantId string,  packageId string, error error) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDistributionStatus",
+			func(_ *controllers.LcmController,_ string) (tenantId string,  packageId string, error error) {
 			return "", "",nil
 		})
 		defer patch2.Reset()
@@ -3019,7 +3057,8 @@ func testDistributionStatus(t *testing.T, extraParams map[string]string, testDb 
 		assert.Equal(t,404, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted, func(_ *controllers.LcmController,_ string) (clientIp string, bkey []uint8, _, _ string, error error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted,
+			func(_ *controllers.LcmController,_ string) (clientIp string, bkey []uint8, _, _ string, error error) {
 			return "", bkey , "_" , "_" ,err
 		})
 		defer patch3.Reset()
@@ -3082,7 +3121,7 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, clientIp string) (string, error) {
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, _ string) (string, error) {
 			return "", err
 		})
 		defer patch5.Reset()
@@ -3093,7 +3132,8 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		instantiateController.GetInputParametersForDistributionStatus(clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDistributionStatus", func(_ *controllers.LcmControllerV2,_ string) (tenantId string,  packageId string, error error) {
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetInputParametersForDistributionStatus",
+			func(_ *controllers.LcmControllerV2,_ string) (tenantId string,  packageId string, error error) {
 			return "", "",nil
 		})
 		defer patch2.Reset()
@@ -3105,7 +3145,8 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted, func(_ *controllers.LcmControllerV2,_ string) (clientIp string, bkey []uint8, _, _ string, error error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted,
+			func(_ *controllers.LcmControllerV2, _ string) (clientIp string, bkey []uint8, _, _ string, error error) {
 			return "", bkey , "_" , "_" ,err
 		})
 		defer patch3.Reset()
@@ -3146,21 +3187,21 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 		
 		// Check for success case wherein the status value will be default i.e. 0
 //		assert.Equal(t, 0, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
-		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), insertOrUpdateData, func(_ *MockDb,data interface{}, cols ...string) (error error) {
+		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), insertOrUpdateData, func(_ *MockDb,_ interface{}, _ ...string) (error error) {
 			return err1
 		})
 		defer patch4.Reset()
 		// Test upload package
 		uploadController.UploadConfig()
 
-		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData, func(_ *MockDb,data interface{}, cols ...string) (error error) {
+		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData, func(_ *MockDb,_ interface{}, _ ...string) (error error) {
 			return err1
 		})
 		defer patch3.Reset()
 		// Test upload package
 		uploadController.UploadConfig()
 
-		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "ValidateYamlFile", func(_ *controllers.LcmController, clientIp string, file multipart.File)(error error) {
+		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "ValidateYamlFile", func(_ *controllers.LcmController, _ string, _ multipart.File)(error error) {
 			return err1
 		})
 		defer patch14.Reset()
@@ -3169,7 +3210,7 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 		clientIp := "123.2.3.4"
 		uploadController.GetInputParametersForUploadCfg(clientIp)
 
-		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetFile", func(_ *controllers.LcmController, key string)(multipart.File, *multipart.FileHeader, error) {
+		patch13 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetFile", func(_ *controllers.LcmController, _ string)(multipart.File, *multipart.FileHeader, error) {
 			return nil, nil, err1
 		})
 		defer patch13.Reset()
@@ -3177,14 +3218,14 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 		//uploadController.UploadConfig()
 		uploadController.GetInputParametersForUploadCfg(clientIp)
 
-		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), getVim, func(_ *controllers.LcmController, clientIp string, hostIp string)(string,  error) {
+		patch12 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), getVim, func(_ *controllers.LcmController, _ string, _ string)(string,  error) {
 			return "", err1
 		})
 		defer patch12.Reset()
 		// Test upload packages
 		uploadController.GetInputParametersForUploadCfg(clientIp)
 
-		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetHostIP", func(_ *controllers.LcmController, clientIp string)(string,  error) {
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetHostIP", func(_ *controllers.LcmController, _ string)(string,  error) {
 			return "", err1
 		})
 		defer patch11.Reset()
@@ -3193,7 +3234,7 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 		//clientIp := "123.2.3.4"
 		uploadController.GetInputParametersForUploadCfg(clientIp)
 
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetInputParametersForUploadCfg", func(_ *controllers.LcmController,clientIp string)(hostIp string,
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetInputParametersForUploadCfg", func(_ *controllers.LcmController,_ string)(hostIp string,
 			vim string, file multipart.File, err error) {
 			return "", "nil", file, err1
 		})
@@ -3202,7 +3243,7 @@ func testUpload(t *testing.T, extraParams map[string]string, path string, testDb
 		uploadController.UploadConfig()
 
 
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), getClientIpAndIsPermitted, func(_ *controllers.LcmController,receiveMsg string)(clientIp string, bKey []byte,
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), getClientIpAndIsPermitted, func(_ *controllers.LcmController,_ string)(clientIp string, bKey []byte,
 			accessToken string, tenantId string, err error) {
 			return "", nil, "", "", err1
 		})
@@ -3260,7 +3301,7 @@ func testUploadV2(t *testing.T, extraParams map[string]string, path string, test
 		assert.Equal(t, 200, uploadController.Ctx.ResponseWriter.Status, "Config upload failed")
 		err1 := errors.New("error")
 
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetHostIP", func(_ *controllers.LcmControllerV2,clientIp string)(string, error){
+		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetHostIP", func(_ *controllers.LcmControllerV2,_ string)(string, error){
 			return "", err1
 		})
 		defer patch2.Reset()
@@ -3270,7 +3311,7 @@ func testUploadV2(t *testing.T, extraParams map[string]string, path string, test
 
 
 
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetInputParametersForUploadCfg", func(_ *controllers.LcmControllerV2,clientIp string)(hostIp string,
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController), "GetInputParametersForUploadCfg", func(_ *controllers.LcmControllerV2,_ string)(hostIp string,
 			vim string, file multipart.File, err error) {
 			return "", "nil", file, err1
 		})
@@ -3315,13 +3356,12 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string, testD
 		removeController.DistributePackage()
 
 		accessToken = createToken(tenantIdentifier)
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), getVim, func(_ *controllers.LcmController,clientIp string, hostIp string) (string, error) {
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), getVim, func(_ *controllers.LcmController,_ string, _ string) (string, error) {
 			return "", err
 		})
 		defer patch7.Reset()
 		removeBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		//removeController.RemoveConfig()
-		clientIp := "121.2.2.2"
 		removeController.GetInputParametersForRemoveCfg(clientIp)
 
 		accessToken = createToken(tenantIdentifier)
@@ -3335,7 +3375,7 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string, testD
 		removeController.GetInputParametersForRemoveCfg(clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), "GetHostIP", func(_ *controllers.LcmController, clientIp string) (string, error) {
+		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), "GetHostIP", func(_ *controllers.LcmController, _ string) (string, error) {
 			return "", err
 		})
 		defer patch5.Reset()
@@ -3344,7 +3384,8 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string, testD
 		removeController.GetInputParametersForRemoveCfg(clientIp)
 
 		accessToken = createToken(tenantIdentifier)
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), "GetInputParametersForRemoveCfg", func(_ *controllers.LcmController, clientIp string) (_ string, _ string, host *models.MecHost, error error) {
+		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), "GetInputParametersForRemoveCfg",
+			func(_ *controllers.LcmController, _ string) (_ string, _ string, host *models.MecHost, error error) {
 			return "", "", host, err
 		})
 		defer patch1.Reset()
