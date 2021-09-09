@@ -2547,9 +2547,14 @@ func (c *LcmController) LoginPage() {
 				"Invalid credentials")
 			return
 		}
+		response, err := json.Marshal(edgeAuthInfoRec)
+		if err != nil {
+			c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+			return
+		}
+		_, _ = c.Ctx.ResponseWriter.Write(response)
 	}
 	c.handleLoggingForSuccess(clientIp, "Login Page is is successful")
-	c.ServeJSON()
 }
 
 
