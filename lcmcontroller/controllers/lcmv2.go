@@ -2084,7 +2084,6 @@ func (c *LcmControllerV2) DistributionStatus() {
 
 	var appPkgs []models.AppPackageStatusRecord
 	for _, appPkgRecord := range appPkgRecords {
-
 		var p models.AppPackageStatusRecord
 		p.AppId = appPkgRecord.AppId
 		p.PackageId = appPkgRecord.PackageId
@@ -2100,30 +2099,30 @@ func (c *LcmControllerV2) DistributionStatus() {
 			//fill app package host info
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
-			if packageId != "" {
-				_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, ph.HostIp)
-				if err != nil {
-					return
-				}
 
-				pluginInfo := util.GetPluginInfo(vim)
-				client, err := pluginAdapter.GetClient(pluginInfo)
-				if err != nil {
-					c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-						util.ErrCodeFailedGetPlugin)
-					return
-				}
-				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-				status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
-				if err != nil {
-					c.HandleLoggingForFailure(clientIp, err.Error())
-					return
-				}
+			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, ph.HostIp)
+			if err != nil {
+				return
+			}
+
+			pluginInfo := util.GetPluginInfo(vim)
+			client, err := pluginAdapter.GetClient(pluginInfo)
+			if err != nil {
+				c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+					util.ErrCodeFailedGetPlugin)
+				return
+			}
+			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+			if err != nil {
+				c.HandleLoggingForFailure(clientIp, err.Error())
+				return
 			}
 			ph.Error = appPkgHost.Error
 			ph.Status = status
 			p.MecHostInfo = append(p.MecHostInfo, ph)
 		}
+		c.Db.InsertOrUpdateData(p, util.AppPackageRecordId)
 		appPkgs = append(appPkgs, p)
 	}
 
