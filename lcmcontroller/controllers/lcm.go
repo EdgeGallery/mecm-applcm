@@ -1891,7 +1891,7 @@ func (c *LcmController) DistributionStatus() {
 			//fill app package host info
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
-			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, ph.HostIp)
+			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
 			if err != nil {
 				return
 			}
