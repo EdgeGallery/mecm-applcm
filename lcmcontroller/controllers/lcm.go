@@ -1853,17 +1853,19 @@ func (c *LcmController) DistributionStatus() {
 			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
 			return
 		}
-	} else if packageId == ""  {
-		count, _ := c.Db.QueryTable(util.TenantId, &appPkgRecords, util.TenantId, tenantId)
-		if count == 0 {
-			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-			return
-		}
 	} else {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
-		if count == 0 {
-			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-			return
+		if packageId == ""  {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
+		} else {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
 		}
 	}
 
@@ -1889,7 +1891,7 @@ func (c *LcmController) DistributionStatus() {
 			//fill app package host info
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
-			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, ph.HostIp)
+			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
 			if err != nil {
 				return
 			}
