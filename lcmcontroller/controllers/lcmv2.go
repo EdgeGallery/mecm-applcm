@@ -2052,29 +2052,38 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 // @router /packages/:packageId [get]
 func (c *LcmControllerV2) DistributionStatus() {
 	var status string
-	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
+	clientIp, bKey, accessToken, tenantId, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
 	}
 
-	tenantId, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
+	_, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
 	if err != nil {
 		return
 	}
 
 	var appPkgRecords []*models.AppPackageRecord
-	if packageId == "" {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+	edgeKey, _ := c.getKey(clientIp)
+	if edgeKey != "" {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
 		if count == 0 {
-			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
 			return
 		}
 	} else {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId+tenantId)
-		if count == 0 {
-			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-			return
+		if packageId == ""  {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
+		} else {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
 		}
 	}
 
@@ -2100,7 +2109,7 @@ func (c *LcmControllerV2) DistributionStatus() {
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
 
-			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, ph.HostIp)
+			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
 			if err != nil {
 				return
 			}
