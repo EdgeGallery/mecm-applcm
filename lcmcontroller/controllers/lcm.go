@@ -1840,7 +1840,7 @@ func (c *LcmController) DistributionStatus() {
 		return
 	}
 
-	tenantId, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
+	_, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
 	if err != nil {
 		return
 	}
@@ -1854,7 +1854,7 @@ func (c *LcmController) DistributionStatus() {
 			return
 		}
 	} else if packageId == ""  {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+		count, _ := c.Db.QueryTable(util.TenantId, &appPkgRecords, util.TenantId, tenantId)
 		if count == 0 {
 			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
 			return
