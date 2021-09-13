@@ -1853,17 +1853,19 @@ func (c *LcmController) DistributionStatus() {
 			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
 			return
 		}
-	} else if packageId == ""  {
-		count, _ := c.Db.QueryTable(util.TenantId, &appPkgRecords, util.TenantId, tenantId)
-		if count == 0 {
-			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-			return
-		}
 	} else {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
-		if count == 0 {
-			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-			return
+		if packageId == ""  {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
+		} else {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
 		}
 	}
 
