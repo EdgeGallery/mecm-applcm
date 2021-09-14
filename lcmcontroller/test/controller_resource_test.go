@@ -417,6 +417,12 @@ func TestMepCapabilitiesId(t *testing.T) {
 		// Test Capability
 		capabilityControllerV2.QueryMepCapabilities()
 
+		patch12 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
+			return err
+		})
+		defer patch12.Reset()
+		capabilityControllerV2.QueryMepCapabilities()
+
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 200, capabilityController.Ctx.ResponseWriter.Status, getCapability+
 			statusFailed)
