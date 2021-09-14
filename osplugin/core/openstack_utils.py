@@ -562,7 +562,8 @@ class Flavor(HOTBase):
         self.properties['ram'] = memory
         self.properties['disk'] = sys_disk
 
-        if 'flavor_extra_specs' in self.template['properties']['vdu_profile']:
+        if 'flavor_extra_specs' in self.template['properties']['vdu_profile']\
+                and self.template['properties']['vdu_profile']['flavor_extra_specs'] is not None:
             flavor_extra_specs = self.template['properties']['vdu_profile']['flavor_extra_specs']
             self.properties['extra_specs'] = {}
             for key in flavor_extra_specs:
