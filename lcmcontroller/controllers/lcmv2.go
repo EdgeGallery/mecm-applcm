@@ -453,7 +453,7 @@ func (c *LcmControllerV2) GetInputParametersForUploadCfg(clientIp string) (hostI
 		return hostIp, vim, file, err
 	}
 
-	err = c.validateYamlFile(clientIp, file)
+	err = c.ValidateYamlFile(clientIp, file)
 	if err != nil {
 		return hostIp, vim, file, err
 	}
@@ -466,7 +466,7 @@ func (c *LcmControllerV2) GetInputParametersForUploadCfg(clientIp string) (hostI
 }
 
 // Validate kubeconfig file
-func (c *LcmControllerV2) validateYamlFile(clientIp string, file multipart.File) error {
+func (c *LcmControllerV2) ValidateYamlFile(clientIp string, file multipart.File) error {
 
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
@@ -507,7 +507,7 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 		return
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	hostIp, vim, hostInfoRec, err := c.getInputParametersForRemoveCfg(clientIp)
+	hostIp, vim, hostInfoRec, err := c.GetInputParametersForRemoveCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -556,7 +556,7 @@ func (c *LcmControllerV2) GetVim(clientIp string, hostIp string) (string, error)
 }
 
 // Get in put parameters for remove configuration
-func (c *LcmControllerV2) getInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, error) {
+func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, error) {
 	hostIp, err := c.GetHostIP(clientIp)
 	if err != nil {
 		return "", "", &models.MecHost{}, err
@@ -648,11 +648,11 @@ func (c *LcmControllerV2) InstantiateV2() {
 		AccessToken:   accessToken,
 	}
 
-	doPrepareParams(c, appParams, bKey)
-	doInstantiate(c, appParams, bKey, req)
+	DoPrepareParams(c, appParams, bKey)
+	DoInstantiate(c, appParams, bKey, req)
 }
 
-func doPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
+func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
 		PkgHostKey: params.AppPackageId + params.TenantId + params.MecHost,
 	}
@@ -685,7 +685,7 @@ func doPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []by
 
 }
 
-func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte, req models.InstantiateRequest) {
+func DoInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte, req models.InstantiateRequest) {
 	vim, err := c.GetVim(params.ClientIP, params.MecHost)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -700,7 +700,7 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 			util.ErrCodeFailedGetPlugin)
 		return
 	}
-	err, acm := processAkSkConfig(params.AppInstanceId, params.AppName, &req, params.ClientIP, params.TenantId)
+	err, acm := ProcessAkSkConfig(params.AppInstanceId, params.AppName, &req, params.ClientIP, params.TenantId)
 	if err != nil {
 		c.HandleForErrorCode(params.ClientIP, util.StatusInternalServerError, err.Error(), util.ErrCodeProcessAkSkFailed)
 		util.ClearByteArray(bKey)
@@ -721,7 +721,7 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 	appInfoParams.AppName = params.AppName
 	appInfoParams.Origin = req.Origin
 
-	err = c.insertOrUpdateAppInfoRecord(params.ClientIP, appInfoParams)
+	err = c.InsertOrUpdateAppInfoRecord(params.ClientIP, appInfoParams)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -731,12 +731,12 @@ func doInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 	err, status := adapter.Instantiate(params.TenantId, params.AccessToken, params.AppInstanceId, req)
 	util.ClearByteArray(bKey)
 	if err != nil {
-		c.handleErrorForInstantiateApp(acm, params.ClientIP, params.AppInstanceId, params.TenantId)
+		c.HandleErrorForInstantiateApp(acm, params.ClientIP, params.AppInstanceId, params.TenantId)
 		c.HandleForErrorCode(params.ClientIP, util.StatusInternalServerError, err.Error(), util.ErrCodePluginReportFailed)
 		return
 	}
 	if status == util.Failure {
-		c.handleErrorForInstantiateApp(acm, params.ClientIP, params.AppInstanceId, params.TenantId)
+		c.HandleErrorForInstantiateApp(acm, params.ClientIP, params.AppInstanceId, params.TenantId)
 		c.HandleForErrorCode(params.ClientIP, util.StatusInternalServerError, util.FailedToInstantiate,
 			util.ErrCodePluginInstFailed)
 		err = errors.New(util.FailedToInstantiate)
@@ -806,7 +806,7 @@ func (c *LcmControllerV2) ValidateInstantiateInputParameters(clientIp string, re
 
 
 // Insert or update application info record
-func (c *LcmControllerV2) insertOrUpdateAppInfoRecord(clientIp string, appInfoParams models.AppInfoRecord) error {
+func (c *LcmControllerV2) InsertOrUpdateAppInfoRecord(clientIp string, appInfoParams models.AppInfoRecord) error {
 	origin := appInfoParams.Origin
 	if origin == "" {
 		origin = "MEO"
@@ -925,7 +925,7 @@ func (c *LcmControllerV2) InsertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 	return nil
 }
 
-func (c *LcmControllerV2) handleErrorForInstantiateApp(acm config.AppConfigAdapter,
+func (c *LcmControllerV2) HandleErrorForInstantiateApp(acm config.AppConfigAdapter,
 	clientIp, appInsId, tenantId string) {
 	err := acm.DeleteAppAuthConfig(clientIp)
 	if err != nil {
@@ -1156,7 +1156,7 @@ func (c *LcmControllerV2) QueryV2() {
 // @router /tenants/:tenantId/hosts/:hostIp/kpi [get]
 func (c *LcmControllerV2) QueryKPI() {
 	log.Info("Application query kpi request received.")
-	clientIp, bKey, accessToken, err := c.getClientIpNew()
+	clientIp, bKey, accessToken, err := c.GetClientIpNew()
 	if err != nil {
 		return
 	}
@@ -1178,10 +1178,10 @@ func (c *LcmControllerV2) QueryKPI() {
 	}
 	response, err := adapter.QueryKPI(accessToken, hostIp)
 	util.ClearByteArray(bKey)
-	c.handleKPI(clientIp, err, response)
+	c.HandleKPI(clientIp, err, response)
 }
 
-func (c *LcmControllerV2) getClientIpNew() (clientIp string, bKey []byte,
+func (c *LcmControllerV2) GetClientIpNew() (clientIp string, bKey []byte,
 	accessToken string, err error) {
 	clientIp = c.Ctx.Input.IP()
 	err = util.ValidateSrcAddress(clientIp)
@@ -1208,7 +1208,7 @@ func (c *LcmControllerV2) getClientIpNew() (clientIp string, bKey []byte,
 	return clientIp, bKey, accessToken, err
 }
 
-func (c *LcmControllerV2) handleKPI(clientIp string, err error, response string) {
+func (c *LcmControllerV2) HandleKPI(clientIp string, err error, response string) {
 	if err != nil {
 		res := strings.Contains(err.Error(), util.NotFound)
 		if res {
@@ -1245,7 +1245,7 @@ func (c *LcmControllerV2) GetUrlHostIP(clientIp string) (string, error) {
 // @Failure 400 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId [get]
 func (c *LcmControllerV2) QueryMepCapabilities() {
-	clientIp, bKey, _, err := c.getClientIpNew()
+	clientIp, bKey, _, err := c.GetClientIpNew()
 	util.ClearByteArray(bKey)
 
 	_, err = c.GetUrlHostIP(clientIp)
@@ -1255,7 +1255,7 @@ func (c *LcmControllerV2) QueryMepCapabilities() {
 
 	mepPort := util.GetMepPort()
 
-	capabilityId, err := c.getUrlCapabilityId(clientIp)
+	capabilityId, err := c.GetUrlCapabilityId(clientIp)
 	if err != nil {
 		return
 	}
@@ -1276,7 +1276,7 @@ func (c *LcmControllerV2) QueryMepCapabilities() {
 }
 
 // Get mep capability id from url
-func (c *LcmControllerV2) getUrlCapabilityId(clientIp string) (string, error) {
+func (c *LcmControllerV2) GetUrlCapabilityId(clientIp string) (string, error) {
 	capabilityId := c.Ctx.Input.Param(":capabilityId")
 	err := util.ValidateMepCapabilityId(capabilityId)
 	if err != nil {
@@ -1566,7 +1566,7 @@ func (c *LcmControllerV2) ProcessDeletePackage(clientIp, packageId, tenantId, ac
 
 	for _, appPkgRecord := range appPkgRecords {
 		for _, appPkgHost := range appPkgRecord.MecHostInfo {
-			err := c.deletePackage(appPkgHost, clientIp, packageId, accessToken)
+			err := c.DeletePkg(appPkgHost, clientIp, packageId, accessToken)
 			if err != nil {
 				return err
 			}
@@ -1615,7 +1615,7 @@ func (c *LcmControllerV2) DeleteAppPkgRecords(packageId, tenantId, clientIp stri
 }
 
 // Send delete package
-func (c *LcmControllerV2) deletePackage(appPkgHost *models.AppPackageHostRecord,
+func (c *LcmControllerV2) DeletePkg(appPkgHost *models.AppPackageHostRecord,
 	clientIp, packageId, accessToken string) error {
 	vim, err := c.GetVim(clientIp, appPkgHost.HostIp)
 	if err != nil {
@@ -1772,7 +1772,7 @@ func (c *LcmControllerV2) GetAppPackageHostRecord(hostIp, appPkgId, tenantId, cl
 }
 
 // Update app package records
-func (c *LcmControllerV2) updateAppPkgRecord(hosts models.DistributeRequest,
+func (c *LcmControllerV2) UpdateAppPkgRecord(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, hostIp, status string) error {
 	err := c.InsertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
@@ -2025,7 +2025,7 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 		status, err := adapter.UploadPackage(tenantId, pkgFilePath, hostIp, packageId, accessToken)
 		if err != nil {
 			c.HandleLoggingForFailure(clientIp, err.Error())
-			err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")
+			err = c.UpdateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")
 			return err
 		}
 		if status == util.Failure {
@@ -2035,7 +2035,7 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 			return err
 		}
 
-		err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Distributed")
+		err = c.UpdateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Distributed")
 		if err != nil {
 			return err
 		}
@@ -2052,29 +2052,38 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 // @router /packages/:packageId [get]
 func (c *LcmControllerV2) DistributionStatus() {
 	var status string
-	clientIp, bKey, accessToken, _, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
+	clientIp, bKey, accessToken, tenantId, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
 	}
 
-	tenantId, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
+	_, packageId, err := c.GetInputParametersForDistributionStatus(clientIp)
 	if err != nil {
 		return
 	}
 
 	var appPkgRecords []*models.AppPackageRecord
-	if packageId == "" {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+	edgeKey, _ := c.getKey(clientIp)
+	if edgeKey != "" {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
 		if count == 0 {
-			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
 			return
 		}
 	} else {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId+tenantId)
-		if count == 0 {
-			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-			return
+		if packageId == ""  {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
+		} else {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return
+			}
 		}
 	}
 
@@ -2084,7 +2093,6 @@ func (c *LcmControllerV2) DistributionStatus() {
 
 	var appPkgs []models.AppPackageStatusRecord
 	for _, appPkgRecord := range appPkgRecords {
-
 		var p models.AppPackageStatusRecord
 		p.AppId = appPkgRecord.AppId
 		p.PackageId = appPkgRecord.PackageId
@@ -2100,30 +2108,30 @@ func (c *LcmControllerV2) DistributionStatus() {
 			//fill app package host info
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
-			if packageId != "" {
-				_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, ph.HostIp)
-				if err != nil {
-					return
-				}
 
-				pluginInfo := util.GetPluginInfo(vim)
-				client, err := pluginAdapter.GetClient(pluginInfo)
-				if err != nil {
-					c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-						util.ErrCodeFailedGetPlugin)
-					return
-				}
-				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-				status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
-				if err != nil {
-					c.HandleLoggingForFailure(clientIp, err.Error())
-					return
-				}
+			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
+			if err != nil {
+				return
+			}
+
+			pluginInfo := util.GetPluginInfo(vim)
+			client, err := pluginAdapter.GetClient(pluginInfo)
+			if err != nil {
+				c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+					util.ErrCodeFailedGetPlugin)
+				return
+			}
+			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+			if err != nil {
+				c.HandleLoggingForFailure(clientIp, err.Error())
+				return
 			}
 			ph.Error = appPkgHost.Error
 			ph.Status = status
 			p.MecHostInfo = append(p.MecHostInfo, ph)
 		}
+		c.Db.InsertOrUpdateData(p, util.AppPackageRecordId)
 		appPkgs = append(appPkgs, p)
 	}
 
