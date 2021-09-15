@@ -1911,7 +1911,7 @@ func (c *LcmController) DistributionStatus() {
 			}
 			ph.Error = appPkgHost.Error
 			ph.Status = status
-			p.MecHostInfo = append(p.MecHostInfo, ph)
+			p.MecHostInfo = append(p.MecHostInfo, &ph)
 		}
 		appPkgs = append(appPkgs, p)
 	}

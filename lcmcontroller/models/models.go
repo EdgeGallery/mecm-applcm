@@ -34,6 +34,8 @@ func init() {
 	orm.RegisterModel(new(AppPackageStaleRec))
 	orm.RegisterModel(new(AppPackageHostStaleRec))
 	orm.RegisterModel(new(EdgeAuthenticateRec))
+	orm.RegisterModel(new(AppPackageStatusRecord))
+	orm.RegisterModel(new(AppPackageHostStatusRecord))
 }
 
 // MEC host record
@@ -201,18 +203,19 @@ type AppPackageStatusRecord struct {
 	AppPkgDesc             string `json:"appPkgDesc"`
 	AppPkgAffinity         string `json:"appPkgAffinity"`
 	AppId                  string `json:"appId"`
-	PackageId              string `json:"packageId"`
+	PackageId              string  `orm:"pk" json:"packageId"`
 	AppIconUrl             string `json:"appIconUrl"`
 	CreatedTime            string `json:"createdTime"`
 	ModifiedTime           string `json:"modifiedTime"`
-	MecHostInfo []AppPackageHostStatusRecord `json:"mecHostInfo"`
+	MecHostInfo []*AppPackageHostStatusRecord `orm:"reverse(many);on_delete(set_null)" json:"mecHostInfo"`
 }
 
 // Application package host status record
 type AppPackageHostStatusRecord struct {
-	HostIp                 string `json:"hostIp"`
+	HostIp                 string `orm:"pk" json:"hostIp"`
 	Status                 string `json:"status"`
 	Error                  string `json:"error"`
+	AppPackageStatus *AppPackageStatusRecord `orm:"rel(fk)"` // RelForeignKey relation
 }
 // Tenant info record
 type TenantInfoRecord struct {
