@@ -2129,9 +2129,9 @@ func (c *LcmControllerV2) DistributionStatus() {
 			}
 			ph.Error = appPkgHost.Error
 			ph.Status = status
-			p.MecHostInfo = append(p.MecHostInfo, ph)
+			p.MecHostInfo = append(p.MecHostInfo, &ph)
 		}
-		c.Db.InsertOrUpdateData(p, util.AppPackageRecordId)
+		_ = c.Db.InsertOrUpdateData(&p, "package_id")
 		appPkgs = append(appPkgs, p)
 	}
 
