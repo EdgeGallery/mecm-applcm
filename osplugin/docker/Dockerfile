@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # 构建ubuntu python3基础镜像
-FROM ubuntu:20.04 AS base
+FROM swr.cn-north-4.myhuaweicloud.com/eg-common/ubuntu:20.04 AS base
 
 RUN apt-get update && \
     apt-get install -y python3 python3-venv libpq5
