@@ -649,33 +649,14 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	name, err := c.GetUserName(clientIp)
-	if err != nil {
-		return
-	}
-
-	key, err := c.GetKey(clientIp)
-	if err != nil {
-		return
-	}
-	if accessToken != "" {
-		err = util.ValidateAccessToken(accessToken,
-			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, "")
-		if err != nil {
-			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-			return
-		}
-	} else {
-		if name != "" && key != "" {
-			err := c.validateCredentials(clientIp, name, key)
-			if err != nil {
-				return
-			}
-		}
-	}
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	util.ClearByteArray(bKey)
+	defer util.ClearByteArray(bKey)
+	err = c.ValidateTokenAndCredentials(accessToken, clientIp)
+	if err != nil {
+		return
+	}
+
 	hostIp, err := c.GetUrlHostIP(clientIp)
 	if err != nil {
 		return
@@ -2545,7 +2526,6 @@ func (c *LcmController) LoginPage() {
 	c.handleLoggingForSuccess(clientIp, "Login Page is is successful")
 }
 
-
 // Get in put parameters for upload configuration
 func (c *LcmController) GetInputParametersForChangeKey(clientIp string) (name string,
 	key string, newKey string, err error) {
@@ -2588,4 +2568,41 @@ func (c *LcmController) GetClientAndProcessAkSkConfig(clientIp,
 		return client, acm, pluginInfo, err
 	}
 	return client, acm, pluginInfo, err
+}
+
+func (c *LcmController) GetUserNameAndKey(clientIp string) (name, key string, err error) {
+	name, err = c.GetUserName(clientIp)
+	if err != nil {
+		return name, key, err
+	}
+
+	key, err = c.GetKey(clientIp)
+	if err != nil {
+		return name, key, err
+	}
+	return name, key, err
+}
+
+func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp string) error {
+	name, key, err := c.GetUserNameAndKey(clientIp)
+	if err != nil {
+		return err
+	}
+
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken,
+			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, "")
+		if err != nil {
+			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+			return err
+		}
+	} else {
+		if name != "" && key != "" {
+			err = c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
