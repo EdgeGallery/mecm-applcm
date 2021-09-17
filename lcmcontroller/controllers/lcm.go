@@ -1774,28 +1774,9 @@ func (c *LcmController) DistributionStatus() {
 		return
 	}
 
-	var appPkgRecords []*models.AppPackageRecord
-	edgeKey, _ := c.getKey(clientIp)
-	if edgeKey != "" {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
-		if count == 0 {
-			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-			return
-		}
-	} else {
-		if packageId == ""  {
-			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
-			if count == 0 {
-				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-				return
-			}
-		} else {
-			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
-			if count == 0 {
-				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-				return
-			}
-		}
+	appPkgRecords, err := c.GetAppPkgRecords(clientIp, packageId, tenantId)
+	if err != nil {
+		return
 	}
 
 	for _, appPkgRecord := range appPkgRecords {
@@ -2577,4 +2558,30 @@ func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp, tenan
 		}
 	}
 	return nil
+}
+
+func (c *LcmController) GetAppPkgRecords(clientIp, packageId, tenantId string) (appPkgRecords []*models.AppPackageRecord, err error) {
+	edgeKey, _ := c.getKey(clientIp)
+	if edgeKey != "" {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
+		if count == 0 {
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			return appPkgRecords, errors.New("record doesn't exist")
+		}
+	} else {
+		if packageId == ""  {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return appPkgRecords, errors.New("record doesn't exist")
+			}
+		} else {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return appPkgRecords, errors.New("record doesn't exist")
+			}
+		}
+	}
+	return appPkgRecords, nil
 }
