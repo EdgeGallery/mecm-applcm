@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// token controller
 package controllers
 
 import (
