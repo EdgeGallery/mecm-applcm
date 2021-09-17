@@ -1757,7 +1757,6 @@ func (c *LcmController) insertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenantI
 // @Failure 400 bad request
 // @router /packages/:packageId [get]
 func (c *LcmController) DistributionStatus() {
-	var status string
 	tenantId, err := c.GetTenantId("")
 	if err != nil {
 		return
@@ -1779,65 +1778,15 @@ func (c *LcmController) DistributionStatus() {
 		return
 	}
 
-	for _, appPkgRecord := range appPkgRecords {
-		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
-	}
-
-	var appPkgs []models.AppPackageStatusRecord
-	for _, appPkgRecord := range appPkgRecords {
-
-		var p models.AppPackageStatusRecord
-		p.AppId = appPkgRecord.AppId
-		p.PackageId = appPkgRecord.PackageId
-		p.AppProvider = appPkgRecord.AppProvider
-		p.AppPkgAffinity = appPkgRecord.AppPkgAffinity
-		p.AppPkgDesc = appPkgRecord.AppPkgDesc
-		p.AppPkgName = appPkgRecord.AppPkgName
-		p.AppPkgVersion = appPkgRecord.AppPkgVersion
-		p.CreatedTime = appPkgRecord.CreatedTime
-		p.ModifiedTime = appPkgRecord.ModifiedTime
-
-		for _, appPkgHost := range appPkgRecord.MecHostInfo {
-			//fill app package host info
-			var ph models.AppPackageHostStatusRecord
-			ph.HostIp = appPkgHost.HostIp
-			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
-			if err != nil {
-				return
-			}
-
-			pluginInfo := util.GetPluginInfo(vim)
-			client, err := pluginAdapter.GetClient(pluginInfo)
-			if err != nil {
-				c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-					util.ErrCodeFailedGetPlugin)
-				return
-			}
-			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
-			if err != nil {
-				c.HandleLoggingForFailure(clientIp, err.Error())
-				return
-			}
-			ph.Error = appPkgHost.Error
-			ph.Status = status
-			p.MecHostInfo = append(p.MecHostInfo, &ph)
-		}
-		appPkgs = append(appPkgs, p)
-	}
-
-	res, err := json.Marshal(appPkgs)
+	appPkgs, err := c.GetAppPkgs(clientIp, accessToken, tenantId, appPkgRecords)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
 		return
 	}
 
-	_, err = c.Ctx.ResponseWriter.Write(res)
+	err = c.SendDistributionStatusResponse(clientIp, appPkgs)
 	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
 		return
 	}
-
 	c.handleLoggingForSuccess(clientIp, "Query app package records successful")
 	return
 }
@@ -2570,22 +2519,88 @@ func (c *LcmController) GetAppPkgRecords(clientIp, packageId, tenantId string) (
 		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
 		if count == 0 {
 			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-			return appPkgRecords, errors.New("record doesn't exist")
+			return appPkgRecords, errors.New(util.RecordDoesNotExist)
 		}
 	} else {
 		if packageId == ""  {
 			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
 			if count == 0 {
 				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-				return appPkgRecords, errors.New("record doesn't exist")
+				return appPkgRecords, errors.New(util.RecordDoesNotExist)
 			}
 		} else {
 			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
 			if count == 0 {
 				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-				return appPkgRecords, errors.New("record doesn't exist")
+				return appPkgRecords, errors.New(util.RecordDoesNotExist)
 			}
 		}
 	}
 	return appPkgRecords, nil
+}
+
+func (c *LcmController) SendDistributionStatusResponse(clientIp string, appPkgs []models.AppPackageStatusRecord) error {
+	res, err := json.Marshal(appPkgs)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return err
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToWriteRes)
+		return err
+	}
+	return nil
+}
+
+func (c *LcmController) GetAppPkgs(clientIp, accessToken, tenantId string,
+	appPkgRecords []*models.AppPackageRecord) (appPkgs []models.AppPackageStatusRecord, err error) {
+	var status string
+	for _, appPkgRecord := range appPkgRecords {
+		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
+	}
+
+	for _, appPkgRecord := range appPkgRecords {
+
+		var p models.AppPackageStatusRecord
+		p.AppId = appPkgRecord.AppId
+		p.PackageId = appPkgRecord.PackageId
+		p.AppProvider = appPkgRecord.AppProvider
+		p.AppPkgAffinity = appPkgRecord.AppPkgAffinity
+		p.AppPkgDesc = appPkgRecord.AppPkgDesc
+		p.AppPkgName = appPkgRecord.AppPkgName
+		p.AppPkgVersion = appPkgRecord.AppPkgVersion
+		p.CreatedTime = appPkgRecord.CreatedTime
+		p.ModifiedTime = appPkgRecord.ModifiedTime
+
+		for _, appPkgHost := range appPkgRecord.MecHostInfo {
+			//fill app package host info
+			var ph models.AppPackageHostStatusRecord
+			ph.HostIp = appPkgHost.HostIp
+			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
+			if err != nil {
+				return appPkgs, err
+			}
+
+			pluginInfo := util.GetPluginInfo(vim)
+			client, err := pluginAdapter.GetClient(pluginInfo)
+			if err != nil {
+				c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+					util.ErrCodeFailedGetPlugin)
+				return appPkgs, err
+			}
+			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+			if err != nil {
+				c.HandleLoggingForFailure(clientIp, err.Error())
+				return appPkgs, err
+			}
+			ph.Error = appPkgHost.Error
+			ph.Status = status
+			p.MecHostInfo = append(p.MecHostInfo, &ph)
+		}
+		appPkgs = append(appPkgs, p)
+	}
+	return appPkgs, nil
 }
