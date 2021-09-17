@@ -1128,7 +1128,7 @@ func testGetInputParametersForUploadCfg(t *testing.T, extraParams map[string]str
 		})
 		defer patch3.Reset()
 		_, _, _, result2 := uploadController.GetInputParametersForUploadCfg(clientIp)
-		assert.Nil(t, result2, "error getting Input Parameters")
+		assert.NotEmpty(t, result2, "error getting Input Parameters")
 
 		//case-3
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData,
