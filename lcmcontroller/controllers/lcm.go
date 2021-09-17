@@ -2479,7 +2479,7 @@ func (c *LcmController) LoginPage() {
 	c.handleLoggingForSuccess(clientIp, "Login Page is is successful")
 }
 
-// Get in put parameters for upload configuration
+// Get input parameters for upload configuration
 func (c *LcmController) GetInputParametersForChangeKey(clientIp string) (name string,
 	key string, newKey string, err error) {
 	name, err = c.GetUserName(clientIp)
@@ -2500,6 +2500,7 @@ func (c *LcmController) GetInputParametersForChangeKey(clientIp string) (name st
 	return name, key, newKey, nil
 }
 
+// Get client info and process ak sk configuration
 func (c *LcmController) GetClientAndProcessAkSkConfig(clientIp,
 	hostIp string, appInsId string, appName string, req models.InstantiateRequest,
 	tenantId string) (client pluginAdapter.ClientIntf, acm config.AppConfigAdapter, pluginInfo string, err error){
@@ -2523,6 +2524,7 @@ func (c *LcmController) GetClientAndProcessAkSkConfig(clientIp,
 	return client, acm, pluginInfo, err
 }
 
+// Get username and key
 func (c *LcmController) GetUserNameAndKey(clientIp string) (name, key string, err error) {
 	name, err = c.GetUserName(clientIp)
 	if err != nil {
@@ -2536,6 +2538,7 @@ func (c *LcmController) GetUserNameAndKey(clientIp string) (name, key string, er
 	return name, key, err
 }
 
+// Validate token and credentials
 func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp, tenantId string) error {
 	name, key, err := c.GetUserNameAndKey(clientIp)
 	if err != nil {
@@ -2560,6 +2563,7 @@ func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp, tenan
 	return nil
 }
 
+// Get App package records
 func (c *LcmController) GetAppPkgRecords(clientIp, packageId, tenantId string) (appPkgRecords []*models.AppPackageRecord, err error) {
 	edgeKey, _ := c.getKey(clientIp)
 	if edgeKey != "" {
