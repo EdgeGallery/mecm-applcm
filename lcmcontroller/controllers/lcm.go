@@ -652,7 +652,7 @@ func (c *LcmController) AppDeploymentStatus() {
 
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
-	err = c.ValidateTokenAndCredentials(accessToken, clientIp)
+	err = c.ValidateTokenAndCredentials(accessToken, clientIp, "")
 	if err != nil {
 		return
 	}
@@ -1118,64 +1118,36 @@ func (c *LcmController) GetWorkloadDescription() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	defer util.ClearByteArray(bKey)
 	tenantId, err := c.GetTenantId(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
-	name, err := c.GetUserName(clientIp)
+	err = c.ValidateTokenAndCredentials(accessToken, clientIp, tenantId)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
-	}
-
-	key, err := c.GetKey(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	if accessToken != "" {
-		err = util.ValidateAccessToken(accessToken,
-			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-		if err != nil {
-			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-			util.ClearByteArray(bKey)
-			return
-		}
-	} else {
-		if name != "" && key != "" {
-			err := c.validateCredentials(clientIp, name, key)
-			if err != nil {
-				return
-			}
-		}
 	}
 
 	appInsId, err := c.GetAppInstId(clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	vim, err := c.GetVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	adapter, err := c.GetPluginAdapter(appInfoRecord.DeployType, clientIp, vim)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
-	util.ClearByteArray(bKey)
 	c.ErrorLog(clientIp,err,response)
 	c.handleLoggingForSuccess(clientIp, "Workload description is successful")
 }
@@ -2583,7 +2555,7 @@ func (c *LcmController) GetUserNameAndKey(clientIp string) (name, key string, er
 	return name, key, err
 }
 
-func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp string) error {
+func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp, tenantId string) error {
 	name, key, err := c.GetUserNameAndKey(clientIp)
 	if err != nil {
 		return err
@@ -2591,7 +2563,7 @@ func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp string
 
 	if accessToken != "" {
 		err = util.ValidateAccessToken(accessToken,
-			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, "")
+			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
 		if err != nil {
 			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 			return err
