@@ -333,15 +333,14 @@ func (c *LcmController) Instantiate() {
 		req.Parameters = make(map[string]string)
 	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	defer util.ClearByteArray(bKey)
 	appInsId, tenantId, hostIp, packageId, appName, err := c.ValidateToken(accessToken, req, clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	originVar, err := util.ValidateName(req.Origin, util.NameRegex)
 	if err != nil || !originVar {
-		util.ClearByteArray(bKey)
 		c.HandleLoggingForError(clientIp, util.BadRequest, util.OriginIsInvalid)
 		return
 	}
@@ -354,13 +353,11 @@ func (c *LcmController) Instantiate() {
 	if readErr != nil {
 		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"App package host record not exists")
-		util.ClearByteArray(bKey)
 		return
 	}
 	if appPkgHostRecord.Status != "Distributed" {
 		c.HandleLoggingForError(clientIp, util.BadRequest,
 			"application package distribution status is:" + appPkgHostRecord.Status)
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -372,34 +369,16 @@ func (c *LcmController) Instantiate() {
 	if readErr == nil {
 		c.HandleLoggingForError(clientIp, util.BadRequest,
 			"App instance info record already exists")
-		util.ClearByteArray(bKey)
 		return
 	}
 
-	vim, err := c.GetVim(clientIp, hostIp)
+	client, acm, pluginInfo, err := c.GetClientAndProcessAkSkConfig(clientIp, hostIp, appInsId, appName, req, tenantId)
 	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	pluginInfo := util.GetPluginInfo(vim)
-	client, err := pluginAdapter.GetClient(pluginInfo)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
-		return
-	}
-
-	err, acm := ProcessAkSkConfig(appInsId, appName, &req, clientIp, tenantId)
-	if err != nil {
-		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	err = c.InsertOrUpdateTenantRecord(clientIp, tenantId)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 	var appInfoParams models.AppInfoRecord
@@ -413,13 +392,11 @@ func (c *LcmController) Instantiate() {
 
 	err = c.InsertOrUpdateAppInfoRecord(clientIp, appInfoParams)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	err, status := adapter.Instantiate(tenantId, accessToken, appInsId, req)
-	util.ClearByteArray(bKey)
 	if err != nil {
 		c.handleErrorForInstantiateApp(acm, clientIp, appInsId, tenantId)
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
@@ -2588,4 +2565,27 @@ func (c *LcmController) GetInputParametersForChangeKey(clientIp string) (name st
 	}
 
 	return name, key, newKey, nil
+}
+
+func (c *LcmController) GetClientAndProcessAkSkConfig(clientIp,
+	hostIp string, appInsId string, appName string, req models.InstantiateRequest,
+	tenantId string) (client pluginAdapter.ClientIntf, acm config.AppConfigAdapter, pluginInfo string, err error){
+	vim, err := c.GetVim(clientIp, hostIp)
+	if err != nil {
+		return client, acm, pluginInfo, err
+	}
+
+	pluginInfo = util.GetPluginInfo(vim)
+	client, err = pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, util.FailedToGetClient)
+		return client, acm, pluginInfo, err
+	}
+
+	err, acm = ProcessAkSkConfig(appInsId, appName, &req, clientIp, tenantId)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
+		return client, acm, pluginInfo, err
+	}
+	return client, acm, pluginInfo, err
 }
