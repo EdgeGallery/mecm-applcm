@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// token controller
 package controllers
 
 import (
@@ -2051,7 +2050,6 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 // @Failure 400 bad request
 // @router /packages/:packageId [get]
 func (c *LcmControllerV2) DistributionStatus() {
-	var status string
 	clientIp, bKey, accessToken, tenantId, err := c.GetClientIpAndIsPermitted("Distribute status request received.")
 	defer util.ClearByteArray(bKey)
 	if err != nil {
@@ -2063,76 +2061,14 @@ func (c *LcmControllerV2) DistributionStatus() {
 		return
 	}
 
-	var appPkgRecords []*models.AppPackageRecord
-	edgeKey, _ := c.getKey(clientIp)
-	if edgeKey != "" {
-		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
-		if count == 0 {
-			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-			return
-		}
-	} else {
-		if packageId == ""  {
-			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
-			if count == 0 {
-				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-				return
-			}
-		} else {
-			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
-			if count == 0 {
-				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
-				return
-			}
-		}
+	appPkgRecords, err := c.GetAppPkgRecords(clientIp, packageId, tenantId)
+	if err != nil {
+		return
 	}
 
-	for _, appPkgRecord := range appPkgRecords {
-		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
-	}
-
-	var appPkgs []models.AppPackageStatusRecord
-	for _, appPkgRecord := range appPkgRecords {
-		var p models.AppPackageStatusRecord
-		p.AppId = appPkgRecord.AppId
-		p.PackageId = appPkgRecord.PackageId
-		p.AppProvider = appPkgRecord.AppProvider
-		p.AppPkgAffinity = appPkgRecord.AppPkgAffinity
-		p.AppPkgDesc = appPkgRecord.AppPkgDesc
-		p.AppPkgName = appPkgRecord.AppPkgName
-		p.AppPkgVersion = appPkgRecord.AppPkgVersion
-		p.CreatedTime = appPkgRecord.CreatedTime
-		p.ModifiedTime = appPkgRecord.ModifiedTime
-
-		for _, appPkgHost := range appPkgRecord.MecHostInfo {
-			//fill app package host info
-			var ph models.AppPackageHostStatusRecord
-			ph.HostIp = appPkgHost.HostIp
-
-			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
-			if err != nil {
-				return
-			}
-
-			pluginInfo := util.GetPluginInfo(vim)
-			client, err := pluginAdapter.GetClient(pluginInfo)
-			if err != nil {
-				c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-					util.ErrCodeFailedGetPlugin)
-				return
-			}
-			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
-			if err != nil {
-				c.HandleLoggingForFailure(clientIp, err.Error())
-				return
-			}
-			ph.Error = appPkgHost.Error
-			ph.Status = status
-			p.MecHostInfo = append(p.MecHostInfo, &ph)
-		}
-		_ = c.Db.InsertOrUpdateData(&p, "package_id")
-		appPkgs = append(appPkgs, p)
+	appPkgs, err := c.GetAppPkgs(clientIp, accessToken, tenantId, appPkgRecords)
+	if err != nil {
+		return
 	}
 
 	c.handleLoggingForSuccess(appPkgs, clientIp, "Query app package records successful")
@@ -2396,4 +2332,83 @@ func (c *LcmControllerV2) GetPluginAdapter(_, clientIp string, vim string) (*plu
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	return adapter, nil
+}
+
+func (c *LcmControllerV2) GetAppPkgRecords(clientIp, packageId, tenantId string) (appPkgRecords []*models.AppPackageRecord, err error) {
+	edgeKey, _ := c.getKey(clientIp)
+	if edgeKey != "" {
+		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
+		if count == 0 {
+			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			return appPkgRecords, errors.New(util.RecordDoesNotExist)
+		}
+	} else {
+		if packageId == ""  {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return appPkgRecords, errors.New(util.RecordDoesNotExist)
+			}
+		} else {
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
+			if count == 0 {
+				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				return appPkgRecords, errors.New(util.RecordDoesNotExist)
+			}
+		}
+	}
+	return appPkgRecords, nil
+}
+
+func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
+	appPkgRecords []*models.AppPackageRecord) (appPkgs []models.AppPackageStatusRecord, err error) {
+	var status string
+
+	for _, appPkgRecord := range appPkgRecords {
+		_, _ = c.Db.LoadRelated(appPkgRecord, util.MecHostInfo)
+	}
+
+	for _, appPkgRecord := range appPkgRecords {
+		var p models.AppPackageStatusRecord
+		p.AppId = appPkgRecord.AppId
+		p.PackageId = appPkgRecord.PackageId
+		p.AppProvider = appPkgRecord.AppProvider
+		p.AppPkgAffinity = appPkgRecord.AppPkgAffinity
+		p.AppPkgDesc = appPkgRecord.AppPkgDesc
+		p.AppPkgName = appPkgRecord.AppPkgName
+		p.AppPkgVersion = appPkgRecord.AppPkgVersion
+		p.CreatedTime = appPkgRecord.CreatedTime
+		p.ModifiedTime = appPkgRecord.ModifiedTime
+
+		for _, appPkgHost := range appPkgRecord.MecHostInfo {
+			//fill app package host info
+			var ph models.AppPackageHostStatusRecord
+			ph.HostIp = appPkgHost.HostIp
+
+			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
+			if err != nil {
+				return appPkgs, err
+			}
+
+			pluginInfo := util.GetPluginInfo(vim)
+			client, err := pluginAdapter.GetClient(pluginInfo)
+			if err != nil {
+				c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+					util.ErrCodeFailedGetPlugin)
+				return appPkgs, err
+			}
+			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+			if err != nil {
+				c.HandleLoggingForFailure(clientIp, err.Error())
+				return appPkgs, err
+			}
+			ph.Error = appPkgHost.Error
+			ph.Status = status
+			p.MecHostInfo = append(p.MecHostInfo, &ph)
+		}
+		_ = c.Db.InsertOrUpdateData(&p, "package_id")
+		appPkgs = append(appPkgs, p)
+	}
+	return appPkgs, nil
 }
