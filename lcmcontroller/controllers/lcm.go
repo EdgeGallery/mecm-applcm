@@ -673,7 +673,7 @@ func (c *LcmController) AppDeploymentStatus() {
 	}
 
 	response := map[string]bool{"package_deployed": true}
-	readErr := c.Db.ReadData(appInfoRecord, util.PkgId, "host_ip")
+	readErr := c.Db.ReadData(appInfoRecord, "app_package_id", "mec_host")
 	if readErr != nil {
 		response["package_deployed"] = false
 	}
