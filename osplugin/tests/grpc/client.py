@@ -36,7 +36,7 @@ DEFAULT_OPTIONS = [
     ('grpc.max_send_message_length', 50 * 1024 * 1024),
     ('grpc.max_receive_message_length', 50 * 1024 * 1024)]
 # channel = _get_secure_channel(DEFAULT_OPTIONS)
-channel = grpc.insecure_channel(target='10.10.10.30:8234', options=DEFAULT_OPTIONS)
+channel = grpc.insecure_channel(target='127.0.0.1:8234', options=DEFAULT_OPTIONS)
 
 app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
 vm_image_stub = lcmservice_pb2_grpc.VmImageStub(channel)

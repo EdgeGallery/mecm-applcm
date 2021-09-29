@@ -88,7 +88,8 @@ class AppLcmServiceTest(unittest.TestCase):
                 status='active',
                 app_package_id='pkg001',
                 image_size=1024,
-                checksum='2'
+                checksum='2',
+                tenant_id='abcabc'
             )
             commit()
 
@@ -202,14 +203,16 @@ class AppLcmServiceTest(unittest.TestCase):
                 host_ip=self.host_ip,
                 image_name='image001',
                 status='active',
-                app_package_id='pkgquery001'
+                app_package_id='pkgquery001',
+                tenant_id='abcabc'
             )
             VmImageInfoMapper(
                 image_id='image002',
                 host_ip=self.host_ip,
                 image_name='image002',
                 status='killed',
-                app_package_id='pkgquery001'
+                app_package_id='pkgquery001',
+                tenant_id='abcabc'
             )
             commit()
         request = lcmservice_pb2.QueryPackageStatusRequest(

@@ -120,7 +120,8 @@ message CreateVmImageRequest {
   string accessToken = 1;
   string appInstanceId = 2;
   string hostIp = 3;
-  string vmId = 4;
+  string tenantId = 4;
+  string vmId = 5;
 }
 
 message CreateVmImageResponse {

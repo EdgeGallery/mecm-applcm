@@ -14,19 +14,20 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
-from concurrent import futures
+from internal.lcmservice import lcmservice_pb2
+from tests.grpc.client import vm_image_stub
+from tests.resources.gen_token import test_access_token
 
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
 
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
-)
+request = lcmservice_pb2.CreateVmImageRequest(
+    accessToken=test_access_token,
+    tenantId='abcabc',
+    hostIp='10.10.9.75',
+    appInstanceId='appIns001',
+    vmId='447a9e1b-3ca8-49c3-9edd-d1d63809dede')
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
+
+if __name__ == '__main__':
+    response = vm_image_stub.createVmImage(request)
+    print(response)

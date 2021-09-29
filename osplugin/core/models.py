@@ -219,10 +219,12 @@ class VmImageInfoMapper(db.Entity):
     image_id = Required(str, max_len=64)
     host_ip = Required(str, max_len=15)
     image_name = Required(str, max_len=64)
-    status = Required(str, max_len=10)
+    status = Required(str, max_len=20)
+    tenant_id = Optional(str, max_len=64)
     app_package_id = Optional(str, max_len=64)
     image_size = Optional(int, size=64, nullable=True)
     checksum = Optional(str, max_len=64, nullable=True)
+    compress_task_id = Optional(str, max_len=64, nullable=True)
 
     def get_table_name(self):
         """
