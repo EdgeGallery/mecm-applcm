@@ -101,6 +101,9 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         if request.vmId is None or request.vmId == '':
             LOG.info("vmId is required")
             return resp
+        if request.tenantId is None or request.tenantId == '':
+            LOG.info('tenantId is required')
+            return resp
 
         try:
             nova_client = create_nova_client(host_ip)
@@ -114,6 +117,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
         VmImageInfoMapper(image_id=image_id,
                           image_name=image_name,
+                          tenant_id=request.tenantId,
                           status=utils.QUEUED,
                           host_ip=host_ip)
         commit()

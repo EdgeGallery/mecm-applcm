@@ -140,7 +140,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.debug('unzip package')
             utils.unzip(parameters.tmp_package_file_path, app_package_path)
             pkg = CsarPkg(app_package_id, app_package_path)
-            pkg.check_image(host_ip)
+            pkg.check_image(host_ip, parameters.tenant_id)
             pkg.translate()
             start_check_package_status(app_package_id, host_ip)
             resp.status = utils.SUCCESS

@@ -164,7 +164,7 @@ class CsarPkg:
                 zip_file.extract(file, os.path.dirname(self.appd_file_path))
 
     @db_session
-    def check_image(self, host_ip):
+    def check_image(self, host_ip, tenant_id):
         """
         根据sw_image_desc.json检查镜像，如果不存在，根据类型创建镜像
         """
@@ -185,14 +185,16 @@ class CsarPkg:
                 LOG.debug('use image from remote')
                 image_id = create_image_record(sw_image_desc,
                                                self.app_package_id,
-                                               host_ip)
+                                               host_ip,
+                                               tenant_id)
                 image_id_map[sw_image_desc.name] = image_id
                 add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
             else:
                 LOG.debug('use image from local')
                 image_id = create_image_record(sw_image_desc,
                                                self.app_package_id,
-                                               host_ip)
+                                               host_ip,
+                                               tenant_id)
                 image_id_map[sw_image_desc.name] = image_id
                 zip_index = sw_image_desc.sw_image.find('.zip')
                 zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index + 4]
