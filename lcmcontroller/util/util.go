@@ -77,7 +77,7 @@ const (
 	PackageIdIsInvalid             = "package id is invalid"
 	TenantIdIsInvalid              = "package id is invalid"
 	OriginIsInvalid                = "Origin is invalid"
-	RecordDoesNotExist             = "Records does not exist"
+	RecordDoesNotExist             = "records does not exist"
 	RequestBodyTooLarge            = "request body too large"
 	FailedToUploadToPlugin         = "failed to upload package to plugin"
 	UploadPackageSuccess           = "Uploaded application package successfully"
