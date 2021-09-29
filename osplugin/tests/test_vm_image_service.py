@@ -113,7 +113,8 @@ class VmImageServiceTest(unittest.TestCase):
                 image_name='image01',
                 status='active',
                 image_size=1024,
-                checksum='2'
+                checksum='2',
+                tenant_id='abcabc'
             )
             commit()
         resp = self.vm_image_service.deleteVmImage(request, None)
@@ -131,7 +132,8 @@ class VmImageServiceTest(unittest.TestCase):
                 image_name='image01',
                 status='active',
                 image_size=1024,
-                checksum='2'
+                checksum='2',
+                tenant_id='abcabc'
             )
             commit()
         request = make_query_image_request(access_token=self.access_token,

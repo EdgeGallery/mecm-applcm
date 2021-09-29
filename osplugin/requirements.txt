@@ -11,4 +11,4 @@ python-heatclient==2.3.0
 python-novaclient==17.3.0
 
 PyYAML~=5.4.1
-urllib3~=1.26.3
+requests~=2.25.1

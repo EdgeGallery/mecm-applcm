@@ -105,7 +105,6 @@ func NewHelmClient(hostIP string) (*HelmClient, error) {
 	}
 }
 
-
 // Install a given helm chart
 func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk string, db pgdb.Database) (string, string, error) {
 	log.Info("Inside helm client")
@@ -372,33 +371,43 @@ func getPodCpuMemUsageInfo(usage interface{}, totalPodCpu, totalPodMem int64) (i
 		if iter.Key().Interface() == "containers" {
 			containersList := iter.Value().Interface()
 			arr1 := reflect.ValueOf(containersList)
-			for j := 0; j < arr1.Len(); j++ {
-				usage1 := arr1.Index(j).Interface()
-				iter1 := reflect.ValueOf(usage1).MapRange()
-				for iter1.Next() {
-					if iter1.Key().Interface() == "usage" {
-						val := iter1.Value().Interface()
-						iter2 := reflect.ValueOf(val).MapRange()
-						for iter2.Next() {
-							if iter2.Key().Interface() == "cpu" {
-								cpuVal := iter2.Value().Interface()
-								cpu := cpuVal.(string)
-								cpuLen := len(cpu)
-								cpu = cpu[:cpuLen-1]
-								cpuInfo, _ := strconv.ParseInt(cpu, 10, 64);
-								totalPodCpu = totalPodCpu + cpuInfo
-							}
-							if iter2.Key().Interface() == "memory" {
-								memory := iter2.Value().Interface()
-								mem := memory.(string)
-								memLen := len(mem)
-								mem = mem[:memLen-2]
-								memInfo, _ := strconv.ParseInt(mem, 10, 64);
-								totalPodMem = totalPodMem + memInfo
-							}
-						}
-					}
-				}
+			totalPodCpu, totalPodMem = getTotalPodCpuMem(arr1, totalPodCpu, totalPodMem)
+		}
+	}
+	return totalPodCpu, totalPodMem
+}
+
+func getTotalPodCpuMem(arr1 reflect.Value, totalPodCpu, totalPodMem int64) (int64, int64) {
+	for j := 0; j < arr1.Len(); j++ {
+		usage1 := arr1.Index(j).Interface()
+		iter1 := reflect.ValueOf(usage1).MapRange()
+		for iter1.Next() {
+			totalPodCpu, totalPodMem = processUsage(iter1, totalPodCpu, totalPodMem)
+		}
+	}
+	return totalPodCpu, totalPodMem
+}
+
+func processUsage(iter1 *reflect.MapIter, totalPodCpu, totalPodMem int64) (int64, int64) {
+	if iter1.Key().Interface() == "usage" {
+		val := iter1.Value().Interface()
+		iter2 := reflect.ValueOf(val).MapRange()
+		for iter2.Next() {
+			if iter2.Key().Interface() == "cpu" {
+				cpuVal := iter2.Value().Interface()
+				cpu := cpuVal.(string)
+				cpuLen := len(cpu)
+				cpu = cpu[:cpuLen-1]
+				cpuInfo, _ := strconv.ParseInt(cpu, 10, 64);
+				totalPodCpu = totalPodCpu + cpuInfo
+			}
+			if iter2.Key().Interface() == "memory" {
+				memory := iter2.Value().Interface()
+				mem := memory.(string)
+				memLen := len(mem)
+				mem = mem[:memLen-2]
+				memInfo, _ := strconv.ParseInt(mem, 10, 64);
+				totalPodMem = totalPodMem + memInfo
 			}
 		}
 	}
@@ -512,6 +521,7 @@ func GetDeploymentArtifact(dir string, ext string) (string, error) {
 	return "", err
 }
 
+// Get client set
 func (hc *HelmClient) GetClientSet(relName, namespace string) (clientset *kubernetes.Clientset, manifest []Manifest, err error) {
 
 	actionConfig := new(action.Configuration)
@@ -548,6 +558,7 @@ func (hc *HelmClient) GetClientSet(relName, namespace string) (clientset *kubern
 	return clientset, manifest, nil
 }
 
+// Update pod description information
 func UpdatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Clientset,
 	label models.LabelList, namespace string) (models.PodDescribeInfo, error) {
 	options := metav1.ListOptions{
@@ -575,6 +586,7 @@ func UpdatePodDescInfo(podDesc models.PodDescribeInfo, clientset *kubernetes.Cli
 	return podDesc, nil
 }
 
+// Get pod description information
 func GetPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.Clientset,
 	podName, namespace string) (podDescInfo models.PodDescList) {
 	ref.Kind = ""
@@ -593,6 +605,7 @@ func GetPodDescInfo(ref *v1.ObjectReference, pod *v1.Pod, clientset *kubernetes.
 	return podDescInfo
 }
 
+// Get events
 func GetEvents(clientset *kubernetes.Clientset, namespace string, ref *v1.ObjectReference) *v1.EventList {
 	events, _ := clientset.CoreV1().Events(namespace).Search(scheme.Scheme, ref)
 	return events
@@ -625,7 +638,7 @@ func GetLabelSelector(manifest []Manifest) models.LabelSelector {
 	return labelSelector
 }
 
-// get JSON response
+// Get JSON response
 func GetJSONResponse(appInfo models.AppInfo, response map[string]string) (string, error) {
 	if response != nil {
 		appInfoJson, err := json.Marshal(response)
@@ -670,6 +683,7 @@ func GetResourcesBySelector(labelSelector models.LabelSelector, clientset *kuber
 	return appInfo, nil, nil
 }
 
+// Update pod information
 func UpdatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *kubernetes.Clientset,
 	config *rest.Config,
 	namespace string) (appInformation models.AppInfo, response map[string]string, err error) {
@@ -694,6 +708,7 @@ func UpdatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *k
 	return appInfo, nil, nil
 }
 
+// Get pods
 func GetPods(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (*v1.PodList, error){
 	options := metav1.ListOptions{
 		LabelSelector: label.Selector,
@@ -705,6 +720,7 @@ func GetPods(clientset *kubernetes.Clientset, namespace string, label *models.La
 	return pods, nil
 }
 
+// Get service information
 func GetServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions, namespace string) (serviceInfo models.ServiceInfo, err error) {
 	services, err := clientset.CoreV1().Services(namespace).List(context.Background(), options)
 	if err != nil {
@@ -835,6 +851,7 @@ func GetTotalCpuDiskMemory(clientset *kubernetes.Clientset) (string, string, str
 	return "", "", "", err
 }
 
+// Get node list
 func GetNodeList(clientset *kubernetes.Clientset) (nodeList *v1.NodeList, err error) {
 	nodeList, err = clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	return nodeList, err

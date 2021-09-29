@@ -65,3 +65,5 @@ if _SERVER_CA_VERIFY == 'false':
 elif _SERVER_CA_VERIFY == 'true':
     _SERVER_CA_VERIFY = True
 server_ca_verify = _SERVER_CA_VERIFY
+
+image_push_url = os.getenv('IMAGE_PUSH_URL', conf.get('default', 'image_push_url'))
