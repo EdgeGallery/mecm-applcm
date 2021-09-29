@@ -2593,8 +2593,7 @@ func (c *LcmController) GetAppPkgs(clientIp, accessToken, tenantId string,
 			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
 			if err != nil {
-				c.HandleLoggingForFailure(clientIp, err.Error())
-				return appPkgs, err
+				continue
 			}
 			ph.Error = appPkgHost.Error
 			ph.Status = status
