@@ -66,9 +66,9 @@ def create_image_record(sw_image, app_package_id, host_ip, tenant_id):
                                  hw_disk_bus=sw_image.hw_disk_bus,
                                  file_format=sw_image.disk_format,
                                  __os_version=sw_image.operating_system,
-                                 __quick_start='false',
+                                 __quick_start='False',
                                  __os_type=sw_image.supported_virtualization_environment,
-                                 cloudinit='true',
+                                 cloudinit='True',
                                  virtual_env_type='KVM',
                                  hw_watchdog_action='none',
                                  disk_format=sw_image.disk_format)
