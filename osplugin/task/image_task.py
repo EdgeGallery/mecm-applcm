@@ -53,6 +53,7 @@ def create_image_record(sw_image, app_package_id, host_ip, tenant_id):
         sw_image:
         app_package_id:
         host_ip:
+        tenant_id:
 
     Returns: 镜像ID
 
