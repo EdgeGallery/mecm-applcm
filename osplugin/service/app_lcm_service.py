@@ -393,6 +393,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         app_pkg_mapper = AppPkgMapper.get(app_package_id=request.packageId,
                                           host_ip=host_ip)
 
+        if app_pkg_mapper is None:
+            LOG.error('app package %s not found', request.packageId)
+            resp.response = '404'
+            return resp
+
         resp.response = app_pkg_mapper.status
 
         return resp
