@@ -155,13 +155,13 @@ func (c *PluginAdapter) GetWorkloadDescription(accessToken, host, appInsId strin
 }
 
 // Create VM Image
-func (c *PluginAdapter) CreateVmImage(host string, accessToken string, appInsId string, vmId string) (response string, error error) {
+func (c *PluginAdapter) CreateVmImage(host, accessToken, appInsId, vmId, tenantId string) (response string, error error) {
 	log.Info("Create VM Image started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	response, err := c.client.CreateVmImage(ctx, accessToken, appInsId, host, vmId)
+	response, err := c.client.CreateVmImage(ctx, accessToken, appInsId, host, vmId, tenantId)
 	if err != nil {
 		log.Error("failed to create VM image")
 		return util.Failure, err

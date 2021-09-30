@@ -51,6 +51,12 @@ func (c *ImageController) CreateImage() {
 		return
 	}
 
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	var request models.CreateVimRequest
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
 	if err != nil {
@@ -59,7 +65,8 @@ func (c *ImageController) CreateImage() {
 		return
 	}
 
-	response, err := adapter.CreateVmImage(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, request.VmId)
+	response, err := adapter.CreateVmImage(appInfoRecord.MecHost, accessToken,
+		appInfoRecord.AppInstanceId, request.VmId, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		// To check if any more error code needs to be returned.
