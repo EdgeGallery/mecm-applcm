@@ -45,7 +45,7 @@ type ClientIntf interface {
 
 
 	// Image related API
-	CreateVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string, vmId string) (response string,
+	CreateVmImage(ctx context.Context, accessToken, appInsId, hostIP, vmId, tenantId string) (response string,
 		error error)
 	QueryVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
 		imageId string) (response string, error error)

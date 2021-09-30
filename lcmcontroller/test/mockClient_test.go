@@ -31,8 +31,8 @@ func (mc *mockClient) Instantiate(ctx context.Context, tenantId string, accessTo
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) CreateVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, vmId string) (response string, error error) {
+func (mc *mockClient) CreateVmImage(ctx context.Context, accessToken, appInsId,
+	hostIP, vmId, tenantId string) (response string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
