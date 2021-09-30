@@ -264,7 +264,7 @@ def do_download_then_compress_image(image_id, host_ip):
     glance_client = create_glance_client(host_ip=host_ip)
     try:
         logger.debug('start download image: %s from openstack', image_id)
-        download_dir = f'/tmp/osplugin/images/downloads/{host_ip}'
+        download_dir = f'/usr/app/vmImage/{host_ip}'
         utils.create_dir(download_dir)
         with open(f'{download_dir}/{image_id}.img', 'wb') as f:
             for body in glance_client.images.data(image_id=image_id):
@@ -272,8 +272,8 @@ def do_download_then_compress_image(image_id, host_ip):
         logger.debug('finished download image: %s from openstack', image_id)
 
         body = {
-            'inputImageName': f'/tmp/osplugin/images/downloads/{host_ip}/{image_id}.img',
-            'outputImageName': f'/tmp/osplugin/images/downloads/{host_ip}/{image_id}.qcow2'
+            'inputImageName': f'/usr/app/vmImage/{host_ip}/{image_id}.img',
+            'outputImageName': f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2'
         }
         response = requests.post(url='http://localhost:5000/api/v1/vmimage/compress', data=json.dumps(body))
         data = response.json()
@@ -281,7 +281,7 @@ def do_download_then_compress_image(image_id, host_ip):
             logger.error('compress image failed, cause: %s', data['msg'])
             image_info.status = utils.KILLED
             commit()
-            utils.delete_dir(f'/tmp/osplugin/images/downlaods/{host_ip}/{image_id}.img')
+            utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
             return
 
         image_info.status = utils.COMPRESSING
@@ -291,7 +291,7 @@ def do_download_then_compress_image(image_id, host_ip):
         logger.error(e, exc_info=True)
         image_info.status = utils.KILLED
         commit()
-        utils.delete_dir(f'/tmp/osplugin/images/downlaods/{host_ip}/{image_id}.img')
+        utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
         return
 
     add_check_compress_image_task(image_id, host_ip)
@@ -323,9 +323,9 @@ def do_check_compress_status(image_id, host_ip):
         else:
             logger.debug('image: %s compress failed, cause %s', image_id, data['msg'])
             image_info.status = utils.KILLED
-            utils.delete_dir(f'/tmp/osplugin/images/downlaods/{host_ip}/{image_id}.qcow2')
+            utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2')
         commit()
-        utils.delete_dir(f'/tmp/osplugin/images/downlaods/{host_ip}/{image_id}.img')
+        utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
     except Exception as e:
         logger.error(e, exc_info=True)
 
@@ -346,7 +346,7 @@ def do_push_image(image_id, host_ip):
         return
     try:
         data = MultipartEncoder({
-            'file': open(f'/tmp/osplugin/images/{host_ip}/{image_id}.qcow2'),
+            'file': open(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2'),
             'priority': 0,
             'userId': image_info.tenant_id
         })
@@ -368,4 +368,4 @@ def do_push_image(image_id, host_ip):
         image_info.status = utils.KILLED
         commit()
     finally:
-        utils.delete_dir(f'/tmp/osplugin/images/{host_ip}/{image_id}.qcow2')
+        utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2')
