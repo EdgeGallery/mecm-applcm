@@ -1951,7 +1951,7 @@ func (c *LcmController) ProcessUploadPackage(hosts models.DistributeRequest,
 			return err
 		}
 
-		err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Distributed")
+		err = c.updateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Distributing")
 		if err != nil {
 			return err
 		}

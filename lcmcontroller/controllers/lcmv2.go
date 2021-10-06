@@ -2034,7 +2034,7 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 			return err
 		}
 
-		err = c.UpdateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Distributed")
+		err = c.UpdateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Distributing")
 		if err != nil {
 			return err
 		}
@@ -2397,17 +2397,28 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 					util.ErrCodeFailedGetPlugin)
 				return appPkgs, err
 			}
-			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
-			if err != nil {
-				c.HandleLoggingForFailure(clientIp, err.Error())
-				return appPkgs, err
+
+			if appPkgHost.Status != "Distributed" {
+				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+				status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+				if err != nil {
+					c.HandleLoggingForFailure(clientIp, err.Error())
+					return appPkgs, err
+				}
+				if status == "Uploading" {
+					status = "Distributing"
+				} else if status == "Uploaded" {
+					status = "Distributed"
+				}
+				ph.Status = status
+				appPkgHost.Status = status
+				_ = c.Db.InsertOrUpdateData(appPkgHost, util.PkgHostKey)
+			} else {
+				ph.Status = appPkgHost.Status
 			}
 			ph.Error = appPkgHost.Error
-			ph.Status = status
 			p.MecHostInfo = append(p.MecHostInfo, &ph)
 		}
-		_ = c.Db.InsertOrUpdateData(&p, "package_id")
 		appPkgs = append(appPkgs, p)
 	}
 	return appPkgs, nil

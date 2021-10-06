@@ -120,7 +120,7 @@ func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
 			appPackageHost.TenantId = readAppPackageHost.TenantId
 			appPackageHost.AppPkgId = readAppPackageHost.AppPkgId
 			appPackageHost.HostIp = readAppPackageHost.HostIp
-			appPackageHost.Status = readAppPackageHost.Status
+			appPackageHost.Status = "Distributed"
 		}
 	}
 
