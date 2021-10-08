@@ -2339,20 +2339,20 @@ func (c *LcmControllerV2) GetAppPkgRecords(clientIp, packageId, tenantId string)
 	if edgeKey != "" {
 		count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, "")
 		if count == 0 {
-			c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
 			return appPkgRecords, errors.New(util.RecordDoesNotExist)
 		}
 	} else {
 		if packageId == ""  {
 			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.TenantId, tenantId)
 			if count == 0 {
-				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
 				return appPkgRecords, errors.New(util.RecordDoesNotExist)
 			}
 		} else {
 			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
 			if count == 0 {
-				c.writeErrorResponse(util.RecordDoesNotExist, util.StatusNotFound)
+				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
 				return appPkgRecords, errors.New(util.RecordDoesNotExist)
 			}
 		}
