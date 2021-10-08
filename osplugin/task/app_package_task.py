@@ -59,7 +59,7 @@ def _check_package_status(package_id, host_ip):
     for image_info in image_infos:
         if image_info.status == utils.ACTIVE:
             continue
-        elif image_info.status == utils.KILLED:
+        if image_info.status == utils.KILLED:
             package.status = utils.ERROR
         else:
             package.status = utils.UPLOADING

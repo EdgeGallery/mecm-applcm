@@ -25,7 +25,7 @@ from core.log import logger
 from internal.lcmservice import lcmservice_pb2_grpc
 from service.app_lcm_service import AppLcmService
 from service.vm_image_service import VmImageService
-from task import upload_thread_pool, check_thread_pool
+from task import upload_thread_pool, check_thread_pool, download_thread_pool
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _LISTEN_PORT = 8234
@@ -51,7 +51,6 @@ def serve():
 
     listen_addr = config.listen_ip + ":" + str(_LISTEN_PORT)
 
-
     if config.ssl_enabled:
         with open(config.private_key_certificate_chain_pairs[0], 'rb') as file:
             private_key = file.read()
@@ -74,5 +73,6 @@ def serve():
         server.wait_for_termination()
     except KeyboardInterrupt:
         upload_thread_pool.shutdown()
+        download_thread_pool.shutdown()
         check_thread_pool.shutdown()
         LOG.info('Server stopped')

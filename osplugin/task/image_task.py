@@ -266,16 +266,17 @@ def do_download_then_compress_image(image_id, host_ip):
         logger.debug('start download image: %s from openstack', image_id)
         download_dir = f'/usr/app/vmImage/{host_ip}'
         utils.create_dir(download_dir)
-        with open(f'{download_dir}/{image_id}.img', 'wb') as f:
+        with open(f'{download_dir}/{image_id}.img', 'wb') as image_file:
             for body in glance_client.images.data(image_id=image_id):
-                f.write(body)
+                image_file.write(body)
         logger.debug('finished download image: %s from openstack', image_id)
 
         body = {
             'inputImageName': f'/usr/app/vmImage/{host_ip}/{image_id}.img',
             'outputImageName': f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2'
         }
-        response = requests.post(url='http://localhost:5000/api/v1/vmimage/compress', data=json.dumps(body))
+        response = requests.post(
+            url='http://localhost:5000/api/v1/vmimage/compress', data=json.dumps(body))
         data = response.json()
         if response.status_code != 200:
             logger.error('compress image failed, cause: %s', data['msg'])
@@ -287,8 +288,8 @@ def do_download_then_compress_image(image_id, host_ip):
         image_info.status = utils.COMPRESSING
         image_info.compress_task_id = data['requestId']
         commit()
-    except Exception as e:
-        logger.error(e, exc_info=True)
+    except Exception as exception:
+        logger.error(exception, exc_info=True)
         image_info.status = utils.KILLED
         commit()
         utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
@@ -299,6 +300,15 @@ def do_download_then_compress_image(image_id, host_ip):
 
 @db_session
 def do_check_compress_status(image_id, host_ip):
+    """
+    检查compress状态
+    Args:
+        image_id:
+        host_ip:
+
+    Returns:
+
+    """
     time.sleep(5)
 
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
@@ -306,7 +316,8 @@ def do_check_compress_status(image_id, host_ip):
         return
 
     try:
-        response = requests.get(f'http://localhost:5000/api/v1/vmimage/compress/{image_info.compress_task_id}')
+        response = requests.get(
+            f'http://localhost:5000/api/v1/vmimage/compress/{image_info.compress_task_id}')
         data = response.json()
         if response.status_code != 200:
             logger.error('check compress progress failed, cause: %s 。skip', data['msg'])
@@ -326,8 +337,8 @@ def do_check_compress_status(image_id, host_ip):
             utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2')
         commit()
         utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
-    except Exception as e:
-        logger.error(e, exc_info=True)
+    except Exception as exception:
+        logger.error(exception, exc_info=True)
 
 
 @db_session
@@ -363,8 +374,8 @@ def do_push_image(image_id, host_ip):
 
         image_info.status = utils.ACTIVE
         commit()
-    except Exception as e:
-        logger.error(e, exc_info=True)
+    except Exception as exception:
+        logger.error(exception, exc_info=True)
         image_info.status = utils.KILLED
         commit()
     finally:
