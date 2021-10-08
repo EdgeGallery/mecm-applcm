@@ -834,32 +834,6 @@ func (c *LcmController) GetHostIP(clientIp string) (string, error) {
 	return hostIp, nil
 }
 
-// Get user name
-func (c *LcmController) GetUserName(clientIp string) (string, error) {
-	userName := c.Ctx.Request.Header.Get("name")
-	if userName != "" {
-		name, err := util.ValidateUserName(userName, util.NameRegex)
-		if err != nil || !name {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
-			return "", errors.New("username is invalid")
-		}
-	}
-	return userName, nil
-}
-
-// Get key
-func (c *LcmController) GetKey(clientIp string) (string, error) {
-	key := c.Ctx.Request.Header.Get("key")
-	if key != "" {
-		keyValid, err := util.ValidateDbParams(key)
-		if err != nil || !keyValid {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
-			return "", errors.New("key is invalid")
-		}
-	}
-	return key, nil
-}
-
 // Get new key
 func (c *LcmController) GetNewKey(clientIp string) (string, error) {
 	newKey := c.Ctx.Request.Header.Get("newkey")
@@ -2487,30 +2461,6 @@ func (c *LcmController) GetUserNameAndKey(clientIp string) (name, key string, er
 	return name, key, err
 }
 
-// Validate token and credentials
-func (c *LcmController) ValidateTokenAndCredentials(accessToken, clientIp, tenantId string) error {
-	name, key, err := c.GetUserNameAndKey(clientIp)
-	if err != nil {
-		return err
-	}
-
-	if accessToken != "" {
-		err = util.ValidateAccessToken(accessToken,
-			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-		if err != nil {
-			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
-			return err
-		}
-	} else {
-		if name != "" && key != "" {
-			err = c.validateCredentials(clientIp, name, key)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
 
 // Get App package records
 func (c *LcmController) GetAppPkgRecords(clientIp, packageId, tenantId string) (appPkgRecords []*models.AppPackageRecord, err error) {
