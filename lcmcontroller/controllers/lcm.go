@@ -2566,13 +2566,25 @@ func (c *LcmController) GetAppPkgs(clientIp, accessToken, tenantId string,
 					util.ErrCodeFailedGetPlugin)
 				return appPkgs, err
 			}
-			adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-			status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
-			if err != nil {
-				continue
+			if appPkgHost.Status != "Distributed" {
+				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+				status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
+				if err != nil {
+					c.HandleLoggingForFailure(clientIp, err.Error())
+					return appPkgs, err
+				}
+				if status == "Uploading" {
+					status = "Distributing"
+				} else if status == "Uploaded" {
+					status = "Distributed"
+				}
+				ph.Status = status
+				appPkgHost.Status = status
+				_ = c.Db.InsertOrUpdateData(appPkgHost, util.PkgHostKey)
+			} else {
+				ph.Status = appPkgHost.Status
 			}
 			ph.Error = appPkgHost.Error
-			ph.Status = status
 			p.MecHostInfo = append(p.MecHostInfo, &ph)
 		}
 		appPkgs = append(appPkgs, p)
