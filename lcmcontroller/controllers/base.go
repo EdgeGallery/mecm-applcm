@@ -441,3 +441,70 @@ func (c *BaseController) validateCredentials(clientIp, userName, key string) err
 	}
 	return nil
 }
+
+
+// Validate token and credentials
+func (c *BaseController) ValidateTokenAndCredentials(accessToken, clientIp, tenantId string) error {
+	name, key, err := c.GetUserNameAndKey(clientIp)
+	if err != nil {
+		return err
+	}
+
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken,
+			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
+		if err != nil {
+			c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
+			return err
+		}
+	} else {
+		if name != "" && key != "" {
+			err = c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Get username and key
+func (c *BaseController) GetUserNameAndKey(clientIp string) (name, key string, err error) {
+	name, err = c.GetUserName(clientIp)
+	if err != nil {
+		return name, key, err
+	}
+
+	key, err = c.GetKey(clientIp)
+	if err != nil {
+		return name, key, err
+	}
+	return name, key, err
+}
+
+
+// Get user name
+func (c *BaseController) GetUserName(clientIp string) (string, error) {
+	userName := c.Ctx.Request.Header.Get("name")
+	if userName != "" {
+		name, err := util.ValidateUserName(userName, util.NameRegex)
+		if err != nil || !name {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
+			return "", errors.New("username is invalid")
+		}
+	}
+	return userName, nil
+}
+
+// Get key
+func (c *BaseController) GetKey(clientIp string) (string, error) {
+	key := c.Ctx.Request.Header.Get("key")
+	if key != "" {
+		keyValid, err := util.ValidateDbParams(key)
+		if err != nil || !keyValid {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
+			return "", errors.New("key is invalid")
+		}
+	}
+	return key, nil
+}

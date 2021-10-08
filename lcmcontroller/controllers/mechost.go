@@ -395,6 +395,12 @@ func (c *MecHostController) GetMecHost() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = c.ValidateTokenAndCredentials(accessToken, clientIp, "")
+	if err != nil {
+		return
+	}
+
 	var mecHosts []*models.MecHost
 	_, _ = c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
 	for _, mecHost := range mecHosts {
@@ -434,6 +440,12 @@ func (c *MecHostController) GetAppInstance() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	err = c.ValidateTokenAndCredentials(accessToken, clientIp, "")
+	if err != nil {
+		return
+	}
 
 	tenantId, err := c.GetTenantId(clientIp)
 	if err != nil {
