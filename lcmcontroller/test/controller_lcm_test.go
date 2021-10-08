@@ -202,7 +202,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 
 		//case-2
 		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getUserName,
-			func(_ *controllers.BaseController, _ string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return username, err
 			})
 		defer patch1.Reset()
@@ -228,12 +228,12 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 
 		//case-3
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getUserName,
-			func(_ *controllers.BaseController, _ string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return username, nil
 			})
 		defer patch2.Reset()
 		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetKey",
-			func(_ *controllers.BaseController, _ string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return "testKey5", err
 			})
 		defer patch3.Reset()
@@ -251,12 +251,12 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 
 		//case-4
 		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getUserName,
-			func(_ *controllers.BaseController, _ string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return username, nil
 			})
 		defer patch4.Reset()
 		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), "GetKey",
-			func(_ *controllers.BaseController, _ string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string) (_ string, error error) {
 				return "testKey1", nil
 			})
 		defer patch5.Reset()
