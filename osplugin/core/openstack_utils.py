@@ -18,7 +18,9 @@
 
 import re
 
+from core.exceptions import PackageNotValid
 from core.log import logger
+
 from heatclient.v1.client import Client as HeatClient
 from glanceclient.v2.client import Client as GlanceClient
 from keystoneauth1 import identity, session
@@ -26,7 +28,6 @@ from novaclient import client as nova_client
 
 import config
 import utils
-from core.exceptions import PackageNotValid
 
 _RC_MAP = {}
 
@@ -568,9 +569,9 @@ class Flavor(HOTBase):
             self.properties['extra_specs'] = {}
             for key in flavor_extra_specs:
                 if isinstance(flavor_extra_specs[key], bool):
-                    self.properties['extra_specs'][key] = 'true' if flavor_extra_specs[key] else 'false'
-                elif isinstance(flavor_extra_specs[key], int) or \
-                        isinstance(flavor_extra_specs[key], float):
+                    self.properties['extra_specs'][key] = 'true' \
+                        if flavor_extra_specs[key] else 'false'
+                elif isinstance(flavor_extra_specs[key], (int, float)):
                     self.properties['extra_specs'][key] = str(flavor_extra_specs[key])
                 else:
                     logger.info(flavor_extra_specs[key])
@@ -584,6 +585,11 @@ class Flavor(HOTBase):
 
 
 def create_security_group_template():
+    """
+    创建安全组模版
+    Returns:
+
+    """
     return {
         'type': 'OS::Neutron::SecurityGroup',
         'properties': {

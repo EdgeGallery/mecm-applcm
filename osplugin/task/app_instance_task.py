@@ -47,8 +47,8 @@ def check_stack_status(app_instance_id):
     time.sleep(5)
     try:
         _check_stack_status(app_instance_id)
-    except Exception as e:
-        LOG.error(e, exc_info=True)
+    except Exception as exception:
+        LOG.error(exception, exc_info=True)
 
 
 @db_session
