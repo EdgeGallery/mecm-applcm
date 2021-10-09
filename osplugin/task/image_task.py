@@ -372,6 +372,8 @@ def do_push_image(image_id, host_ip):
             commit()
             return
 
+        response_data = response.json()
+        image_info.compress_task_id = response_data['image_id']
         image_info.status = utils.ACTIVE
         commit()
     except Exception as exception:
