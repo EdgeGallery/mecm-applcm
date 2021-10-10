@@ -237,7 +237,7 @@ def do_import_image(image_id, host_ip, uri):
     try:
         LOG.debug('start upload image %s', image_id)
         with requests.get(uri, stream=True) as resp_stream:
-            glance.images.upload(image_id=image_id, image_data=resp_stream)
+            glance.images.upload(image_id=image_id, image_data=resp_stream.raw)
         LOG.debug('finished upload image %s', image_id)
     except Exception as exception:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
