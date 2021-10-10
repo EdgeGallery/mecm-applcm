@@ -355,7 +355,7 @@ func (c *LcmController) Instantiate() {
 			"App package host record not exists")
 		return
 	}
-	if appPkgHostRecord.Status != "Distributed" {
+	if appPkgHostRecord.Status != "Distributed" && appPkgHostRecord.Status != "uploaded"{
 		c.HandleLoggingForError(clientIp, util.BadRequest,
 			"application package distribution status is:" + appPkgHostRecord.Status)
 		return
