@@ -663,7 +663,7 @@ func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []by
 		util.ClearByteArray(bKey)
 		return
 	}
-	if appPkgHostRecord.Status != "Distributed" {
+	if appPkgHostRecord.Status != "Distributed" && appPkgHostRecord.Status != "uploaded"{
 		c.HandleForErrorCode(params.ClientIP, util.BadRequest,
 			"application package distribution status is:"+appPkgHostRecord.Status, util.ErrCodePackDistributed)
 		util.ClearByteArray(bKey)
