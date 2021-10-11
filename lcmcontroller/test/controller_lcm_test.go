@@ -1116,7 +1116,7 @@ func testGetInputParametersForUploadCfg(t *testing.T, extraParams map[string]str
 		//case-1:
 		_, _, _, result := uploadController.GetInputParametersForUploadCfg(clientIp)
 		assert.NotEmpty(t, result, "error getting Input Parameters For Upload Cfg failed")
-
+		//
 		//case-2:
 		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
@@ -1128,7 +1128,7 @@ func testGetInputParametersForUploadCfg(t *testing.T, extraParams map[string]str
 		})
 		defer patch3.Reset()
 		_, _, _, result2 := uploadController.GetInputParametersForUploadCfg(clientIp)
-		assert.Empty(t, result2, "error getting Input Parameters")
+		assert.Nil(t, result2, "error getting Input Parameters")
 
 		//case-3
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData,
