@@ -272,11 +272,18 @@ def do_download_then_compress_image(image_id, host_ip):
         logger.debug('finished download image: %s from openstack', image_id)
 
         body = {
-            'inputImageName': f'{image_id}.img',
-            'outputImageName': f'{image_id}.qcow2'
+            'inputImageName': f'{host_ip}/{image_id}.img',
+            'outputImageName': f'{host_ip}/{image_id}.qcow2'
         }
+
+        headers = {
+            'content-type': 'application/json'
+        }
+
         response = requests.post(
-            url='http://localhost:5000/api/v1/vmimage/compress', data=json.dumps(body))
+            url='http://localhost:5000/api/v1/vmimage/compress',
+            data=json.dumps(body),
+            headers=headers)
         data = response.json()
         if response.status_code != 200:
             logger.error('compress image failed, cause: %s', data['msg'])
