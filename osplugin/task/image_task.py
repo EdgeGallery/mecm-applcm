@@ -365,7 +365,7 @@ def do_push_image(image_id, host_ip):
     try:
         data = MultipartEncoder({
             'file': open(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2'),
-            'priority': 0,
+            'priority': '0',
             'userId': image_info.tenant_id
         })
         req_headers = {
