@@ -319,7 +319,7 @@ def do_check_compress_status(image_id, host_ip):
     time.sleep(5)
 
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.ACTIVE:
+    if image_info is None or image_info.status != utils.COMPRESSING:
         return
 
     try:
@@ -360,7 +360,7 @@ def do_push_image(image_id, host_ip):
 
     """
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.ACTIVE:
+    if image_info is None or image_info.status != utils.PUSHING:
         return
     try:
         data = MultipartEncoder({
