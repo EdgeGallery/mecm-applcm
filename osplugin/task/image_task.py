@@ -364,7 +364,9 @@ def do_push_image(image_id, host_ip):
         return
     try:
         data = MultipartEncoder({
-            'file': open(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2'),
+            'file': (f'{image_id}.qcow2',
+                     open(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2', 'rb'),
+                     'application/octet-stream'),
             'priority': '0',
             'userId': image_info.tenant_id
         })
