@@ -237,7 +237,7 @@ def do_import_image(image_id, host_ip, uri):
     try:
         LOG.debug('start upload image %s', image_id)
         with requests.get(uri, stream=True) as resp_stream:
-            glance.images.upload(image_id=image_id, image_data=resp_stream)
+            glance.images.upload(image_id=image_id, image_data=resp_stream.raw)
         LOG.debug('finished upload image %s', image_id)
     except Exception as exception:
         image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
@@ -272,11 +272,18 @@ def do_download_then_compress_image(image_id, host_ip):
         logger.debug('finished download image: %s from openstack', image_id)
 
         body = {
-            'inputImageName': f'/usr/app/vmImage/{host_ip}/{image_id}.img',
-            'outputImageName': f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2'
+            'inputImageName': f'{host_ip}/{image_id}.img',
+            'outputImageName': f'{host_ip}/{image_id}.qcow2'
         }
+
+        headers = {
+            'content-type': 'application/json'
+        }
+
         response = requests.post(
-            url='http://localhost:5000/api/v1/vmimage/compress', data=json.dumps(body))
+            url='http://localhost:5000/api/v1/vmimage/compress',
+            data=json.dumps(body),
+            headers=headers)
         data = response.json()
         if response.status_code != 200:
             logger.error('compress image failed, cause: %s', data['msg'])
@@ -312,7 +319,7 @@ def do_check_compress_status(image_id, host_ip):
     time.sleep(5)
 
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.ACTIVE:
+    if image_info is None or image_info.status != utils.COMPRESSING:
         return
 
     try:
@@ -353,7 +360,7 @@ def do_push_image(image_id, host_ip):
 
     """
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.ACTIVE:
+    if image_info is None or image_info.status != utils.PUSHING:
         return
     try:
         data = MultipartEncoder({
@@ -372,6 +379,8 @@ def do_push_image(image_id, host_ip):
             commit()
             return
 
+        response_data = response.json()
+        image_info.compress_task_id = response_data['image_id']
         image_info.status = utils.ACTIVE
         commit()
     except Exception as exception:

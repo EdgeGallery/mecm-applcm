@@ -64,7 +64,7 @@ func (c *ImageController) CreateImage() {
 		util.ClearByteArray(bKey)
 		return
 	}
-
+	log.Info("VmId: " + request.VmId)
 	response, err := adapter.CreateVmImage(appInfoRecord.MecHost, accessToken,
 		appInfoRecord.AppInstanceId, request.VmId, tenantId)
 	util.ClearByteArray(bKey)

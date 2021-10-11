@@ -31,7 +31,7 @@ func init() {
 	initAPI(util.Lcmcontroller, "Terminate", "/v1/tenants/:tenantId/app_instances/:appInstanceId/terminate", util.POST)
 	initAPI(util.Lcmcontroller, "Query", "/v1/tenants/:tenantId/app_instances/:appInstanceId", util.GET)
 	initAPI(util.Lcmcontroller, "QueryKPI", "/v1/tenants/:tenantId/hosts/:hostIp/kpi", util.GET)
-	initAPI(util.Lcmcontroller, "QueryMepCapabilities", util.QueryMepCapabilities, util.GET)
+	initAPI(util.Lcmcontroller, "QueryMepCapabilities", util.QueryMepCapabilitiesV1, util.GET)
 	initAPI(util.Lcmcontroller, "QueryMepCapabilities", "/v1/tenants/:tenantId/hosts/:hostIp/mep_capabilities/:capabilityId", util.GET)
 	initAPI(util.Lcmcontroller, "GetWorkloadDescription", "/v1/tenants/:tenantId/app_instances/:appInstanceId/workload/events", util.GET)
 	initAPI(util.Lcmcontroller, "SynchronizeUpdatedRecord", "/v1/tenants/:tenantId/app_instances/sync_updated", util.GET)
