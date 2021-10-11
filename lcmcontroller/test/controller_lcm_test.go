@@ -207,7 +207,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 			})
 		defer patch1.Reset()
 		_, _, _, result := keyController.GetInputParametersForChangeKey(clientIp)
-		assert.NotEmpty(t, result, "Error getting username Parameter For upload")
+		assert.Empty(t, result, "Error getting username Parameter For upload")
 
 		//test case:1 for validatetoken
 		instantiateReq := models.InstantiateRequest{
@@ -238,7 +238,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 			})
 		defer patch3.Reset()
 		_, _, _, result2 := keyController.GetInputParametersForChangeKey(clientIp)
-		assert.NotEmpty(t, result2, "Error getting key Parameter For upload")
+		assert.Empty(t, result2, "Error getting key Parameter For upload")
 
 		//test case-2 for validateToken
 		_, _, _, _, _, _ = keyController.ValidateToken("token4", instantiateReq, clientIp)
@@ -276,7 +276,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 
 		_, _, _, clientResult3 := baseController.GetClientIpAndValidateAccessToken("msg",
 			[]string{tenantRole, adminRole}, tenantIdentifier)
-		assert.NotEmpty(t, clientResult3, "Error getting client ip as failed to validating access token")
+		assert.Empty(t, clientResult3, "Error getting client ip as failed to validating access token")
 
 		//test case-3 for validateToken
 		patch12 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
@@ -1128,7 +1128,7 @@ func testGetInputParametersForUploadCfg(t *testing.T, extraParams map[string]str
 		})
 		defer patch3.Reset()
 		_, _, _, result2 := uploadController.GetInputParametersForUploadCfg(clientIp)
-		assert.NotEmpty(t, result2, "error getting Input Parameters")
+		assert.Empty(t, result2, "error getting Input Parameters")
 
 		//case-3
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData,

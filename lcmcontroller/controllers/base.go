@@ -489,8 +489,8 @@ func (c *BaseController) GetUserName(clientIp string) (string, error) {
 	if userName != "" {
 		name, err := util.ValidateUserName(userName, util.NameRegex)
 		if err != nil || !name {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
-			return "", errors.New("username is invalid")
+			c.HandleLoggingForError(clientIp, util.BadRequest, "username or key is invalid")
+			return "", errors.New("username or key is invalid")
 		}
 	}
 	return userName, nil
@@ -502,9 +502,19 @@ func (c *BaseController) GetKey(clientIp string) (string, error) {
 	if key != "" {
 		keyValid, err := util.ValidateDbParams(key)
 		if err != nil || !keyValid {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
-			return "", errors.New("key is invalid")
+			c.HandleLoggingForError(clientIp, util.BadRequest, "username or key is invalid")
+			return "", errors.New("username or key is invalid")
 		}
 	}
 	return key, nil
+}
+
+
+func HandleStatus(status string) string {
+	if status =="Uploading" {
+		return "Distributing"
+	} else if status == "Uploaded" {
+		return "Distributed"
+	}
+	return status
 }

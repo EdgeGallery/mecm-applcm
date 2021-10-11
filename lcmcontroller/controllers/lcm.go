@@ -2461,33 +2461,6 @@ func (c *LcmController) GetUserNameAndKey(clientIp string) (name, key string, er
 	return name, key, err
 }
 
-
-// Get user name
-func (c *LcmController) GetUserName(clientIp string) (string, error) {
-	userName := c.Ctx.Request.Header.Get("name")
-	if userName != "" {
-		name, err := util.ValidateUserName(userName, util.NameRegex)
-		if err != nil || !name {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
-			return "", errors.New("username is invalid")
-		}
-	}
-	return userName, nil
-}
-
-// Get key
-func (c *LcmController) GetKey(clientIp string) (string, error) {
-	key := c.Ctx.Request.Header.Get("key")
-	if key != "" {
-		keyValid, err := util.ValidateDbParams(key)
-		if err != nil || !keyValid {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
-			return "", errors.New("key is invalid")
-		}
-	}
-	return key, nil
-}
-
 // Get App package records
 func (c *LcmController) GetAppPkgRecords(clientIp, packageId, tenantId string) (appPkgRecords []*models.AppPackageRecord, err error) {
 	edgeKey, _ := c.getKey(clientIp)
@@ -2573,12 +2546,7 @@ func (c *LcmController) GetAppPkgs(clientIp, accessToken, tenantId string,
 					c.HandleLoggingForFailure(clientIp, err.Error())
 					return appPkgs, err
 				}
-				if status == "Uploading" {
-					status = "Distributing"
-				} else if status == "Uploaded" {
-					status = "Distributed"
-				}
-				ph.Status = status
+				ph.Status = HandleStatus(status)
 				appPkgHost.Status = status
 				_ = c.Db.InsertOrUpdateData(appPkgHost, util.PkgHostKey)
 			} else {
@@ -2591,3 +2559,4 @@ func (c *LcmController) GetAppPkgs(clientIp, accessToken, tenantId string,
 	}
 	return appPkgs, nil
 }
+
