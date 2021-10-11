@@ -20,6 +20,7 @@ package dbAdapter
 import (
 	"errors"
 	"fmt"
+	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"os"
 	"strings"
@@ -158,5 +159,15 @@ func (db *PgDb) InitDatabase() error {
 		return err
 	}
 
+	edgeAuthenticateRec := &models.EdgeAuthenticateRec{
+		AuthenticateId: "39937079-99fe-4cd8-881f-04ca8c4fe09d",
+		Name: "admin",
+		Key:"",
+	}
+
+	readErr := db.ReadData(edgeAuthenticateRec)
+	if readErr != nil {
+		_ = db.InsertOrUpdateData(edgeAuthenticateRec, "authenticate_id")
+	}
 	return nil
 }
