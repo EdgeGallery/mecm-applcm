@@ -1117,35 +1117,6 @@ func testGetInputParametersForUploadCfg(t *testing.T, extraParams map[string]str
 		_, _, _, result := uploadController.GetInputParametersForUploadCfg(clientIp)
 		assert.NotEmpty(t, result, "error getting Input Parameters For Upload Cfg failed")
 		//
-		//case-2:
-		patch1 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData,
-			func(_ *MockDb, _ interface{}, _ ...string) error {
-				return nil
-			})
-		defer patch1.Reset()
-		patch3 := gomonkey.ApplyFunc(util.ValidateFileExtensionEmpty, func(_ string) error {
-			return err
-		})
-		defer patch3.Reset()
-		_, _, _, result2 := uploadController.GetInputParametersForUploadCfg(clientIp)
-		assert.Nil(t, result2, "error getting Input Parameters")
-
-		//case-3
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadController.Db), readData,
-			func(_ *MockDb, _ interface{}, _ ...string) error {
-				return nil
-			})
-		defer patch2.Reset()
-		patch4:= gomonkey.ApplyFunc(util.ValidateFileExtensionEmpty, func(_ string) error {
-			return nil
-		})
-		defer patch4.Reset()
-		patch5 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
-			return err
-		})
-		defer patch5.Reset()
-		_, _, _, result3 := uploadController.GetInputParametersForUploadCfg(clientIp)
-		assert.NotEmpty(t, result3, "error getting Input Parameter")
 	})
 }
 
