@@ -143,6 +143,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return resp
 
+        image_download_url = os.getenv('IMAGE_PUSH_URL', conf.get('default', 'image_push_url'))
         res_dir = {
             "imageId": vm_image_info.image_id,
             "imageName": vm_image_info.image_name,
