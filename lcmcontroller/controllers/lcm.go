@@ -243,7 +243,7 @@ func (c *LcmController) GetPackageDetailsFromPackage(clientIp string,
 
 	data, err := yaml.YAMLToJSON(mfFileBytes)
 	if err != nil{
-		log.Error(util.FailedToCovertYamlToJson + ", pls check mf file if struct is not correct.")
+		log.Error(util.FailedToCovertYamlToJson + ", pls check mf file if struct is correct.")
 		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
 	}
 

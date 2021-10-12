@@ -233,6 +233,7 @@ func (c *LcmControllerV2) GetInputParametersForUploadPkg(clientIp string) (strin
 	if err != nil {
 		return "", "", "", err
 	}
+	
 	if len(appId) == 0 {
 		appId = util.GenerateUUID()
 	}
@@ -356,7 +357,7 @@ func (c *LcmControllerV2) GetPackageDetailsFromPackage(clientIp string,
 	packageDir string) (models.AppPkgDetails, error) {
 
 	var pkgDetails models.AppPkgDetails
-	mf, err := c.GetFileContainsExtension(clientIp, packageDir, ".mf")
+	mf, err := c.GetFileContainsExtension(packageDir, ".mf")
 	if err != nil {
 		log.Error("failed to find mf file, check if mf file exist.")
 		c.HandleForErrorCode(clientIp, util.BadRequest, "failed to find mf file, check if mf file exist.",
@@ -366,14 +367,14 @@ func (c *LcmControllerV2) GetPackageDetailsFromPackage(clientIp string,
 
 	mfYaml, err := os.Open(mf)
 	if err != nil {
-		log.Error("failed to open mf file")
-		return pkgDetails, errors.New("failed to read mf file")
+		log.Error(util.FailedToReadMfFile)
+		return pkgDetails, errors.New(util.FailedToReadMfFile)
 	}
 	defer mfYaml.Close()
 
 	mfFileBytes, err := readMfBytes(mfYaml)
 	if err != nil {
-		log.Error("Failed to get info, pls check mf file if struct is not correct.")
+		log.Error(util.FailedToAnalysisMfFile)
 		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
 	}
 
@@ -394,18 +395,18 @@ func (c *LcmControllerV2) GetPackageDetailsFromPackage(clientIp string,
 }
 
 // get file with extension
-func (c *LcmControllerV2) GetFileContainsExtension(clientIp string, pkgDir string, ext string) (string, error) {
-	d, err := os.Open(pkgDir)
+func (c *LcmControllerV2) GetFileContainsExtension(pkgDir string, ext string) (string, error) {
+	data, err := os.Open(pkgDir)
 	if err != nil {
-		log.Error("failed to find application package")
-		return "", errors.New("failed to find  application package")
+		log.Error(util.FailedToFindAppPackage)
+		return "", errors.New(util.FailedToFindAppPackage)
 	}
-	defer d.Close()
+	defer data.Close()
 
-	files, err := d.Readdir(-1)
+	files, err := data.Readdir(-1)
 	if err != nil {
-		log.Error("failed to read application package")
-		return "", errors.New("failed to read application package")
+		log.Error(util.FailedToReadAppPackage)
+		return "", errors.New(util.FailedToReadAppPackage)
 	}
 
 	for _, file := range files {
