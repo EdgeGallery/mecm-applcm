@@ -92,15 +92,12 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 			return tenantId, err
 		}
 	}
-	name, err := c.getUserName(clientIp)
+
+	name, key, err := c.CheckUserNameAndKey(clientIp)
 	if err != nil {
 		return tenantId, err
 	}
 
-	key, err := c.getKey(clientIp)
-	if err != nil {
-		return tenantId, err
-	}
 
 	if accessToken != "" {
 		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
@@ -489,8 +486,8 @@ func (c *BaseController) GetUserName(clientIp string) (string, error) {
 	if userName != "" {
 		name, err := util.ValidateUserName(userName, util.NameRegex)
 		if err != nil || !name {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "username or key is invalid")
-			return "", errors.New("username or key is invalid")
+			c.HandleLoggingForError(clientIp, util.BadRequest, util.UserNameOrKeyInvalid)
+			return "", errors.New(util.UserNameOrKeyInvalid)
 		}
 	}
 	return userName, nil
@@ -502,11 +499,24 @@ func (c *BaseController) GetKey(clientIp string) (string, error) {
 	if key != "" {
 		keyValid, err := util.ValidateDbParams(key)
 		if err != nil || !keyValid {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "username or key is invalid")
-			return "", errors.New("username or key is invalid")
+			c.HandleLoggingForError(clientIp, util.BadRequest, util.UserNameOrKeyInvalid)
+			return "", errors.New(util.UserNameOrKeyInvalid)
 		}
 	}
 	return key, nil
+}
+
+func (c *BaseController) CheckUserNameAndKey(clientIp string) (string, string, error) {
+	name, err := c.getUserName(clientIp)
+	if err != nil {
+		return name, "", err
+	}
+
+	key, err := c.getKey(clientIp)
+	if err != nil {
+		return name, key, err
+	}
+	return name, key, nil
 }
 
 
@@ -517,4 +527,33 @@ func HandleStatus(status string) string {
 		return "Distributed"
 	}
 	return status
+}
+
+
+func (c *BaseController) GetPluginAndClient(clientIp, packageId, tenantId, hostIp string) (string,
+	pluginAdapter.ClientIntf, error) {
+	appPkgRecord, err := c.GetAppPackageRecord(packageId, tenantId, clientIp)
+	if err != nil {
+		return "", nil, err
+	}
+
+	appPkgHostRecord, err := c.getAppPackageHostRecord(hostIp, appPkgRecord.PackageId, appPkgRecord.TenantId, clientIp)
+	if err != nil {
+		return "", nil, err
+	}
+
+	vim, err := c.GetVim(clientIp, appPkgHostRecord.HostIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetVimFailed)
+		return "", nil, err
+	}
+
+	pluginInfo := util.GetPluginInfo(vim)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+			util.ErrCodeFailedGetPlugin)
+		return "", nil, err
+	}
+	return pluginInfo, client, nil
 }
