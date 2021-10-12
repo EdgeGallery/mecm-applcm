@@ -251,8 +251,7 @@ const (
 
 )
 
-
-
+var ReadTlsCfg = true
 var VmImageMap = make(map[int32][]byte, 150000)
 
 var cipherSuiteMap = map[string]uint16{
