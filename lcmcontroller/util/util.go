@@ -69,6 +69,7 @@ const (
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
 
+	UserNameOrKeyInvalid           = "username or key is invalid"
 	FailedToMakeDir                = "failed to make directory"
 	FileNameNotFound               = "file name not found with "
 	AppIdIsNotValid                = "AppName is invalid"
