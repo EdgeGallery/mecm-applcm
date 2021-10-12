@@ -2381,21 +2381,14 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 		p.ModifiedTime = appPkgRecord.ModifiedTime
 
 		for _, appPkgHost := range appPkgRecord.MecHostInfo {
+
 			//fill app package host info
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
 
-			_, vim, err := c.GetVimAndHostIpFromPkgHostRec(clientIp, p.PackageId, tenantId, ph.HostIp)
+			pluginInfo, client, err := c.GetPluginAndClient(clientIp, p.PackageId, tenantId, ph.HostIp)
 			if err != nil {
-				return appPkgs, err
-			}
-
-			pluginInfo := util.GetPluginInfo(vim)
-			client, err := pluginAdapter.GetClient(pluginInfo)
-			if err != nil {
-				c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-					util.ErrCodeFailedGetPlugin)
-				return appPkgs, err
+				continue
 			}
 
 			if appPkgHost.Status != "Distributed" {
@@ -2403,7 +2396,7 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 				status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
 				if err != nil {
 					c.HandleLoggingForFailure(clientIp, err.Error())
-					return appPkgs, err
+					continue
 				}
 				ph.Status = HandleStatus(status)
 				appPkgHost.Status = status
@@ -2418,3 +2411,4 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 	}
 	return appPkgs, nil
 }
+

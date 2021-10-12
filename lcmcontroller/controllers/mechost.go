@@ -60,21 +60,9 @@ func (c *MecHostController) AddMecHost() {
 		return
 	}
 
-	userName := c.Ctx.Request.Header.Get("name")
-	if userName != "" {
-		name, err := util.ValidateUserName(userName, util.NameRegex)
-		if err != nil || !name {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
-			return
-		}
-	}
-	key := c.Ctx.Request.Header.Get("key")
-	if key != "" {
-		validKey, err := util.ValidateDbParams(key)
-		if err != nil || !validKey {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "key is invalid")
-			return
-		}
+	userName, key, err := c.CheckUserNameAndKey(clientIp)
+	if err != nil {
+		return
 	}
 
 	if userName != "" && key != "" {
