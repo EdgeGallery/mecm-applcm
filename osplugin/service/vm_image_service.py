@@ -126,6 +126,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         LOG.info('create image record created, fetching image data')
         return resp
 
+
     @db_session
     def queryVmImage(self, request, context):
         """
@@ -141,17 +142,14 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return resp
 
+        image_download_url = os.getenv('IMAGE_PUSH_URL', conf.get('default', 'image_push_url'))
         res_dir = {
             "imageId": vm_image_info.image_id,
             "imageName": vm_image_info.image_name,
             "status": vm_image_info.status
         }
         if vm_image_info.status == utils.ACTIVE:
-            res_dir['checksum'] = vm_image_info.checksum
-            res_dir['sumChunkNum'] = get_chunk_num(
-                size=vm_image_info.image_size,
-                chunk_size=int(config.chunk_size))
-            res_dir['chunkSize'] = config.chunk_size
+            res_dir['url'] = image_download_url + '/' + vm_image_info.compress_task_id
         resp.response = json.dumps(res_dir)
         LOG.info("query image success")
         return resp
