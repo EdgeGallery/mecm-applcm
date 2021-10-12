@@ -2539,9 +2539,9 @@ func (c *LcmController) GetAppPkgs(clientIp, accessToken, tenantId string,
 					continue
 				}
 				log.Error("status before: " + status)
-				if status == "Uploading" {
+				if strings.ToLower(status) == "uploading" {
 					status = "Distributing"
-				} else if status == "Uploaded" {
+				} else if strings.ToLower(status) == "uploaded"{
 					status = "Distributed"
 				}
 				ph.Status = status
