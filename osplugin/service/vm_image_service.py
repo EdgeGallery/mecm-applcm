@@ -24,6 +24,7 @@ from pony.orm import db_session, commit
 
 import config
 import utils
+from config import image_push_url
 from core.exceptions import ParamNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
@@ -126,6 +127,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         LOG.info('create image record created, fetching image data')
         return resp
 
+
     @db_session
     def queryVmImage(self, request, context):
         """
@@ -147,11 +149,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             "status": vm_image_info.status
         }
         if vm_image_info.status == utils.ACTIVE:
-            res_dir['checksum'] = vm_image_info.checksum
-            res_dir['sumChunkNum'] = get_chunk_num(
-                size=vm_image_info.image_size,
-                chunk_size=int(config.chunk_size))
-            res_dir['chunkSize'] = config.chunk_size
+            res_dir['url'] = image_push_url + '/' + vm_image_info.compress_task_id
         resp.response = json.dumps(res_dir)
         LOG.info("query image success")
         return resp
