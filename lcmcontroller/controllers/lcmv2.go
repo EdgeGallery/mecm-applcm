@@ -2400,7 +2400,7 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 					continue
 				}
 				ph.Status = HandleStatus(status)
-				appPkgHost.Status = status
+				appPkgHost.Status = ph.Status
 				_ = c.Db.InsertOrUpdateData(appPkgHost, util.PkgHostKey)
 			} else {
 				ph.Status = appPkgHost.Status
