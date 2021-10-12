@@ -18,6 +18,7 @@ package pluginAdapter
 
 import (
 	"bytes"
+	"crypto/tls"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
@@ -49,6 +50,8 @@ type ClientGRPCConfig struct {
 	RootCertificate string
 }
 
+var tlsConfig *tls.Config
+
 // Create a GRPC client
 func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 
@@ -58,11 +61,13 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 	)
 
 	if util.GetAppConfig("client_ssl_enable") == "true" {
-
-		tlsConfig, err := util.TLSConfig(cfg.RootCertificate)
-		if err != nil {
-			log.Error("failed to get TLS configuration with error")
-			return nil, err
+		if util.ReadTlsCfg {
+			tlsConfig, err = util.TLSConfig(cfg.RootCertificate)
+			if err != nil {
+				log.Error("failed to get TLS configuration with error")
+				return nil, err
+			}
+			util.ReadTlsCfg = false
 		}
 		creds := credentials.NewTLS(tlsConfig)
 		size := 1024 * 1024 * 24
