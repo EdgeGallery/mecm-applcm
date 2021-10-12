@@ -1848,37 +1848,37 @@ func testUploadPackageV2(t *testing.T, extraParams map[string]string, path strin
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
-		patch20 := gomonkey.ApplyFunc(os.Open, func(_ string) (*os.File, error) {
-			return nil,nil
-		})
-		defer patch20.Reset()
-
-		// Test instantiate
+		//patch20 := gomonkey.ApplyFunc(os.Open, func(_ string) (*os.File, error) {
+		//	return nil,nil
+		//})
+		//defer patch20.Reset()
+		//
+		//// Test instantiate
+		////instantiateController.UploadPackageV2()
+		//packageDir := "abc"
+		//instantiateController.GetPackageDetailsFromPackage(clientIp, packageDir)
+		//
+		//accessToken = createToken(tenantIdentifier)
+		//patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension", func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ string) (string, error) {
+		//	return "", err
+		//})
+		//defer patch8.Reset()
+		//// Test upload package
+		//instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		//instantiateController.UploadPackageV2()
-		packageDir := "abc"
-		instantiateController.GetPackageDetailsFromPackage(clientIp, packageDir)
-		
-		accessToken = createToken(tenantIdentifier)
-		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension", func(_ *controllers.LcmControllerV2 ,_ string, _ string, _ string) (string, error) {
-			return "", err
-		})
-		defer patch8.Reset()
-		// Test upload package
-		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
-		instantiateController.UploadPackageV2()
-
-		accessToken = createToken(tenantIdentifier)
-		patch15 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageDetailsFromPackage", func(_ *controllers.LcmControllerV2 ,_ string,
-			_ string) (pkgDir models.AppPkgDetails , error error) {
-			return pkgDir,err
-		})
-		defer patch15.Reset()
-		// Test upload package
-		instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
-		instantiateController.UploadPackageV2()
-
-		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		//
+		//accessToken = createToken(tenantIdentifier)
+		//patch15 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetPackageDetailsFromPackage", func(_ *controllers.LcmControllerV2 ,_ string,
+		//	_ string) (pkgDir models.AppPkgDetails , error error) {
+		//	return pkgDir,err
+		//})
+		//defer patch15.Reset()
+		//// Test upload package
+		//instantiateBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
+		//instantiateController.UploadPackageV2()
+		//
+		//// Check for success case wherein the status value will be default i.e. 0
+		//assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "CreatePackagePath",
