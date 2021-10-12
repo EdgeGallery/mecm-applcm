@@ -2538,8 +2538,13 @@ func (c *LcmController) GetAppPkgs(clientIp, accessToken, tenantId string,
 					c.HandleLoggingForFailure(clientIp, err.Error())
 					continue
 				}
-				ph.Status = HandleStatus(status)
-				appPkgHost.Status = ph.Status
+				if status == "Uploading" {
+					status = "Distributing"
+				} else if status == "Uploaded" {
+					status = "Distributed"
+				}
+				ph.Status = status
+				appPkgHost.Status = status
 				_ = c.Db.InsertOrUpdateData(appPkgHost, util.PkgHostKey)
 			} else {
 				ph.Status = appPkgHost.Status
