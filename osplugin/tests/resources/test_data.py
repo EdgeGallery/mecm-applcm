@@ -138,3 +138,20 @@ server.status = 'active',
 server.name = 'vm01'
 mock_nova_client.servers.get.return_value = server
 mock_nova_client.servers.create_image.return_value = 'aabbccvmimage01'
+
+
+class MockResponse:
+    """
+
+    """
+    def __init__(self, params):
+        self.status_code = params['status_code']
+        self.data = params['json']
+
+    def json(self):
+        """
+
+        Returns:
+
+        """
+        return self.data

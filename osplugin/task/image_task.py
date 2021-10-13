@@ -22,7 +22,7 @@ from pony.orm import db_session, commit
 
 import requests
 import utils
-from config import image_push_url
+from config import image_push_url, base_dir
 from core.log import logger
 from core.models import VmImageInfoMapper
 from core.openstack_utils import create_glance_client
@@ -264,7 +264,7 @@ def do_download_then_compress_image(image_id, host_ip):
     glance_client = create_glance_client(host_ip=host_ip)
     try:
         logger.debug('start download image: %s from openstack', image_id)
-        download_dir = f'/usr/app/vmImage/{host_ip}'
+        download_dir = f'{base_dir}/vmImage/{host_ip}'
         utils.create_dir(download_dir)
         with open(f'{download_dir}/{image_id}.img', 'wb') as image_file:
             for body in glance_client.images.data(image_id=image_id):
@@ -289,7 +289,7 @@ def do_download_then_compress_image(image_id, host_ip):
             logger.error('compress image failed, cause: %s', data['msg'])
             image_info.status = utils.KILLED
             commit()
-            utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
+            utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.img')
             return
 
         image_info.status = utils.COMPRESSING
@@ -299,7 +299,7 @@ def do_download_then_compress_image(image_id, host_ip):
         logger.error(exception, exc_info=True)
         image_info.status = utils.KILLED
         commit()
-        utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
+        utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.img')
         return
 
     add_check_compress_image_task(image_id, host_ip)
@@ -341,9 +341,9 @@ def do_check_compress_status(image_id, host_ip):
         else:
             logger.debug('image: %s compress failed, cause %s', image_id, data['msg'])
             image_info.status = utils.KILLED
-            utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2')
+            utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.qcow2')
         commit()
-        utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
+        utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.img')
     except Exception as exception:
         logger.error(exception, exc_info=True)
 
@@ -365,7 +365,7 @@ def do_push_image(image_id, host_ip):
     try:
         data = MultipartEncoder({
             'file': (f'{image_id}.qcow2',
-                     open(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2', 'rb'),
+                     open(f'{base_dir}/vmImage/{host_ip}/{image_id}.qcow2', 'rb'),
                      'application/octet-stream'),
             'priority': '0',
             'userId': image_info.tenant_id
@@ -390,4 +390,4 @@ def do_push_image(image_id, host_ip):
         image_info.status = utils.KILLED
         commit()
     finally:
-        utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2')
+        utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.qcow2')

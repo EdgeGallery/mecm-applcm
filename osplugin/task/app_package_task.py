@@ -36,11 +36,11 @@ def start_check_package_status(package_id, host_ip):
     Returns:
 
     """
-    check_thread_pool.submit(_check_package_status, package_id, host_ip)
+    check_thread_pool.submit(do_check_package_status, package_id, host_ip)
 
 
 @db_session
-def _check_package_status(package_id, host_ip):
+def do_check_package_status(package_id, host_ip):
     """
     检查包状态
     Args:

@@ -41,6 +41,7 @@ RUN sed -i "s|umask 022|umask 027|g" /etc/profile
 RUN mkdir -p /usr/app/bin
 
 ENV HOME=/usr/app
+ENV BASE_DIR=/usr/app
 ENV UID=166
 ENV GID=166
 ENV USER_NAME=eguser

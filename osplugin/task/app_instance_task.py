@@ -46,13 +46,13 @@ def check_stack_status(app_instance_id):
     """
     time.sleep(5)
     try:
-        _check_stack_status(app_instance_id)
+        do_check_stack_status(app_instance_id)
     except Exception as exception:
         LOG.error(exception, exc_info=True)
 
 
 @db_session
-def _check_stack_status(app_instance_id):
+def do_check_stack_status(app_instance_id):
     app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
     if not app_ins_mapper:
         LOG.debug('app ins: %s db record not found', app_instance_id)
