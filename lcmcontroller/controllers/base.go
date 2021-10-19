@@ -521,9 +521,9 @@ func (c *BaseController) CheckUserNameAndKey(clientIp string) (string, string, e
 
 
 func HandleStatus(status string) string {
-	if status =="Uploading" {
+	if strings.ToLower(status) =="uploading" {
 		return "Distributing"
-	} else if status == "Uploaded" {
+	} else if strings.ToLower(status) == "uploaded" {
 		return "Distributed"
 	}
 	return status
