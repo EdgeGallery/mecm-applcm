@@ -495,7 +495,10 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('configFile is required')
             return res
 
-        config_path = utils.RC_FILE_DIR + '/' + host_ip + '/' + parameter.tenant_id
+        config_path_dir = utils.RC_FILE_DIR + '/' + parameter.tenant_id
+        if not utils.exists_path(config_path_dir):
+            utils.create_dir(config_path_dir)
+        config_path = config_path_dir + '/' + host_ip
 
         try:
             with open(config_path, 'wb') as new_file:
@@ -523,7 +526,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if host_ip is None:
             return res
 
-        config_path = utils.RC_FILE_DIR + '/' + host_ip + '/' + request.tenantId
+        config_path = utils.RC_FILE_DIR + '/' + request.tenantId + '/' + host_ip
         try:
             if os.path.exists(config_path):
                 os.remove(config_path)

@@ -38,6 +38,7 @@ def make_create_image_request(access_token, host_ip, app_instance_id, vm_id):
     return lcmservice_pb2.CreateVmImageRequest(accessToken=access_token,
                                                hostIp=host_ip,
                                                appInstanceId=app_instance_id,
+                                               tenantId='tenant001',
                                                vmId=vm_id)
 
 
@@ -133,7 +134,8 @@ class VmImageServiceTest(unittest.TestCase):
                 status='active',
                 image_size=1024,
                 checksum='2',
-                tenant_id='abcabc'
+                tenant_id='abcabc',
+                compress_task_id='abcabcabc'
             )
             commit()
         request = make_query_image_request(access_token=self.access_token,

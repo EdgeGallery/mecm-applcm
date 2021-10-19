@@ -159,7 +159,7 @@ class UploadCfgRequest:
             elif request.configFile:
                 self.config_file = request.configFile
             elif request.tenantId:
-                self.tenant_ip = request.tenantId
+                self.tenant_id = request.tenantId
 
     def get_config_file(self):
         """

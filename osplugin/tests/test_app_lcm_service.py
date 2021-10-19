@@ -40,22 +40,20 @@ class AppLcmServiceTest(unittest.TestCase):
     host_ip = '159.138.23.91'
 
     @mock.patch("service.app_lcm_service.start_check_package_status")
-    @mock.patch("task.image_task.start_check_image_status")
-    @mock.patch("task.image_task.http")
     @mock.patch("task.image_task.create_glance_client")
+    @mock.patch('core.csar.pkg.add_import_image_task')
     @mock.patch("core.csar.pkg.get_image_by_name_checksum")
     def test_upload_package(self, get_image_by_name_checksum,
+                            add_import_image_task,
                             create_glance_client,
-                            http,
-                            start_check_image_status,
                             start_check_package_status):
         """
         测试上传包
         """
         get_image_by_name_checksum.return_value = {'id': 'abc123'}
+        add_import_image_task.return_value = None
         create_glance_client.return_value = mock_glance_client
-        http.request.return_value = None
-        start_check_image_status.return_value = None
+
         start_check_package_status.return_value = None
 
         with open('resources/edgegallery_vm_openstack.zip', 'rb') as f:
@@ -148,6 +146,7 @@ class AppLcmServiceTest(unittest.TestCase):
         with db_session:
             AppInsMapper(
                 app_instance_id='testterminate001',
+                tenant_id='tenant001',
                 host_ip=self.host_ip,
                 stack_id='stackterminate001',
                 operational_status='Instantiated',
@@ -171,6 +170,7 @@ class AppLcmServiceTest(unittest.TestCase):
         with db_session:
             AppInsMapper(
                 app_instance_id='25e32a5c-e00f-4edf-b42d-6dd4b610c2db',
+                tenant_id='tenant001',
                 host_ip=self.host_ip,
                 stack_id='stacuquery001',
                 operational_status='Instantiated',
@@ -234,6 +234,7 @@ class AppLcmServiceTest(unittest.TestCase):
             config_file = f.read()
         data = [
             lcmservice_pb2.UploadCfgRequest(accessToken=self.access_token),
+            lcmservice_pb2.UploadCfgRequest(tenantId='tenant001'),
             lcmservice_pb2.UploadCfgRequest(hostIp='10.0.0.1'),
             lcmservice_pb2.UploadCfgRequest(configFile=config_file)
         ]
@@ -246,7 +247,8 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         data = lcmservice_pb2.RemoveCfgRequest(
             accessToken=self.access_token,
-            hostIp='10.0.0.1'
+            hostIp='10.0.0.1',
+            tenantId='tenant001'
         )
         response = self.app_lcm_service.removeConfig(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
@@ -260,6 +262,7 @@ class AppLcmServiceTest(unittest.TestCase):
             AppInsMapper(
                 app_instance_id='35e32a5c-e00f-4edf-b42d-6dd4b610c2db',
                 host_ip=self.host_ip,
+                tenant_id='tenant001',
                 stack_id='stackevent001',
                 operational_status='Instantiated',
                 operation_info=None

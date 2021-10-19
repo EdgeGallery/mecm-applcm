@@ -32,14 +32,12 @@ import utils
 
 _RC_MAP = {}
 
-_SESSION_MAP = {}
-
 
 def set_rc(host_ip, tenant_id):
     """
     缓存rc表
     """
-    _RC_MAP[f'{host_ip}-{tenant_id}'] = RCFile(utils.RC_FILE_DIR + '/' + host_ip + '/' + tenant_id)
+    _RC_MAP[f'{host_ip}-{tenant_id}'] = RCFile(utils.RC_FILE_DIR + '/' + tenant_id + '/' + host_ip)
 
 
 def del_rc(host_ip, tenant_id):
@@ -55,8 +53,7 @@ def get_rc(host_ip, tenant_id):
     获取rc表
     """
     if f'{host_ip}-{tenant_id}' not in _RC_MAP:
-        rc_file_dir = utils.RC_FILE_DIR + '/' + host_ip + '/' + tenant_id
-        _RC_MAP[f'{host_ip}-{tenant_id}'] = RCFile(rc_file_dir)
+        set_rc(host_ip, tenant_id)
     return _RC_MAP[f'{host_ip}-{tenant_id}']
 
 

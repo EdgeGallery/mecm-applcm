@@ -47,6 +47,7 @@ class TasksTest(unittest.TestCase):
             AppInsMapper(
                 app_instance_id='appIns01',
                 host_ip='10.10.10.10',
+                tenant_id='tenant001',
                 stack_id='stack001',
                 operational_status=utils.INSTANTIATING
             )
