@@ -174,11 +174,14 @@ class CsarPkg:
             if image is not None:
                 LOG.debug('use exist image')
                 image_id_map[sw_image_desc.name] = image.image_id
-            elif sw_image_desc.sw_image is None or sw_image_desc.sw_image == '':
+                continue
+
+            image = get_image_by_name_checksum(sw_image_desc.name,
+                                               sw_image_desc.checksum,
+                                               host_ip,
+                                               tenant_id)
+            if image is not None:
                 LOG.debug('use image from plugin')
-                image = get_image_by_name_checksum(sw_image_desc.name,
-                                                   sw_image_desc.checksum,
-                                                   host_ip)
                 image_id_map[sw_image_desc.name] = image['id']
 
             elif sw_image_desc.sw_image.startswith('http'):

@@ -52,7 +52,8 @@ message QueryResponse {
 
 message QueryKPIRequest {
     string accessToken = 1;
-    string hostIp = 2;
+    string tenantId = 2;
+    string hostIp = 3;
 }
 
 message QueryKPIResponse {
@@ -72,8 +73,9 @@ message QueryPackageStatusResponse {
 message UploadCfgRequest {
   oneof data {
     string accessToken = 1;
-    string hostIp = 2;
-    bytes configFile = 3;
+    string tenantId = 2;
+    string hostIp = 3;
+    bytes configFile = 4;
   };
 }
 
@@ -83,7 +85,8 @@ message UploadCfgResponse {
 
 message RemoveCfgRequest {
   string accessToken = 1;
-  string hostIp = 2;
+  string tenantId = 2;
+  string hostIp = 3;
 }
 
 message RemoveCfgResponse {

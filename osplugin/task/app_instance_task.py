@@ -57,7 +57,7 @@ def do_check_stack_status(app_instance_id):
     if not app_ins_mapper:
         LOG.debug('app ins: %s db record not found', app_instance_id)
         return
-    heat = create_heat_client(app_ins_mapper.host_ip)
+    heat = create_heat_client(app_ins_mapper.host_ip, app_ins_mapper.tenant_id)
     stack_resp = heat.stacks.get(app_ins_mapper.stack_id)
     if stack_resp is None and app_ins_mapper.operational_status == 'Terminating':
         app_ins_mapper.delete()

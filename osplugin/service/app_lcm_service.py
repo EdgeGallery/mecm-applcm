@@ -47,9 +47,9 @@ LOG = logger
 
 def validate_input_params(param):
     """
-    check_stack_status
+    校验通用参数,host_ip和token，返回host_ip
     Args:
-        param:
+        param: 包含host_ip和token
     Returns:
         host_ip
     """
@@ -178,7 +178,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                                             host_ip=host_ip)
         if app_package_info is not None:
             app_package_info.delete()
-        glance = create_glance_client(host_ip)
+        glance = create_glance_client(host_ip, request.tenantId)
         images = VmImageInfoMapper.find_many(app_package_id=app_package_id,
                                              host_ip=host_ip)
         for image in images:
@@ -255,7 +255,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'parameters': parameters
         }
         LOG.debug('init heat client')
-        heat = create_heat_client(host_ip)
+        heat = create_heat_client(host_ip, parameter.tenant_id)
         try:
             LOG.debug('发送创建stack请求')
             stack_resp = heat.stacks.create(**fields)
@@ -264,6 +264,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return resp
         AppInsMapper(app_instance_id=app_instance_id,
                      host_ip=host_ip,
+                     tenant_id=parameter.tenant_id,
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
         commit()
@@ -305,7 +306,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return res
 
         LOG.debug('初始化openstack客户端')
-        heat = create_heat_client(host_ip)
+        heat = create_heat_client(host_ip, app_ins_mapper.tenant_id)
         try:
             LOG.debug('发送删除请求')
             heat.stacks.delete(app_ins_mapper.stack_id)
@@ -353,29 +354,17 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             res.response = '{"code":404}'
             return res
 
-        if app_ins_mapper.operational_status == utils.INSTANTIATING:
+        if app_ins_mapper.operational_status != utils.INSTANTIATED:
             res_data = {
                 'code': 200,
                 'msg': app_ins_mapper.operation_info,
-                'data': utils.INSTANTIATING,
-                'status': utils.INSTANTIATING
+                'status': app_ins_mapper.operational_status
             }
             res.response = json.dumps(res_data)
             LOG.info('query app instance info success')
             return res
 
-        if app_ins_mapper.operational_status != utils.INSTANTIATED:
-            res_data = {
-                'code': 500,
-                'msg': app_ins_mapper.operation_info,
-                'data': app_ins_mapper.operational_status,
-                'status': utils.operational_status
-            }
-            res.response = json.dumps(res_data)
-            LOG.info('query app instance info success')
-            return res
-
-        heat = create_heat_client(host_ip)
+        heat = create_heat_client(host_ip, app_ins_mapper.tenant_id)
         output_list = heat.stacks.output_list(app_ins_mapper.stack_id)
 
         response = _get_output_data(output_list, heat, app_ins_mapper.stack_id)
@@ -455,7 +444,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             res.response = '{"code":404}'
             return res
 
-        heat = create_heat_client(host_ip)
+        heat = create_heat_client(host_ip, app_ins_mapper.tenant_id)
 
         events = heat.events.list(stack_id=app_ins_mapper.stack_id)
         vm_describe_info = {}
@@ -507,13 +496,15 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('configFile is required')
             return res
 
-        config_path = utils.RC_FILE_DIR + '/' + host_ip
+        config_path_dir = utils.RC_FILE_DIR + '/' + parameter.tenant_id
+        if not utils.exists_path(config_path_dir):
+            utils.create_dir(config_path_dir)
+        config_path = config_path_dir + '/' + host_ip
 
         try:
             with open(config_path, 'wb') as new_file:
                 new_file.write(config_file)
-            openstack_utils.set_rc(host_ip)
-            openstack_utils.clear_glance_client(host_ip)
+            openstack_utils.set_rc(host_ip, parameter.tenant_id)
             res.status = utils.SUCCESS
         except Exception as exception:
             LOG.error(exception, exc_info=True)
@@ -536,12 +527,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         if host_ip is None:
             return res
 
-        config_path = utils.RC_FILE_DIR + '/' + host_ip
+        config_path = utils.RC_FILE_DIR + '/' + request.tenantId + '/' + host_ip
         try:
             if os.path.exists(config_path):
                 os.remove(config_path)
-            openstack_utils.del_rc(host_ip)
-            openstack_utils.clear_glance_client(host_ip)
+            openstack_utils.del_rc(host_ip, request.tenantId)
             res.status = utils.SUCCESS
         except Exception as exception:
             LOG.error(exception, exc_info=True)

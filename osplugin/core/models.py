@@ -107,6 +107,7 @@ class InstantiateRequest:
     app_instance_id = None
     app_package_id = None
     app_package_path = None
+    tenant_id = None
     parameters = None
     ak_sk_lcm_gen = None
 
@@ -115,6 +116,7 @@ class InstantiateRequest:
         self.app_instance_id = request.appInstanceId
         self.host_ip = request.hostIp
         self.app_package_id = request.appPackageId
+        self.tenant_id = request.tenantId
         self.app_package_path = _APP_PACKAGE_PATH_FORMATTER\
             .format(base_dir=config.base_dir, host_ip=request.hostIp,
                     app_package_id=request.appPackageId)
@@ -146,6 +148,7 @@ class UploadCfgRequest:
     access_token = None
     host_ip = None
     config_file = None
+    tenant_id = None
 
     def __init__(self, request_iterator):
         for request in request_iterator:
@@ -155,6 +158,8 @@ class UploadCfgRequest:
                 self.host_ip = request.hostIp
             elif request.configFile:
                 self.config_file = request.configFile
+            elif request.tenantId:
+                self.tenant_id = request.tenantId
 
     def get_config_file(self):
         """
@@ -180,6 +185,7 @@ class AppInsMapper(db.Entity):
     _table_ = 't_app_instance'
     app_instance_id = PrimaryKey(str, max_len=64)
     host_ip = Required(str, max_len=15)
+    tenant_id = Required(str, max_len=64)
     stack_id = Required(str, max_len=64, unique=True)
     operational_status = Required(str, max_len=128)
     operation_info = Optional(str, max_len=256, nullable=True)

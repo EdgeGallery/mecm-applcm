@@ -43,3 +43,11 @@ class ParamNotValid(RuntimeError):
     def __init__(self, msg):
         super().__init__(msg)
         self.message = msg
+
+
+class OsConfigNotValid(RuntimeError):
+    """
+    openstack rc校验出错
+    """
+    def __init__(self):
+        self.message = 'openstack rc校验出错'
