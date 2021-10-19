@@ -71,6 +71,7 @@ def _get_output_data(output_list, heat, stack_id):
     response = {
         'code': 200,
         'msg': 'ok',
+        'status': utils.INSTANTIATED,
         'data': []
     }
     for item in output_list['outputs']:
@@ -352,11 +353,23 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             res.response = '{"code":404}'
             return res
 
+        if app_ins_mapper.operational_status == utils.INSTANTIATING:
+            res_data = {
+                'code': 200,
+                'msg': app_ins_mapper.operation_info,
+                'data': utils.INSTANTIATING,
+                'status': utils.INSTANTIATING
+            }
+            res.response = json.dumps(res_data)
+            LOG.info('query app instance info success')
+            return res
+
         if app_ins_mapper.operational_status != utils.INSTANTIATED:
             res_data = {
                 'code': 500,
                 'msg': app_ins_mapper.operation_info,
-                'data': app_ins_mapper.operational_status
+                'data': app_ins_mapper.operational_status,
+                'status': utils.operational_status
             }
             res.response = json.dumps(res_data)
             LOG.info('query app instance info success')
