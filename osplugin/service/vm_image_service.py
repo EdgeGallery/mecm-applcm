@@ -107,7 +107,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             return resp
 
         try:
-            nova_client = create_nova_client(host_ip)
+            nova_client = create_nova_client(host_ip, request.tenantId)
             vm_info = nova_client.servers.get(request.vmId)
             LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
             image_name = get_image_name(vm_info.name)
@@ -127,7 +127,6 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         LOG.info('create image record created, fetching image data')
         return resp
 
-
     @db_session
     def queryVmImage(self, request, context):
         """
@@ -143,7 +142,6 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             return resp
 
-        image_download_url = os.getenv('IMAGE_PUSH_URL', conf.get('default', 'image_push_url'))
         res_dir = {
             "imageId": vm_image_info.image_id,
             "imageName": vm_image_info.image_name,
@@ -165,22 +163,23 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         host_ip = validate_input_params_for_upload_cfg(request)
         if host_ip is None:
             return resp
-        vm_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
-        if vm_info is None:
+        image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
+        if image_info is None:
             LOG.info("image not found! image_id: %s", request.imageId)
             return resp
-        glance_client = create_glance_client(host_ip)
+        glance_client = create_glance_client(host_ip, image_info.tenant_id)
         try:
             glance_client.images.delete(request.imageId)
         except Exception as exception:
             LOG.error(exception, exc_info=True)
             return resp
-        vm_info.delete()
+        image_info.delete()
         commit()
         resp.response = '{"code": 200, "msg": "Ok"}'
         LOG.info("delete image %s success", request.imageId)
         return resp
 
+    @db_session
     def downloadVmImage(self, request, context):
         """
         下载镜像
@@ -190,8 +189,14 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
 
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
-            raise ParamNotValid("host ip is null...")
-        glance_client = create_glance_client(host_ip)
+            yield DownloadVmImageResponse(content=b'{"code":400,"msg":"required param host_ip"}')
+            return
+        image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
+        if image_info is None:
+            LOG.info("image not found! image_id: %s", request.imageId)
+            yield DownloadVmImageResponse(content=b'{"code":400,"msg":"required param image_info"}')
+            return
+        glance_client = create_glance_client(host_ip, image_info)
 
         iterable = glance_client.images.data(image_id=request.imageId)
 

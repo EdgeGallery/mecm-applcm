@@ -58,7 +58,7 @@ def create_image_record(sw_image, app_package_id, host_ip, tenant_id):
     Returns: 镜像ID
 
     """
-    glance = create_glance_client(host_ip)
+    glance = create_glance_client(host_ip, tenant_id)
     image = glance.images.create(name=sw_image.name,
                                  container_format=sw_image.container_format,
                                  min_ram=sw_image.min_ram,
@@ -173,7 +173,7 @@ def do_check_image_status(image_id, host_ip):
             return
         if image_info.status == utils.KILLED:
             return
-        glance = create_glance_client(host_ip)
+        glance = create_glance_client(host_ip, image_info.tenant_id)
         image = glance.images.get(image_id)
     except Exception as exception:
         LOG.error(exception, exc_info=True)
@@ -215,15 +215,15 @@ def do_upload_image(image_id, host_ip, file_path):
     Returns:
 
     """
-    glance = create_glance_client(host_ip)
+    image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+    glance = create_glance_client(host_ip, image_info.tenant_id)
     try:
         with open(file_path, 'rb') as image_data:
             LOG.debug('start upload image %s', image_id)
             glance.images.upload(image_id, image_data=image_data)
             LOG.debug('finish upload image %s', image_id)
     except Exception as exception:
-        image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-        image.status = utils.KILLED
+        image_info.status = utils.KILLED
         commit()
         LOG.error(exception, exc_info=True)
 
@@ -233,15 +233,15 @@ def do_import_image(image_id, host_ip, uri):
     """
     上传远端镜像到openstack
     """
-    glance = create_glance_client(host_ip)
+    image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+    glance = create_glance_client(host_ip, image_info.tenant_id)
     try:
         LOG.debug('start upload image %s', image_id)
         with requests.get(uri, stream=True) as resp_stream:
             glance.images.upload(image_id=image_id, image_data=resp_stream.raw)
         LOG.debug('finished upload image %s', image_id)
     except Exception as exception:
-        image = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-        image.status = utils.KILLED
+        image_info.status = utils.KILLED
         commit()
         LOG.error(exception, exc_info=True)
 
@@ -261,7 +261,7 @@ def do_download_then_compress_image(image_id, host_ip):
     if image_info is None or image_info.status != utils.DOWNLOADING:
         return
 
-    glance_client = create_glance_client(host_ip=host_ip)
+    glance_client = create_glance_client(host_ip=host_ip, tenant_id=image_info.tenant_id)
     try:
         logger.debug('start download image: %s from openstack', image_id)
         download_dir = f'{base_dir}/vmImage/{host_ip}'

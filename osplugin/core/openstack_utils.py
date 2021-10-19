@@ -21,8 +21,9 @@ import re
 from core.exceptions import PackageNotValid, OsConfigNotValid
 from core.log import logger
 
-from heatclient.v1.client import Client as HeatClient
 from glanceclient.v2.client import Client as GlanceClient
+from heatclient.v1.client import Client as HeatClient
+from keystoneclient.v3.client import Client as KeystoneClient
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
 
@@ -31,59 +32,39 @@ import utils
 
 _RC_MAP = {}
 
+_SESSION_MAP = {}
 
-def set_rc(host_ip):
+
+def set_rc(host_ip, tenant_id):
     """
     缓存rc表
     """
-    _RC_MAP[host_ip] = RCFile(utils.RC_FILE_DIR + '/' + host_ip)
+    _RC_MAP[f'{host_ip}-{tenant_id}'] = RCFile(utils.RC_FILE_DIR + '/' + host_ip + '/' + tenant_id)
 
 
-def del_rc(host_ip):
+def del_rc(host_ip, tenant_id):
     """
     删除rc表
     """
-    if host_ip in _RC_MAP:
-        _RC_MAP.pop(host_ip)
+    if f'{host_ip}-{tenant_id}' in _RC_MAP:
+        _RC_MAP.pop(f'{host_ip}-{tenant_id}')
 
 
-def get_rc(host_ip):
+def get_rc(host_ip, tenant_id):
     """
     获取rc表
     """
-    if host_ip not in _RC_MAP:
-        rc_file_dir = utils.RC_FILE_DIR + '/' + host_ip
-        _RC_MAP[host_ip] = RCFile(rc_file_dir)
-    return _RC_MAP[host_ip]
+    if f'{host_ip}-{tenant_id}' not in _RC_MAP:
+        rc_file_dir = utils.RC_FILE_DIR + '/' + host_ip + '/' + tenant_id
+        _RC_MAP[f'{host_ip}-{tenant_id}'] = RCFile(rc_file_dir)
+    return _RC_MAP[f'{host_ip}-{tenant_id}']
 
 
-def get_auth(host_ip):
-    """
-    初始化auth
-    """
-    rc_data = get_rc(host_ip)
-    return identity.Password(
-        user_domain_name=rc_data.user_domain_name,
-        username=rc_data.username,
-        password=rc_data.password,
-        project_domain_name=rc_data.project_domain_name,
-        project_name=rc_data.project_name,
-        auth_url=rc_data.auth_url
-    )
-
-
-def get_session(host_ip):
+def get_session(host_ip, tenant_id):
     """
     创建Openstack session
     """
-    return session.Session(auth=get_auth(host_ip), verify=config.server_ca_verify)
-
-
-def create_heat_client(host_ip):
-    """
-    创建heat客户端
-    """
-    rc_data = get_rc(host_ip)
+    rc_data = get_rc(host_ip, tenant_id)
     auth = identity.Password(
         user_domain_name=rc_data.user_domain_name,
         username=rc_data.username,
@@ -92,27 +73,53 @@ def create_heat_client(host_ip):
         project_name=rc_data.project_name,
         auth_url=rc_data.auth_url
     )
-    sess = session.Session(auth=auth, verify=config.server_ca_verify)
-    return HeatClient(session=sess, endpoint_override=rc_data.heat_url)
+    return session.Session(auth=auth, verify=config.server_ca_verify)
 
 
-def create_nova_client(host_ip):
+def create_heat_client(host_ip, tenant_id):
+    """
+    创建heat客户端
+    """
+    rc_data = get_rc(host_ip, tenant_id)
+    return HeatClient(session=get_session(host_ip, tenant_id), endpoint_override=rc_data.heat_url)
+
+
+def create_nova_client(host_ip, tenant_id):
     """
     创建nova客户端
     """
-    rc_data = get_rc(host_ip)
+    rc_data = get_rc(host_ip, tenant_id)
     return nova_client.Client('2',
-                              session=get_session(host_ip),
+                              session=get_session(host_ip, tenant_id),
                               endpoint_override=rc_data.nova_url)
 
 
-_GLANCE_CLIENT_MAP = {}
+def create_glance_client(host_ip, tenant_id):
+    """
+    创建glance客户端
+    """
+    rc_data = get_rc(host_ip, tenant_id)
+    return GlanceClient(session=get_session(host_ip, tenant_id), endpoint_override=rc_data.glance_url)
 
 
-def get_image_by_name_checksum(name, checksum, host_ip):
+def create_keystone_client(host_ip, tenant_id):
+    """
+    创建keystone客户端
+    Args:
+        host_ip:
+        tenant_id:
+
+    Returns:
+
+    """
+    return KeystoneClient(session=get_session(host_ip, tenant_id))
+
+
+def get_image_by_name_checksum(name, checksum, host_ip, tenant_id):
     """
     根据名称和校验和获取镜像
     Args:
+        tenant_id: 租户id
         name: 名称
         checksum: 校验和
         host_ip:
@@ -120,32 +127,12 @@ def get_image_by_name_checksum(name, checksum, host_ip):
     Returns: 镜像信息
 
     """
-    glance = create_glance_client(host_ip)
+    glance = create_glance_client(host_ip, tenant_id)
     images = glance.images.list(filters={'name': name})
     for image in images:
         if image['checksum'] == checksum:
             return image
     raise RuntimeError(f'image {name} 不存在')
-
-
-def create_glance_client(host_ip):
-    """
-    创建glance客户端
-    """
-    if host_ip in _GLANCE_CLIENT_MAP:
-        return _GLANCE_CLIENT_MAP[host_ip]
-    rc_data = get_rc(host_ip)
-    client = GlanceClient(session=get_session(host_ip), endpoint_override=rc_data.glance_url)
-    _GLANCE_CLIENT_MAP[host_ip] = client
-    return client
-
-
-def clear_glance_client(host_ip):
-    """
-    删除glance客户端
-    """
-    if host_ip in _GLANCE_CLIENT_MAP:
-        _GLANCE_CLIENT_MAP.pop(host_ip)
 
 
 class RCFile:
