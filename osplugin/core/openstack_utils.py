@@ -18,7 +18,7 @@
 
 import re
 
-from core.exceptions import PackageNotValid
+from core.exceptions import PackageNotValid, OsConfigNotValid
 from core.log import logger
 
 from heatclient.v1.client import Client as HeatClient
@@ -165,31 +165,35 @@ class RCFile:
     glance_url = None
 
     def __init__(self, rc_path):
-        with open(rc_path, 'r') as file:
-            for line in file.readlines():
-                match = re.match(self._PATTERN, line)
-                group1 = match.group(1)
-                group2 = match.group(2).replace('"', '')
-                if group1 == 'OS_AUTH_URL':
-                    self.auth_url = group2
-                elif group1 == 'OS_USERNAME':
-                    self.username = group2
-                elif group1 == 'OS_PASSWORD':
-                    self.password = group2
-                elif group1 == 'OS_PROJECT_NAME':
-                    self.project_name = group2
-                elif group1 == 'OS_PROJECT_DOMAIN_NAME':
-                    self.project_domain_name = group2
-                elif group1 == 'OS_USER_DOMAIN_NAME':
-                    self.user_domain_name = group2
-                elif group1 == 'HEAT_URL':
-                    self.heat_url = group2
-                elif group1 == 'GLANCE_URL':
-                    self.glance_url = group2
-                elif group1 == 'NOVA_URL':
-                    self.nova_url = group2
-                elif group1 == 'CINDER_URL':
-                    self.cinder_url = group2
+        try:
+            with open(rc_path, 'r') as file:
+                for line in file.readlines():
+                    match = re.match(self._PATTERN, line)
+                    group1 = match.group(1)
+                    group2 = match.group(2).replace('"', '')
+                    if group1 == 'OS_AUTH_URL':
+                        self.auth_url = group2
+                    elif group1 == 'OS_USERNAME':
+                        self.username = group2
+                    elif group1 == 'OS_PASSWORD':
+                        self.password = group2
+                    elif group1 == 'OS_PROJECT_NAME':
+                        self.project_name = group2
+                    elif group1 == 'OS_PROJECT_DOMAIN_NAME':
+                        self.project_domain_name = group2
+                    elif group1 == 'OS_USER_DOMAIN_NAME':
+                        self.user_domain_name = group2
+                    elif group1 == 'HEAT_URL':
+                        self.heat_url = group2
+                    elif group1 == 'GLANCE_URL':
+                        self.glance_url = group2
+                    elif group1 == 'NOVA_URL':
+                        self.nova_url = group2
+                    elif group1 == 'CINDER_URL':
+                        self.cinder_url = group2
+        except Exception as exception:
+            logger.error(exception, exc_info=True)
+            raise OsConfigNotValid()
 
     def get_auth_url(self):
         """
