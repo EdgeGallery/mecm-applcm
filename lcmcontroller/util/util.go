@@ -237,7 +237,6 @@ const (
 
 	PkgUrlPathV2 = "/v2/tenants/:tenantId/packages/:packageId"
 	QueryMepCapabilities = "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities"
-	QueryMepCapabilitiesV1 = "/v1/tenants/:tenantId/hosts/:hostIp/mep_capabilities"
 
 	//mep service calling
 	ErrCallFromMep        string = "failed to execute rest calling, check if mep service is ready."
