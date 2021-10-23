@@ -64,14 +64,12 @@ func TestControllerErr(t *testing.T) {
 	testChangeKey(t, extraParams, path, testDb)
 	testGetInputParametersForChangeKey(t, extraParams, path, testDb)
 	testLoginPage(t, extraParams, path, testDb)
-	testGetClientIpNew(t, extraParams, path, testDb)
 	testDeletePkg(t, extraParams, path, testDb)
 
 	testTerminateApplication(t, extraParams, testDb)
 
 	testAddMecHostErr(t, extraParams, testDb)
 
-	testDeletePackageErr(t, extraParams, testDb)
 	testSyncUpdatedMecHostRec2(t, extraParams, path, testDb)
 	testBatchTerminate2(t, extraParams, testDb)
 
@@ -82,7 +80,6 @@ func TestControllerErr(t *testing.T) {
 	testUploadPkgV2Err(t, extraParams, path, testDb)
 	testGetInputParametersForUploadCfg(t, extraParams, path, testDb)
 
-	testGetPackageDetailsFromPackage(t, extraParams, path, testDb)
 	testDistributionStatus1(t, extraParams, testDb)
 	testSynchronizeAppPackageUpdatedRecord1(t, extraParams, path, testDb)
 
@@ -209,22 +206,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 		_, _, _, result := keyController.GetInputParametersForChangeKey(clientIp)
 		assert.Empty(t, result, "Error getting username Parameter For upload")
 
-		//test case:1 for validatetoken
-		instantiateReq := models.InstantiateRequest{
-			HostIp:     clientIp,
-			PackageId:  packageId,
-			AppName:    "appname1",
-			Origin:     originVal,
-			Parameters: map[string]string{"ak": "value11", "sk": "value22"},
-			AkSkLcmGen: false,
-		}
-		_, _, _, _, _, _ = keyController.ValidateToken("token3", instantiateReq, clientIp)
 		keyController.AppDeploymentStatus()
-
-		//test case:1 for GetClientIpAndValidateAccessToken
-		_, _, _, clientResult := keyController.GetClientIpAndValidateAccessToken("msg",
-			[]string{tenantRole, adminRole}, tenantIdentifier)
-		assert.NotEmpty(t, clientResult, "Error getting client ip and validating token")
 
 		//case-3
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getUserName,
@@ -241,13 +223,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 		assert.Empty(t, result2, "Error getting key Parameter For upload")
 
 		//test case-2 for validateToken
-		_, _, _, _, _, _ = keyController.ValidateToken("token4", instantiateReq, clientIp)
 		keyController.AppDeploymentStatus()
-
-		//test case:2 for GetClientIpAndValidateAccessToken
-		_, _, _, clientResult2 := keyController.GetClientIpAndValidateAccessToken("msg",
-			[]string{tenantRole, adminRole}, tenantIdentifier)
-		assert.NotEmpty(t, clientResult2, "Error getting client ip and validating access token failed")
 
 		//case-4
 		patch4 := gomonkey.ApplyMethod(reflect.TypeOf(keyController), getUserName,
@@ -268,22 +244,14 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 		_, _, _, result3 := keyController.GetInputParametersForChangeKey(clientIp)
 		assert.NotEmpty(t, result3, "Error getting new key Parameter For upload")
 
-		//test case:3 for GetClientIpAndValidateAccessToken
-		baseController := &controllers.LcmController{controllers.BaseController{Db: testDb,
-			Controller: keyBeegoController}}
 		accessToken := ""
 		keyBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
-
-		_, _, _, clientResult3 := baseController.GetClientIpAndValidateAccessToken("msg",
-			[]string{tenantRole, adminRole}, tenantIdentifier)
-		assert.Empty(t, clientResult3, "Error getting client ip as failed to validating access token")
 
 		//test case-3 for validateToken
 		patch12 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
 			return err
 		})
 		defer patch12.Reset()
-		_, _, _, _, _, _ = keyController.ValidateToken("token5", instantiateReq, clientIp)
 
 		//test case-4 for validateToken
 		patch13 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
@@ -296,7 +264,7 @@ func testGetInputParametersForChangeKey(t *testing.T, extraParams map[string]str
 			return err
 		})
 		defer patch14.Reset()
-		_, _, _, _, _, _ = keyController.ValidateToken("token6", instantiateReq, clientIp)
+
 		keyController.AppDeploymentStatus()
 	})
 }
@@ -327,15 +295,6 @@ func testLoginPage(t *testing.T, extraParams map[string]string, path string, tes
 		})
 		defer patch1.Reset()
 		keyController.LoginPage()
-
-		//test case:4 for GetClientIpAndValidateAccessToken
-		_, _, _, result := keyController.GetClientIpAndValidateAccessToken("msg",
-			[]string{tenantRole, adminRole}, tenantIdentifier)
-		assert.NotEmpty(t, result, "Error getting client ip and validating access token")
-
-		//test case:1 for GetClientIpAndValidateAccessToken
-		_, _, _, _, result5 := keyController.GetClientIpAndIsPermitted("msg")
-		assert.NotEmpty(t, result5, "Error getting client ip and permission")
 
 		//case-2
 		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
@@ -375,63 +334,6 @@ func testLoginPage(t *testing.T, extraParams map[string]string, path string, tes
 	})
 }
 
-func testGetClientIpNew(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
-
-	t.Run("TestGetClientIpNew", func(_ *testing.T) {
-
-		keyRequest, _ := getHttpRequest(tenantsPath+tenantIdentifier+directory+packageId+hosts+ipAddress, extraParams,
-			"file", path, clientIp, []byte(""))
-
-		keyChangeInput := &context.BeegoInput{Context: &context.Context{Request: keyRequest}}
-		setParam(keyChangeInput)
-
-		keyBeegoController := beego.Controller{Ctx: &context.Context{Input: keyChangeInput,
-			Request: keyRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
-			Data: make(map[interface{}]interface{})}
-
-		keyController := &controllers.LcmController{controllers.BaseController{Db: testDb,
-			Controller: keyBeegoController}}
-
-		//case-1
-		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
-			return err
-		})
-		defer patch1.Reset()
-		_, _, _, result := keyController.GetClientIpNew()
-		assert.NotEmpty(t, result, "Error getting new Client IP")
-
-		//case-2
-		patch2 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
-			return nil
-		})
-		defer patch2.Reset()
-		patch3 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
-			return err
-		})
-		defer patch3.Reset()
-		_, _, _, result2 := keyController.GetClientIpNew()
-		assert.NotEmpty(t, result2, "Error getting new Client IP")
-
-		//case-1 for GetClientIp
-		patch4 := gomonkey.ApplyFunc(util.ValidateUUID, func(_ string) error {
-			return nil
-		})
-		defer patch4.Reset()
-		patch5 := gomonkey.ApplyFunc(util.ValidateAccessToken, func(_ string,
-			_ []string, _ string) error {
-			return err
-		})
-		defer patch5.Reset()
-		_, result3 := keyController.GetClientIp()
-		assert.NotEmpty(t, result3, "Error getting Client IP")
-
-		//case-1 for errorLog
-		keyController.ErrorLog(clientIp, err, "notFound")
-
-		//case-2
-		keyController.ErrorLog(clientIp, errors.New(errorNotFond), "404")
-	})
-}
 
 func testDeletePkg(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
@@ -467,7 +369,6 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 				return nil
 			})
 		defer patch1.Reset()
-		_ = deleteController.DeletePkg(appPkgHostRecord, clientIp, packageId, accessToken)
 
 		//test case-1 for deletepkg of LcmV2Controller
 		result := deleteLcmv2Controller.DeletePkg(appPkgHostRecord, clientIp, packageId, accessToken)
@@ -480,9 +381,6 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 				return err
 			})
 		defer patch2.Reset()
-
-		result2 := deleteController.DeletePkg(appPkgHostRecord, clientIp, packageId, accessToken)
-		assert.NotEmpty(t, result2, "Error deleting package")
 
 		//test case-2 for deletepkg of LcmV2Controller
 		resultv2 := deleteLcmv2Controller.DeletePkg(appPkgHostRecord, clientIp, packageId, accessToken)
@@ -498,8 +396,6 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 			return &mockClient{}, err
 		})
 		defer patch4.Reset()
-		result3 := deleteController.DeletePkg(appPkgHostRecord, clientIp, packageId, accessToken)
-		assert.NotEmpty(t, result3, "Error deleting package")
 
 		//test case-3 for deletepkg of LcmV2Controller
 		result2v2 := deleteLcmv2Controller.DeletePkg(appPkgHostRecord, clientIp, packageId, accessToken)
@@ -522,8 +418,6 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 				return err
 			})
 		defer patch17.Reset()
-		result4 := deleteController.DeleteAppPkgRecords(packageId, tenantIdentifier, clientIp)
-		assert.NotEmpty(t, result4, "Error on deleting App package records")
 
 		result6 := deleteController.DeleteAppPackageHostRecord(clientIp, packageId, tenantIdentifier)
 		assert.NotEmpty(t, result6, "Error deleting App package host record")
@@ -546,9 +440,6 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 			})
 		defer patch9.Reset()
 
-		result5 := deleteController.DeleteAppPkgRecords(packageId, tenantIdentifier, clientIp)
-		assert.NotEmpty(t, result5, "Error deleting Application package records")
-
 		//test case-2 for DeleteAppPkgRecords of LcmControllerv2
 		_ = deleteLcmv2Controller.DeleteAppPkgRecords(packageId, tenantIdentifier, clientIp)
 
@@ -563,9 +454,6 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 				return 1, nil
 			})
 		defer patch11.Reset()
-
-		result8 := deleteController.DeleteAppPkgRecords(packageId, tenantIdentifier, clientIp)
-		assert.Empty(t, result8, "Error deleting App package records")
 
 		//test case for getInputParametersForRemoveCfg
 		patch12 := gomonkey.ApplyFunc(util.ValidateIpv4Address, func(_ string) error {
@@ -752,34 +640,6 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 	})
 }
 
-func testDeletePackageErr(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {
-
-	t.Run("TestDeletePackage", func(_ *testing.T) {
-
-		// POST Request
-		instantiateRequest, _ := getHttpRequest(tenantsPath+
-			tenantIdentifier+directory+
-			packageId+hosts+ipAddress, extraParams,
-			"file", "", deleteOper, []byte(""))
-
-		// Prepare Input
-		instantiateInput := &context.BeegoInput{Context: &context.Context{Request: instantiateRequest}}
-		setParam(instantiateInput)
-
-		// Prepare beego controller
-		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: instantiateInput,
-			Request: instantiateRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
-			Data: make(map[interface{}]interface{})}
-
-		// Create LCM controller with mocked DB and prepared Beego controller
-		instantiateController := &controllers.LcmController{controllers.BaseController{Db: testDb,
-			Controller: instantiateBeegoController}}
-
-		// Test instantiate
-		instantiateController.DeletePackage()
-	})
-}
-
 func testSyncUpdatedMecHostRec2(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestSyncUpdatedMecHostRec", func(t *testing.T) {
@@ -873,9 +733,6 @@ func testUploadConfigV2(t *testing.T, extraParams map[string]string, path string
 		uploadControllerLcmV2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
 			Controller: uploadBeegoController}}
 
-		uploadController := &controllers.LcmController{controllers.BaseController{Db: testDb,
-			Controller: uploadBeegoController}}
-
 		//case-1
 		patch1 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
 			return err
@@ -883,7 +740,6 @@ func testUploadConfigV2(t *testing.T, extraParams map[string]string, path string
 		defer patch1.Reset()
 		uploadControllerLcmV2.UploadConfigV2()
 		assert.Equal(t, 400, uploadControllerLcmV2.Ctx.ResponseWriter.Status, "Config upload is failed")
-
 
 		//case-2
 		patch3 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
@@ -899,11 +755,6 @@ func testUploadConfigV2(t *testing.T, extraParams map[string]string, path string
 		uploadControllerLcmV2.UploadConfigV2()
 		assert.Equal(t, 400, uploadControllerLcmV2.Ctx.ResponseWriter.Status, "Config upload failed error")
 
-		//test case-1 for UploadConfig of lcmController
-		uploadController.UploadConfig()
-		assert.Equal(t, 400, uploadController.Ctx.ResponseWriter.Status, "Config upload failed for lcmv2")
-
-
 		//case-3
 		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(uploadControllerLcmV2), getInputParametersForUploadCfg,
 			func(_ *controllers.LcmControllerV2, _ string) (string, string, multipart.File, error) {
@@ -918,12 +769,6 @@ func testUploadConfigV2(t *testing.T, extraParams map[string]string, path string
 		uploadControllerLcmV2.UploadConfigV2()
 		assert.Equal(t, 400, uploadControllerLcmV2.Ctx.ResponseWriter.Status,
 			"Config upload failed while reading data from db")
-
-		//test case-2 for UploadConfig of lcmController
-		uploadController.UploadConfig()
-		assert.Equal(t, 400, uploadController.Ctx.ResponseWriter.Status,
-			"Config upload failed for lcm")
-
 	})
 }
 
@@ -946,10 +791,6 @@ func testUploadConfig3(t *testing.T, extraParams map[string]string, path string,
 
 		// Create LCM controllerV2 with mocked DB and prepared Beego controller
 		uploadControllerLcmV2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
-			Controller: uploadBeegoController}}
-
-		//controller for lcm controller
-		uploadController := &controllers.LcmController{controllers.BaseController{Db: testDb,
 			Controller: uploadBeegoController}}
 
 		//case-1
@@ -980,11 +821,6 @@ func testUploadConfig3(t *testing.T, extraParams map[string]string, path string,
 			return  "", nil
 		})
 		defer patch11.Reset()
-		//test case-2 for UploadConfig of lcmController
-		uploadController.UploadConfig()
-		assert.Equal(t, 500, uploadController.Ctx.ResponseWriter.Status,
-			"Config upload is failed for lcm for plugin adapter")
-
 
 		//case-2
 		patch8 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
@@ -1133,40 +969,6 @@ func TestProcessAkSkConfig(t *testing.T) {
 	result, _ := controllers.ProcessAkSkConfig("instID", "appName2", instantiateReq,
 		clientIp, "tenantId")
 	assert.NotEmpty(t, result, " process Ak Sk Config")
-}
-
-func testGetPackageDetailsFromPackage(t *testing.T, extraParams map[string]string,
-	path string, testDb dbAdapter.Database) {
-
-	t.Run("TestGetPackageDetailsFromPackage", func(t *testing.T) {
-		// Get Request
-		url := tenantsPath + tenantIdentifier + packages
-		uploadPkgRequest, _ := getHttpRequest(url, extraParams,
-			packageName, path, "POST", []byte(""))
-
-		// Prepare Input
-		uploadPkgInput := &context.BeegoInput{Context: &context.Context{Request: uploadPkgRequest}}
-		setParam(uploadPkgInput)
-
-		// Prepare beego controller
-		instantiateBeegoController := beego.Controller{Ctx: &context.Context{Input: uploadPkgInput,
-			Request: uploadPkgRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
-			Data: make(map[interface{}]interface{})}
-
-		// Create LCM controller with mocked DB and prepared Beego controller
-		instantiateController := &controllers.LcmController{controllers.BaseController{Db: testDb,
-			Controller: instantiateBeegoController}}
-
-		patch10 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetFileContainsExtension",
-			func(_ *controllers.LcmController, _ string, _ string, _ string) (_ string, error error) {
-				return "", nil
-			})
-		defer patch10.Reset()
-
-		packageDir := "abc"
-		_, result := instantiateController.GetPackageDetailsFromPackage(clientIp, packageDir)
-		assert.NotEmpty(t, result, "failed to read mf fil")
-	})
 }
 
 func testDistributionStatus1(t *testing.T, extraParams map[string]string, testDb dbAdapter.Database) {

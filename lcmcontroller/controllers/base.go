@@ -98,7 +98,6 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 		return tenantId, err
 	}
 
-
 	if accessToken != "" {
 		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
 		if err != nil {
