@@ -244,7 +244,7 @@ func (c *ImageController) getInputParams(chunkNum int32) (accessToken string, bK
 	c.displayReceivedMsg(clientIp)
 	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted(accessToken, clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return accessToken, bKey, appInfoRecord, adapter, clientIp, err
 	}
