@@ -500,31 +500,14 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
-	name, err := c.GetUserName(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.IsPermitted(accessToken, clientIp)
 	if err != nil {
+		util.ClearByteArray(bKey)
 		return
 	}
 
-	key, err := c.GetKey(clientIp)
-	if err != nil {
-		return
-	}
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	if accessToken != "" {
-		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
-		if err != nil {
-			c.HandleLoggingForTokenFailure(clientIp, err.Error())
-			return
-		}
-	} else {
-		if name != "" && key != "" {
-			err = c.validateCredentials(clientIp, name, key)
-			if err != nil {
-				return
-			}
-		}
-	}
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	hostIp, vim, hostInfoRec, err := c.GetInputParametersForRemoveCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -1130,31 +1113,11 @@ func (c *LcmControllerV2) QueryV2() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	name, key, err := c.GetUserNameAndKey(clientIp)
-	if err != nil {
-		return
-	}
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.GetTenantId(clientIp)
+
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
 		return
-	}
-	if accessToken != "" {
-		err = util.ValidateAccessToken(accessToken,
-			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-		if err != nil {
-			c.HandleForErrorCode(clientIp, util.StatusUnauthorized, util.AuthorizationFailed, util.ErrCodeTokenInvalid)
-			util.ClearByteArray(bKey)
-			return
-		}
-	} else {
-		if name != "" && key != "" {
-			err = c.validateCredentials(clientIp, name, key)
-			if err != nil {
-				return
-			}
-		}
 	}
 
 	appInsId, err := c.GetAppInstId(clientIp)
@@ -1356,30 +1319,9 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.GetTenantId(clientIp)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	name, key, err := c.GetUserNameAndKey(clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
-	}
-	if accessToken != "" {
-		err = util.ValidateAccessToken(accessToken,
-			[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-		if err != nil {
-			c.HandleForErrorCode(clientIp, util.StatusUnauthorized, util.AuthorizationFailed, util.ErrCodeTokenInvalid)
-			util.ClearByteArray(bKey)
-			return
-		}
-	} else {
-		if name != "" && key != "" {
-			err = c.validateCredentials(clientIp, name, key)
-			if err != nil {
-				return
-			}
-		}
 	}
 
 	appInsId, err := c.GetAppInstId(clientIp)
