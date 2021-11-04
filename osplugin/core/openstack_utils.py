@@ -152,6 +152,8 @@ class RCFile:
         try:
             with open(rc_path, 'r') as file:
                 for line in file.readlines():
+                    if line == '\n':
+                        continue
                     match = re.match(self._PATTERN, line)
                     group1 = match.group(1)
                     group2 = match.group(2).replace('"', '')
@@ -551,7 +553,7 @@ class Flavor(HOTBase):
         self.properties['ram'] = memory
         self.properties['disk'] = sys_disk
 
-        if 'flavor_extra_specs' in self.template['properties']['vdu_profile']\
+        if 'flavor_extra_specs' in self.template['properties']['vdu_profile'] \
                 and self.template['properties']['vdu_profile']['flavor_extra_specs'] is not None:
             flavor_extra_specs = self.template['properties']['vdu_profile']['flavor_extra_specs']
             self.properties['extra_specs'] = {}
