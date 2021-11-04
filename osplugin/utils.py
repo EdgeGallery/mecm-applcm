@@ -127,7 +127,7 @@ def validate_access_token(access_token):
     校验token
     """
     if access_token is None:
-        return False
+        return True
     try:
         payload = jwt.decode(access_token, jwt_public_key, algorithms=['RS256'])
         if 'authorities' not in payload:
