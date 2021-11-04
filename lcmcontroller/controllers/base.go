@@ -77,7 +77,7 @@ func (c *BaseController) writeResponse(msg interface{}, code int) {
 	c.ServeJSON()
 }
 
-func (c *BaseController) isPermitted(accessToken, clientIp string) (string, error) {
+func (c *BaseController) isPermitted(allowedRoles []string, accessToken, clientIp string) (string, error) {
 	var tenantId = ""
 	var err error
 
@@ -98,9 +98,8 @@ func (c *BaseController) isPermitted(accessToken, clientIp string) (string, erro
 		return tenantId, err
 	}
 
-
 	if accessToken != "" {
-		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+		err = util.ValidateAccessToken(accessToken, allowedRoles, tenantId)
 		if err != nil {
 			c.HandleLoggingForTokenFailure(clientIp, err.Error())
 			return tenantId, err
