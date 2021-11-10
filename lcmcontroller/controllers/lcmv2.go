@@ -217,6 +217,11 @@ func (c *LcmControllerV2) UploadPackageV2() {
 	c.handleLoggingForSuccess(appPkgResp, clientIp, util.UploadPackageSuccess)
 }
 
+func (c *LcmControllerV2) handleLoggingForSuccessV1(clientIp string, msg string) {
+	log.Info("Response for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
+}
+
 func (c *LcmControllerV2) handleLoggingForSuccess(object interface{}, clientIp string, msg string) {
 	log.Info("Response for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
@@ -1155,7 +1160,12 @@ func (c *LcmControllerV2) QueryV2() {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrorReportByPlugin)
 		return
 	}
-	c.handleLoggingForSuccess(response, clientIp, "Query workload statistics is successful")
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Query workload statistics is successful")
 }
 
 // @Title Query kpi
@@ -1230,8 +1240,12 @@ func (c *LcmControllerV2) HandleKPI(clientIp string, err error, response string)
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodePluginReportFailed)
 		return
 	} else {
-		strings.Replace(response, "\\n", "", -1)
-		c.handleLoggingForSuccess(response, clientIp, "Query kpi is successful")
+		_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+		if err != nil {
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+			return
+		}
+		c.handleLoggingForSuccessV1(clientIp, "Query kpi is successful")
 	}
 }
 
@@ -1283,8 +1297,12 @@ func (c *LcmControllerV2) QueryMepCapabilities() {
 		return
 	}
 
-	strings.Replace(mepCapabilities, "\\n", "", -1)
-	c.handleLoggingForSuccess(mepCapabilities, clientIp, "Query mep capabilities is successful")
+	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Query mep capabilities is successful")
 }
 
 // Get mep capability id from url
@@ -1358,7 +1376,12 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetWorkloadFailed)
 		return
 	}
-	c.handleLoggingForSuccess(response, clientIp, "Workload description is successful")
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Workload description is successful")
 }
 
 // @Title Sync app instances stale records
@@ -2089,7 +2112,19 @@ func (c *LcmControllerV2) DistributionStatus() {
 		return
 	}
 
-	c.handleLoggingForSuccess(appPkgs, clientIp, "Query app package records successful")
+	res, err := json.Marshal(appPkgs)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
+		return
+	}
+
+	_, err = c.Ctx.ResponseWriter.Write(res)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+
+	c.handleLoggingForSuccessV1(clientIp, "Query app package records successful")
 }
 
 // @Title Sync app package records
