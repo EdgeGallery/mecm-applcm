@@ -102,8 +102,8 @@ func (c *FlavorController) QueryFlavor() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	if c.IsIdAvailable(":flavorId") {
-		flavorId = c.GetId(":flavorId")
+	if c.IsIdAvailable(util.FlavorId) {
+		flavorId = c.GetId(util.FlavorId)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -143,7 +143,7 @@ func (c *FlavorController) DeleteFlavor() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	flavorId := c.GetId(":flavorId")
+	flavorId := c.GetId(util.FlavorId)
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return

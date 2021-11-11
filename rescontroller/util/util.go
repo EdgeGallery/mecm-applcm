@@ -56,6 +56,8 @@ const (
 	IllegalTenantId          string = "Illegal TenantId"
 	HostIp                          = "mec_host_id"
 	FailedToGetClient               = "Failed to get client"
+	FlavorId                        = ":flavorId"
+	SecurityGroupId                 = ":securityGroupId"
 
 	RequestBodyTooLarge            = "request body too large"
 	CreateFlavorSuccess            = "Create flavor is successful"
@@ -74,6 +76,9 @@ const (
 	RequestBodyLength             = 4096
 
 	SuccessCode int = 200
+
+	QueryImages                   = "/v1/tenants/:tenantId/hosts/:hostIp/images/:imageId"
+	QueryServer                   = "/v1/tenants/:tenantId/hosts/:hostIp/servers/:serverId"
 
 	//Base Error Code
 	ErrCodeForbidden         int = 31000

@@ -93,8 +93,8 @@ func (c *SecurityGroupController) QuerySecurityGroup() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	if c.IsIdAvailable(":securityGroupId") {
-		securityGroupdId = c.GetId(":securityGroupId")
+	if c.IsIdAvailable(util.SecurityGroupId) {
+		securityGroupdId = c.GetId(util.SecurityGroupId)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -134,7 +134,7 @@ func (c *SecurityGroupController) DeleteSecurityGroup() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	securityGroupId := c.GetId(":securityGroupId")
+	securityGroupId := c.GetId(util.SecurityGroupId)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -213,8 +213,8 @@ func (c *SecurityGroupController) QuerySecurityGroupRules() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	if c.IsIdAvailable(":securityGroupId") {
-		securityGroupdId = c.GetId(":securityGroupId")
+	if c.IsIdAvailable(util.SecurityGroupId) {
+		securityGroupdId = c.GetId(util.SecurityGroupId)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
