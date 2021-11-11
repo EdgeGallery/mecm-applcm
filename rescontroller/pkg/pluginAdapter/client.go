@@ -22,7 +22,20 @@ import (
 
 // GRPC client APIs
 type ClientIntf interface {
-	CreateFlavor(ctx context.Context, flavor models.Flavor, hostIP, accessToken, tenantId string) (status string, error error)
+	CreateFlavor(ctx context.Context, flavor models.Flavor, hostIP, accessToken,
+		tenantId string) (status string, error error)
 	QueryFlavor(ctx context.Context, hostIP, accessToken, tenantId, flavorId string) (response string, error error)
 	DeleteFlavor(ctx context.Context, hostIP, accessToken, tenantId, flavorId string) (response string, error error)
+	CreateSecurityGroup(ctx context.Context, securityGroup models.SecurityGroup, hostIP, accessToken,
+		tenantId string) (status string, error error)
+	QuerySecurityGroup(ctx context.Context, hostIP, accessToken,
+		tenantId, securityGroupId string) (response string, error error)
+	DeleteSecurityGroup(ctx context.Context, hostIP, accessToken,
+		tenantId, securityGroupId string) (response string, error error)
+	CreateSecurityGroupRules(ctx context.Context, securityGroupRules models.SecurityGroupRules,
+		hostIP, accessToken, tenantId string) (status string, error error)
+	QuerySecurityGroupRules(ctx context.Context, hostIP, accessToken,
+		tenantId, securityGroupId string) (response string, error error)
+	DeleteSecurityGroupRule(ctx context.Context, hostIP, accessToken,
+		tenantId, securityGroupRuleId string) (response string, error error)
 }

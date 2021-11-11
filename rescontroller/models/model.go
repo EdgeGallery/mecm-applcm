@@ -96,3 +96,20 @@ type Flavor struct {
 	Swap       int32    `json:"swap"`
 	ExtraSpecs map[string]string `json:"extraSpecs"`
 }
+
+// Security group info
+type SecurityGroup struct {
+	Name string `json:"name"`
+}
+
+// Security group rules
+type SecurityGroupRules struct {
+	Securitygroupid string `json:"securityGroupId"`
+	Direction       string `json:"direction"`
+	Protocol        string `json:"protocol"`
+	Ethertype       string `json:"ethertype"`
+	PortRangeMin    int32  `json:"port_range_min"`
+	PortRangeMax    int32  `json:"port_range_max"`
+	Remoteipprefix  string `json:"remoteIpPrefix"`
+	RemoteGroupID   string `json:"remote_group_id"`
+}

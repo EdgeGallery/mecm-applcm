@@ -82,12 +82,14 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 	}
 
 	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, flavorClient: resservice.NewFlavorManagerClient(conn),
-		networkClient: resservice.NewNetworkManagerClient(conn), securityGroupClient: resservice.NewSecurityGroupManagerClient(conn),
+		networkClient: resservice.NewNetworkManagerClient(conn),
+		securityGroupClient: resservice.NewSecurityGroupManagerClient(conn),
 		vmImageClient: resservice.NewVmImageMangerClient(conn), vmClient: resservice.NewVmManagerClient(conn)}, nil
 }
 
 // Create flavor
-func (c *ClientGRPC) CreateFlavor(ctx context.Context, flavor models.Flavor, hostIp, accessToken, tenantId string) (response string, error error) {
+func (c *ClientGRPC) CreateFlavor(ctx context.Context, flavor models.Flavor, hostIp, accessToken,
+	tenantId string) (response string, error error) {
 	reqFlavor := &resservice.CreateFlavorRequest_Flavor{
 		Name:  flavor.Name,
 		Vcpus: flavor.Vcpus,
@@ -110,7 +112,8 @@ func (c *ClientGRPC) CreateFlavor(ctx context.Context, flavor models.Flavor, hos
 }
 
 // Query flavor
-func (c *ClientGRPC) QueryFlavor(ctx context.Context, hostIp, accessToken, tenantId, flavorId string) (response string, error error) {
+func (c *ClientGRPC) QueryFlavor(ctx context.Context, hostIp, accessToken, tenantId,
+	flavorId string) (response string, error error) {
 	req := &resservice.QueryFlavorRequest{
 		AccessToken:   accessToken,
 		HostIp:        hostIp,
@@ -125,7 +128,8 @@ func (c *ClientGRPC) QueryFlavor(ctx context.Context, hostIp, accessToken, tenan
 }
 
 // Delete flavor
-func (c *ClientGRPC) DeleteFlavor(ctx context.Context, hostIp, accessToken, tenantId, flavorId string) (response string, error error) {
+func (c *ClientGRPC) DeleteFlavor(ctx context.Context, hostIp, accessToken, tenantId,
+	flavorId string) (response string, error error) {
 	req := &resservice.DeleteFlavorRequest{
 		AccessToken:   accessToken,
 		HostIp:        hostIp,
@@ -133,6 +137,117 @@ func (c *ClientGRPC) DeleteFlavor(ctx context.Context, hostIp, accessToken, tena
 		FlavorId:      flavorId,
 	}
 	resp, err := c.flavorClient.DeleteFlavor(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Create security group
+func (c *ClientGRPC) CreateSecurityGroup(ctx context.Context, securityGroup models.SecurityGroup,
+	hostIp, accessToken, tenantId string) (response string, error error) {
+
+	secGroup := &resservice.CreateSecurityGroupRequest_SecurityGroup{
+		Name: securityGroup.Name,
+	}
+	req := &resservice.CreateSecurityGroupRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		SecurityGroup: secGroup,
+	}
+	resp, err := c.securityGroupClient.CreateSecurityGroup(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Query security group
+func (c *ClientGRPC) QuerySecurityGroup(ctx context.Context, hostIp, accessToken, tenantId,
+	securityGroupId string) (response string, error error) {
+	req := &resservice.QuerySecurityGroupRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		SecurityGroupId:      securityGroupId,
+	}
+	resp, err := c.securityGroupClient.QuerySecurityGroup(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Delete security group
+func (c *ClientGRPC) DeleteSecurityGroup(ctx context.Context, hostIp, accessToken, tenantId,
+	securityGroupId string) (response string, error error) {
+	req := &resservice.DeleteSecurityGroupRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		SecurityGroupId:      securityGroupId,
+	}
+	resp, err := c.securityGroupClient.DeleteSecurityGroup(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Create security group rules
+func (c *ClientGRPC) CreateSecurityGroupRules(ctx context.Context, securityGroupRules models.SecurityGroupRules,
+	hostIp, accessToken, tenantId string) (response string, error error) {
+
+	secGroupRule := &resservice.CreateSecurityGroupRuleRequest_SecurityGroupRule{
+		SecurityGroupId: securityGroupRules.Securitygroupid,
+		Direction:       securityGroupRules.Direction,
+		Protocol:        securityGroupRules.Protocol,
+		Ethertype:       securityGroupRules.Ethertype,
+		PortRangeMax:    securityGroupRules.PortRangeMax,
+		PortRangeMin:    securityGroupRules.PortRangeMin,
+		RemoteIpPrefix:  securityGroupRules.Remoteipprefix,
+		RemoteGroupId:   securityGroupRules.RemoteGroupID,
+	}
+	req := &resservice.CreateSecurityGroupRuleRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		SecurityGroupRule: secGroupRule,
+	}
+	resp, err := c.securityGroupClient.CreateSecurityGroupRule(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Query security group rules
+func (c *ClientGRPC) QuerySecurityGroupRules(ctx context.Context, hostIp, accessToken, tenantId,
+	securityGroupId string) (response string, error error) {
+	req := &resservice.QuerySecurityGroupRuleRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		SecurityGroupId:      securityGroupId,
+	}
+	resp, err := c.securityGroupClient.QuerySecurityGroupRule(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Delete security group rule
+func (c *ClientGRPC) DeleteSecurityGroupRule(ctx context.Context, hostIp, accessToken, tenantId,
+	securityGroupRuleId string) (response string, error error) {
+	req := &resservice.DeleteSecurityGroupRuleRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		SecurityGroupRuleId:  securityGroupRuleId,
+	}
+	resp, err := c.securityGroupClient.DeleteSecurityGroupRule(ctx, req)
 	if err != nil {
 		return "", err
 	}

@@ -22,6 +22,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"rescontroller/models"
 	"rescontroller/pkg/dbAdapter"
+	"rescontroller/pkg/pluginAdapter"
 	"rescontroller/util"
 	"strings"
 )
@@ -81,9 +82,9 @@ func (c *BaseController) IsTenantAvailable() bool {
 }
 
 // Check flavor id
-func (c *BaseController) IsFlavorIdAvailable() bool {
-	tenantId := c.Ctx.Input.Param(":flavorId")
-	return tenantId != ""
+func (c *BaseController) IsIdAvailable(id string) bool {
+	flavorId := c.Ctx.Input.Param(id)
+	return flavorId != ""
 }
 
 // Get tenant Id
@@ -98,8 +99,8 @@ func (c *BaseController) GetTenantId(clientIp string) (string, error) {
 }
 
 // Get tenant Id
-func (c *BaseController) GetFlavorId() string {
-	flavorId := c.Ctx.Input.Param(":flavorId")
+func (c *BaseController) GetId(id string) string {
+	flavorId := c.Ctx.Input.Param(id)
 	return flavorId
 }
 
@@ -294,4 +295,37 @@ func (c *BaseController) GetInputParameters(clientIp string) (hostIp string,
 func (c *BaseController) handleLoggingForSuccessV1(clientIp string, msg string) {
 	log.Info("Response for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
+}
+
+func (c *BaseController) ValidateAccessTokenAndGetInputParameters(allowedRoles []string) (err error, accessToken, clientIp, hostIp, vim, tenantId string){
+	clientIp = c.Ctx.Input.IP()
+	err = util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
+		return err, accessToken, clientIp, hostIp, vim, tenantId
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	tenantId, err = c.isPermitted(allowedRoles, accessToken, clientIp)
+	if err != nil {
+		return err, accessToken, clientIp, hostIp, vim, tenantId
+	}
+	hostIp, vim, err = c.GetInputParameters(clientIp)
+	if err != nil {
+		return err, accessToken, clientIp, hostIp, vim, tenantId
+	}
+	return nil, accessToken, clientIp, hostIp, vim, tenantId
+}
+
+func (c *BaseController) GetAdapter(clientIp, vim string) (adapter *pluginAdapter.PluginAdapter, err error){
+	pluginInfo := util.GetPluginInfo(vim)
+	client, err := pluginAdapter.GetClient(pluginInfo)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
+			util.ErrCodeFailedGetPlugin)
+		return adapter, err
+	}
+
+	adapter = pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	return adapter, nil
 }

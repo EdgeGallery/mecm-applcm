@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"rescontroller/models"
-	"rescontroller/pkg/pluginAdapter"
 	"rescontroller/util"
 	"unsafe"
 )
@@ -44,30 +43,20 @@ func (c *FlavorController) HealthCheck() {
 // @Param   access_token  header     string true   "access token"
 // @Param   tenantId      path 	     string	true   "tenantId"
 // @Param   hostIp        path 	     string	true   "hostIp"
-// @Param   body        body    models.Flavor   true      "The mec host information"
+// @Param   body        body    models.Flavor   true      "The flavor information"
 // @Success 200 ok
 // @Failure 400 bad request
 // @router /tenants/:tenantId/hosts/:hostIp/flavor [post]
 func (c *FlavorController) CreateFlavor() {
 	log.Info("Create flavor request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+
+	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmAdminRole}, accessToken, clientIp)
-	if err != nil {
-		return
-	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
-	if err != nil {
-		return
-	}
+
 	var flavor models.Flavor
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &flavor)
 	if err != nil {
@@ -75,15 +64,10 @@ func (c *FlavorController) CreateFlavor() {
 		return
 	}
 
-	pluginInfo := util.GetPluginInfo(vim)
-	client, err := pluginAdapter.GetClient(pluginInfo)
+	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-			util.ErrCodeFailedGetPlugin)
 		return
 	}
-
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	response, err := adapter.CreateFlavor(flavor, hostIp, accessToken, tenantId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
@@ -111,38 +95,21 @@ func (c *FlavorController) QueryFlavor() {
 	log.Info("Query flavor request received.")
 	var flavorId = ""
 
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
 	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
-	if err != nil {
-		return
-	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
+
+	if c.IsIdAvailable(":flavorId") {
+		flavorId = c.GetId(":flavorId")
+	}
+
+	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
 	}
-	if c.IsFlavorIdAvailable() {
-		flavorId = c.GetFlavorId()
-	}
-
-	pluginInfo := util.GetPluginInfo(vim)
-	client, err := pluginAdapter.GetClient(pluginInfo)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-			util.ErrCodeFailedGetPlugin)
-		return
-	}
-
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	response, err := adapter.QueryFlavor(hostIp, accessToken, tenantId, flavorId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
@@ -168,35 +135,19 @@ func (c *FlavorController) QueryFlavor() {
 // @router /tenants/:tenantId/hosts/:hostIp/flavor/flavorId [get]
 func (c *FlavorController) DeleteFlavor() {
 	log.Info("Delete flavor by flavor id request received.")
-	clientIp := c.Ctx.Input.IP()
-	err := util.ValidateSrcAddress(clientIp)
+
+	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
-		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
 		return
 	}
-	c.displayReceivedMsg(clientIp)
-	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
-	if err != nil {
-		return
-	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
-	if err != nil {
-		return
-	}
-	flavorId := c.GetFlavorId()
-	pluginInfo := util.GetPluginInfo(vim)
-	client, err := pluginAdapter.GetClient(pluginInfo)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToGetClient,
-			util.ErrCodeFailedGetPlugin)
-		return
-	}
 
-	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
+	flavorId := c.GetId(":flavorId")
+	adapter, err := c.GetAdapter(clientIp, vim)
+	if err != nil {
+		return
+	}
 	_, err = adapter.DeleteFlavor(hostIp, accessToken, tenantId, flavorId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
