@@ -39,23 +39,21 @@ func init() {
 	initAPI(util.SecurityGroupcontroller, "QuerySecurityGroup", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup", util.GET)
 	initAPI(util.SecurityGroupcontroller, "QuerySecurityGroup", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId", util.GET)
 	initAPI(util.SecurityGroupcontroller, "DeleteSecurityGroup", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId", util.DELETE)
-	initAPI(util.SecurityGroupcontroller, "CreateSecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup/securityGroupRules", util.POST)
-	initAPI(util.SecurityGroupcontroller, "QuerySecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup/securityGroupRules", util.GET)
-	initAPI(util.SecurityGroupcontroller, "QuerySecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup/securityGroupRules/:securityGroupRulesId", util.GET)
-	initAPI(util.SecurityGroupcontroller, "DeleteSecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup/securityGroupRules/:securityGroupRulesId", util.DELETE)
+	initAPI(util.SecurityGroupcontroller, "CreateSecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules", util.POST)
+	initAPI(util.SecurityGroupcontroller, "QuerySecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules", util.GET)
+	initAPI(util.SecurityGroupcontroller, "DeleteSecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId/securityGroupRules/:securityGroupRuleId", util.DELETE)
 
 	initAPI(util.VmImagecontroller, "QueryImages", "/v1/tenants/:tenantId/hosts/:hostIp/images", util.GET)
-	initAPI(util.VmImagecontroller, "QueryImages", "/v1/tenants/:tenantId/hosts/:hostIp/images/:imageId", util.GET)
-	initAPI(util.VmImagecontroller, "DeleteImage", "/v1/tenants/:tenantId/hosts/:hostIp/images/:imageId", util.DELETE)
-	initAPI(util.VmImagecontroller, "CreateImage", "/v1/tenants/:tenantId/hosts/:hostIp/images/:imageId", util.POST)
+	initAPI(util.VmImagecontroller, "QueryImages", util.QueryImages, util.GET)
+	initAPI(util.VmImagecontroller, "DeleteImage", util.QueryImages, util.DELETE)
+	initAPI(util.VmImagecontroller, "CreateImage", util.QueryImages, util.POST)
 	initAPI(util.VmImagecontroller, "ImportImage", "/v1/tenants/:tenantId/hosts/:hostIp/images", util.POST)
 
 	initAPI(util.VmController, "CreateServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers", util.POST)
 	initAPI(util.VmController, "QueryServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers", util.GET)
-	initAPI(util.VmController, "QueryServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers/:serverId", util.GET)
-	initAPI(util.VmController, "OperateServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers/:serverId", util.POST)
-	initAPI(util.VmController, "DeleteServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers/:serverId", util.DELETE)
-
+	initAPI(util.VmController, "QueryServer", util.QueryServer, util.GET)
+	initAPI(util.VmController, "OperateServer", util.QueryServer, util.POST)
+	initAPI(util.VmController, "DeleteServer", util.QueryServer, util.DELETE)
 }
 
 func initAPI(controllerName, methodName, path, operationType string,) {

@@ -35,6 +35,13 @@ func NewPluginAdapter(pluginInfo string, client ClientIntf) *PluginAdapter {
 	return &PluginAdapter{pluginInfo: pluginInfo, client: client}
 }
 
+// Close connection
+func (c *ClientGRPC) Close() {
+	if c.conn != nil {
+		c.conn.Close()
+	}
+}
+
 // Create flavor
 func (c *PluginAdapter) CreateFlavor(flavor models.Flavor, hostIp, accessToken, tenantId string) (status string,
 	error error) {
@@ -52,7 +59,6 @@ func (c *PluginAdapter) CreateFlavor(flavor models.Flavor, hostIp, accessToken, 
 	log.Info("Create flavor is success with status: ", status)
 	return status, nil
 }
-
 
 // Query flavor
 func (c *PluginAdapter) QueryFlavor(hostIp, accessToken, tenantId, flavorId string) (response string, error error) {
@@ -85,5 +91,110 @@ func (c *PluginAdapter) DeleteFlavor(hostIp, accessToken, tenantId, flavorId str
 	}
 
 	log.Info("Delete flavor is success with status:", status)
+	return status, nil
+}
+
+// Create security group
+func (c *PluginAdapter) CreateSecurityGroup(securityGroup models.SecurityGroup, hostIp, accessToken, tenantId string) (status string,
+	error error) {
+	log.Info("Create security group started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.CreateSecurityGroup(ctx, securityGroup, hostIp, accessToken, tenantId)
+	if err != nil {
+		log.Error("failed to create security group")
+		return util.Failure, err
+	}
+
+	log.Info("Create security group is success with status: ", status)
+	return status, nil
+}
+
+// Query security group
+func (c *PluginAdapter) QuerySecurityGroup(hostIp, accessToken, tenantId, securityGroupId string) (response string, error error) {
+	log.Info("Query security group started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.QuerySecurityGroup(ctx, hostIp, accessToken, tenantId, securityGroupId)
+	if err != nil {
+		log.Error("failed to query security group")
+		return util.Failure, err
+	}
+
+	log.Info("Query security group is success with status: success")
+	return response, nil
+}
+
+// Delete flavor
+func (c *PluginAdapter) DeleteSecurityGroup(hostIp, accessToken, tenantId, securityGroupId string) (status string, error error) {
+	log.Info("Delete security group started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.DeleteSecurityGroup(ctx, hostIp, accessToken, tenantId, securityGroupId)
+	if err != nil {
+		log.Error("failed to delete security group")
+		return util.Failure, err
+	}
+
+	log.Info("Delete security group is success with status:", status)
+	return status, nil
+}
+
+// Create security group rules
+func (c *PluginAdapter) CreateSecurityGroupRules(securityGroupRules models.SecurityGroupRules, hostIp, accessToken, tenantId string) (status string,
+	error error) {
+	log.Info("Create security group rules started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.CreateSecurityGroupRules(ctx, securityGroupRules, hostIp, accessToken, tenantId)
+	if err != nil {
+		log.Error("failed to create security group rule")
+		return util.Failure, err
+	}
+
+	log.Info("Create security group rule is success with status: ", status)
+	return status, nil
+}
+
+
+// Query security group
+func (c *PluginAdapter) QuerySecurityGroupRules(hostIp, accessToken, tenantId, securityGroupId string) (response string, error error) {
+	log.Info("Query security group rules started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.QuerySecurityGroupRules(ctx, hostIp, accessToken, tenantId, securityGroupId)
+	if err != nil {
+		log.Error("failed to query security group rules")
+		return util.Failure, err
+	}
+
+	log.Info("Query security group rules is success with status: success")
+	return response, nil
+}
+
+// Delete flavor
+func (c *PluginAdapter) DeleteSecurityGroupRule(hostIp, accessToken, tenantId, securityGroupRuleId string) (status string, error error) {
+	log.Info("Delete security group rule started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.DeleteSecurityGroupRule(ctx, hostIp, accessToken, tenantId, securityGroupRuleId)
+	if err != nil {
+		log.Error("failed to delete security group rule")
+		return util.Failure, err
+	}
+
+	log.Info("Delete security group rule is success with status:", status)
 	return status, nil
 }
