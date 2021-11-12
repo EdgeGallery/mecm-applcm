@@ -196,10 +196,10 @@ func TestQueryKPIV2Success(t *testing.T) {
 		kpiController.QueryKPI()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 200, kpiController.Ctx.ResponseWriter.Status, getKPIFailed)
+		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, getKPIFailed)
 
 		response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, "", response.Body.String(), queryFailed)
+		assert.Equal(t, "{\"cpuusage\":{\"total\":1599646388.843,\"used\":\"0.3125\"},\"memusage\":{\"total\":1599647046.214,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599647141.594,\"used\":\"0.0000000000022286734699480752\"}}", response.Body.String(), queryFailed)
 
 	})
 }
@@ -379,10 +379,10 @@ func TestMepCapabilitiesId(t *testing.T) {
 		capabilityControllerV2.QueryMepCapabilities()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 200, capabilityController.Ctx.ResponseWriter.Status, getCapability+
+		assert.Equal(t, 400, capabilityController.Ctx.ResponseWriter.Status, getCapability+
 			statusFailed)
 		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, "", response.Body.String(), getCapabilityDataFailed)
+		assert.Equal(t, "{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\",\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}", response.Body.String(), getCapabilityDataFailed)
 	})
 }
 

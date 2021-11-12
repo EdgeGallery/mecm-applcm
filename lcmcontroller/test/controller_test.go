@@ -2787,7 +2787,7 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		instantiateController.DistributionStatus()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 200, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
+		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status, distributePackageFailed)
 
 		err := errors.New("error")
 		accessToken := createToken(tenantIdentifier)
@@ -2801,7 +2801,7 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		instantiateController.DistributionStatus()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.Equal(t,404, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch5 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), "GetUrlPackageId", func(_ *controllers.LcmControllerV2, _ string) (string, error) {
@@ -2825,7 +2825,7 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		instantiateController.DistributionStatus()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.Equal(t,404, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 		accessToken = createToken(tenantIdentifier)
 		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getClientIpAndIsPermitted,
@@ -2838,7 +2838,7 @@ func testDistributionStatusV2(t *testing.T, extraParams map[string]string, testD
 		instantiateController.DistributionStatus()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t,200, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
+		assert.Equal(t,404, instantiateController.Ctx.ResponseWriter.Status, uploadPackageFailed)
 
 
 	})
