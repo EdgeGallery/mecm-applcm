@@ -15,21 +15,25 @@
 
 """
 
+# -*- coding: utf-8 -*-
 from concurrent import futures
 
-# -*- coding: utf-8 -*-
 import grpc
 
 import config
 from core.log import logger
 from internal.lcmservice import lcmservice_pb2_grpc
+from internal.resourcemanager import resourcemanager_pb2_grpc
 from service.app_lcm_service import AppLcmService
+from service.flavor_service import FlavorService
+from service.network_service import NetworkService
+from service.security_group_service import SecurityGroupService
+from service.vm_service import VmService
 from service.vm_image_service import VmImageService
 from task import upload_thread_pool, check_thread_pool, download_thread_pool
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-_LISTEN_PORT = 8234
-MAX_MESSAGE_LENGTH = 1024 * 1024 * 50
+LISTEN_PORT = 8234
+MAX_MESSAGE_LENGTH = 1024 * 1024 * 2
 LOG = logger
 
 
@@ -47,9 +51,13 @@ def serve():
         options=options
     )
     lcmservice_pb2_grpc.add_AppLCMServicer_to_server(AppLcmService(), server)
-    lcmservice_pb2_grpc.add_VmImageServicer_to_server(VmImageService(), server)
+    resourcemanager_pb2_grpc.add_VmManagerServicer_to_server(VmService(), server)
+    resourcemanager_pb2_grpc.add_VmImageMangerServicer_to_server(VmImageService(), server)
+    resourcemanager_pb2_grpc.add_FlavorManagerServicer_to_server(FlavorService(), server)
+    resourcemanager_pb2_grpc.add_NetworkManagerServicer_to_server(NetworkService(), server)
+    resourcemanager_pb2_grpc.add_SecurityGroupManagerServicer_to_server(SecurityGroupService(), server)
 
-    listen_addr = config.listen_ip + ":" + str(_LISTEN_PORT)
+    listen_addr = config.listen_ip + ":" + str(LISTEN_PORT)
 
     if config.ssl_enabled:
         with open(config.private_key_certificate_chain_pairs[0], 'rb') as file:
