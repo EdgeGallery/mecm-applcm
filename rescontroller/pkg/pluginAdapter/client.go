@@ -38,4 +38,12 @@ type ClientIntf interface {
 		tenantId, securityGroupId string) (response string, error error)
 	DeleteSecurityGroupRule(ctx context.Context, hostIP, accessToken,
 		tenantId, securityGroupRuleId string) (response string, error error)
+	QueryImages(ctx context.Context, hostIP, accessToken,
+		tenantId, imageId string) (response string, error error)
+	DeleteImage(ctx context.Context, hostIP, accessToken,
+		tenantId, imageId string) (response string, error error)
+	CreateImage(ctx context.Context, image models.Image, hostIP, accessToken,
+		tenantId string) (status string, error error)
+	ImportImage(ctx context.Context, importImage models.ImportImage, hostIP, accessToken,
+		tenantId string) (status string, error error)
 }

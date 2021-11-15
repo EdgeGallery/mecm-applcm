@@ -113,3 +113,19 @@ type SecurityGroupRules struct {
 	Remoteipprefix  string `json:"remoteIpPrefix"`
 	RemoteGroupID   string `json:"remote_group_id"`
 }
+
+// Image info
+type Image struct {
+	Name            string `json:"name"`
+	Containerformat string `json:"containerFormat"`
+	Diskformat      string `json:"diskFormat"`
+	Minram          int32    `json:"minRam"`
+	Mindisk         int32    `json:"minDisk"`
+	Properties      map[string]string `json:"properties"`
+}
+
+// Import image info
+type ImportImage struct {
+	Imageid     string `json:"imageId"`
+	Resourceuri string `json:"resourceUri"`
+}

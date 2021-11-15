@@ -253,3 +253,77 @@ func (c *ClientGRPC) DeleteSecurityGroupRule(ctx context.Context, hostIp, access
 	}
 	return resp.Response, err
 }
+
+// Query images
+func (c *ClientGRPC) QueryImages(ctx context.Context, hostIp, accessToken,
+	tenantId, imageId string) (response string, error error) {
+	req := &resservice.QueryVmImageRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		ImageId:              imageId,
+	}
+	resp, err := c.vmImageClient.QueryVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Delete image
+func (c *ClientGRPC) DeleteImage(ctx context.Context, hostIp, accessToken, tenantId,
+	imageId string) (response string, error error) {
+	req := &resservice.DeleteVmImageRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		ImageId:              imageId,
+	}
+	resp, err := c.vmImageClient.DeleteVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Create Image
+func (c *ClientGRPC) CreateImage(ctx context.Context, image models.Image, hostIp, accessToken,
+	tenantId string) (response string, error error) {
+	reqImage := &resservice.CreateVmImageRequest_Image{
+		Name:            image.Name,
+		ContainerFormat: image.Containerformat,
+		DiskFormat:      image.Diskformat,
+		MinRam:          image.Minram,
+		MinDisk:         image.Mindisk,
+		Properties:      image.Properties,
+	}
+
+	req := &resservice.CreateVmImageRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		Image:        reqImage,
+	}
+	resp, err := c.vmImageClient.CreateVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Import Image
+func (c *ClientGRPC) ImportImage(ctx context.Context, importImage models.ImportImage, hostIp, accessToken,
+	tenantId string) (response string, error error) {
+	req := &resservice.ImportVmImageRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		ImageId:       importImage.Imageid,
+		ResourceUri:   importImage.Resourceuri,
+	}
+	resp, err := c.vmImageClient.ImportVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}

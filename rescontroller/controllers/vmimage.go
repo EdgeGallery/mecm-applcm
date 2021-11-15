@@ -16,7 +16,13 @@
 
 package controllers
 
-import log "github.com/sirupsen/logrus"
+import (
+	"encoding/json"
+	log "github.com/sirupsen/logrus"
+	"rescontroller/models"
+	"rescontroller/util"
+	"unsafe"
+)
 
 // vm image Controller
 type VmImageController struct {
@@ -25,17 +31,129 @@ type VmImageController struct {
 
 func (c *VmImageController) QueryImages() {
 	log.Info("Query images request received.")
+	var imageId = ""
+
+	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
+	if err != nil {
+		return
+	}
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	defer util.ClearByteArray(bKey)
+
+	if c.IsIdAvailable(":imageId") {
+		imageId = c.GetId(":imageId")
+	}
+
+	adapter, err := c.GetAdapter(clientIp, vim)
+	if err != nil {
+		return
+	}
+
+	response, err := adapter.QueryImages(hostIp, accessToken, tenantId, imageId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
+			util.ErrCodePluginReportFailed)
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Query security group is successful")
 }
 
 func (c *VmImageController) DeleteImage() {
 	log.Info("Delete image request received.")
+
+	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
+	if err != nil {
+		return
+	}
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	defer util.ClearByteArray(bKey)
+
+	imageId := c.GetId(":imageId")
+
+	adapter, err := c.GetAdapter(clientIp, vim)
+	if err != nil {
+		return
+	}
+
+	_, err = adapter.DeleteImage(hostIp, accessToken, tenantId, imageId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
+			util.ErrCodePluginReportFailed)
+		return
+	}
+	c.handleLoggingForSuccess(nil, clientIp, "Delete image is successful")
 }
 
 func (c *VmImageController) CreateImage() {
 	log.Info("Create image request received.")
+	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
+	if err != nil {
+		return
+	}
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	defer util.ClearByteArray(bKey)
+
+	var image models.Image
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &image)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return
+	}
+
+	adapter, err := c.GetAdapter(clientIp, vim)
+	if err != nil {
+		return
+	}
+
+	response, err := adapter.CreateImage(image, hostIp, accessToken, tenantId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
+			util.ErrCodePluginReportFailed)
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Create image is successful")
 }
 
 func (c *VmImageController) ImportImage() {
 	log.Info("Import image request received.")
-}
+	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
+	if err != nil {
+		return
+	}
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	defer util.ClearByteArray(bKey)
 
+	adapter, err := c.GetAdapter(clientIp, vim)
+	if err != nil {
+		return
+	}
+
+	var importImage models.ImportImage
+	err = json.Unmarshal(c.Ctx.Input.RequestBody, &importImage)
+	if err != nil {
+		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		return
+	}
+	response, err := adapter.ImportImage(importImage, hostIp, accessToken, tenantId)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
+			util.ErrCodePluginReportFailed)
+		return
+	}
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Import image is successful")
+}

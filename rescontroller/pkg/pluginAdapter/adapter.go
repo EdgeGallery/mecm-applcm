@@ -198,3 +198,73 @@ func (c *PluginAdapter) DeleteSecurityGroupRule(hostIp, accessToken, tenantId, s
 	log.Info("Delete security group rule is success with status:", status)
 	return status, nil
 }
+
+// Query Images
+func (c *PluginAdapter) QueryImages(hostIp, accessToken, tenantId, imageId string) (response string, error error) {
+	log.Info("Query images started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.QueryImages(ctx, hostIp, accessToken, tenantId, imageId)
+	if err != nil {
+		log.Error("failed to query images")
+		return util.Failure, err
+	}
+
+	log.Info("Query images is success with status: success")
+	return response, nil
+}
+
+// Delete image
+func (c *PluginAdapter) DeleteImage(hostIp, accessToken, tenantId, imageId string) (status string, error error) {
+	log.Info("Delete image started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.DeleteImage(ctx, hostIp, accessToken, tenantId, imageId)
+	if err != nil {
+		log.Error("failed to delete image")
+		return util.Failure, err
+	}
+
+	log.Info("Delete image is success with status:", status)
+	return status, nil
+}
+
+// Create image
+func (c *PluginAdapter) CreateImage(image models.Image, hostIp, accessToken, tenantId string) (status string,
+	error error) {
+	log.Info("Create image started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.CreateImage(ctx, image, hostIp, accessToken, tenantId)
+	if err != nil {
+		log.Error("failed to create image")
+		return util.Failure, err
+	}
+
+	log.Info("Create image is success with status: ", status)
+	return status, nil
+}
+
+// Import image
+func (c *PluginAdapter) ImportImage(importImage models.ImportImage, hostIp, accessToken, tenantId string) (status string,
+	error error) {
+	log.Info("Import image started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.ImportImage(ctx, importImage, hostIp, accessToken, tenantId)
+	if err != nil {
+		log.Error("failed to import image")
+		return util.Failure, err
+	}
+
+	log.Info("Import image is success with status: ", status)
+	return status, nil
+}
