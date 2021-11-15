@@ -25,13 +25,12 @@ from pony.orm import db_session, commit
 import config
 import utils
 from config import image_push_url
-from core.exceptions import ParamNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
 from core.openstack_utils import create_glance_client
 from core.openstack_utils import create_nova_client
-from internal.lcmservice import lcmservice_pb2_grpc
-from internal.lcmservice.lcmservice_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
+from internal.resourcemanager import resourcemanager_pb2_grpc
+from internal.resourcemanager.resourcemanager_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
     DownloadVmImageResponse, DeleteVmImageResponse
 from task.image_task import start_check_image_status
 
@@ -82,7 +81,7 @@ def validate_input_params_for_upload_cfg(req):
     return host_ip
 
 
-class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
+class VmImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
     """
     VmImageService
     Author: wangy1
@@ -137,7 +136,13 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         host_ip = validate_input_params_for_upload_cfg(request)
         if not host_ip:
             return resp
-        vm_image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
+
+        if not request.imageId:
+            glance = create_glance_client(host_ip=host_ip, tenant_id=request.tenant_id)
+            resp.response = json.dumps(glance.images.list())
+            return resp
+
+        vm_image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip, tenant_id=request.tenant_id)
         if vm_image_info is None:
             LOG.info("image not found! image_id: %s", request.imageId)
             return resp
@@ -196,7 +201,7 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
             LOG.info("image not found! image_id: %s", request.imageId)
             yield DownloadVmImageResponse(content=b'{"code":400,"msg":"required param image_info"}')
             return
-        glance_client = create_glance_client(host_ip, image_info)
+        glance_client = create_glance_client(host_ip, image_info.tenant_id)
 
         iterable = glance_client.images.data(image_id=request.imageId)
 
@@ -219,3 +224,27 @@ class VmImageService(lcmservice_pb2_grpc.VmImageServicer):
         buf.close()
         LOG.debug("finished download image")
         LOG.info('download image success')
+
+    def uploadVmImage(self, request_iterator, context):
+        """
+
+        Args:
+            request_iterator:
+            context:
+
+        Returns:
+
+        """
+        pass
+
+    def importVmImage(self, request, context):
+        """
+
+        Args:
+            request:
+            context:
+
+        Returns:
+
+        """
+        pass
