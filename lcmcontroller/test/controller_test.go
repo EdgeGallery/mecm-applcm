@@ -52,7 +52,7 @@ var (
 	handleLoggingFailure              = "Handle logging failure is success"
 	deleteMecHostSuccess              = "Delete mec host is successful"
 	deleteOper                        = "DELETE"
-	hostsPath                         = "https://edgegallery:8094/lcmcontroller/v1/hosts"
+	hostsPath                         = "https://edgegallery:8094/lcmcontroller/v1/tenants/"+tenantIdentifier+"/hosts"
 	packageName                       = "package"
 	packages                          = "/packages"
 	tenantsPath                       = "https://edgegallery:8094/lcmcontroller/v1/tenants/"
@@ -131,7 +131,7 @@ func TestLcmOperation(t *testing.T) {
 
 	// Common steps
 	baseDir, _ := os.Getwd()
-	path := baseDir + "/positioning_with_mepagent_new.csar"
+	path := baseDir + "/positioning_with_mepagent_new.zip"
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{
@@ -1959,7 +1959,7 @@ func testGetMecHost(t *testing.T, extraParams map[string]string, path string, te
 		queryController.GetMecHost()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, queryController.Ctx.ResponseWriter.Status, queryFailed)
+		assert.Equal(t, 404, queryController.Ctx.ResponseWriter.Status, queryFailed)
 		response := queryController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 		assert.Equal(t, "null", response.Body.String(), queryFailed)
 
@@ -1969,7 +1969,7 @@ func testGetMecHost(t *testing.T, extraParams map[string]string, path string, te
 		defer patch1.Reset()
 
 		queryController.GetMecHost()
-		assert.Equal(t, 400, queryController.Ctx.ResponseWriter.Status, queryFailed)
+		assert.Equal(t, 404, queryController.Ctx.ResponseWriter.Status, queryFailed)
 
 
 	})
@@ -1980,7 +1980,7 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 	t.Run("TestDeleteMecHost", func(t *testing.T) {
 
 		// POST Request
-		instantiateRequest, _ := getHttpRequest("https://edgegallery:8094/lcmcontroller/v1/hosts/1.1.1.1", extraParams,
+		instantiateRequest, _ := getHttpRequest(hostsPath + "/1.1.1.1", extraParams,
 			"file", "", deleteOper, []byte(""))
 
 

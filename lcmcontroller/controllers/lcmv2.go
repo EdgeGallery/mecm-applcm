@@ -59,6 +59,12 @@ func (c *LcmControllerV2) UploadConfigV2() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	_, err = c.IsPermitted(accessToken, clientIp)
@@ -75,6 +81,8 @@ func (c *LcmControllerV2) UploadConfigV2() {
 	hostInfoRec := &models.MecHost{
 		MecHostId: hostIp,
 	}
+
+
 
 	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
 	if readErr != nil {
@@ -93,7 +101,7 @@ func (c *LcmControllerV2) UploadConfigV2() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	_, err = adapter.UploadConfig(file, hostIp, accessToken)
+	_, err = adapter.UploadConfig(file, hostIp, accessToken, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,

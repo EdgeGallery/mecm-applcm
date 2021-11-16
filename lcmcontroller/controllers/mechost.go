@@ -47,6 +47,11 @@ func (c *MecHostController) AddMecHost() {
 	}
 	c.displayReceivedMsg(clientIp)
 
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
 	var request models.MecHostInfo
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &request)
 	if err != nil {
@@ -71,7 +76,7 @@ func (c *MecHostController) AddMecHost() {
 			return
 		}
 	}
-	err = c.InsertorUpdateMecHostRecord(clientIp, request)
+	err = c.InsertorUpdateMecHostRecord(clientIp, tenantId, request)
 	if err != nil {
 		c.writeErrorResponse("failed to insert or update mec host record", util.BadRequest)
 		return
@@ -118,12 +123,6 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 		return err
 	}
 
-	userName, err := util.ValidateName(request.UserName, util.NameRegex)
-	if err != nil || !userName {
-		c.HandleLoggingForError(clientIp, util.BadRequest, "Username is invalid")
-		return err
-	}
-
 	if len(request.Coordinates) > 128 {
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Coordinates is invalid")
 		return err
@@ -145,7 +144,8 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 }
 
 // Insert or update mec host record
-func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request models.MecHostInfo) error {
+func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantId string,
+	request models.MecHostInfo) error {
 
 	if request.Origin == "" {
 		request.Origin = "MEO"
@@ -164,7 +164,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, request
 		City:               request.City,
 		Address:            request.Address,
 		Affinity:           request.Affinity,
-		UserName:           request.UserName,
+		TenantId:           TenantId,
 		ConfigUploadStatus: "",
 		Coordinates:        request.Coordinates,
 		Vim:                request.Vim,
@@ -390,7 +390,10 @@ func (c *MecHostController) GetMecHost() {
 	}
 
 	var mecHosts []*models.MecHost
-	_, _ = c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
+
+	//_, _ = c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
+	mecHosts = c.GetMecHostByCond(clientIp)
+
 	for _, mecHost := range mecHosts {
 		_, _ = c.Db.LoadRelated(mecHost, "Hwcapabilities")
 	}
@@ -412,6 +415,33 @@ func (c *MecHostController) GetMecHost() {
 	}
 	_, _ = c.Ctx.ResponseWriter.Write(response)
 	c.handleLoggingForSuccess(clientIp, "Query MEC host info is successful")
+}
+
+func (c *MecHostController) GetMecHostByCond(clientIp string) (mecHosts []*models.MecHost) {
+	edgeKey, _ := c.getKey(clientIp)
+	if edgeKey != "" {
+		count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
+		if count == 0 {
+			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
+			return mecHosts
+		}
+	} else {
+		tenantId,_ := c.GetTenantId(clientIp)
+		if tenantId == ""  {
+			count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
+			if count == 0 {
+				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
+				return mecHosts
+			}
+		} else {
+			count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, util.TenantId, tenantId)
+			if count == 0 {
+				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
+				return mecHosts
+			}
+		}
+	}
+	return mecHosts
 }
 
 // @Title Query AppInstance information

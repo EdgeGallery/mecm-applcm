@@ -81,7 +81,7 @@ func doTest(t *testing.T) {
 
 	// Common steps
 	baseDir, _ := os.Getwd()
-	path := baseDir + "/positioning_with_mepagent_new.csar"
+	path := baseDir + "/positioning_with_mepagent_new.zip"
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{

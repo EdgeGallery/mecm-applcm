@@ -34,7 +34,7 @@ func init() {
 	initAPI(util.MecHostcontroller, "AddMecHost", util.Hosts, util.POST)
 	initAPI(util.MecHostcontroller, "UpdateMecHost", util.Hosts, "put")
 	initAPI(util.MecHostcontroller, "GetMecHost", util.Hosts, util.GET)
-	initAPI(util.MecHostcontroller, "DeleteMecHost", "/v1/hosts/:hostIp", util.DELETE)
+	initAPI(util.MecHostcontroller, "DeleteMecHost", "/v1/tenants/:tenantId/hosts/:hostIp", util.DELETE)
 	initAPI(util.MecHostcontroller, "GetAppInstance", "/v1/tenants/:tenantId/app_instances", util.GET)
 	initAPI(util.MecHostcontroller, "BatchTerminate", "/v1/tenants/:tenantId/app_instances/batchTerminate", util.DELETE)
 	initAPI(util.MecHostcontroller, "SynchronizeMecHostUpdatedRecord", "/v1/hosts/sync_updated", util.GET)
@@ -45,8 +45,8 @@ func init() {
 
 
 
-	initAPI(util.Lcmcontrollerv2, "UploadConfigV2", "/v2/configuration", util.POST)
-	initAPI(util.Lcmcontrollerv2, "RemoveConfigV2", "/v2/configuration", util.DELETE)
+	initAPI(util.Lcmcontrollerv2, "UploadConfigV2", "/v2/tenants/:tenantId/configuration", util.POST)
+	initAPI(util.Lcmcontrollerv2, "RemoveConfigV2", "/v2/tenants/:tenantId/configuration", util.DELETE)
 	initAPI(util.Lcmcontrollerv2, "UploadPackageV2", "/v2/tenants/:tenantId/packages", util.POST)
 	initAPI(util.Lcmcontrollerv2, "InstantiateV2", "/v2/tenants/:tenantId/app_instances/:appInstanceId/instantiate", util.POST)
 	initAPI(util.Lcmcontrollerv2, "TerminateV2", "/v2/tenants/:tenantId/app_instances/:appInstanceId/terminate", util.POST)

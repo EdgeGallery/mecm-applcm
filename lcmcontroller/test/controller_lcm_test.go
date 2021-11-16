@@ -626,7 +626,7 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 		assert.NotEmpty(t, result1, "Validate Add MecHost ZipCode City")
 
 		//case-1
-		result = instantiateController.InsertorUpdateMecHostRecord(clientIp, mecHost)
+		result = instantiateController.InsertorUpdateMecHostRecord(clientIp,tenantId, mecHost)
 		assert.Empty(t, result, "error while Insert or Update MecHost Record")
 
 		//case-2
@@ -635,7 +635,7 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 				return err
 			})
 		defer patch6.Reset()
-		result = instantiateController.InsertorUpdateMecHostRecord(clientIp, mecHost)
+		result = instantiateController.InsertorUpdateMecHostRecord(clientIp,tenantId, mecHost)
 		assert.NotEmpty(t, result, "error while Insert or Update MecHost Record")
 	})
 }

@@ -48,7 +48,7 @@ type MecHost struct {
 	City               string
 	Address            string
 	Affinity           string
-	UserName           string
+	TenantId           string
 	ConfigUploadStatus string
 	Coordinates        string
 	Vim                string
@@ -260,7 +260,7 @@ type MecHostInfo struct {
 	City               string              `json:"city"`
 	Address            string              `json:"address"`
 	Affinity           string              `json:"affinity"`
-	UserName           string              `json:"userName"`
+	TenantId           string              `json:"tenantId"`
 	ConfigUploadStatus string              `json:"configUploadStatus"`
 	Coordinates        string              `json:"coordinates"`
 	Vim                string              `json:"vim"`

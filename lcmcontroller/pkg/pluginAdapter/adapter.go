@@ -105,8 +105,8 @@ func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId stri
 }
 
 // Upload configuration
-func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string,
-	error error) {
+func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string, tenantId string) (
+	status string, error error) {
 	log.Info("Upload config started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
