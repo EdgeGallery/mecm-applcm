@@ -15,11 +15,11 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='lcmservice.proto',
-  package='lcmservice',
+  package='internal.lcmservice',
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10lcmservice.proto\x12\nlcmservice\"\x83\x02\n\x12InstantiateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x15\n\rappInstanceId\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\x12\x0e\n\x06hostIp\x18\x05 \x01(\t\x12\x42\n\nparameters\x18\x06 \x03(\x0b\x32..lcmservice.InstantiateRequest.ParametersEntry\x12\x12\n\nakSkLcmGen\x18\x07 \x01(\x08\x1a\x31\n\x0fParametersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x13InstantiateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"N\n\x10TerminateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"#\n\x11TerminateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"J\n\x0cQueryRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"!\n\rQueryResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"H\n\x0fQueryKPIRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"$\n\x10QueryKPIResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"S\n\x19QueryPackageStatusRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x11\n\tpackageId\x18\x03 \x01(\t\".\n\x1aQueryPackageStatusResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"m\n\x10UploadCfgRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x02 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x03 \x01(\tH\x00\x12\x14\n\nconfigFile\x18\x04 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"#\n\x11UploadCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"I\n\x10RemoveCfgRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"#\n\x11RemoveCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"S\n\x15WorkloadEventsRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"*\n\x16WorkloadEventsResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"r\n\x14\x43reateVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x10\n\x08tenantId\x18\x04 \x01(\t\x12\x0c\n\x04vmId\x18\x05 \x01(\t\")\n\x15\x43reateVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"b\n\x13QueryVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\"(\n\x14QueryVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"c\n\x14\x44\x65leteVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\")\n\x15\x44\x65leteVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"w\n\x16\x44ownloadVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\x12\x10\n\x08\x63hunkNum\x18\x05 \x01(\x05\"*\n\x17\x44ownloadVmImageResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\"\x86\x01\n\x14UploadPackageRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x16\n\x0c\x61ppPackageId\x18\x02 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x03 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x04 \x01(\tH\x00\x12\x11\n\x07package\x18\x05 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"\'\n\x15UploadPackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"c\n\x14\x44\x65letePackageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\"\'\n\x15\x44\x65letePackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t2\xc3\x06\n\x06\x41ppLCM\x12P\n\x0binstantiate\x12\x1e.lcmservice.InstantiateRequest\x1a\x1f.lcmservice.InstantiateResponse\"\x00\x12J\n\tterminate\x12\x1c.lcmservice.TerminateRequest\x1a\x1d.lcmservice.TerminateResponse\"\x00\x12>\n\x05query\x12\x18.lcmservice.QueryRequest\x1a\x19.lcmservice.QueryResponse\"\x00\x12G\n\x08queryKPI\x12\x1b.lcmservice.QueryKPIRequest\x1a\x1c.lcmservice.QueryKPIResponse\"\x00\x12\x65\n\x12queryPackageStatus\x12%.lcmservice.QueryPackageStatusRequest\x1a&.lcmservice.QueryPackageStatusResponse\"\x00\x12O\n\x0cuploadConfig\x12\x1c.lcmservice.UploadCfgRequest\x1a\x1d.lcmservice.UploadCfgResponse\"\x00(\x01\x12M\n\x0cremoveConfig\x12\x1c.lcmservice.RemoveCfgRequest\x1a\x1d.lcmservice.RemoveCfgResponse\"\x00\x12Y\n\x0eworkloadEvents\x12!.lcmservice.WorkloadEventsRequest\x1a\".lcmservice.WorkloadEventsResponse\"\x00\x12X\n\ruploadPackage\x12 .lcmservice.UploadPackageRequest\x1a!.lcmservice.UploadPackageResponse\"\x00(\x01\x12V\n\rdeletePackage\x12 .lcmservice.DeletePackageRequest\x1a!.lcmservice.DeletePackageResponse\"\x00\x32\xee\x02\n\x07VmImage\x12V\n\rcreateVmImage\x12 .lcmservice.CreateVmImageRequest\x1a!.lcmservice.CreateVmImageResponse\"\x00\x12S\n\x0cqueryVmImage\x12\x1f.lcmservice.QueryVmImageRequest\x1a .lcmservice.QueryVmImageResponse\"\x00\x12V\n\rdeleteVmImage\x12 .lcmservice.DeleteVmImageRequest\x1a!.lcmservice.DeleteVmImageResponse\"\x00\x12^\n\x0f\x64ownloadVmImage\x12\".lcmservice.DownloadVmImageRequest\x1a#.lcmservice.DownloadVmImageResponse\"\x00\x30\x01\x62\x06proto3'
+  serialized_pb=b'\n\x10lcmservice.proto\x12\x13internal.lcmservice\"\x8c\x02\n\x12InstantiateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x15\n\rappInstanceId\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\x12\x0e\n\x06hostIp\x18\x05 \x01(\t\x12K\n\nparameters\x18\x06 \x03(\x0b\x32\x37.internal.lcmservice.InstantiateRequest.ParametersEntry\x12\x12\n\nakSkLcmGen\x18\x07 \x01(\x08\x1a\x31\n\x0fParametersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x13InstantiateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"`\n\x10TerminateRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x15\n\rappInstanceId\x18\x03 \x01(\t\x12\x0e\n\x06hostIp\x18\x04 \x01(\t\"#\n\x11TerminateResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"\\\n\x0cQueryRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x10\n\x08tenantId\x18\x04 \x01(\t\"!\n\rQueryResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"H\n\x0fQueryKPIRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"$\n\x10QueryKPIResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"e\n\x19QueryPackageStatusRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x11\n\tpackageId\x18\x03 \x01(\t\x12\x10\n\x08tenantId\x18\x04 \x01(\t\".\n\x1aQueryPackageStatusResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"m\n\x10UploadCfgRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x02 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x03 \x01(\tH\x00\x12\x14\n\nconfigFile\x18\x04 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"#\n\x11UploadCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"I\n\x10RemoveCfgRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\"#\n\x11RemoveCfgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"e\n\x15WorkloadEventsRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x15\n\rappInstanceId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x10\n\x08tenantId\x18\x04 \x01(\t\"*\n\x16WorkloadEventsResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\x86\x01\n\x14UploadPackageRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x16\n\x0c\x61ppPackageId\x18\x02 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x03 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x04 \x01(\tH\x00\x12\x11\n\x07package\x18\x05 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"\'\n\x15UploadPackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"c\n\x14\x44\x65letePackageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x10\n\x08tenantId\x18\x02 \x01(\t\x12\x0e\n\x06hostIp\x18\x03 \x01(\t\x12\x14\n\x0c\x61ppPackageId\x18\x04 \x01(\t\"\'\n\x15\x44\x65letePackageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t2\xf7\x07\n\x06\x41ppLCM\x12\x62\n\x0binstantiate\x12\'.internal.lcmservice.InstantiateRequest\x1a(.internal.lcmservice.InstantiateResponse\"\x00\x12\\\n\tterminate\x12%.internal.lcmservice.TerminateRequest\x1a&.internal.lcmservice.TerminateResponse\"\x00\x12P\n\x05query\x12!.internal.lcmservice.QueryRequest\x1a\".internal.lcmservice.QueryResponse\"\x00\x12Y\n\x08queryKPI\x12$.internal.lcmservice.QueryKPIRequest\x1a%.internal.lcmservice.QueryKPIResponse\"\x00\x12w\n\x12queryPackageStatus\x12..internal.lcmservice.QueryPackageStatusRequest\x1a/.internal.lcmservice.QueryPackageStatusResponse\"\x00\x12\x61\n\x0cuploadConfig\x12%.internal.lcmservice.UploadCfgRequest\x1a&.internal.lcmservice.UploadCfgResponse\"\x00(\x01\x12_\n\x0cremoveConfig\x12%.internal.lcmservice.RemoveCfgRequest\x1a&.internal.lcmservice.RemoveCfgResponse\"\x00\x12k\n\x0eworkloadEvents\x12*.internal.lcmservice.WorkloadEventsRequest\x1a+.internal.lcmservice.WorkloadEventsResponse\"\x00\x12j\n\ruploadPackage\x12).internal.lcmservice.UploadPackageRequest\x1a*.internal.lcmservice.UploadPackageResponse\"\x00(\x01\x12h\n\rdeletePackage\x12).internal.lcmservice.DeletePackageRequest\x1a*.internal.lcmservice.DeletePackageResponse\"\x00\x62\x06proto3'
 )
 
 
@@ -27,21 +27,21 @@ DESCRIPTOR = _descriptor.FileDescriptor(
 
 _INSTANTIATEREQUEST_PARAMETERSENTRY = _descriptor.Descriptor(
   name='ParametersEntry',
-  full_name='lcmservice.InstantiateRequest.ParametersEntry',
+  full_name='internal.lcmservice.InstantiateRequest.ParametersEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='lcmservice.InstantiateRequest.ParametersEntry.key', index=0,
+      name='key', full_name='internal.lcmservice.InstantiateRequest.ParametersEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='lcmservice.InstantiateRequest.ParametersEntry.value', index=1,
+      name='value', full_name='internal.lcmservice.InstantiateRequest.ParametersEntry.value', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -59,62 +59,62 @@ _INSTANTIATEREQUEST_PARAMETERSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=243,
-  serialized_end=292,
+  serialized_start=261,
+  serialized_end=310,
 )
 
 _INSTANTIATEREQUEST = _descriptor.Descriptor(
   name='InstantiateRequest',
-  full_name='lcmservice.InstantiateRequest',
+  full_name='internal.lcmservice.InstantiateRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.InstantiateRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.InstantiateRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tenantId', full_name='lcmservice.InstantiateRequest.tenantId', index=1,
+      name='tenantId', full_name='internal.lcmservice.InstantiateRequest.tenantId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.InstantiateRequest.appInstanceId', index=2,
+      name='appInstanceId', full_name='internal.lcmservice.InstantiateRequest.appInstanceId', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='appPackageId', full_name='lcmservice.InstantiateRequest.appPackageId', index=3,
+      name='appPackageId', full_name='internal.lcmservice.InstantiateRequest.appPackageId', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.InstantiateRequest.hostIp', index=4,
+      name='hostIp', full_name='internal.lcmservice.InstantiateRequest.hostIp', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='parameters', full_name='lcmservice.InstantiateRequest.parameters', index=5,
+      name='parameters', full_name='internal.lcmservice.InstantiateRequest.parameters', index=5,
       number=6, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='akSkLcmGen', full_name='lcmservice.InstantiateRequest.akSkLcmGen', index=6,
+      name='akSkLcmGen', full_name='internal.lcmservice.InstantiateRequest.akSkLcmGen', index=6,
       number=7, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -132,21 +132,21 @@ _INSTANTIATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=33,
-  serialized_end=292,
+  serialized_start=42,
+  serialized_end=310,
 )
 
 
 _INSTANTIATERESPONSE = _descriptor.Descriptor(
   name='InstantiateResponse',
-  full_name='lcmservice.InstantiateResponse',
+  full_name='internal.lcmservice.InstantiateResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='lcmservice.InstantiateResponse.status', index=0,
+      name='status', full_name='internal.lcmservice.InstantiateResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -164,36 +164,43 @@ _INSTANTIATERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=294,
-  serialized_end=331,
+  serialized_start=312,
+  serialized_end=349,
 )
 
 
 _TERMINATEREQUEST = _descriptor.Descriptor(
   name='TerminateRequest',
-  full_name='lcmservice.TerminateRequest',
+  full_name='internal.lcmservice.TerminateRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.TerminateRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.TerminateRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.TerminateRequest.appInstanceId', index=1,
+      name='tenantId', full_name='internal.lcmservice.TerminateRequest.tenantId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.TerminateRequest.hostIp', index=2,
+      name='appInstanceId', full_name='internal.lcmservice.TerminateRequest.appInstanceId', index=2,
       number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='hostIp', full_name='internal.lcmservice.TerminateRequest.hostIp', index=3,
+      number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -210,21 +217,21 @@ _TERMINATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=333,
-  serialized_end=411,
+  serialized_start=351,
+  serialized_end=447,
 )
 
 
 _TERMINATERESPONSE = _descriptor.Descriptor(
   name='TerminateResponse',
-  full_name='lcmservice.TerminateResponse',
+  full_name='internal.lcmservice.TerminateResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='lcmservice.TerminateResponse.status', index=0,
+      name='status', full_name='internal.lcmservice.TerminateResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -242,36 +249,43 @@ _TERMINATERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=413,
-  serialized_end=448,
+  serialized_start=449,
+  serialized_end=484,
 )
 
 
 _QUERYREQUEST = _descriptor.Descriptor(
   name='QueryRequest',
-  full_name='lcmservice.QueryRequest',
+  full_name='internal.lcmservice.QueryRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.QueryRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.QueryRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.QueryRequest.appInstanceId', index=1,
+      name='appInstanceId', full_name='internal.lcmservice.QueryRequest.appInstanceId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.QueryRequest.hostIp', index=2,
+      name='hostIp', full_name='internal.lcmservice.QueryRequest.hostIp', index=2,
       number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='tenantId', full_name='internal.lcmservice.QueryRequest.tenantId', index=3,
+      number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -288,21 +302,21 @@ _QUERYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=450,
-  serialized_end=524,
+  serialized_start=486,
+  serialized_end=578,
 )
 
 
 _QUERYRESPONSE = _descriptor.Descriptor(
   name='QueryResponse',
-  full_name='lcmservice.QueryResponse',
+  full_name='internal.lcmservice.QueryResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='lcmservice.QueryResponse.response', index=0,
+      name='response', full_name='internal.lcmservice.QueryResponse.response', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -320,35 +334,35 @@ _QUERYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=526,
-  serialized_end=559,
+  serialized_start=580,
+  serialized_end=613,
 )
 
 
 _QUERYKPIREQUEST = _descriptor.Descriptor(
   name='QueryKPIRequest',
-  full_name='lcmservice.QueryKPIRequest',
+  full_name='internal.lcmservice.QueryKPIRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.QueryKPIRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.QueryKPIRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tenantId', full_name='lcmservice.QueryKPIRequest.tenantId', index=1,
+      name='tenantId', full_name='internal.lcmservice.QueryKPIRequest.tenantId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.QueryKPIRequest.hostIp', index=2,
+      name='hostIp', full_name='internal.lcmservice.QueryKPIRequest.hostIp', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -366,21 +380,21 @@ _QUERYKPIREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=561,
-  serialized_end=633,
+  serialized_start=615,
+  serialized_end=687,
 )
 
 
 _QUERYKPIRESPONSE = _descriptor.Descriptor(
   name='QueryKPIResponse',
-  full_name='lcmservice.QueryKPIResponse',
+  full_name='internal.lcmservice.QueryKPIResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='lcmservice.QueryKPIResponse.response', index=0,
+      name='response', full_name='internal.lcmservice.QueryKPIResponse.response', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -398,36 +412,43 @@ _QUERYKPIRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=635,
-  serialized_end=671,
+  serialized_start=689,
+  serialized_end=725,
 )
 
 
 _QUERYPACKAGESTATUSREQUEST = _descriptor.Descriptor(
   name='QueryPackageStatusRequest',
-  full_name='lcmservice.QueryPackageStatusRequest',
+  full_name='internal.lcmservice.QueryPackageStatusRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.QueryPackageStatusRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.QueryPackageStatusRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.QueryPackageStatusRequest.hostIp', index=1,
+      name='hostIp', full_name='internal.lcmservice.QueryPackageStatusRequest.hostIp', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='packageId', full_name='lcmservice.QueryPackageStatusRequest.packageId', index=2,
+      name='packageId', full_name='internal.lcmservice.QueryPackageStatusRequest.packageId', index=2,
       number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='tenantId', full_name='internal.lcmservice.QueryPackageStatusRequest.tenantId', index=3,
+      number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -444,21 +465,21 @@ _QUERYPACKAGESTATUSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=673,
-  serialized_end=756,
+  serialized_start=727,
+  serialized_end=828,
 )
 
 
 _QUERYPACKAGESTATUSRESPONSE = _descriptor.Descriptor(
   name='QueryPackageStatusResponse',
-  full_name='lcmservice.QueryPackageStatusResponse',
+  full_name='internal.lcmservice.QueryPackageStatusResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='lcmservice.QueryPackageStatusResponse.response', index=0,
+      name='response', full_name='internal.lcmservice.QueryPackageStatusResponse.response', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -476,42 +497,42 @@ _QUERYPACKAGESTATUSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=758,
-  serialized_end=804,
+  serialized_start=830,
+  serialized_end=876,
 )
 
 
 _UPLOADCFGREQUEST = _descriptor.Descriptor(
   name='UploadCfgRequest',
-  full_name='lcmservice.UploadCfgRequest',
+  full_name='internal.lcmservice.UploadCfgRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.UploadCfgRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.UploadCfgRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tenantId', full_name='lcmservice.UploadCfgRequest.tenantId', index=1,
+      name='tenantId', full_name='internal.lcmservice.UploadCfgRequest.tenantId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.UploadCfgRequest.hostIp', index=2,
+      name='hostIp', full_name='internal.lcmservice.UploadCfgRequest.hostIp', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='configFile', full_name='lcmservice.UploadCfgRequest.configFile', index=3,
+      name='configFile', full_name='internal.lcmservice.UploadCfgRequest.configFile', index=3,
       number=4, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -529,26 +550,26 @@ _UPLOADCFGREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
     _descriptor.OneofDescriptor(
-      name='data', full_name='lcmservice.UploadCfgRequest.data',
+      name='data', full_name='internal.lcmservice.UploadCfgRequest.data',
       index=0, containing_type=None,
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=806,
-  serialized_end=915,
+  serialized_start=878,
+  serialized_end=987,
 )
 
 
 _UPLOADCFGRESPONSE = _descriptor.Descriptor(
   name='UploadCfgResponse',
-  full_name='lcmservice.UploadCfgResponse',
+  full_name='internal.lcmservice.UploadCfgResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='lcmservice.UploadCfgResponse.status', index=0,
+      name='status', full_name='internal.lcmservice.UploadCfgResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -566,35 +587,35 @@ _UPLOADCFGRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=917,
-  serialized_end=952,
+  serialized_start=989,
+  serialized_end=1024,
 )
 
 
 _REMOVECFGREQUEST = _descriptor.Descriptor(
   name='RemoveCfgRequest',
-  full_name='lcmservice.RemoveCfgRequest',
+  full_name='internal.lcmservice.RemoveCfgRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.RemoveCfgRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.RemoveCfgRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tenantId', full_name='lcmservice.RemoveCfgRequest.tenantId', index=1,
+      name='tenantId', full_name='internal.lcmservice.RemoveCfgRequest.tenantId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.RemoveCfgRequest.hostIp', index=2,
+      name='hostIp', full_name='internal.lcmservice.RemoveCfgRequest.hostIp', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -612,21 +633,21 @@ _REMOVECFGREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=954,
-  serialized_end=1027,
+  serialized_start=1026,
+  serialized_end=1099,
 )
 
 
 _REMOVECFGRESPONSE = _descriptor.Descriptor(
   name='RemoveCfgResponse',
-  full_name='lcmservice.RemoveCfgResponse',
+  full_name='internal.lcmservice.RemoveCfgResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='lcmservice.RemoveCfgResponse.status', index=0,
+      name='status', full_name='internal.lcmservice.RemoveCfgResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -644,36 +665,43 @@ _REMOVECFGRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1029,
-  serialized_end=1064,
+  serialized_start=1101,
+  serialized_end=1136,
 )
 
 
 _WORKLOADEVENTSREQUEST = _descriptor.Descriptor(
   name='WorkloadEventsRequest',
-  full_name='lcmservice.WorkloadEventsRequest',
+  full_name='internal.lcmservice.WorkloadEventsRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.WorkloadEventsRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.WorkloadEventsRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.WorkloadEventsRequest.appInstanceId', index=1,
+      name='appInstanceId', full_name='internal.lcmservice.WorkloadEventsRequest.appInstanceId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.WorkloadEventsRequest.hostIp', index=2,
+      name='hostIp', full_name='internal.lcmservice.WorkloadEventsRequest.hostIp', index=2,
       number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='tenantId', full_name='internal.lcmservice.WorkloadEventsRequest.tenantId', index=3,
+      number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -690,21 +718,21 @@ _WORKLOADEVENTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1066,
-  serialized_end=1149,
+  serialized_start=1138,
+  serialized_end=1239,
 )
 
 
 _WORKLOADEVENTSRESPONSE = _descriptor.Descriptor(
   name='WorkloadEventsResponse',
-  full_name='lcmservice.WorkloadEventsResponse',
+  full_name='internal.lcmservice.WorkloadEventsResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='lcmservice.WorkloadEventsResponse.response', index=0,
+      name='response', full_name='internal.lcmservice.WorkloadEventsResponse.response', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -722,403 +750,49 @@ _WORKLOADEVENTSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1151,
-  serialized_end=1193,
-)
-
-
-_CREATEVMIMAGEREQUEST = _descriptor.Descriptor(
-  name='CreateVmImageRequest',
-  full_name='lcmservice.CreateVmImageRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.CreateVmImageRequest.accessToken', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.CreateVmImageRequest.appInstanceId', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.CreateVmImageRequest.hostIp', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='tenantId', full_name='lcmservice.CreateVmImageRequest.tenantId', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='vmId', full_name='lcmservice.CreateVmImageRequest.vmId', index=4,
-      number=5, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1195,
-  serialized_end=1309,
-)
-
-
-_CREATEVMIMAGERESPONSE = _descriptor.Descriptor(
-  name='CreateVmImageResponse',
-  full_name='lcmservice.CreateVmImageResponse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='response', full_name='lcmservice.CreateVmImageResponse.response', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1311,
-  serialized_end=1352,
-)
-
-
-_QUERYVMIMAGEREQUEST = _descriptor.Descriptor(
-  name='QueryVmImageRequest',
-  full_name='lcmservice.QueryVmImageRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.QueryVmImageRequest.accessToken', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.QueryVmImageRequest.appInstanceId', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.QueryVmImageRequest.hostIp', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='imageId', full_name='lcmservice.QueryVmImageRequest.imageId', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1354,
-  serialized_end=1452,
-)
-
-
-_QUERYVMIMAGERESPONSE = _descriptor.Descriptor(
-  name='QueryVmImageResponse',
-  full_name='lcmservice.QueryVmImageResponse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='response', full_name='lcmservice.QueryVmImageResponse.response', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1454,
-  serialized_end=1494,
-)
-
-
-_DELETEVMIMAGEREQUEST = _descriptor.Descriptor(
-  name='DeleteVmImageRequest',
-  full_name='lcmservice.DeleteVmImageRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.DeleteVmImageRequest.accessToken', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.DeleteVmImageRequest.appInstanceId', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.DeleteVmImageRequest.hostIp', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='imageId', full_name='lcmservice.DeleteVmImageRequest.imageId', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1496,
-  serialized_end=1595,
-)
-
-
-_DELETEVMIMAGERESPONSE = _descriptor.Descriptor(
-  name='DeleteVmImageResponse',
-  full_name='lcmservice.DeleteVmImageResponse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='response', full_name='lcmservice.DeleteVmImageResponse.response', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1597,
-  serialized_end=1638,
-)
-
-
-_DOWNLOADVMIMAGEREQUEST = _descriptor.Descriptor(
-  name='DownloadVmImageRequest',
-  full_name='lcmservice.DownloadVmImageRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.DownloadVmImageRequest.accessToken', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='appInstanceId', full_name='lcmservice.DownloadVmImageRequest.appInstanceId', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.DownloadVmImageRequest.hostIp', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='imageId', full_name='lcmservice.DownloadVmImageRequest.imageId', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='chunkNum', full_name='lcmservice.DownloadVmImageRequest.chunkNum', index=4,
-      number=5, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1640,
-  serialized_end=1759,
-)
-
-
-_DOWNLOADVMIMAGERESPONSE = _descriptor.Descriptor(
-  name='DownloadVmImageResponse',
-  full_name='lcmservice.DownloadVmImageResponse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='content', full_name='lcmservice.DownloadVmImageResponse.content', index=0,
-      number=1, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"",
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1761,
-  serialized_end=1803,
+  serialized_start=1241,
+  serialized_end=1283,
 )
 
 
 _UPLOADPACKAGEREQUEST = _descriptor.Descriptor(
   name='UploadPackageRequest',
-  full_name='lcmservice.UploadPackageRequest',
+  full_name='internal.lcmservice.UploadPackageRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.UploadPackageRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.UploadPackageRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='appPackageId', full_name='lcmservice.UploadPackageRequest.appPackageId', index=1,
+      name='appPackageId', full_name='internal.lcmservice.UploadPackageRequest.appPackageId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.UploadPackageRequest.hostIp', index=2,
+      name='hostIp', full_name='internal.lcmservice.UploadPackageRequest.hostIp', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tenantId', full_name='lcmservice.UploadPackageRequest.tenantId', index=3,
+      name='tenantId', full_name='internal.lcmservice.UploadPackageRequest.tenantId', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='package', full_name='lcmservice.UploadPackageRequest.package', index=4,
+      name='package', full_name='internal.lcmservice.UploadPackageRequest.package', index=4,
       number=5, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -1136,26 +810,26 @@ _UPLOADPACKAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
     _descriptor.OneofDescriptor(
-      name='data', full_name='lcmservice.UploadPackageRequest.data',
+      name='data', full_name='internal.lcmservice.UploadPackageRequest.data',
       index=0, containing_type=None,
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1806,
-  serialized_end=1940,
+  serialized_start=1286,
+  serialized_end=1420,
 )
 
 
 _UPLOADPACKAGERESPONSE = _descriptor.Descriptor(
   name='UploadPackageResponse',
-  full_name='lcmservice.UploadPackageResponse',
+  full_name='internal.lcmservice.UploadPackageResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='lcmservice.UploadPackageResponse.status', index=0,
+      name='status', full_name='internal.lcmservice.UploadPackageResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1173,42 +847,42 @@ _UPLOADPACKAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1942,
-  serialized_end=1981,
+  serialized_start=1422,
+  serialized_end=1461,
 )
 
 
 _DELETEPACKAGEREQUEST = _descriptor.Descriptor(
   name='DeletePackageRequest',
-  full_name='lcmservice.DeletePackageRequest',
+  full_name='internal.lcmservice.DeletePackageRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='accessToken', full_name='lcmservice.DeletePackageRequest.accessToken', index=0,
+      name='accessToken', full_name='internal.lcmservice.DeletePackageRequest.accessToken', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tenantId', full_name='lcmservice.DeletePackageRequest.tenantId', index=1,
+      name='tenantId', full_name='internal.lcmservice.DeletePackageRequest.tenantId', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hostIp', full_name='lcmservice.DeletePackageRequest.hostIp', index=2,
+      name='hostIp', full_name='internal.lcmservice.DeletePackageRequest.hostIp', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='appPackageId', full_name='lcmservice.DeletePackageRequest.appPackageId', index=3,
+      name='appPackageId', full_name='internal.lcmservice.DeletePackageRequest.appPackageId', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1226,21 +900,21 @@ _DELETEPACKAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1983,
-  serialized_end=2082,
+  serialized_start=1463,
+  serialized_end=1562,
 )
 
 
 _DELETEPACKAGERESPONSE = _descriptor.Descriptor(
   name='DeletePackageResponse',
-  full_name='lcmservice.DeletePackageResponse',
+  full_name='internal.lcmservice.DeletePackageResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='lcmservice.DeletePackageResponse.status', index=0,
+      name='status', full_name='internal.lcmservice.DeletePackageResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1258,8 +932,8 @@ _DELETEPACKAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2084,
-  serialized_end=2123,
+  serialized_start=1564,
+  serialized_end=1603,
 )
 
 _INSTANTIATEREQUEST_PARAMETERSENTRY.containing_type = _INSTANTIATEREQUEST
@@ -1307,14 +981,6 @@ DESCRIPTOR.message_types_by_name['RemoveCfgRequest'] = _REMOVECFGREQUEST
 DESCRIPTOR.message_types_by_name['RemoveCfgResponse'] = _REMOVECFGRESPONSE
 DESCRIPTOR.message_types_by_name['WorkloadEventsRequest'] = _WORKLOADEVENTSREQUEST
 DESCRIPTOR.message_types_by_name['WorkloadEventsResponse'] = _WORKLOADEVENTSRESPONSE
-DESCRIPTOR.message_types_by_name['CreateVmImageRequest'] = _CREATEVMIMAGEREQUEST
-DESCRIPTOR.message_types_by_name['CreateVmImageResponse'] = _CREATEVMIMAGERESPONSE
-DESCRIPTOR.message_types_by_name['QueryVmImageRequest'] = _QUERYVMIMAGEREQUEST
-DESCRIPTOR.message_types_by_name['QueryVmImageResponse'] = _QUERYVMIMAGERESPONSE
-DESCRIPTOR.message_types_by_name['DeleteVmImageRequest'] = _DELETEVMIMAGEREQUEST
-DESCRIPTOR.message_types_by_name['DeleteVmImageResponse'] = _DELETEVMIMAGERESPONSE
-DESCRIPTOR.message_types_by_name['DownloadVmImageRequest'] = _DOWNLOADVMIMAGEREQUEST
-DESCRIPTOR.message_types_by_name['DownloadVmImageResponse'] = _DOWNLOADVMIMAGERESPONSE
 DESCRIPTOR.message_types_by_name['UploadPackageRequest'] = _UPLOADPACKAGEREQUEST
 DESCRIPTOR.message_types_by_name['UploadPackageResponse'] = _UPLOADPACKAGERESPONSE
 DESCRIPTOR.message_types_by_name['DeletePackageRequest'] = _DELETEPACKAGEREQUEST
@@ -1326,12 +992,12 @@ InstantiateRequest = _reflection.GeneratedProtocolMessageType('InstantiateReques
   'ParametersEntry' : _reflection.GeneratedProtocolMessageType('ParametersEntry', (_message.Message,), {
     'DESCRIPTOR' : _INSTANTIATEREQUEST_PARAMETERSENTRY,
     '__module__' : 'lcmservice_pb2'
-    # @@protoc_insertion_point(class_scope:lcmservice.InstantiateRequest.ParametersEntry)
+    # @@protoc_insertion_point(class_scope:internal.lcmservice.InstantiateRequest.ParametersEntry)
     })
   ,
   'DESCRIPTOR' : _INSTANTIATEREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.InstantiateRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.InstantiateRequest)
   })
 _sym_db.RegisterMessage(InstantiateRequest)
 _sym_db.RegisterMessage(InstantiateRequest.ParametersEntry)
@@ -1339,189 +1005,133 @@ _sym_db.RegisterMessage(InstantiateRequest.ParametersEntry)
 InstantiateResponse = _reflection.GeneratedProtocolMessageType('InstantiateResponse', (_message.Message,), {
   'DESCRIPTOR' : _INSTANTIATERESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.InstantiateResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.InstantiateResponse)
   })
 _sym_db.RegisterMessage(InstantiateResponse)
 
 TerminateRequest = _reflection.GeneratedProtocolMessageType('TerminateRequest', (_message.Message,), {
   'DESCRIPTOR' : _TERMINATEREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.TerminateRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.TerminateRequest)
   })
 _sym_db.RegisterMessage(TerminateRequest)
 
 TerminateResponse = _reflection.GeneratedProtocolMessageType('TerminateResponse', (_message.Message,), {
   'DESCRIPTOR' : _TERMINATERESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.TerminateResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.TerminateResponse)
   })
 _sym_db.RegisterMessage(TerminateResponse)
 
 QueryRequest = _reflection.GeneratedProtocolMessageType('QueryRequest', (_message.Message,), {
   'DESCRIPTOR' : _QUERYREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.QueryRequest)
   })
 _sym_db.RegisterMessage(QueryRequest)
 
 QueryResponse = _reflection.GeneratedProtocolMessageType('QueryResponse', (_message.Message,), {
   'DESCRIPTOR' : _QUERYRESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.QueryResponse)
   })
 _sym_db.RegisterMessage(QueryResponse)
 
 QueryKPIRequest = _reflection.GeneratedProtocolMessageType('QueryKPIRequest', (_message.Message,), {
   'DESCRIPTOR' : _QUERYKPIREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryKPIRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.QueryKPIRequest)
   })
 _sym_db.RegisterMessage(QueryKPIRequest)
 
 QueryKPIResponse = _reflection.GeneratedProtocolMessageType('QueryKPIResponse', (_message.Message,), {
   'DESCRIPTOR' : _QUERYKPIRESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryKPIResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.QueryKPIResponse)
   })
 _sym_db.RegisterMessage(QueryKPIResponse)
 
 QueryPackageStatusRequest = _reflection.GeneratedProtocolMessageType('QueryPackageStatusRequest', (_message.Message,), {
   'DESCRIPTOR' : _QUERYPACKAGESTATUSREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryPackageStatusRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.QueryPackageStatusRequest)
   })
 _sym_db.RegisterMessage(QueryPackageStatusRequest)
 
 QueryPackageStatusResponse = _reflection.GeneratedProtocolMessageType('QueryPackageStatusResponse', (_message.Message,), {
   'DESCRIPTOR' : _QUERYPACKAGESTATUSRESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryPackageStatusResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.QueryPackageStatusResponse)
   })
 _sym_db.RegisterMessage(QueryPackageStatusResponse)
 
 UploadCfgRequest = _reflection.GeneratedProtocolMessageType('UploadCfgRequest', (_message.Message,), {
   'DESCRIPTOR' : _UPLOADCFGREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.UploadCfgRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.UploadCfgRequest)
   })
 _sym_db.RegisterMessage(UploadCfgRequest)
 
 UploadCfgResponse = _reflection.GeneratedProtocolMessageType('UploadCfgResponse', (_message.Message,), {
   'DESCRIPTOR' : _UPLOADCFGRESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.UploadCfgResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.UploadCfgResponse)
   })
 _sym_db.RegisterMessage(UploadCfgResponse)
 
 RemoveCfgRequest = _reflection.GeneratedProtocolMessageType('RemoveCfgRequest', (_message.Message,), {
   'DESCRIPTOR' : _REMOVECFGREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.RemoveCfgRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.RemoveCfgRequest)
   })
 _sym_db.RegisterMessage(RemoveCfgRequest)
 
 RemoveCfgResponse = _reflection.GeneratedProtocolMessageType('RemoveCfgResponse', (_message.Message,), {
   'DESCRIPTOR' : _REMOVECFGRESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.RemoveCfgResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.RemoveCfgResponse)
   })
 _sym_db.RegisterMessage(RemoveCfgResponse)
 
 WorkloadEventsRequest = _reflection.GeneratedProtocolMessageType('WorkloadEventsRequest', (_message.Message,), {
   'DESCRIPTOR' : _WORKLOADEVENTSREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.WorkloadEventsRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.WorkloadEventsRequest)
   })
 _sym_db.RegisterMessage(WorkloadEventsRequest)
 
 WorkloadEventsResponse = _reflection.GeneratedProtocolMessageType('WorkloadEventsResponse', (_message.Message,), {
   'DESCRIPTOR' : _WORKLOADEVENTSRESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.WorkloadEventsResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.WorkloadEventsResponse)
   })
 _sym_db.RegisterMessage(WorkloadEventsResponse)
-
-CreateVmImageRequest = _reflection.GeneratedProtocolMessageType('CreateVmImageRequest', (_message.Message,), {
-  'DESCRIPTOR' : _CREATEVMIMAGEREQUEST,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.CreateVmImageRequest)
-  })
-_sym_db.RegisterMessage(CreateVmImageRequest)
-
-CreateVmImageResponse = _reflection.GeneratedProtocolMessageType('CreateVmImageResponse', (_message.Message,), {
-  'DESCRIPTOR' : _CREATEVMIMAGERESPONSE,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.CreateVmImageResponse)
-  })
-_sym_db.RegisterMessage(CreateVmImageResponse)
-
-QueryVmImageRequest = _reflection.GeneratedProtocolMessageType('QueryVmImageRequest', (_message.Message,), {
-  'DESCRIPTOR' : _QUERYVMIMAGEREQUEST,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryVmImageRequest)
-  })
-_sym_db.RegisterMessage(QueryVmImageRequest)
-
-QueryVmImageResponse = _reflection.GeneratedProtocolMessageType('QueryVmImageResponse', (_message.Message,), {
-  'DESCRIPTOR' : _QUERYVMIMAGERESPONSE,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.QueryVmImageResponse)
-  })
-_sym_db.RegisterMessage(QueryVmImageResponse)
-
-DeleteVmImageRequest = _reflection.GeneratedProtocolMessageType('DeleteVmImageRequest', (_message.Message,), {
-  'DESCRIPTOR' : _DELETEVMIMAGEREQUEST,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.DeleteVmImageRequest)
-  })
-_sym_db.RegisterMessage(DeleteVmImageRequest)
-
-DeleteVmImageResponse = _reflection.GeneratedProtocolMessageType('DeleteVmImageResponse', (_message.Message,), {
-  'DESCRIPTOR' : _DELETEVMIMAGERESPONSE,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.DeleteVmImageResponse)
-  })
-_sym_db.RegisterMessage(DeleteVmImageResponse)
-
-DownloadVmImageRequest = _reflection.GeneratedProtocolMessageType('DownloadVmImageRequest', (_message.Message,), {
-  'DESCRIPTOR' : _DOWNLOADVMIMAGEREQUEST,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.DownloadVmImageRequest)
-  })
-_sym_db.RegisterMessage(DownloadVmImageRequest)
-
-DownloadVmImageResponse = _reflection.GeneratedProtocolMessageType('DownloadVmImageResponse', (_message.Message,), {
-  'DESCRIPTOR' : _DOWNLOADVMIMAGERESPONSE,
-  '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.DownloadVmImageResponse)
-  })
-_sym_db.RegisterMessage(DownloadVmImageResponse)
 
 UploadPackageRequest = _reflection.GeneratedProtocolMessageType('UploadPackageRequest', (_message.Message,), {
   'DESCRIPTOR' : _UPLOADPACKAGEREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.UploadPackageRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.UploadPackageRequest)
   })
 _sym_db.RegisterMessage(UploadPackageRequest)
 
 UploadPackageResponse = _reflection.GeneratedProtocolMessageType('UploadPackageResponse', (_message.Message,), {
   'DESCRIPTOR' : _UPLOADPACKAGERESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.UploadPackageResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.UploadPackageResponse)
   })
 _sym_db.RegisterMessage(UploadPackageResponse)
 
 DeletePackageRequest = _reflection.GeneratedProtocolMessageType('DeletePackageRequest', (_message.Message,), {
   'DESCRIPTOR' : _DELETEPACKAGEREQUEST,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.DeletePackageRequest)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.DeletePackageRequest)
   })
 _sym_db.RegisterMessage(DeletePackageRequest)
 
 DeletePackageResponse = _reflection.GeneratedProtocolMessageType('DeletePackageResponse', (_message.Message,), {
   'DESCRIPTOR' : _DELETEPACKAGERESPONSE,
   '__module__' : 'lcmservice_pb2'
-  # @@protoc_insertion_point(class_scope:lcmservice.DeletePackageResponse)
+  # @@protoc_insertion_point(class_scope:internal.lcmservice.DeletePackageResponse)
   })
 _sym_db.RegisterMessage(DeletePackageResponse)
 
@@ -1530,17 +1140,17 @@ _INSTANTIATEREQUEST_PARAMETERSENTRY._options = None
 
 _APPLCM = _descriptor.ServiceDescriptor(
   name='AppLCM',
-  full_name='lcmservice.AppLCM',
+  full_name='internal.lcmservice.AppLCM',
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=2126,
-  serialized_end=2961,
+  serialized_start=1606,
+  serialized_end=2621,
   methods=[
   _descriptor.MethodDescriptor(
     name='instantiate',
-    full_name='lcmservice.AppLCM.instantiate',
+    full_name='internal.lcmservice.AppLCM.instantiate',
     index=0,
     containing_service=None,
     input_type=_INSTANTIATEREQUEST,
@@ -1550,7 +1160,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='terminate',
-    full_name='lcmservice.AppLCM.terminate',
+    full_name='internal.lcmservice.AppLCM.terminate',
     index=1,
     containing_service=None,
     input_type=_TERMINATEREQUEST,
@@ -1560,7 +1170,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='query',
-    full_name='lcmservice.AppLCM.query',
+    full_name='internal.lcmservice.AppLCM.query',
     index=2,
     containing_service=None,
     input_type=_QUERYREQUEST,
@@ -1570,7 +1180,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='queryKPI',
-    full_name='lcmservice.AppLCM.queryKPI',
+    full_name='internal.lcmservice.AppLCM.queryKPI',
     index=3,
     containing_service=None,
     input_type=_QUERYKPIREQUEST,
@@ -1580,7 +1190,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='queryPackageStatus',
-    full_name='lcmservice.AppLCM.queryPackageStatus',
+    full_name='internal.lcmservice.AppLCM.queryPackageStatus',
     index=4,
     containing_service=None,
     input_type=_QUERYPACKAGESTATUSREQUEST,
@@ -1590,7 +1200,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='uploadConfig',
-    full_name='lcmservice.AppLCM.uploadConfig',
+    full_name='internal.lcmservice.AppLCM.uploadConfig',
     index=5,
     containing_service=None,
     input_type=_UPLOADCFGREQUEST,
@@ -1600,7 +1210,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='removeConfig',
-    full_name='lcmservice.AppLCM.removeConfig',
+    full_name='internal.lcmservice.AppLCM.removeConfig',
     index=6,
     containing_service=None,
     input_type=_REMOVECFGREQUEST,
@@ -1610,7 +1220,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='workloadEvents',
-    full_name='lcmservice.AppLCM.workloadEvents',
+    full_name='internal.lcmservice.AppLCM.workloadEvents',
     index=7,
     containing_service=None,
     input_type=_WORKLOADEVENTSREQUEST,
@@ -1620,7 +1230,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='uploadPackage',
-    full_name='lcmservice.AppLCM.uploadPackage',
+    full_name='internal.lcmservice.AppLCM.uploadPackage',
     index=8,
     containing_service=None,
     input_type=_UPLOADPACKAGEREQUEST,
@@ -1630,7 +1240,7 @@ _APPLCM = _descriptor.ServiceDescriptor(
   ),
   _descriptor.MethodDescriptor(
     name='deletePackage',
-    full_name='lcmservice.AppLCM.deletePackage',
+    full_name='internal.lcmservice.AppLCM.deletePackage',
     index=9,
     containing_service=None,
     input_type=_DELETEPACKAGEREQUEST,
@@ -1642,61 +1252,5 @@ _APPLCM = _descriptor.ServiceDescriptor(
 _sym_db.RegisterServiceDescriptor(_APPLCM)
 
 DESCRIPTOR.services_by_name['AppLCM'] = _APPLCM
-
-
-_VMIMAGE = _descriptor.ServiceDescriptor(
-  name='VmImage',
-  full_name='lcmservice.VmImage',
-  file=DESCRIPTOR,
-  index=1,
-  serialized_options=None,
-  create_key=_descriptor._internal_create_key,
-  serialized_start=2964,
-  serialized_end=3330,
-  methods=[
-  _descriptor.MethodDescriptor(
-    name='createVmImage',
-    full_name='lcmservice.VmImage.createVmImage',
-    index=0,
-    containing_service=None,
-    input_type=_CREATEVMIMAGEREQUEST,
-    output_type=_CREATEVMIMAGERESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='queryVmImage',
-    full_name='lcmservice.VmImage.queryVmImage',
-    index=1,
-    containing_service=None,
-    input_type=_QUERYVMIMAGEREQUEST,
-    output_type=_QUERYVMIMAGERESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='deleteVmImage',
-    full_name='lcmservice.VmImage.deleteVmImage',
-    index=2,
-    containing_service=None,
-    input_type=_DELETEVMIMAGEREQUEST,
-    output_type=_DELETEVMIMAGERESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='downloadVmImage',
-    full_name='lcmservice.VmImage.downloadVmImage',
-    index=3,
-    containing_service=None,
-    input_type=_DOWNLOADVMIMAGEREQUEST,
-    output_type=_DOWNLOADVMIMAGERESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-])
-_sym_db.RegisterServiceDescriptor(_VMIMAGE)
-
-DESCRIPTOR.services_by_name['VmImage'] = _VMIMAGE
 
 # @@protoc_insertion_point(module_scope)

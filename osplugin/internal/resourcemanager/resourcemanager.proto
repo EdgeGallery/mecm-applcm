@@ -1,0 +1,395 @@
+// Copyright 2020 Huawei Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package internal.resourcemanager;
+
+// resource manager entity start
+
+message CreateVmImageRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  message Image {
+    string name = 1;
+    string containerFormat = 2;
+    string diskFormat = 3;
+    int32 minRam = 4;
+    int32 minDisk = 5;
+    map<string, string> properties = 6;
+  }
+  Image image = 4;
+}
+
+message CreateVmImageResponse {
+  string response = 1;
+}
+
+message QueryVmImageRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string imageId = 4;
+}
+
+message QueryVmImageResponse {
+  string response = 1;
+}
+
+message DeleteVmImageRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string imageId = 4;
+}
+
+message DeleteVmImageResponse {
+  string response = 1;
+}
+
+message DownloadVmImageRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string imageId = 4;
+}
+
+message DownloadVmImageResponse {
+  bytes content = 1;
+}
+
+message ImportVmImageRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string imageId = 4;
+  string resourceUri = 5;
+}
+
+message ImportVmImageResponse {
+  string response = 1;
+}
+
+message UploadVmImageRequest {
+  oneof data {
+    string accessToken = 1;
+    string hostIp = 2;
+    string tenantId = 3;
+    string imageId = 4;
+    bytes content = 5;
+  }
+}
+
+message UploadVmImageResponse {
+  string response = 1;
+}
+
+message CreateVmRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  message Server {
+    string name = 1;
+    string flavor = 2;
+    string image = 3;
+    string availabilityZone = 4;
+    string userData = 5;
+    bool configDrive = 6;
+    repeated string securityGroups = 7;
+    message Network {
+      string network = 1;
+      string fixedIp = 2;
+    }
+    repeated Network networks = 8;
+  }
+  Server server = 4;
+}
+
+message CreateVmResponse {
+  string response = 1;
+}
+
+message QueryVmRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string vmId = 4;
+}
+
+message QueryVmResponse {
+  string response = 1;
+}
+
+message OperateVmRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string vmId = 4;
+  string action = 5;// reboot createImage pause(数据保留到内存) unpause(after pause) suspend(数据保留到磁盘) resume(after suspend) stop(关机) start(after stop) createConsole
+  message Reboot {
+    string type = 1;// HARD SOFT
+  }
+  Reboot reboot = 6;
+  message CreateImage {
+    string name = 1;
+    map<string, string> metadata = 2;
+  }
+  CreateImage createImage = 7;
+}
+
+message OperateVmResponse {
+  string response = 1;
+}
+
+message DeleteVmRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string vmId = 4;
+}
+
+message DeleteVmResponse {
+  string response = 1;
+}
+
+message CreateFlavorRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  message Flavor {
+    string name = 1;
+    int32 vcpus = 2;
+    int32 ram = 3;
+    int32 disk = 4;
+    int32 swap = 5;
+    map<string, string> extraSpecs = 8;
+  }
+  Flavor flavor = 4;
+}
+
+message CreateFlavorResponse {
+  string response = 1;
+}
+
+message DeleteFlavorRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string flavorId = 4;
+}
+
+message DeleteFlavorResponse {
+  string response = 1;
+}
+
+message QueryFlavorRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string flavorId = 4;
+}
+
+message QueryFlavorResponse {
+  string response = 1;
+}
+
+message CreateNetworkRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  message Network {
+    string name = 1;
+    bool adminStateUp = 2;
+    string dnsDomain = 3;
+    int32 mtu = 4;
+    bool portSecurityEnabled = 5;
+    string providerNetworkType = 6;
+    string providerPhysicalNetwork = 7;
+    int32 providerSegmentationId = 8;
+    string qosPolicyId = 9;
+    bool routerExternal = 10;
+    message Segment {
+      int32 providerSegmentationId = 1;
+      string providerPhysicalNetwork = 2;
+      string providerNetworkType = 3;
+    }
+    repeated Segment segments = 11;
+    bool shared = 12;
+    bool vlanTransparent = 13;
+    bool isDefault = 14;
+    string tenantId = 15;
+    message Subnet {
+      string name = 1;
+      bool enableDhcp = 2;
+      repeated string dnsNameservers = 3;
+      message AllocationPool {
+        string start = 1;
+        string end = 2;
+      };
+      repeated AllocationPool allocationPools = 4;
+      int32 ipVersion = 5;
+      string gatewayIp = 6;
+      string cidr = 7;
+      string ipv6AddressMode = 8;
+      string ipv6RaMode = 9;
+    }
+    repeated Subnet subnets = 16;
+  }
+}
+
+message CreateNetworkResponse {
+  string response = 1;
+}
+
+message DeleteNetworkRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string networkId = 4;
+}
+
+message DeleteNetworkResponse {
+  string response = 1;
+}
+
+message QueryNetworkRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string networkId = 4;
+}
+
+message QueryNetworkResponse {
+  string response = 1;
+}
+
+message CreateSecurityGroupRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  message SecurityGroup {
+    string name = 1;
+  }
+  SecurityGroup securityGroup = 4;
+}
+
+message CreateSecurityGroupResponse {
+  string response = 1;
+}
+
+message DeleteSecurityGroupRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string securityGroupId = 4;
+}
+
+message DeleteSecurityGroupResponse {
+  string response = 1;
+}
+
+message QuerySecurityGroupRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string securityGroupId = 4;
+}
+
+message QuerySecurityGroupResponse {
+  string response = 1;
+}
+
+message CreateSecurityGroupRuleRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  message SecurityGroupRule {
+    string securityGroupId = 1;
+    string direction = 2;
+    string protocol = 3;
+    string ethertype = 4;
+    int32 portRangeMax = 5;
+    int32 portRangeMin = 6;
+    string remoteIpPrefix = 8;
+    string remoteGroupId = 9;
+  }
+  SecurityGroupRule securityGroupRule = 4;
+}
+
+message CreateSecurityGroupRuleResponse {
+  string response = 1;
+}
+
+message DeleteSecurityGroupRuleRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string securityGroupRuleId = 4;
+}
+
+message DeleteSecurityGroupRuleResponse {
+  string response = 4;
+}
+
+message QuerySecurityGroupRuleRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string securityGroupId = 4;
+}
+
+message QuerySecurityGroupRuleResponse {
+  string response = 1;
+}
+
+// resource manager entity end
+
+service VmImageManger {
+  rpc createVmImage(CreateVmImageRequest) returns (CreateVmImageResponse) {}
+  rpc uploadVmImage(stream UploadVmImageRequest) returns (UploadVmImageResponse) {}
+  rpc deleteVmImage(DeleteVmImageRequest) returns (DeleteVmImageResponse) {}
+  rpc downloadVmImage(DownloadVmImageRequest) returns (stream DownloadVmImageResponse) {}
+  rpc importVmImage(ImportVmImageRequest) returns (ImportVmImageResponse) {}
+  rpc queryVmImage(QueryVmImageRequest) returns (QueryVmImageResponse) {}
+}
+
+service VmManager {
+  rpc createVm(CreateVmRequest) returns (CreateVmResponse) {}
+  rpc queryVm(QueryVmRequest) returns (QueryVmResponse) {}
+  rpc operateVm(OperateVmRequest) returns (OperateVmResponse) {}
+  rpc deleteVm(DeleteVmRequest) returns (DeleteVmResponse) {}
+}
+
+service FlavorManager {
+  rpc createFlavor(CreateFlavorRequest) returns (CreateFlavorResponse) {}
+  rpc deleteFlavor(DeleteFlavorRequest) returns (DeleteFlavorResponse) {}
+  rpc queryFlavor(QueryFlavorRequest) returns (QueryFlavorResponse) {}
+}
+
+service NetworkManager {
+  rpc createNetwork(CreateNetworkRequest) returns (CreateNetworkResponse) {}
+  rpc deleteNetwork(DeleteNetworkRequest) returns (DeleteNetworkResponse) {}
+  rpc queryNetwork(QueryNetworkRequest) returns (QueryNetworkResponse) {}
+}
+
+service SecurityGroupManager {
+  rpc createSecurityGroup(CreateSecurityGroupRequest) returns (CreateSecurityGroupResponse) {}
+  rpc deleteSecurityGroup(DeleteSecurityGroupRequest) returns (DeleteSecurityGroupResponse) {}
+  rpc querySecurityGroup(QuerySecurityGroupRequest) returns (QuerySecurityGroupResponse) {}
+
+  rpc createSecurityGroupRule(CreateSecurityGroupRuleRequest) returns (CreateSecurityGroupRuleResponse) {}
+  rpc deleteSecurityGroupRule(DeleteSecurityGroupRuleRequest) returns (DeleteSecurityGroupRuleResponse) {}
+  rpc querySecurityGroupRule(QuerySecurityGroupRuleRequest) returns (QuerySecurityGroupRuleResponse) {}
+}

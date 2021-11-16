@@ -6,7 +6,9 @@ import internal.lcmservice.lcmservice_pb2 as lcmservice__pb2
 
 
 class AppLCMStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """app lcm entity end
+
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -15,59 +17,61 @@ class AppLCMStub(object):
             channel: A grpc.Channel.
         """
         self.instantiate = channel.unary_unary(
-                '/lcmservice.AppLCM/instantiate',
+                '/internal.lcmservice.AppLCM/instantiate',
                 request_serializer=lcmservice__pb2.InstantiateRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.InstantiateResponse.FromString,
                 )
         self.terminate = channel.unary_unary(
-                '/lcmservice.AppLCM/terminate',
+                '/internal.lcmservice.AppLCM/terminate',
                 request_serializer=lcmservice__pb2.TerminateRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.TerminateResponse.FromString,
                 )
         self.query = channel.unary_unary(
-                '/lcmservice.AppLCM/query',
+                '/internal.lcmservice.AppLCM/query',
                 request_serializer=lcmservice__pb2.QueryRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.QueryResponse.FromString,
                 )
         self.queryKPI = channel.unary_unary(
-                '/lcmservice.AppLCM/queryKPI',
+                '/internal.lcmservice.AppLCM/queryKPI',
                 request_serializer=lcmservice__pb2.QueryKPIRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.QueryKPIResponse.FromString,
                 )
         self.queryPackageStatus = channel.unary_unary(
-                '/lcmservice.AppLCM/queryPackageStatus',
+                '/internal.lcmservice.AppLCM/queryPackageStatus',
                 request_serializer=lcmservice__pb2.QueryPackageStatusRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.QueryPackageStatusResponse.FromString,
                 )
         self.uploadConfig = channel.stream_unary(
-                '/lcmservice.AppLCM/uploadConfig',
+                '/internal.lcmservice.AppLCM/uploadConfig',
                 request_serializer=lcmservice__pb2.UploadCfgRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.UploadCfgResponse.FromString,
                 )
         self.removeConfig = channel.unary_unary(
-                '/lcmservice.AppLCM/removeConfig',
+                '/internal.lcmservice.AppLCM/removeConfig',
                 request_serializer=lcmservice__pb2.RemoveCfgRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.RemoveCfgResponse.FromString,
                 )
         self.workloadEvents = channel.unary_unary(
-                '/lcmservice.AppLCM/workloadEvents',
+                '/internal.lcmservice.AppLCM/workloadEvents',
                 request_serializer=lcmservice__pb2.WorkloadEventsRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.WorkloadEventsResponse.FromString,
                 )
         self.uploadPackage = channel.stream_unary(
-                '/lcmservice.AppLCM/uploadPackage',
+                '/internal.lcmservice.AppLCM/uploadPackage',
                 request_serializer=lcmservice__pb2.UploadPackageRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.UploadPackageResponse.FromString,
                 )
         self.deletePackage = channel.unary_unary(
-                '/lcmservice.AppLCM/deletePackage',
+                '/internal.lcmservice.AppLCM/deletePackage',
                 request_serializer=lcmservice__pb2.DeletePackageRequest.SerializeToString,
                 response_deserializer=lcmservice__pb2.DeletePackageResponse.FromString,
                 )
 
 
 class AppLCMServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """app lcm entity end
+
+    """
 
     def instantiate(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -184,13 +188,15 @@ def add_AppLCMServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'lcmservice.AppLCM', rpc_method_handlers)
+            'internal.lcmservice.AppLCM', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
 class AppLCM(object):
-    """Missing associated documentation comment in .proto file."""
+    """app lcm entity end
+
+    """
 
     @staticmethod
     def instantiate(request,
@@ -203,7 +209,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/instantiate',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/instantiate',
             lcmservice__pb2.InstantiateRequest.SerializeToString,
             lcmservice__pb2.InstantiateResponse.FromString,
             options, channel_credentials,
@@ -220,7 +226,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/terminate',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/terminate',
             lcmservice__pb2.TerminateRequest.SerializeToString,
             lcmservice__pb2.TerminateResponse.FromString,
             options, channel_credentials,
@@ -237,7 +243,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/query',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/query',
             lcmservice__pb2.QueryRequest.SerializeToString,
             lcmservice__pb2.QueryResponse.FromString,
             options, channel_credentials,
@@ -254,7 +260,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/queryKPI',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/queryKPI',
             lcmservice__pb2.QueryKPIRequest.SerializeToString,
             lcmservice__pb2.QueryKPIResponse.FromString,
             options, channel_credentials,
@@ -271,7 +277,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/queryPackageStatus',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/queryPackageStatus',
             lcmservice__pb2.QueryPackageStatusRequest.SerializeToString,
             lcmservice__pb2.QueryPackageStatusResponse.FromString,
             options, channel_credentials,
@@ -288,7 +294,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/lcmservice.AppLCM/uploadConfig',
+        return grpc.experimental.stream_unary(request_iterator, target, '/internal.lcmservice.AppLCM/uploadConfig',
             lcmservice__pb2.UploadCfgRequest.SerializeToString,
             lcmservice__pb2.UploadCfgResponse.FromString,
             options, channel_credentials,
@@ -305,7 +311,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/removeConfig',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/removeConfig',
             lcmservice__pb2.RemoveCfgRequest.SerializeToString,
             lcmservice__pb2.RemoveCfgResponse.FromString,
             options, channel_credentials,
@@ -322,7 +328,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/workloadEvents',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/workloadEvents',
             lcmservice__pb2.WorkloadEventsRequest.SerializeToString,
             lcmservice__pb2.WorkloadEventsResponse.FromString,
             options, channel_credentials,
@@ -339,7 +345,7 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/lcmservice.AppLCM/uploadPackage',
+        return grpc.experimental.stream_unary(request_iterator, target, '/internal.lcmservice.AppLCM/uploadPackage',
             lcmservice__pb2.UploadPackageRequest.SerializeToString,
             lcmservice__pb2.UploadPackageResponse.FromString,
             options, channel_credentials,
@@ -356,168 +362,8 @@ class AppLCM(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.AppLCM/deletePackage',
+        return grpc.experimental.unary_unary(request, target, '/internal.lcmservice.AppLCM/deletePackage',
             lcmservice__pb2.DeletePackageRequest.SerializeToString,
             lcmservice__pb2.DeletePackageResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-
-class VmImageStub(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def __init__(self, channel):
-        """Constructor.
-
-        Args:
-            channel: A grpc.Channel.
-        """
-        self.createVmImage = channel.unary_unary(
-                '/lcmservice.VmImage/createVmImage',
-                request_serializer=lcmservice__pb2.CreateVmImageRequest.SerializeToString,
-                response_deserializer=lcmservice__pb2.CreateVmImageResponse.FromString,
-                )
-        self.queryVmImage = channel.unary_unary(
-                '/lcmservice.VmImage/queryVmImage',
-                request_serializer=lcmservice__pb2.QueryVmImageRequest.SerializeToString,
-                response_deserializer=lcmservice__pb2.QueryVmImageResponse.FromString,
-                )
-        self.deleteVmImage = channel.unary_unary(
-                '/lcmservice.VmImage/deleteVmImage',
-                request_serializer=lcmservice__pb2.DeleteVmImageRequest.SerializeToString,
-                response_deserializer=lcmservice__pb2.DeleteVmImageResponse.FromString,
-                )
-        self.downloadVmImage = channel.unary_stream(
-                '/lcmservice.VmImage/downloadVmImage',
-                request_serializer=lcmservice__pb2.DownloadVmImageRequest.SerializeToString,
-                response_deserializer=lcmservice__pb2.DownloadVmImageResponse.FromString,
-                )
-
-
-class VmImageServicer(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def createVmImage(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def queryVmImage(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def deleteVmImage(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def downloadVmImage(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-
-def add_VmImageServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-            'createVmImage': grpc.unary_unary_rpc_method_handler(
-                    servicer.createVmImage,
-                    request_deserializer=lcmservice__pb2.CreateVmImageRequest.FromString,
-                    response_serializer=lcmservice__pb2.CreateVmImageResponse.SerializeToString,
-            ),
-            'queryVmImage': grpc.unary_unary_rpc_method_handler(
-                    servicer.queryVmImage,
-                    request_deserializer=lcmservice__pb2.QueryVmImageRequest.FromString,
-                    response_serializer=lcmservice__pb2.QueryVmImageResponse.SerializeToString,
-            ),
-            'deleteVmImage': grpc.unary_unary_rpc_method_handler(
-                    servicer.deleteVmImage,
-                    request_deserializer=lcmservice__pb2.DeleteVmImageRequest.FromString,
-                    response_serializer=lcmservice__pb2.DeleteVmImageResponse.SerializeToString,
-            ),
-            'downloadVmImage': grpc.unary_stream_rpc_method_handler(
-                    servicer.downloadVmImage,
-                    request_deserializer=lcmservice__pb2.DownloadVmImageRequest.FromString,
-                    response_serializer=lcmservice__pb2.DownloadVmImageResponse.SerializeToString,
-            ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-            'lcmservice.VmImage', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-
-
- # This class is part of an EXPERIMENTAL API.
-class VmImage(object):
-    """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def createVmImage(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.VmImage/createVmImage',
-            lcmservice__pb2.CreateVmImageRequest.SerializeToString,
-            lcmservice__pb2.CreateVmImageResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def queryVmImage(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.VmImage/queryVmImage',
-            lcmservice__pb2.QueryVmImageRequest.SerializeToString,
-            lcmservice__pb2.QueryVmImageResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def deleteVmImage(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/lcmservice.VmImage/deleteVmImage',
-            lcmservice__pb2.DeleteVmImageRequest.SerializeToString,
-            lcmservice__pb2.DeleteVmImageResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def downloadVmImage(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/lcmservice.VmImage/downloadVmImage',
-            lcmservice__pb2.DownloadVmImageRequest.SerializeToString,
-            lcmservice__pb2.DownloadVmImageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
