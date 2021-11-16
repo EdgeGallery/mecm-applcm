@@ -220,7 +220,7 @@ const (
 	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Mepcontroller        = "lcmcontroller/controllers:MepController"
-	Hosts                = "/v1/hosts"
+	Hosts                = "/v1/tenants/:tenantId/hosts"
 	DELETE               = "delete"
 	GET                  = "get"
 	POST                 = "post"
@@ -275,7 +275,7 @@ func GetAppConfig(k string) string {
 // Validate UUID
 func ValidateUUID(id string) error {
 	if id == "" {
-		return errors.New("require app instance id")
+		return errors.New("require id")
 	}
 	validate := validator.New()
 	res := validate.Var(id, "required,uuid")
@@ -337,8 +337,8 @@ func ValidateFileExtensionEmpty(fileName string) error {
 // Validate file extenstion
 func ValidateFileExtensionCsar(fileName string) error {
 	extension := filepath.Ext(fileName)
-	if extension != ".csar" {
-		return errors.New("file extension is not csar")
+	if extension != ".csar" && extension != ".zip" {
+		return errors.New("file extension is not csar or zip")
 	}
 	return nil
 }
