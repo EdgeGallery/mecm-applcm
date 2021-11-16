@@ -259,7 +259,7 @@ func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 	if err != nil {
 		return
 	}
-	_, err = adapter.DeleteSecurityGroup(hostIp, accessToken, tenantId, securityGroupRuleId)
+	_, err = adapter.DeleteSecurityGroupRule(hostIp, accessToken, tenantId, securityGroupRuleId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
 			util.ErrCodePluginReportFailed)
