@@ -46,4 +46,12 @@ type ClientIntf interface {
 		tenantId string) (status string, error error)
 	ImportImage(ctx context.Context, importImage models.ImportImage, hostIP, accessToken,
 		tenantId string) (status string, error error)
+	CreateServer(ctx context.Context, server models.Server, hostIP, accessToken,
+		tenantId string) (status string, error error)
+	QueryServer(ctx context.Context, hostIP, accessToken,
+		tenantId, serverId string) (response string, error error)
+	OperateServer(ctx context.Context, server models.OperateServer, hostIP, accessToken,
+		tenantId, serverId string) (status string, error error)
+	DeleteServer(ctx context.Context, hostIP, accessToken,
+		tenantId, serverId string) (status string, error error)
 }

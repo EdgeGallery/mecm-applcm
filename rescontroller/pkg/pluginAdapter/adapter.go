@@ -52,7 +52,6 @@ func (c *PluginAdapter) CreateFlavor(flavor models.Flavor, hostIp, accessToken, 
 
 	status, err := c.client.CreateFlavor(ctx, flavor, hostIp, accessToken, tenantId)
 	if err != nil {
-		log.Error("failed to create flavor")
 		return util.Failure, err
 	}
 
@@ -69,7 +68,6 @@ func (c *PluginAdapter) QueryFlavor(hostIp, accessToken, tenantId, flavorId stri
 
 	response, err := c.client.QueryFlavor(ctx, hostIp, accessToken, tenantId, flavorId)
 	if err != nil {
-		log.Error("failed to query flavor")
 		return util.Failure, err
 	}
 
@@ -86,7 +84,6 @@ func (c *PluginAdapter) DeleteFlavor(hostIp, accessToken, tenantId, flavorId str
 
 	status, err := c.client.DeleteFlavor(ctx, hostIp, accessToken, tenantId, flavorId)
 	if err != nil {
-		log.Error("failed to delete flavor")
 		return util.Failure, err
 	}
 
@@ -104,7 +101,6 @@ func (c *PluginAdapter) CreateSecurityGroup(securityGroup models.SecurityGroup, 
 
 	status, err := c.client.CreateSecurityGroup(ctx, securityGroup, hostIp, accessToken, tenantId)
 	if err != nil {
-		log.Error("failed to create security group")
 		return util.Failure, err
 	}
 
@@ -121,7 +117,6 @@ func (c *PluginAdapter) QuerySecurityGroup(hostIp, accessToken, tenantId, securi
 
 	response, err := c.client.QuerySecurityGroup(ctx, hostIp, accessToken, tenantId, securityGroupId)
 	if err != nil {
-		log.Error("failed to query security group")
 		return util.Failure, err
 	}
 
@@ -129,7 +124,7 @@ func (c *PluginAdapter) QuerySecurityGroup(hostIp, accessToken, tenantId, securi
 	return response, nil
 }
 
-// Delete flavor
+// Delete security group
 func (c *PluginAdapter) DeleteSecurityGroup(hostIp, accessToken, tenantId, securityGroupId string) (status string, error error) {
 	log.Info("Delete security group started")
 
@@ -138,7 +133,6 @@ func (c *PluginAdapter) DeleteSecurityGroup(hostIp, accessToken, tenantId, secur
 
 	status, err := c.client.DeleteSecurityGroup(ctx, hostIp, accessToken, tenantId, securityGroupId)
 	if err != nil {
-		log.Error("failed to delete security group")
 		return util.Failure, err
 	}
 
@@ -156,7 +150,6 @@ func (c *PluginAdapter) CreateSecurityGroupRules(securityGroupRules models.Secur
 
 	status, err := c.client.CreateSecurityGroupRules(ctx, securityGroupRules, hostIp, accessToken, tenantId)
 	if err != nil {
-		log.Error("failed to create security group rule")
 		return util.Failure, err
 	}
 
@@ -164,8 +157,7 @@ func (c *PluginAdapter) CreateSecurityGroupRules(securityGroupRules models.Secur
 	return status, nil
 }
 
-
-// Query security group
+// Query security group rules
 func (c *PluginAdapter) QuerySecurityGroupRules(hostIp, accessToken, tenantId, securityGroupId string) (response string, error error) {
 	log.Info("Query security group rules started")
 
@@ -174,7 +166,6 @@ func (c *PluginAdapter) QuerySecurityGroupRules(hostIp, accessToken, tenantId, s
 
 	response, err := c.client.QuerySecurityGroupRules(ctx, hostIp, accessToken, tenantId, securityGroupId)
 	if err != nil {
-		log.Error("failed to query security group rules")
 		return util.Failure, err
 	}
 
@@ -182,7 +173,7 @@ func (c *PluginAdapter) QuerySecurityGroupRules(hostIp, accessToken, tenantId, s
 	return response, nil
 }
 
-// Delete flavor
+// Delete security group rule
 func (c *PluginAdapter) DeleteSecurityGroupRule(hostIp, accessToken, tenantId, securityGroupRuleId string) (status string, error error) {
 	log.Info("Delete security group rule started")
 
@@ -191,7 +182,6 @@ func (c *PluginAdapter) DeleteSecurityGroupRule(hostIp, accessToken, tenantId, s
 
 	status, err := c.client.DeleteSecurityGroupRule(ctx, hostIp, accessToken, tenantId, securityGroupRuleId)
 	if err != nil {
-		log.Error("failed to delete security group rule")
 		return util.Failure, err
 	}
 
@@ -208,7 +198,6 @@ func (c *PluginAdapter) QueryImages(hostIp, accessToken, tenantId, imageId strin
 
 	response, err := c.client.QueryImages(ctx, hostIp, accessToken, tenantId, imageId)
 	if err != nil {
-		log.Error("failed to query images")
 		return util.Failure, err
 	}
 
@@ -225,7 +214,6 @@ func (c *PluginAdapter) DeleteImage(hostIp, accessToken, tenantId, imageId strin
 
 	status, err := c.client.DeleteImage(ctx, hostIp, accessToken, tenantId, imageId)
 	if err != nil {
-		log.Error("failed to delete image")
 		return util.Failure, err
 	}
 
@@ -243,7 +231,6 @@ func (c *PluginAdapter) CreateImage(image models.Image, hostIp, accessToken, ten
 
 	status, err := c.client.CreateImage(ctx, image, hostIp, accessToken, tenantId)
 	if err != nil {
-		log.Error("failed to create image")
 		return util.Failure, err
 	}
 
@@ -261,10 +248,76 @@ func (c *PluginAdapter) ImportImage(importImage models.ImportImage, hostIp, acce
 
 	status, err := c.client.ImportImage(ctx, importImage, hostIp, accessToken, tenantId)
 	if err != nil {
-		log.Error("failed to import image")
 		return util.Failure, err
 	}
 
 	log.Info("Import image is success with status: ", status)
+	return status, nil
+}
+
+// Create server
+func (c *PluginAdapter) CreateServer(server models.Server, hostIp, accessToken, tenantId string) (status string,
+	error error) {
+	log.Info("Create server started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.CreateServer(ctx, server, hostIp, accessToken, tenantId)
+	if err != nil {
+		return util.Failure, err
+	}
+
+	log.Info("Create server is success with status: ", status)
+	return status, nil
+}
+
+// Query Server
+func (c *PluginAdapter) QueryServer(hostIp, accessToken, tenantId, serverId string) (response string, error error) {
+	log.Info("Query server started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.QueryServer(ctx, hostIp, accessToken, tenantId, serverId)
+	if err != nil {
+		return util.Failure, err
+	}
+
+	log.Info("Query server is success with status: success")
+	return response, nil
+}
+
+// Operate server
+func (c *PluginAdapter) OperateServer(operateServer models.OperateServer, hostIp, accessToken, tenantId, serverId string) (status string,
+	error error) {
+	log.Info("Operate server started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.OperateServer(ctx, operateServer, hostIp, accessToken, tenantId, serverId)
+	if err != nil {
+		return util.Failure, err
+	}
+
+	log.Info("Operate server is success with status: ", status)
+	return status, nil
+}
+
+// Delete server
+func (c *PluginAdapter) DeleteServer(hostIp, accessToken, tenantId, serverId string) (status string,
+	error error) {
+	log.Info("Delete server started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.DeleteServer(ctx, hostIp, accessToken, tenantId, serverId)
+	if err != nil {
+		return util.Failure, err
+	}
+
+	log.Info("Delete server is success with status: ", status)
 	return status, nil
 }
