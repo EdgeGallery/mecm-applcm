@@ -67,10 +67,7 @@ RUN rm -rf bin/tests bin/.gitignore bin/README.MD bin/requirements.txt bin/docke
     mkdir -m 750 $HOME/config &&\
     mkdir -m 750 $HOME/package &&\
 
-    chown -hR $USER_NAME:$GROUP_NAME $HOME &&\
-    chown -hR $USER_NAME:$GROUP_NAME /etc/hosts
-
-USER $USER_NAME
+    chown -hR $USER_NAME:$GROUP_NAME $HOME 
 
 EXPOSE 8234
 
