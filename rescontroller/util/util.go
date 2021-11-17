@@ -58,6 +58,8 @@ const (
 	FailedToGetClient               = "Failed to get client"
 	FlavorId                        = ":flavorId"
 	SecurityGroupId                 = ":securityGroupId"
+	ServerId                        = ":serverId"
+	ImageId                         = ":imageId"
 
 	RequestBodyTooLarge            = "request body too large"
 	CreateFlavorSuccess            = "Create flavor is successful"
@@ -74,6 +76,8 @@ const (
 	StatusNotFound            int = 404
 	StatusForbidden           int = 403
 	RequestBodyLength             = 4096
+
+	MaxIPVal             = 255
 
 	SuccessCode int = 200
 
@@ -166,6 +170,7 @@ const (
 	ResponseForClient    = 	"Response message for ClientIP ["
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
+	UserId               = "7f9cac8d-7c54-23e7-99c6-27e4d944d5de"
 )
 
 var ReadTlsCfg = true
@@ -502,7 +507,7 @@ func ValidateRole(claims jwt.MapClaims, allowedRoles []string) error {
 }
 
 func isValidUser(roleName string, allowedRoles []string) error {
-	if !isRoleAllowed(roleName, allowedRoles) {
+	if !IsRoleAllowed(roleName, allowedRoles) {
 		log.Info("Invalid token Authorities")
 		if roleName == MecmGuestRole {
 			return errors.New(Forbidden)
@@ -512,7 +517,7 @@ func isValidUser(roleName string, allowedRoles []string) error {
 	return nil
 }
 
-func isRoleAllowed(actual string, allowed []string) bool {
+func IsRoleAllowed(actual string, allowed []string) bool {
 	for _, v := range allowed {
 		if v == actual {
 			return true

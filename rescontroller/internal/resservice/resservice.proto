@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package internal.resourcemanager;
+package resservice;
 
 // resource manager entity start
 
@@ -222,6 +222,7 @@ message CreateNetworkRequest {
     }
     repeated Subnet subnets = 16;
   }
+  Network network = 4;
 }
 
 message CreateNetworkResponse {

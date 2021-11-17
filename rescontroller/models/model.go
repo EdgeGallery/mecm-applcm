@@ -18,6 +18,7 @@ package models
 
 import (
 	"github.com/astaxie/beego/orm"
+	resservice "rescontroller/internal/resservice"
 	"time"
 )
 
@@ -112,4 +113,45 @@ type SecurityGroupRules struct {
 	PortRangeMax    int32  `json:"port_range_max"`
 	Remoteipprefix  string `json:"remoteIpPrefix"`
 	RemoteGroupID   string `json:"remote_group_id"`
+}
+
+// Image info
+type Image struct {
+	Name            string `json:"name"`
+	Containerformat string `json:"containerFormat"`
+	Diskformat      string `json:"diskFormat"`
+	Minram          int32    `json:"minRam"`
+	Mindisk         int32    `json:"minDisk"`
+	Properties      map[string]string `json:"properties"`
+}
+
+// Import image info
+type ImportImage struct {
+	Imageid     string `json:"imageId"`
+	Resourceuri string `json:"resourceUri"`
+}
+
+// Server Info
+type Server struct {
+	Name             string `json:"name"`
+	Flavor           string `json:"flavor"`
+	Image            string `json:"image"`
+	Imageref         string `json:"imageRef"`
+	Availabilityzone string `json:"availabilityZone"`
+	UserData         string `json:"user_data"`
+	Configdrive      bool `json:"configDrive"`
+	Securitygroups   []struct {
+		Name string `json:"name"`
+	} `json:"securityGroups"`
+	Network []*resservice.CreateVmRequest_Server_Network `json:"netWork"`
+}
+
+// Operate Server
+type OperateServer struct {
+	Action      string             `json:"action"`
+	Reboot      string             `json:"reboot"`
+	Createimage struct {
+		Name     string            `json:"name"`
+		Metadata map[string]string `json:"metadata"`
+	} `json:"createImage"`
 }

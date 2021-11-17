@@ -253,3 +253,170 @@ func (c *ClientGRPC) DeleteSecurityGroupRule(ctx context.Context, hostIp, access
 	}
 	return resp.Response, err
 }
+
+// Query images
+func (c *ClientGRPC) QueryImages(ctx context.Context, hostIp, accessToken,
+	tenantId, imageId string) (response string, error error) {
+	req := &resservice.QueryVmImageRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		ImageId:              imageId,
+	}
+	resp, err := c.vmImageClient.QueryVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Delete image
+func (c *ClientGRPC) DeleteImage(ctx context.Context, hostIp, accessToken, tenantId,
+	imageId string) (response string, error error) {
+	req := &resservice.DeleteVmImageRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		ImageId:              imageId,
+	}
+	resp, err := c.vmImageClient.DeleteVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Create Image
+func (c *ClientGRPC) CreateImage(ctx context.Context, image models.Image, hostIp, accessToken,
+	tenantId string) (response string, error error) {
+	reqImage := &resservice.CreateVmImageRequest_Image{
+		Name:            image.Name,
+		ContainerFormat: image.Containerformat,
+		DiskFormat:      image.Diskformat,
+		MinRam:          image.Minram,
+		MinDisk:         image.Mindisk,
+		Properties:      image.Properties,
+	}
+
+	req := &resservice.CreateVmImageRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		Image:        reqImage,
+	}
+	resp, err := c.vmImageClient.CreateVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Import Image
+func (c *ClientGRPC) ImportImage(ctx context.Context, importImage models.ImportImage, hostIp, accessToken,
+	tenantId string) (response string, error error) {
+	req := &resservice.ImportVmImageRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		ImageId:       importImage.Imageid,
+		ResourceUri:   importImage.Resourceuri,
+	}
+	resp, err := c.vmImageClient.ImportVmImage(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Create Server
+func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hostIp, accessToken,
+	tenantId string) (response string, error error) {
+	var SecurityGroups   []string
+	var Networks         []*resservice.CreateVmRequest_Server_Network
+
+	for _, securityGroup := range server.Securitygroups {
+		SecurityGroups = append(SecurityGroups, securityGroup.Name)
+	}
+
+	reqServer := &resservice.CreateVmRequest_Server{
+		Name:             server.Name,
+		Flavor:           server.Flavor,
+		Image:            server.Image,
+		AvailabilityZone: server.Availabilityzone,
+		UserData:         server.UserData,
+		ConfigDrive:      server.Configdrive,
+		SecurityGroups:   SecurityGroups,
+		Networks:         server.Network,
+	}
+
+	req := &resservice.CreateVmRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		Server:        reqServer,
+	}
+	resp, err := c.vmClient.CreateVm(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Query Server
+func (c *ClientGRPC) QueryServer(ctx context.Context, hostIp, accessToken,
+	tenantId, serverId string) (response string, error error) {
+	req := &resservice.QueryVmRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		VmId:                 serverId,
+	}
+	resp, err := c.vmClient.QueryVm(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Operate Server
+func (c *ClientGRPC) OperateServer(ctx context.Context, operateServer models.OperateServer, hostIp, accessToken,
+	tenantId, serverId string) (response string, error error) {
+	rebootReq := &resservice.OperateVmRequest_Reboot{
+		Type: operateServer.Reboot,
+	}
+
+	createImageReq := &resservice.OperateVmRequest_CreateImage{
+		Name: operateServer.Createimage.Name,
+		Metadata: operateServer.Createimage.Metadata,
+	}
+	req := &resservice.OperateVmRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		VmId:          serverId,
+		Action:        operateServer.Action,
+		Reboot:        rebootReq,
+		CreateImage:   createImageReq,
+	}
+	resp, err := c.vmClient.OperateVm(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Delete server
+func (c *ClientGRPC) DeleteServer(ctx context.Context, hostIp, accessToken, tenantId,
+	serverId string) (response string, error error) {
+	req := &resservice.DeleteVmRequest{
+		AccessToken:          accessToken,
+		HostIp:               hostIp,
+		TenantId:             tenantId,
+		VmId:                 serverId,
+	}
+	resp, err := c.vmClient.DeleteVm(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
