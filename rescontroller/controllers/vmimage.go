@@ -49,8 +49,8 @@ func (c *VmImageController) QueryImages() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	if c.IsIdAvailable(":imageId") {
-		imageId = c.GetId(":imageId")
+	if c.IsIdAvailable(util.ImageId) {
+		imageId = c.GetId(util.ImageId)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -91,7 +91,7 @@ func (c *VmImageController) DeleteImage() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	imageId := c.GetId(":imageId")
+	imageId := c.GetId(util.ImageId)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {

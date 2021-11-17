@@ -18,6 +18,7 @@ package models
 
 import (
 	"github.com/astaxie/beego/orm"
+	resservice "rescontroller/internal/resservice"
 	"time"
 )
 
@@ -128,4 +129,29 @@ type Image struct {
 type ImportImage struct {
 	Imageid     string `json:"imageId"`
 	Resourceuri string `json:"resourceUri"`
+}
+
+// Server Info
+type Server struct {
+	Name             string `json:"name"`
+	Flavor           string `json:"flavor"`
+	Image            string `json:"image"`
+	Imageref         string `json:"imageRef"`
+	Availabilityzone string `json:"availabilityZone"`
+	UserData         string `json:"user_data"`
+	Configdrive      bool `json:"configDrive"`
+	Securitygroups   []struct {
+		Name string `json:"name"`
+	} `json:"securityGroups"`
+	Network []*resservice.CreateVmRequest_Server_Network `json:"netWork"`
+}
+
+// Operate Server
+type OperateServer struct {
+	Action      string             `json:"action"`
+	Reboot      string             `json:"reboot"`
+	Createimage struct {
+		Name     string            `json:"name"`
+		Metadata map[string]string `json:"metadata"`
+	} `json:"createImage"`
 }

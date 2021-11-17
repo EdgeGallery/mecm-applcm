@@ -419,3 +419,4 @@ func (c *ClientGRPC) DeleteServer(ctx context.Context, hostIp, accessToken, tena
 		return "", err
 	}
 	return resp.Response, err
+}

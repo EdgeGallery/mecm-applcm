@@ -59,6 +59,7 @@ const (
 	FlavorId                        = ":flavorId"
 	SecurityGroupId                 = ":securityGroupId"
 	ServerId                        = ":serverId"
+	ImageId                         = ":imageId"
 
 	RequestBodyTooLarge            = "request body too large"
 	CreateFlavorSuccess            = "Create flavor is successful"
@@ -506,7 +507,7 @@ func ValidateRole(claims jwt.MapClaims, allowedRoles []string) error {
 }
 
 func isValidUser(roleName string, allowedRoles []string) error {
-	if !isRoleAllowed(roleName, allowedRoles) {
+	if !IsRoleAllowed(roleName, allowedRoles) {
 		log.Info("Invalid token Authorities")
 		if roleName == MecmGuestRole {
 			return errors.New(Forbidden)
@@ -516,7 +517,7 @@ func isValidUser(roleName string, allowedRoles []string) error {
 	return nil
 }
 
-func isRoleAllowed(actual string, allowed []string) bool {
+func IsRoleAllowed(actual string, allowed []string) bool {
 	for _, v := range allowed {
 		if v == actual {
 			return true

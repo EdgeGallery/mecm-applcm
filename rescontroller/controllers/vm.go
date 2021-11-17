@@ -190,5 +190,6 @@ func (c *VmController) DeleteServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
+
 	c.handleLoggingForSuccess(nil, clientIp, "Delete server is successful")
 }
