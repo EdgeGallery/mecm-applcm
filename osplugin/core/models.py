@@ -182,7 +182,7 @@ class AppInsMapper(db.Entity):
     host_ip = Required(str, max_len=15)
     stack_id = Required(str, max_len=64, unique=True)
     operational_status = Required(str, max_len=128)
-    operation_info = Optional(str, max_len=256, nullable=True)
+    operation_info = Optional(str, nullable=True)
 
     def get_table_name(self):
         """
