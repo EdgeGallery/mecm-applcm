@@ -52,70 +52,21 @@ func (db *PgDb) InitOrmer() (err1 error) {
 	return nil
 }
 
-// Insert or update data into lcmcontroller
-func (db *PgDb) InsertOrUpdateData(data interface{}, cols ...string) (err error) {
-	_, err = db.ormer.InsertOrUpdate(data, cols...)
-	return err
-}
-
 // Read data from lcmcontroller
 func (db *PgDb) ReadData(data interface{}, cols ...string) (err error) {
 	err = db.ormer.Read(data, cols...)
 	return err
 }
 
-// Delete data from lcmcontroller
-func (db *PgDb) DeleteData(data interface{}, cols ...string) (err error) {
-	_, err = db.ormer.Delete(data, cols...)
-	return err
-}
-
-// Query count for any given table name
-func (db *PgDb) QueryCount(tableName string) (int64, error) {
-	num, err := db.ormer.QueryTable(tableName).Count()
-	return num, err
-}
-
-// Query count based on fieldname and fieldvalue
-func (db *PgDb) QueryCountForTable(tableName, fieldName, fieldValue string) (int64, error) {
-	num, err := db.ormer.QueryTable(tableName).Filter(fieldName, fieldValue).Count()
-	if err != nil {
-		log.Error("Failed to Query count based on fieldname and fieldvalue")
-		return num,err
-	}
-	return num, err
-}
-
-// return a raw query setter for raw sql string.
-func (db *PgDb) QueryTable(tableName string, container interface{}, field string, container1 ...interface{}) (num int64, err error) {
-
-	if field != "" {
-		num, err = db.ormer.QueryTable(tableName).Filter(field, container1).All(container)
-	} else {
-		num, err = db.ormer.QueryTable(tableName).All(container)
-	}
-
-	return num, err
-}
-
-// Load Related
-func (db *PgDb) LoadRelated(md interface{}, name string) (int64, error) {
-	num, err := db.ormer.LoadRelated(md, name)
-	return num, err
-}
 
 // Init database
 func (db *PgDb) InitDatabase() error {
-	/*dbUser := util.GetDbUser()
+	dbUser := util.GetDbUser()
 	dbPwd := []byte(os.Getenv("LCM_CNTLR_DB_PASSWORD"))
 	dbName := util.GetDbName()
 	dbHost := util.GetDbHost()
-	dbPort := util.GetDbPort()*/
-	dbUser := "lcmcontroller"
-	dbPwd := []byte("te9Fmv%qaq")
-	dbName := "lcmcontrollerdb"
-	dbHost := "localhost"
-	dbPort := "5432"
+	dbPort := util.GetDbPort()
+
 	dbSslMode := util.GetAppConfig("DB_SSL_MODE")
 	dbSslRootCert := util.GetAppConfig("DB_SSL_ROOT_CERT")
 

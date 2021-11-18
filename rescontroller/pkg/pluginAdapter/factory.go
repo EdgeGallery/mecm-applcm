@@ -18,8 +18,6 @@ package pluginAdapter
 
 import (
 	"errors"
-	log "github.com/sirupsen/logrus"
-	"rescontroller/util"
 )
 
 const (
@@ -36,7 +34,6 @@ func GetClient(pluginInfo string) (client ClientIntf, err error) {
 			RootCertificate: "HTTPSClientCA"}
 		var client, err = NewClientGRPC(clientConfig)
 		if err != nil {
-			log.Errorf(util.FailedToCreateClient, err)
 			return nil, err
 		}
 		return client, nil
