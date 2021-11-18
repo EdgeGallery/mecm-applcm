@@ -47,31 +47,6 @@ type VmImageServer struct {
 	Address string
 }
 
-func (v VmImageServer) CreateVmImage(ctx context.Context, request *lcmservice.CreateVmImageRequest) (*lcmservice.CreateVmImageResponse, error) {
-	resp := &lcmservice.CreateVmImageResponse{
-		Response: SUCCESS_RETURN,
-	}
-	return resp, nil
-}
-
-func (v VmImageServer) QueryVmImage(ctx context.Context, request *lcmservice.QueryVmImageRequest) (*lcmservice.QueryVmImageResponse, error) {
-	resp := &lcmservice.QueryVmImageResponse{
-		Response: SUCCESS_RETURN,
-	}
-	return resp, nil
-}
-
-func (v VmImageServer) DeleteVmImage(ctx context.Context, request *lcmservice.DeleteVmImageRequest) (*lcmservice.DeleteVmImageResponse, error) {
-	resp := &lcmservice.DeleteVmImageResponse{
-		Response: SUCCESS_RETURN,
-	}
-	return resp, nil
-}
-
-func (v VmImageServer) DownloadVmImage(request *lcmservice.DownloadVmImageRequest, server lcmservice.VmImage_DownloadVmImageServer) error {
-	return nil
-}
-
 func (a AppLCMServer) Instantiate(ctx context.Context, request *lcmservice.InstantiateRequest) (*lcmservice.InstantiateResponse, error) {
 	resp := &lcmservice.InstantiateResponse{
 		Status: SUCCESS_RETURN,
@@ -193,10 +168,8 @@ func (s *ServerGRPC) Listen() (err error) {
 	// Create server without TLS credentials
 	s.server = grpc.NewServer()
 	var appLCMServer AppLCMServer
-	var appVmImageServer VmImageServer
-	
+
 	lcmservice.RegisterAppLCMServer(s.server, appLCMServer)
-	lcmservice.RegisterVmImageServer(s.server, appVmImageServer)
 	log.Infof("Mock server registered with GRPC")
 
 	// Server start serving

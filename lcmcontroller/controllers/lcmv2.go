@@ -521,7 +521,7 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 		return
 	}
 
-	hostIp, vim, hostInfoRec, err := c.GetInputParametersForRemoveCfg(clientIp)
+	hostIp, vim, hostInfoRec, tenantId, err := c.GetInputParametersForRemoveCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -535,7 +535,7 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	_, err = adapter.RemoveConfig(hostIp, accessToken)
+	_, err = adapter.RemoveConfig(hostIp, accessToken, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
@@ -570,10 +570,14 @@ func (c *LcmControllerV2) GetVim(clientIp string, hostIp string) (string, error)
 }
 
 // Get in put parameters for remove configuration
-func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, error) {
+func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, string, error) {
 	hostIp, err := c.GetHostIP(clientIp)
 	if err != nil {
-		return "", "", &models.MecHost{}, err
+		return "", "", &models.MecHost{}, "", err
+	}
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return "", "", &models.MecHost{}, "", err
 	}
 
 	hostInfoRec := &models.MecHost{
@@ -584,15 +588,15 @@ func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (strin
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound,
 			util.MecHostRecDoesNotExist, util.ErrCodeHostNotExist)
-		return "", "", hostInfoRec, err
+		return "", "", hostInfoRec, "", err
 	}
 
 	vim, err := c.GetVim(clientIp, hostIp)
 	if err != nil {
-		return "", "", hostInfoRec, err
+		return "", "", hostInfoRec, "", err
 	}
 
-	return hostIp, vim, hostInfoRec, err
+	return hostIp, vim, hostInfoRec, tenantId, err
 }
 
 // Get host IP
@@ -1027,7 +1031,7 @@ func (c *LcmControllerV2) TerminateV2() {
 		return
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
@@ -1128,7 +1132,7 @@ func (c *LcmControllerV2) QueryV2() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
-	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
+	tenantId, err:= c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
@@ -1157,7 +1161,7 @@ func (c *LcmControllerV2) QueryV2() {
 		return
 	}
 
-	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost)
+	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
@@ -1195,6 +1199,11 @@ func (c *LcmControllerV2) QueryKPI() {
 		return
 	}
 
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
 	vim, err := c.GetVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -1206,7 +1215,7 @@ func (c *LcmControllerV2) QueryKPI() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	response, err := adapter.QueryKPI(accessToken, hostIp)
+	response, err := adapter.QueryKPI(accessToken, hostIp, tenantId)
 	util.ClearByteArray(bKey)
 	c.HandleKPI(clientIp, err, response)
 }
@@ -1345,7 +1354,7 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
+	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
@@ -1373,7 +1382,8 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
+	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId,
+		tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")

@@ -27,10 +27,6 @@ func init() {
 	initAPI(util.Lcmcontroller, "HealthCheck", "/v1/health", util.GET)
 	initAPI(util.Lcmcontroller, "ChangeKey", "/v1/password", util.POST)
 	initAPI(util.Lcmcontroller, "LoginPage", "/v1/login", util.POST)
-	initAPI(util.Imagecontroller, "CreateImage", "/v1/tenants/:tenantId/app_instances/:appInstanceId/images", util.POST)
-	initAPI(util.Imagecontroller, "DeleteImage", "/v1/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId", util.DELETE)
-	initAPI(util.Imagecontroller, "GetImage", "/v1/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId", util.GET)
-	initAPI(util.Imagecontroller, "GetImageFile", "/v1/tenants/:tenantId/app_instances/:appInstanceId/images/:imageId/file", util.GET)
 	initAPI(util.MecHostcontroller, "AddMecHost", util.Hosts, util.POST)
 	initAPI(util.MecHostcontroller, "UpdateMecHost", util.Hosts, "put")
 	initAPI(util.MecHostcontroller, "GetMecHost", util.Hosts, util.GET)
@@ -42,8 +38,6 @@ func init() {
 	initAPI(util.Mepcontroller, "Services", "/v1/mep/services", util.GET)
 	initAPI(util.Mepcontroller, "KongLog", "/v1/mep/kong_log", util.GET)
 	initAPI(util.Mepcontroller, "Subscribe", "/v1/mep/subscribe_statistic", util.GET)
-
-
 
 	initAPI(util.Lcmcontrollerv2, "UploadConfigV2", "/v2/tenants/:tenantId/configuration", util.POST)
 	initAPI(util.Lcmcontrollerv2, "RemoveConfigV2", "/v2/tenants/:tenantId/configuration", util.DELETE)

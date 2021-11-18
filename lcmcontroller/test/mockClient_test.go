@@ -17,7 +17,6 @@
 package test
 
 import (
-	"bytes"
 	"context"
 	"lcmcontroller/models"
 	"mime/multipart"
@@ -31,54 +30,34 @@ func (mc *mockClient) Instantiate(ctx context.Context, tenantId string, accessTo
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) CreateVmImage(ctx context.Context, accessToken, appInsId,
-	hostIP, vmId, tenantId string) (response string, error error) {
-	return SUCCESS_RETURN, nil
-}
-
-func (mc *mockClient) QueryVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string) (response string, error error) {
-	return SUCCESS_RETURN, nil
-}
-
-func (mc *mockClient) DeleteVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string) (status string, error error) {
-	return SUCCESS_RETURN, nil
-}
-
-func (mc *mockClient) DownloadVmImage(ctx context.Context, accessToken string, appInsId string, hostIP string,
-	imageId string, chunkNum int32) (buf *bytes.Buffer, error error) {
-	return &bytes.Buffer{}, nil
-}
-
-
-func (mc *mockClient) Terminate(ctx context.Context, hostIP string, accessToken string,
+func (mc *mockClient) Terminate(ctx context.Context, hostIP string, tenantId string, accessToken string,
 	appInsId string) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) Query(ctx context.Context, accessToken string, appInsId string,
-	hostIP string) (response string, error error) {
+func (mc *mockClient) Query(ctx context.Context, accessToken string, appInsId string, hostIP string, tenantId string) (
+	response string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
 
-func (mc *mockClient) QueryKPI(ctx context.Context, accessToken string, hostIP string) (response string, error error) {
+func (mc *mockClient) QueryKPI(ctx context.Context, accessToken string, tenantId string, hostIP string) (response string,
+	error error) {
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) UploadConfig(ctx context.Context, multipartFile multipart.File,
+func (mc *mockClient) UploadConfig(ctx context.Context, tenantId string,multipartFile multipart.File,
 	hostIP string, accessToken string) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
-func (mc *mockClient) RemoveConfig(ctx context.Context, hostIP string,
+func (mc *mockClient) RemoveConfig(ctx context.Context, hostIP string, tenantId string,
 	accessToken string) (status string, error error) {
 	return SUCCESS_RETURN, nil
 }
 
 func (mc *mockClient) WorkloadDescription(ctx context.Context, accessToken string, hostIp string,
-	workloadName string) (response string, error error) {
+	workloadName string, tenantId string) (response string, error error) {
 	return SUCCESS_RETURN, nil
 }
 

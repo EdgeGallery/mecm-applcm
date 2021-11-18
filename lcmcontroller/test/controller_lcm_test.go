@@ -460,7 +460,7 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 			return err
 		})
 		defer patch12.Reset()
-		_, _, _, result10 := deleteLcmv2Controller.GetInputParametersForRemoveCfg(clientIp)
+		_, _, _, _, result10:= deleteLcmv2Controller.GetInputParametersForRemoveCfg(clientIp)
 		assert.NotEmpty(t, result10, "Error occurred as host does not exist ")
 
 		//case-2:
@@ -473,7 +473,7 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 				return err
 			})
 		defer patch16.Reset()
-		_, _, _, result11 := deleteLcmv2Controller.GetInputParametersForRemoveCfg(clientIp)
+		_, _, _, _, result11 := deleteLcmv2Controller.GetInputParametersForRemoveCfg(clientIp)
 		assert.Empty(t, result11, "Error occurred as host does not exist ")
 	})
 }
