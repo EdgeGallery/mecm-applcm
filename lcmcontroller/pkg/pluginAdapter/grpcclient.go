@@ -17,7 +17,6 @@
 package pluginAdapter
 
 import (
-	"bytes"
 	"crypto/tls"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -39,7 +38,6 @@ import (
 type ClientGRPC struct {
 	conn        *grpc.ClientConn
 	client      lcmservice.AppLCMClient
-	imageClient lcmservice.VmImageClient
 	chunkSize   int
 }
 
@@ -86,8 +84,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 		return c, err
 	}
 
-	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn),
-		imageClient: lcmservice.NewVmImageClient(conn)}, nil
+	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn)}, nil
 }
 
 // Instantiate application
@@ -111,12 +108,13 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, accessTok
 
 // Query application
 func (c *ClientGRPC) Query(ctx context.Context, accessToken string,
-	appInsId string, hostIP string) (response string, error error) {
+	appInsId string, hostIP string, tenantId string) (response string, error error) {
 
 	req := &lcmservice.QueryRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
+		TenantId:      tenantId,
 	}
 	resp, err := c.client.Query(ctx, req)
 	if err != nil {
@@ -126,10 +124,12 @@ func (c *ClientGRPC) Query(ctx context.Context, accessToken string,
 }
 
 // Query application
-func (c *ClientGRPC) QueryKPI(ctx context.Context, accessToken, hostIP string) (response string, error error) {
+func (c *ClientGRPC) QueryKPI(ctx context.Context, accessToken, tenantId string, hostIP string) (response string,
+	error error) {
 
 	req := &lcmservice.QueryKPIRequest{
 		AccessToken:   accessToken,
+		TenantId:      tenantId,
 		HostIp:        hostIP,
 	}
 	resp, err := c.client.QueryKPI(ctx, req)
@@ -140,11 +140,12 @@ func (c *ClientGRPC) QueryKPI(ctx context.Context, accessToken, hostIP string) (
 }
 
 // Terminate application
-func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, accessToken string,
+func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, tenantId string, accessToken string,
 	appInsId string) (status string, error error) {
 
 	req := &lcmservice.TerminateRequest{
 		HostIp:        hostIP,
+		TenantId:      tenantId,
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 	}
@@ -156,9 +157,11 @@ func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, accessToken s
 }
 
 // Remove configuration
-func (c *ClientGRPC) RemoveConfig(ctx context.Context, hostIP string, accessToken string) (status string, error error) {
+func (c *ClientGRPC) RemoveConfig(ctx context.Context, tenantId string, hostIP string, accessToken string) (
+	status string, error error) {
 	req := &lcmservice.RemoveCfgRequest{
 		HostIp:      hostIP,
+		TenantId:    tenantId,
 		AccessToken: accessToken,
 	}
 	resp, err := c.client.RemoveConfig(ctx, req)
@@ -169,7 +172,7 @@ func (c *ClientGRPC) RemoveConfig(ctx context.Context, hostIP string, accessToke
 }
 
 // Upload Configuration
-func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.File,
+func (c *ClientGRPC) UploadConfig(ctx context.Context, tenantId string, multipartFile multipart.File,
 	hostIP string, accessToken string) (status string, error error) {
 	var (
 		writing = true
@@ -191,6 +194,20 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 		Data: &lcmservice.UploadCfgRequest_AccessToken{
 			AccessToken: accessToken,
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Error(util.FailedToSendMetadataInfo)
+		return util.Failure, err
+	}
+
+	//send metadata information
+	req = &lcmservice.UploadCfgRequest{
+
+		Data: &lcmservice.UploadCfgRequest_TenantId{
+			TenantId: tenantId,
 		},
 	}
 
@@ -255,110 +272,19 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, multipartFile multipart.F
 
 // Get workload description
 func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string,
-	appInsId string, hostIP string) (response string, error error) {
+	appInsId string, hostIP string, tenantId string) (response string, error error) {
 
 	req := &lcmservice.WorkloadEventsRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
+		TenantId:      tenantId,
 	}
 	resp, err := c.client.WorkloadEvents(ctx, req)
 	if err != nil {
 		return "", err
 	}
 	return resp.Response, err
-}
-
-// Create VM Image
-func (c *ClientGRPC) CreateVmImage(ctx context.Context, accessToken, appInsId,
-	hostIP, vmId, tenantId string) (response string, error error) {
-	req := &lcmservice.CreateVmImageRequest{
-		HostIp:        hostIP,
-		AccessToken:   accessToken,
-		AppInstanceId: appInsId,
-		TenantId:      tenantId,
-		VmId:          vmId,
-	}
-	resp, err := c.imageClient.CreateVmImage(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	return resp.Response, err
-}
-
-// Query VM Image
-func (c *ClientGRPC) QueryVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string) (response string, error error) {
-	req := &lcmservice.QueryVmImageRequest{
-		HostIp:        hostIP,
-		AccessToken:   accessToken,
-		AppInstanceId: appInsId,
-		ImageId:       imageId,
-	}
-	resp, err := c.imageClient.QueryVmImage(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	return resp.Response, err
-}
-
-// Delete VM Image
-func (c *ClientGRPC) DeleteVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string) (response string, error error) {
-	req := &lcmservice.DeleteVmImageRequest{
-		HostIp:        hostIP,
-		AccessToken:   accessToken,
-		AppInstanceId: appInsId,
-		ImageId:       imageId,
-	}
-	resp, err := c.imageClient.DeleteVmImage(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	return resp.Response, err
-}
-
-// Download VM Image
-func (c *ClientGRPC) DownloadVmImage(ctx context.Context, accessToken string, appInsId string,
-	hostIP string, imageId string, chunkNum int32) (buf *bytes.Buffer, error error) {
-	req := &lcmservice.DownloadVmImageRequest{
-		HostIp:        hostIP,
-		AccessToken:   accessToken,
-		AppInstanceId: appInsId,
-		ImageId:       imageId,
-		ChunkNum:      chunkNum,
-	}
-
-
-	stream, err := c.imageClient.DownloadVmImage(ctx, req)
-	if err != nil {
-		return buf, err
-	}
-	var count int32 = 0
-	for {
-		err := c.contextError(stream.Context())
-		if err != nil {
-			return buf, err
-		}
-
-		log.Debug("Waiting to receive more data")
-
-		res, err := stream.Recv()
-		if err == io.EOF {
-			log.Info("No more data")
-			break
-		}
-		if err != nil {
-			return buf, c.logError(status.Error(codes.Unknown, "cannot receive chunk data"))
-		}
-
-		// Receive chunk and write to package
-		chunk := res.GetContent()
-		util.VmImageMap[count] = chunk
-		count++
-	}
-	_ = stream.CloseSend()
-	return buf, nil
 }
 
 // Close connection
@@ -534,11 +460,13 @@ func (c *ClientGRPC) DeletePackage(ctx context.Context, tenantId string, hostIP 
 
 
 // Upload Package status
-func (c *ClientGRPC) QueryPackageStatus(ctx context.Context, tenantId string, hostIP string, packageId string, accessToken string) (status string, error error) {
+func (c *ClientGRPC) QueryPackageStatus(ctx context.Context, tenantId string, hostIP string, packageId string,
+	accessToken string) (status string, error error) {
 	req := &lcmservice.QueryPackageStatusRequest{
 		AccessToken:  accessToken,
 		PackageId: packageId,
 		HostIp:       hostIP,
+		TenantId:   tenantId,
 	}
 
 	log.WithFields(log.Fields{

@@ -217,7 +217,6 @@ const (
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Lcmcontrollerv2      = "lcmcontroller/controllers:LcmControllerV2"
-	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Mepcontroller        = "lcmcontroller/controllers:MepController"
 	Hosts                = "/v1/tenants/:tenantId/hosts"

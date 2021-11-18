@@ -327,7 +327,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId, appInfoRecord.TenantId)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
 		return err

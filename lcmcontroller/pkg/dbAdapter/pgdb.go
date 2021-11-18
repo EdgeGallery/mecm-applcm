@@ -18,7 +18,6 @@
 package dbAdapter
 
 import (
-	"errors"
 	"fmt"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
@@ -118,11 +117,11 @@ func (db *PgDb) InitDatabase() error {
 
 	dbPwdStr := string(dbPwd)
 	util.ClearByteArray(dbPwd)
-	dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbPwdStr)
-	if validateDbParamsErr != nil || !dbParamsAreValid {
-		log.Error("Failed to validate db parameters:",validateDbParamsErr)
-		return errors.New("failed to validate db parameters")
-	}
+	//dbParamsAreValid, validateDbParamsErr := util.ValidateDbParams(dbPwdStr)
+	//if validateDbParamsErr != nil || !dbParamsAreValid {
+	//	log.Error("Failed to validate db parameters:",validateDbParamsErr)
+	//	return errors.New("failed to validate db parameters")
+	//}
 	registerDriverErr := orm.RegisterDriver(util.DriverName, orm.DRPostgres)
 	if registerDriverErr != nil {
 		log.Error("Failed to register driver")
