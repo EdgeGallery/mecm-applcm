@@ -37,7 +37,7 @@ type SecurityGroupController struct {
 // @Param   body          body    models.SecurityGroup   true      "The security group information"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup" [post]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups" [post]
 func (c *SecurityGroupController) CreateSecurityGroup() {
 	log.Info("Create security group request received.")
 
@@ -76,7 +76,7 @@ func (c *SecurityGroupController) CreateSecurityGroup() {
 // @Param   securityGroupId       path 	     string	true   "securityGroupId"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId" [get]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId" [get]
 func (c *SecurityGroupController) QuerySecurityGroup() {
 	log.Info("Query security group request received.")
 	var securityGroupdId = ""
@@ -114,7 +114,7 @@ func (c *SecurityGroupController) QuerySecurityGroup() {
 // @Param   securityGroupId       path 	     string	true   "securityGroupId"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId" [delete]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId" [delete]
 func (c *SecurityGroupController) DeleteSecurityGroup() {
 	log.Info("Delete security group by security group id request received.")
 	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
@@ -224,7 +224,7 @@ func (c *SecurityGroupController) QuerySecurityGroupRules() {
 // @Param   securityGroupRuleId   path 	     string	true   "securityGroupRuleId"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId/securityGroupRules/:securityGroupRuleId" [delete]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules/:securityGroupRuleId" [delete]
 func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 	log.Info("Delete security group rules by security group rules id request received.")
 	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})

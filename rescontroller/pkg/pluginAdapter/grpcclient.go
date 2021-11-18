@@ -332,7 +332,6 @@ func (c *ClientGRPC) ImportImage(ctx context.Context, importImage models.ImportI
 func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hostIp, accessToken,
 	tenantId string) (response string, error error) {
 	var SecurityGroups   []string
-	var Networks         []*resservice.CreateVmRequest_Server_Network
 
 	for _, securityGroup := range server.Securitygroups {
 		SecurityGroups = append(SecurityGroups, securityGroup.Name)
