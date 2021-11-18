@@ -69,6 +69,8 @@ RUN rm -rf bin/tests bin/.gitignore bin/README.MD bin/requirements.txt bin/docke
 
     chown -hR $USER_NAME:$GROUP_NAME $HOME 
 
+USER $USER_NAME
+
 EXPOSE 8234
 
 CMD ["sh", "-c", "$HOME/bin/start.sh"]
