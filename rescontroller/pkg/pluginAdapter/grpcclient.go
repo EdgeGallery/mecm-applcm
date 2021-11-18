@@ -419,3 +419,65 @@ func (c *ClientGRPC) DeleteServer(ctx context.Context, hostIp, accessToken, tena
 	}
 	return resp.Response, err
 }
+
+// Create network
+func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, hostIp, accessToken, tenantId string) (response string, error error) {
+	reqNetwork := &resservice.CreateNetworkRequest_Network{
+		Name:                    network.Name,
+		AdminStateUp:            network.Adminstateup,
+		DnsDomain:               network.Dnsdomain,
+		Mtu:                     network.Mtu,
+		PortSecurityEnabled:     network.Portsecurityenabled,
+		ProviderNetworkType:     network.Providernetworktype,
+		ProviderPhysicalNetwork: network.Providerphysicalnetwork,
+		ProviderSegmentationId:  network.Providersegmentationid,
+		QosPolicyId:             network.Qospolicyid,
+		RouterExternal:          network.Routerexternal,
+		Segments:                network.Segments,
+		Shared:                  network.Shared,
+		VlanTransparent:         network.Vlantransparent,
+		IsDefault:               network.Isdefault,
+		Subnets:                 network.Subnets,
+	}
+	req := &resservice.CreateNetworkRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		Network:       reqNetwork,
+	}
+	resp, err := c.networkClient.CreateNetwork(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Query network
+func (c *ClientGRPC) QueryNetwork(ctx context.Context, hostIp, accessToken, tenantId, networkId string) (response string, error error) {
+	req := &resservice.QueryNetworkRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		NetworkId:     networkId,
+	}
+	resp, err := c.networkClient.QueryNetwork(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}
+
+// Delete network
+func (c *ClientGRPC) DeleteNetwork(ctx context.Context, hostIp, accessToken, tenantId, networkId string) (response string, error error) {
+	req := &resservice.DeleteNetworkRequest{
+		AccessToken:   accessToken,
+		HostIp:        hostIp,
+		TenantId:      tenantId,
+		NetworkId:      networkId,
+	}
+	resp, err := c.networkClient.DeleteNetwork(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Response, err
+}

@@ -81,10 +81,10 @@ func (c *BaseController) IsTenantAvailable() bool {
 	return tenantId != ""
 }
 
-// Check flavor id
+// Check id
 func (c *BaseController) IsIdAvailable(id string) bool {
-	flavorId := c.Ctx.Input.Param(id)
-	return flavorId != ""
+	Id := c.Ctx.Input.Param(id)
+	return Id != ""
 }
 
 // Get tenant Id
@@ -99,16 +99,21 @@ func (c *BaseController) GetTenantId(clientIp string) (string, error) {
 }
 
 // Get tenant Id
-func (c *BaseController) GetId(id string) string {
-	flavorId := c.Ctx.Input.Param(id)
-	return flavorId
+func (c *BaseController) GetId(id string, clientIp string) (string, error) {
+	Id := c.Ctx.Input.Param(id)
+	err := util.ValidateUUID(Id)
+	if err != nil {
+		c.HandleLoggingForError(clientIp, util.BadRequest, " id is invalid")
+		return "", err
+	}
+	return Id, nil
 }
 
 // Get user name
 func (c *BaseController) getUserName(clientIp string) (string, error) {
 	userName := c.Ctx.Request.Header.Get("name")
 	if userName != "" {
-		name, err := util.ValidateUserName(userName, util.NameRegex)
+		name, err := util.ValidateName(userName, util.NameRegex)
 		if err != nil || !name {
 			c.HandleLoggingForError(clientIp, util.BadRequest, "username is invalid")
 			return "", errors.New("username is invalid")

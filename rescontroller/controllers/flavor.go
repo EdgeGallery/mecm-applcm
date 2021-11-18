@@ -21,6 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"rescontroller/models"
 	"rescontroller/util"
+	"unicode"
 	"unsafe"
 )
 
@@ -63,7 +64,7 @@ func (c *FlavorController) CreateFlavor() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
-
+	ValidateBodyParams(c, flavor, clientIp)
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -74,8 +75,14 @@ func (c *FlavorController) CreateFlavor() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	c.SendResponse(clientIp, response, util.CreateFlavorSuccess)
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, util.CreateFlavorSuccess)
 }
+
 
 // @Title Query Flavor
 // @Description Query Flavor
@@ -98,7 +105,10 @@ func (c *FlavorController) QueryFlavor() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.FlavorId) {
-		flavorId = c.GetId(util.FlavorId)
+		flavorId, err = c.GetId(util.FlavorId,clientIp)
+		if err != nil {
+			return
+		}
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -111,7 +121,12 @@ func (c *FlavorController) QueryFlavor() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	c.SendResponse(clientIp, response, "Query flavor is successful")
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Query flavor is successful")
 }
 
 // @Title Delete Flavor
@@ -133,7 +148,10 @@ func (c *FlavorController) DeleteFlavor() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	flavorId := c.GetId(util.FlavorId)
+	flavorId, err := c.GetId(util.FlavorId,clientIp)
+	if err != nil {
+		return
+	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -145,4 +163,29 @@ func (c *FlavorController) DeleteFlavor() {
 		return
 	}
 	c.handleLoggingForSuccess(nil, clientIp, util.DeleteFlavorSuccess)
+}
+
+func ValidateBodyParams(c *FlavorController, flavor models.Flavor, clientIp string) {
+	//add validation code here
+	name, err := util.ValidateName(flavor.Name, util.NameRegex)
+	if err != nil || !name {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Name is invalid")
+		return
+	}
+	if !(unicode.IsNumber(flavor.Disk)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Disk input is invalid is not a number")
+		return
+	}
+	if !(unicode.IsNumber(flavor.Vcpus)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Vcpus input is invalid is not a number")
+		return
+	}
+	if !(unicode.IsNumber(flavor.Ram)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Ram input is invalid is not a number")
+		return
+	}
+	if !(unicode.IsNumber(flavor.Swap)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Swap input is invalid is not a number")
+		return
+	}
 }

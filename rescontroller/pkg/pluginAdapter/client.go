@@ -54,4 +54,11 @@ type ClientIntf interface {
 		tenantId, serverId string) (status string, error error)
 	DeleteServer(ctx context.Context, hostIP, accessToken,
 		tenantId, serverId string) (status string, error error)
+	CreateNetwork(ctx context.Context, network models.Network, hostIP, accessToken,
+		tenantId string) (status string, error error)
+	QueryNetwork(ctx context.Context, hostIP, accessToken,
+		tenantId, networkId string) (response string, error error)
+	DeleteNetwork(ctx context.Context, hostIP, accessToken,
+		tenantId, networkId string) (response string, error error)
+
 }
