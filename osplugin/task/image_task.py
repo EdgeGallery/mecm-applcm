@@ -360,7 +360,10 @@ def do_push_image(image_id, host_ip):
 
     """
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+    logger.debug('image_id', image_id)
+    logger.debug('host_ip', host_ip)
     if image_info is None or image_info.status != utils.PUSHING:
+        logger.debug('cheak then return')
         return
     try:
         data = MultipartEncoder({
