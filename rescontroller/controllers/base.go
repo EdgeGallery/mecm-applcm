@@ -284,10 +284,10 @@ func (c *BaseController) GetInputParameters(clientIp string) (hostIp string,
 		return hostIp, vim, err
 	}
 
-	/*vim, err = c.GetVim(clientIp, hostIp)
+	vim, err = c.GetVim(clientIp, hostIp)
 	if err != nil {
 		return hostIp, vim, err
-	}*/
+	}
 
 	return hostIp, vim, nil
 }
