@@ -329,3 +329,12 @@ func (c *BaseController) GetAdapter(clientIp, vim string) (adapter *pluginAdapte
 	adapter = pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	return adapter, nil
 }
+
+func (c *BaseController) SendResponse(clientIp, response, msg string) {
+	_, err := c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, msg)
+}

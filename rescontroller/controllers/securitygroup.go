@@ -65,12 +65,7 @@ func (c *SecurityGroupController) CreateSecurityGroup() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create security group is successful")
+	c.SendResponse(clientIp, response, "Create security group is successful")
 }
 
 // @Title Query Security Group
@@ -108,12 +103,7 @@ func (c *SecurityGroupController) QuerySecurityGroup() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query security group is successful")
+	c.SendResponse(clientIp, response, "Query security group is successful")
 }
 
 // @Title Delete Security Group
@@ -185,12 +175,7 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create security group is successful")
+	c.SendResponse(clientIp, response, "Create security group rule is successful")
 }
 
 // @Title Query Security Group rule
@@ -227,12 +212,7 @@ func (c *SecurityGroupController) QuerySecurityGroupRules() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query security group rule is successful")
+	c.SendResponse(clientIp, response, "Query security group rule is successful")
 }
 
 // @Title Delete Security Group rule

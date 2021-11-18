@@ -64,12 +64,7 @@ func (c *VmImageController) QueryImages() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query security group is successful")
+	c.SendResponse(clientIp, response, "Query image is successful")
 }
 
 // @Title Delete Image
@@ -143,12 +138,7 @@ func (c *VmImageController) CreateImage() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create image is successful")
+	c.SendResponse(clientIp, response, "Create image is successful")
 }
 
 // @Title Import Image
