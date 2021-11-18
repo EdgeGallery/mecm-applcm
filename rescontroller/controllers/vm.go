@@ -63,12 +63,7 @@ func (c *VmController) CreateServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create server is successful")
+	c.SendResponse(clientIp, response, "Create server is successful")
 }
 
 // @Title Query Server
@@ -106,12 +101,7 @@ func (c *VmController) QueryServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query server is successful")
+	c.SendResponse(clientIp, response, "Query server is successful")
 }
 
 // @Title Operate Server
@@ -152,12 +142,7 @@ func (c *VmController) OperateServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Operate server is successful")
+	c.SendResponse(clientIp, response, "Operate server is successful")
 }
 
 // @Title Delete Server

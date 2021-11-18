@@ -284,10 +284,10 @@ func (c *BaseController) GetInputParameters(clientIp string) (hostIp string,
 		return hostIp, vim, err
 	}
 
-	/*vim, err = c.GetVim(clientIp, hostIp)
+	vim, err = c.GetVim(clientIp, hostIp)
 	if err != nil {
 		return hostIp, vim, err
-	}*/
+	}
 
 	return hostIp, vim, nil
 }
@@ -328,4 +328,13 @@ func (c *BaseController) GetAdapter(clientIp, vim string) (adapter *pluginAdapte
 
 	adapter = pluginAdapter.NewPluginAdapter(pluginInfo, client)
 	return adapter, nil
+}
+
+func (c *BaseController) SendResponse(clientIp, response, msg string) {
+	_, err := c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, msg)
 }
