@@ -29,6 +29,10 @@ import (
 	"testing"
 )
 
+const (
+	LcmControllerDbPwd = "LCM_CNTLR_DB_PASSWORD"
+	LcmControllerPwd   = "fe0Hmv%sbq"
+)
 
 func TestGetDbAdapterSuccess(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(orm.RegisterDataBase, func(_, _, _ string, _ ...int) (error) {
@@ -52,7 +56,7 @@ func TestGetDbAdapterSuccess(t *testing.T) {
 	})
 	defer patch3.Reset()
 
-	os.Setenv("LCM_CNTLR_DB_PASSWORD", "fe0Hmv%sbq")
+	os.Setenv(LcmControllerDbPwd, LcmControllerPwd)
 	_, err := dbAdapter.GetDbAdapter()
 	assert.Error(t, err, "TestGetDbAdapterSuccess execution result")
 	beego.AppConfig.Set("dbAdapter", "pgDb")
@@ -61,7 +65,7 @@ func TestGetDbAdapterSuccess(t *testing.T) {
 }
 
 func TestInitDbSuccess(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(driverName string, typ orm.DriverType) error {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(_ string, _ orm.DriverType) error {
 		// do nothing
 		return nil
 	})
@@ -85,20 +89,20 @@ func TestInitDbSuccess(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(ormer orm.Ormer, str string) error {
+	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(_ orm.Ormer, _ string) error {
 		// do nothing
 		return nil
 	})
 	defer patch5.Reset()
 
 	db := &dbAdapter.PgDb{}
-	os.Setenv("LCM_CNTLR_DB_PASSWORD", "fe0Hmv%sbq")
+	os.Setenv(LcmControllerDbPwd, LcmControllerPwd)
 	err := db.InitDatabase()
-	assert.Error(t, err, "TestGetGetClientFailure execution result")
+	assert.Error(t, err, "TestInitDbSuccess execution result")
 }
 
 func TestInitDbFailure1(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(driverName string, typ orm.DriverType) error {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(_ string, _ orm.DriverType) error {
 		// do nothing
 		return nil
 	})
@@ -122,20 +126,20 @@ func TestInitDbFailure1(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(ormer orm.Ormer, str string) error {
+	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(_ orm.Ormer, _ string) error {
 		// do nothing
 		return nil
 	})
 	defer patch5.Reset()
 
 	db := &dbAdapter.PgDb{}
-	os.Setenv("LCM_CNTLR_DB_PASSWORD", "fe0Hmv%sbq")
+	os.Setenv(LcmControllerDbPwd, LcmControllerPwd)
 	err := db.InitDatabase()
-	assert.Error(t, err, "TestGetGetClientFailure execution result")
+	assert.Error(t, err, "TestInitDbFailure1 execution result")
 }
 
 func TestInitDbFailure2(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(driverName string, typ orm.DriverType) error {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(_ string, _ orm.DriverType) error {
 		// do nothing
 		return errors.New("failed to register driver")
 	})
@@ -159,20 +163,20 @@ func TestInitDbFailure2(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(ormer orm.Ormer, str string) error {
+	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(_ orm.Ormer, _ string) error {
 		// do nothing
 		return nil
 	})
 	defer patch5.Reset()
 
 	db := &dbAdapter.PgDb{}
-	os.Setenv("LCM_CNTLR_DB_PASSWORD", "fe0Hmv%sbq")
+	os.Setenv(LcmControllerDbPwd, LcmControllerPwd)
 	err := db.InitDatabase()
-	assert.Error(t, err, "TestGetGetClientFailure execution result")
+	assert.Error(t, err, "TestInitDbFailure2 execution result")
 }
 
 func TestInitDbFailure3(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(driverName string, typ orm.DriverType) error {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(_ string, _ orm.DriverType) error {
 		// do nothing
 		return nil
 	})
@@ -196,20 +200,20 @@ func TestInitDbFailure3(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(ormer orm.Ormer, str string) error {
+	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(_ orm.Ormer, _ string) error {
 		// do nothing
 		return nil
 	})
 	defer patch5.Reset()
 
 	db := &dbAdapter.PgDb{}
-	os.Setenv("LCM_CNTLR_DB_PASSWORD", "fe0Hmv%sbq")
+	os.Setenv(LcmControllerDbPwd, LcmControllerPwd)
 	err := db.InitDatabase()
-	assert.Error(t, err, "TestGetGetClientFailure execution result")
+	assert.Error(t, err, "TestInitDbFailure3 execution result")
 }
 
 func TestInitDbFailure4(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(driverName string, typ orm.DriverType) error {
+	patch1 := gomonkey.ApplyFunc(orm.RegisterDriver, func(_ string, _ orm.DriverType) error {
 		// do nothing
 		return nil
 	})
@@ -233,16 +237,16 @@ func TestInitDbFailure4(t *testing.T) {
 	})
 	defer patch4.Reset()
 
-	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(ormer orm.Ormer, str string) error {
+	patch5 := gomonkey.ApplyFunc(orm.Ormer.Using, func(_ orm.Ormer, _ string) error {
 		// do nothing
 		return nil
 	})
 	defer patch5.Reset()
 
 	db := &dbAdapter.PgDb{}
-	os.Setenv("LCM_CNTLR_DB_PASSWORD", "abc")
+	os.Setenv(LcmControllerDbPwd, "abc")
 	err := db.InitDatabase()
-	assert.Error(t, err, "TestGetGetClientFailure execution result")
+	assert.Error(t, err, "TestInitDbFailure4 execution result")
 }
 
 func TestGetDbAdapterSuccess1(t *testing.T) {
@@ -267,8 +271,8 @@ func TestGetDbAdapterSuccess1(t *testing.T) {
 	})
 	defer patch3.Reset()
 
-	os.Setenv("LCM_CNTLR_DB_PASSWORD", "fe0Hmv%sbq")
+	os.Setenv(LcmControllerDbPwd, LcmControllerPwd)
 	beego.AppConfig.Set("dbAdapter", "pgDb")
 	_, err := dbAdapter.GetDbAdapter()
-	assert.Error(t, err, "TestGetDbAdapterSuccess execution result")
+	assert.Error(t, err, "TestGetDbAdapterSuccess1 execution result")
 }
