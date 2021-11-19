@@ -155,3 +155,22 @@ type OperateServer struct {
 		Metadata map[string]string `json:"metadata"`
 	} `json:"createImage"`
 }
+
+// Network info
+type Network struct {
+	Name                    string   `json:"name"`
+	Adminstateup            bool     `json:"adminStateUp"`
+	Dnsdomain               string   `json:"dnsDomain"`
+	Mtu                     int32    `json:"mtu"`
+	Portsecurityenabled     bool     `json:"portSecurityEnabled"`
+	Providernetworktype     string   `json:"providerNetworkType"`
+	Providerphysicalnetwork string   `json:"providerPhysicalNetwork"`
+	Providersegmentationid  int32    `json:"providerSegmentationId"`
+	Qospolicyid             string   `json:"qosPolicyId"`
+	Routerexternal          bool     `json:"routerExternal"`
+	Segments                []*resservice.CreateNetworkRequest_Network_Segment `json:"segments"`
+	Shared                  bool     `json:"shared"`
+	Vlantransparent         bool     `json:"vlanTransparent"`
+	Isdefault               bool     `json:"isDefault"`
+	Subnets                 []*resservice.CreateNetworkRequest_Network_Subnet `json:"subnets"`
+}

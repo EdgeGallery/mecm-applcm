@@ -57,12 +57,16 @@ const (
 	FailedToGetClient               = "Failed to get client"
 	FlavorId                        = ":flavorId"
 	SecurityGroupId                 = ":securityGroupId"
+	NetworkId                       = ":networkId"
+
 	ServerId                        = ":serverId"
 	ImageId                         = ":imageId"
 
 	RequestBodyTooLarge            = "request body too large"
 	CreateFlavorSuccess            = "Create flavor is successful"
 	DeleteFlavorSuccess            = "Delete flavor is successful"
+	CreateNetworkSuccess           = "Create network is successful"
+	DeleteNetworkSuccess           = "Delete network is successful"
 	PluginErrorReport              = "Failed to do operate on Plugin"
 	MaxSize                  int   = 20
 	MaxBackups               int   = 50
@@ -330,7 +334,7 @@ func ValidateSrcAddress(id string) error {
 }
 
 // Validate user name
-func ValidateUserName(name string, regex string) (bool, error) {
+func ValidateName(name string, regex string) (bool, error) {
 	if len(name) > 15 {
 		return false, errors.New("name length is larger than max size")
 	}

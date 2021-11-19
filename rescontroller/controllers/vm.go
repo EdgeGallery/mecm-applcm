@@ -52,6 +52,8 @@ func (c *VmController) CreateServer() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
+	ValidateBody(server, clientIp)
+
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -87,7 +89,7 @@ func (c *VmController) QueryServer() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.ServerId) {
-		serverId = c.GetId(util.ServerId)
+		serverId, err = c.GetId(util.ServerId, clientIp)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -130,7 +132,7 @@ func (c *VmController) OperateServer() {
 		return
 	}
 
-	serverId := c.GetId(util.ServerId)
+	serverId, err := c.GetId(util.ServerId, clientIp)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -163,7 +165,7 @@ func (c *VmController) DeleteServer() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	serverId := c.GetId(util.ServerId)
+	serverId, err := c.GetId(util.ServerId,clientIp)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -177,4 +179,35 @@ func (c *VmController) DeleteServer() {
 	}
 
 	c.handleLoggingForSuccess(nil, clientIp, "Delete server is successful")
+}
+
+func ValidateBody( server models.Server , clientIp string) {
+
+	err := util.ValidateUUID(server.Flavor)
+	if err != nil {
+		return
+	}
+	err = util.ValidateUUID(server.Image)
+	if err != nil {
+		return
+	}
+	err = util.ValidateUUID(server.Imageref)
+	if err != nil {
+		return
+	}
+
+	for _, network := range server.Network {
+		err = util.ValidateUUID(network.Network)
+		if err != nil {
+			return
+		}
+		err := util.ValidateIpv4Address(network.FixedIp)
+		if err != nil {
+			return
+		}
+	}
+	name, err := util.ValidateName(server.Name, util.NameRegex)
+	if err != nil || !name {
+		return
+	}
 }

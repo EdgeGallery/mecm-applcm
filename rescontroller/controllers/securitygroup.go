@@ -55,6 +55,12 @@ func (c *SecurityGroupController) CreateSecurityGroup() {
 		return
 	}
 
+	name, err := util.ValidateName(securityGroup.Name, util.NameRegex)
+	if err != nil || !name {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Name is invalid")
+		return
+	}
+
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -89,7 +95,7 @@ func (c *SecurityGroupController) QuerySecurityGroup() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.SecurityGroupId) {
-		securityGroupdId = c.GetId(util.SecurityGroupId)
+		securityGroupdId, err = c.GetId(util.SecurityGroupId, clientIp)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -124,7 +130,7 @@ func (c *SecurityGroupController) DeleteSecurityGroup() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	securityGroupId := c.GetId(util.SecurityGroupId)
+	securityGroupId, err := c.GetId(util.SecurityGroupId, clientIp)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -165,6 +171,9 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 		return
 	}
 
+	ValidateBodyPara(securityGroupRules, clientIp)
+
+
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -199,7 +208,7 @@ func (c *SecurityGroupController) QuerySecurityGroupRules() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.SecurityGroupId) {
-		securityGroupdId = c.GetId(util.SecurityGroupId)
+		securityGroupdId, err = c.GetId(util.SecurityGroupId, clientIp)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -234,7 +243,7 @@ func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	securityGroupRuleId := c.GetId(":securityGroupRuleId")
+	securityGroupRuleId, err := c.GetId(":securityGroupRuleId",clientIp)
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -246,4 +255,19 @@ func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 		return
 	}
 	c.handleLoggingForSuccess(nil, clientIp, "Delete security group rule is successful")
+}
+
+func ValidateBodyPara( securityGroupRules models.SecurityGroupRules, clientIp string) {
+	err :=  util.ValidateUUID(securityGroupRules.Securitygroupid)
+    if err != nil {
+     return
+    }
+     err = util.ValidateUUID(securityGroupRules.RemoteGroupID)
+     if err != nil {
+     return
+   }
+	name, err := util.ValidateName(securityGroupRules.Direction, util.NameRegex)
+	if err != nil || !name {
+		return
+	}
 }
