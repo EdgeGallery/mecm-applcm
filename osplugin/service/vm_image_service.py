@@ -20,19 +20,17 @@ import json
 import time
 from io import BytesIO
 
-from pony.orm import db_session, commit
+import requests
+from pony.orm import commit
 
 import config
 import utils
-from config import image_push_url
 from core.log import logger
-from core.models import VmImageInfoMapper
 from core.openstack_utils import create_glance_client
-from core.openstack_utils import create_nova_client
 from internal.resourcemanager import resourcemanager_pb2_grpc
 from internal.resourcemanager.resourcemanager_pb2 import CreateVmImageResponse, QueryVmImageResponse, \
-    DownloadVmImageResponse, DeleteVmImageResponse
-from task.image_task import start_check_image_status
+    DownloadVmImageResponse, DeleteVmImageResponse, UploadVmImageResponse, ImportVmImageResponse
+from task import upload_thread_pool
 
 LOG = logger
 
@@ -62,23 +60,17 @@ def get_chunk_num(size, chunk_size=1048576):
     return size // chunk_size + 1
 
 
-def validate_input_params_for_upload_cfg(req):
-    """
-    validate_input_params_for_upload_cfg
-    Args:
-        req: req
-    Returns:
-        host_ip
-    """
-    access_token = req.accessToken
-    host_ip = req.hostIp
-    if not utils.validate_access_token(access_token):
-        LOG.error('accessToken not valid')
-        return None
-    if not utils.validate_ipv4_address(host_ip):
-        LOG.error('hostIp not match ipv4')
-        return None
-    return host_ip
+def import_image(image_id, host_ip, tenant_id, uri):
+    glance = create_glance_client(host_ip, tenant_id)
+    try:
+        LOG.debug('start upload image %s', image_id)
+        with requests.get(uri, stream=True) as resp_stream:
+            glance.images.upload(image_id=image_id, image_data=resp_stream.raw)
+        LOG.debug('finished upload image %s', image_id)
+        return True
+    except Exception as exception:
+        LOG.error(exception, exc_info=True)
+        return False
 
 
 class VmImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
@@ -88,103 +80,74 @@ class VmImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
 
     """
 
-    @db_session
     def createVmImage(self, request, context):
         """
-        创建虚拟机快照
+        创建镜像信息记录
         """
         LOG.info("receive create vm image msg...")
         resp = CreateVmImageResponse(response=utils.FAILURE_JSON)
-        host_ip = validate_input_params_for_upload_cfg(request)
-        if host_ip is None:
-            return resp
-        if request.vmId is None or request.vmId == '':
-            LOG.info("vmId is required")
-            return resp
-        if request.tenantId is None or request.tenantId == '':
-            LOG.info('tenantId is required')
-            return resp
+        host_ip = utils.validate_input_params(request)
+        glance = create_glance_client(host_ip, request.tenantId)
 
-        try:
-            nova_client = create_nova_client(host_ip, request.tenantId)
-            vm_info = nova_client.servers.get(request.vmId)
-            LOG.info('vm %s: status: %s', vm_info.id, vm_info.status)
-            image_name = get_image_name(vm_info.name)
-            image_id = nova_client.servers.create_image(request.vmId, image_name)
-        except Exception as exception:
-            LOG.error(exception, exc_info=True)
-            return resp
+        metadata = request.image.properties
+        metadata['name'] = request.image.name
+        metadata['container_format'] = request.image.containerFormat
+        metadata['disk_format'] = request.image.diskFormat
+        metadata['min_ram'] = request.image.minRam
+        metadata['min_disk'] = request.image.minDisk
 
-        VmImageInfoMapper(image_id=image_id,
-                          image_name=image_name,
-                          tenant_id=request.tenantId,
-                          status=utils.QUEUED,
-                          host_ip=host_ip)
-        commit()
-        start_check_image_status(image_id, host_ip)
-        resp.response = json.dumps({'imageId': image_id})
-        LOG.info('create image record created, fetching image data')
+        image = glance.images.create(**metadata)
+
+        resp.response = json.dumps({'imageId': image['id']})
+        LOG.info('create image record created')
         return resp
 
-    @db_session
     def queryVmImage(self, request, context):
         """
         查询镜像信息
         """
         LOG.info("receive query vm image msg...")
         resp = QueryVmImageResponse(response=utils.FAILURE_JSON)
-        host_ip = validate_input_params_for_upload_cfg(request)
-        if not host_ip:
-            return resp
+        host_ip = utils.validate_input_params(request)
+
+        glance = create_glance_client(host_ip=host_ip, tenant_id=request.tenantId)
 
         if not request.imageId:
-            glance = create_glance_client(host_ip=host_ip, tenant_id=request.tenant_id)
             resp.response = json.dumps(glance.images.list())
             return resp
 
-        vm_image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip, tenant_id=request.tenant_id)
-        if vm_image_info is None:
-            LOG.info("image not found! image_id: %s", request.imageId)
-            return resp
+        image_info = glance.images.get(image_id=request.imageId)
 
         res_dir = {
-            "imageId": vm_image_info.image_id,
-            "imageName": vm_image_info.image_name,
-            "status": vm_image_info.status
+            "imageId": image_info.image_id,
+            "imageName": image_info.image_name,
+            "status": image_info.status
         }
-        if vm_image_info.status == utils.ACTIVE:
-            res_dir['url'] = image_push_url + '/' + vm_image_info.compress_task_id
+
         resp.response = json.dumps(res_dir)
         LOG.info("query image success")
         return resp
 
-    @db_session
     def deleteVmImage(self, request, context):
         """
         删除镜像
         """
         LOG.info("receive delete vm image msg...")
-        resp = DeleteVmImageResponse(response=utils.FAILURE_JSON)
-        host_ip = validate_input_params_for_upload_cfg(request)
+        resp = DeleteVmImageResponse(status=utils.FAILURE)
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return resp
-        image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
-        if image_info is None:
-            LOG.info("image not found! image_id: %s", request.imageId)
-            return resp
-        glance_client = create_glance_client(host_ip, image_info.tenant_id)
+        glance_client = create_glance_client(host_ip, request.tenantId)
         try:
             glance_client.images.delete(request.imageId)
         except Exception as exception:
             LOG.error(exception, exc_info=True)
             return resp
-        image_info.delete()
         commit()
-        resp.response = '{"code": 200, "msg": "Ok"}'
+        resp.status = 'Success'
         LOG.info("delete image %s success", request.imageId)
         return resp
 
-    @db_session
     def downloadVmImage(self, request, context):
         """
         下载镜像
@@ -192,16 +155,12 @@ class VmImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         LOG.info("receive download vm image msg...")
         LOG.debug("download image chunk %s starting...", request.chunkNum)
 
-        host_ip = validate_input_params_for_upload_cfg(request)
+        host_ip = utils.validate_input_params(request)
         if not host_ip:
             yield DownloadVmImageResponse(content=b'{"code":400,"msg":"required param host_ip"}')
             return
-        image_info = VmImageInfoMapper.get(image_id=request.imageId, host_ip=host_ip)
-        if image_info is None:
-            LOG.info("image not found! image_id: %s", request.imageId)
-            yield DownloadVmImageResponse(content=b'{"code":400,"msg":"required param image_info"}')
-            return
-        glance_client = create_glance_client(host_ip, image_info.tenant_id)
+
+        glance_client = create_glance_client(host_ip, request.tenantId)
 
         iterable = glance_client.images.data(image_id=request.imageId)
 
@@ -235,7 +194,28 @@ class VmImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         Returns:
 
         """
-        pass
+        LOG.info("received uploadVmImage message")
+        resp = UploadVmImageResponse(status='Failure')
+
+        access_token = next(request_iterator)
+        host_ip = next(request_iterator)
+        tenant_id = next(request_iterator)
+        image_id = next(request_iterator)
+
+        if not utils.validate_access_token(access_token):
+            LOG.error('accessToken not valid')
+            return resp
+        if not utils.validate_ipv4_address(host_ip):
+            LOG.error('hostIp not match ipv4')
+            return resp
+
+        glance = create_glance_client(host_ip, tenant_id)
+
+        glance.images.upload(image_id=image_id, image_data=utils.StreamReader(request_iterator))
+
+        LOG.info("upload finished")
+        resp.status = 'Success'
+        return resp
 
     def importVmImage(self, request, context):
         """
@@ -247,4 +227,10 @@ class VmImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         Returns:
 
         """
-        pass
+        LOG.info("received importVmImage message")
+        resp = ImportVmImageResponse(response=utils.FAILURE_JSON)
+        host_ip = utils.validate_input_params(request)
+        if host_ip is None:
+            return resp
+
+        upload_thread_pool.submit(import_image, request.imageId, host_ip, request.tenantId, request.resourceUri)
