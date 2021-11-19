@@ -56,7 +56,7 @@ message DeleteVmImageRequest {
 }
 
 message DeleteVmImageResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DownloadVmImageRequest {
@@ -79,7 +79,7 @@ message ImportVmImageRequest {
 }
 
 message ImportVmImageResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message UploadVmImageRequest {
@@ -93,7 +93,7 @@ message UploadVmImageRequest {
 }
 
 message UploadVmImageResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message CreateVmRequest {
@@ -118,7 +118,7 @@ message CreateVmRequest {
 }
 
 message CreateVmResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QueryVmRequest {
@@ -150,7 +150,7 @@ message OperateVmRequest {
 }
 
 message OperateVmResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteVmRequest {
@@ -161,7 +161,7 @@ message DeleteVmRequest {
 }
 
 message DeleteVmResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message CreateFlavorRequest {
@@ -180,7 +180,7 @@ message CreateFlavorRequest {
 }
 
 message CreateFlavorResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteFlavorRequest {
@@ -191,7 +191,7 @@ message DeleteFlavorRequest {
 }
 
 message DeleteFlavorResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QueryFlavorRequest {
@@ -229,7 +229,6 @@ message CreateNetworkRequest {
     bool shared = 12;
     bool vlanTransparent = 13;
     bool isDefault = 14;
-    string tenantId = 15;
     message Subnet {
       string name = 1;
       bool enableDhcp = 2;
@@ -245,12 +244,13 @@ message CreateNetworkRequest {
       string ipv6AddressMode = 8;
       string ipv6RaMode = 9;
     }
-    repeated Subnet subnets = 16;
+    repeated Subnet subnets = 15;
   }
+  Network network = 4;
 }
 
 message CreateNetworkResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteNetworkRequest {
@@ -261,7 +261,7 @@ message DeleteNetworkRequest {
 }
 
 message DeleteNetworkResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QueryNetworkRequest {
@@ -286,7 +286,7 @@ message CreateSecurityGroupRequest {
 }
 
 message CreateSecurityGroupResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteSecurityGroupRequest {
@@ -297,7 +297,7 @@ message DeleteSecurityGroupRequest {
 }
 
 message DeleteSecurityGroupResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QuerySecurityGroupRequest {
@@ -329,7 +329,7 @@ message CreateSecurityGroupRuleRequest {
 }
 
 message CreateSecurityGroupRuleResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteSecurityGroupRuleRequest {
@@ -340,7 +340,7 @@ message DeleteSecurityGroupRuleRequest {
 }
 
 message DeleteSecurityGroupRuleResponse {
-  string response = 4;
+  string status = 4;
 }
 
 message QuerySecurityGroupRuleRequest {
