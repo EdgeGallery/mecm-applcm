@@ -21,6 +21,7 @@ import os
 import re
 import uuid
 import zipfile
+from io import IOBase
 from pathlib import Path
 
 import jwt
@@ -169,3 +170,51 @@ def validate_uuid(param):
         return False
     pattern = re.compile(_UUID_PATTERN)
     return pattern.match(param)
+
+
+def validate_input_params(param):
+    """
+    校验通用参数,host_ip和token，返回host_ip
+    Args:
+        param: 包含host_ip和token
+    Returns:
+        host_ip
+    """
+    access_token = param.access_token
+    host_ip = param.host_ip
+    if not validate_access_token(access_token):
+        LOG.error('accessToken not valid')
+        return None
+    if not validate_ipv4_address(host_ip):
+        LOG.error('hostIp not match ipv4')
+        return None
+    return host_ip
+
+
+class StreamReader(IOBase):
+    def __init__(self, request_iter):
+        self.data_iter = request_iter
+        self.is_end = False
+
+    def read(self) -> bytes:
+        if self.is_end:
+            yield bytes()
+        else:
+            for request in self.data_iter:
+                yield request.content
+            self.is_end = True
+
+    def fileno(self) -> int:
+        raise IOError('not a file')
+
+    def isatty(self) -> bool:
+        return False
+
+    def readable(self) -> bool:
+        return True
+
+    def seek(self, __offset: int, __whence: int = ...) -> int:
+        raise IOError('can not seek!')
+
+    def seekable(self) -> bool:
+        return False

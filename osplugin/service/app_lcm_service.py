@@ -45,25 +45,6 @@ import utils
 LOG = logger
 
 
-def validate_input_params(param):
-    """
-    校验通用参数,host_ip和token，返回host_ip
-    Args:
-        param: 包含host_ip和token
-    Returns:
-        host_ip
-    """
-    access_token = param.access_token
-    host_ip = param.host_ip
-    if not utils.validate_access_token(access_token):
-        LOG.error('accessToken not valid')
-        return None
-    if not utils.validate_ipv4_address(host_ip):
-        LOG.error('hostIp not match ipv4')
-        return None
-    return host_ip
-
-
 def _get_output_data(output_list, heat, stack_id):
     """
     获取output数据
@@ -113,7 +94,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         parameters = UploadPackageRequest(request_iterator)
 
-        host_ip = validate_input_params(parameters)
+        host_ip = utils.validate_input_params(parameters)
         if host_ip is None:
             parameters.delete_tmp()
             return resp
@@ -165,7 +146,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive delete package msg...')
         res = DeletePackageResponse(status=utils.FAILURE)
 
-        host_ip = validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(BaseRequest(request))
         if host_ip is None:
             return res
 
@@ -210,7 +191,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         parameter = InstantiateRequest(request)
 
         LOG.debug('校验access token, host ip')
-        host_ip = validate_input_params(parameter)
+        host_ip = utils.validate_input_params(parameter)
         if host_ip is None:
             return resp
 
@@ -289,7 +270,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res = TerminateResponse(status=utils.FAILURE)
 
         LOG.debug('校验token, host ip')
-        host_ip = validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(BaseRequest(request))
         if host_ip is None:
             return res
 
@@ -338,7 +319,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive query msg...')
         res = QueryResponse(response='{"code": 500, "msg": "server error"}')
 
-        host_ip = validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(BaseRequest(request))
         if host_ip is None:
             res.response = '{"code":400}'
             return res
@@ -387,7 +368,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         resp = QueryPackageStatusResponse(response=utils.ERROR)
 
         LOG.debug('校验access token, host ip')
-        host_ip = validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(BaseRequest(request))
         if host_ip is None:
             return resp
 
@@ -429,7 +410,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive workload describe msg...')
         res = WorkloadEventsResponse(response='{"code":500}')
 
-        host_ip = validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(BaseRequest(request))
         if host_ip is None:
             return res
 
@@ -487,7 +468,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         parameter = UploadCfgRequest(request_iterator)
 
-        host_ip = validate_input_params(parameter)
+        host_ip = utils.validate_input_params(parameter)
         if host_ip is None:
             return res
 
@@ -523,7 +504,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive removeConfig msg...')
         res = RemoveCfgResponse(status=utils.FAILURE)
 
-        host_ip = validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(BaseRequest(request))
         if host_ip is None:
             return res
 
