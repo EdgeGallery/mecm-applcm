@@ -64,7 +64,10 @@ func (c *FlavorController) CreateFlavor() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
-	ValidateBodyParams(c, flavor, clientIp)
+	err = c.ValidateBodyParams(flavor, clientIp)
+	if err!=nil {
+        return
+	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -165,27 +168,28 @@ func (c *FlavorController) DeleteFlavor() {
 	c.handleLoggingForSuccess(nil, clientIp, util.DeleteFlavorSuccess)
 }
 
-func ValidateBodyParams(c *FlavorController, flavor models.Flavor, clientIp string) {
+func (c *FlavorController) ValidateBodyParams(flavor models.Flavor, clientIp string) error {
 	//add validation code here
 	name, err := util.ValidateName(flavor.Name, util.NameRegex)
 	if err != nil || !name {
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Name is invalid")
-		return
+		return err
 	}
-	if !(unicode.IsNumber(flavor.Disk)){
+	if (unicode.IsNumber(flavor.Disk)){
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Disk input is invalid is not a number")
-		return
+		return err
 	}
-	if !(unicode.IsNumber(flavor.Vcpus)){
+	if (unicode.IsNumber(flavor.Vcpus)){
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Vcpus input is invalid is not a number")
-		return
+		return err
 	}
-	if !(unicode.IsNumber(flavor.Ram)){
+	if (unicode.IsNumber(flavor.Ram)){
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Ram input is invalid is not a number")
-		return
+		return err
 	}
-	if !(unicode.IsNumber(flavor.Swap)){
+	if (unicode.IsNumber(flavor.Swap)){
 		c.HandleLoggingForError(clientIp, util.BadRequest, "Swap input is invalid is not a number")
-		return
+		return err
 	}
+	return nil
 }

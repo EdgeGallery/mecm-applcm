@@ -65,6 +65,10 @@ func (c *NetworkController) CreateNetwork() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
+	err = c.ValidateBodyParams(network, clientIp)
+	if err != nil{
+		return
+	}
 
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
@@ -196,4 +200,35 @@ func (c *NetworkController) DeleteNetwork() {
 		return
 	}
 	c.handleLoggingForSuccess(nil, clientIp, util.DeleteNetworkSuccess)
+}
+
+func (c *NetworkController) ValidateBodyParams (network models.Network, clientIp string) error {
+
+	// add validation code here
+	for _, subnet := range network.Subnets {
+		err := util.ValidateIpv4Address(subnet.GatewayIp)
+		if err != nil {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "subnet.GatewayIp address is invalid")
+			return err
+		}
+		for _, sub := range subnet.AllocationPools {
+			err := util.ValidateIpv4Address(sub.Start)
+			if err != nil {
+				c.HandleLoggingForError(clientIp, util.BadRequest, "sub.Start address is invalid")
+				return err
+			}
+			err1 := util.ValidateIpv4Address(sub.End)
+			if err1 != nil {
+				c.HandleLoggingForError(clientIp, util.BadRequest, "sub.End address is invalid")
+				return err
+			}
+		}
+	}
+
+	name, err := util.ValidateName(network.Name, util.NameRegex)
+	if err != nil || !name {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "name is invalid")
+		return err
+	}
+	return nil
 }

@@ -52,7 +52,10 @@ func (c *VmController) CreateServer() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
-	ValidateBody(server, clientIp)
+	err = ValidateBody(server, clientIp)
+	if err != nil{
+		return
+	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -132,6 +135,11 @@ func (c *VmController) OperateServer() {
 		return
 	}
 
+	name, err := util.ValidateName(operateServer.Createimage.Name, util.NameRegex)
+	if err != nil || !name {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Operator server create image name is invalid")
+		return
+	}
 	serverId, err := c.GetId(util.ServerId, clientIp)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -181,33 +189,34 @@ func (c *VmController) DeleteServer() {
 	c.handleLoggingForSuccess(nil, clientIp, "Delete server is successful")
 }
 
-func ValidateBody( server models.Server , clientIp string) {
+func ValidateBody( server models.Server , clientIp string) error {
 
 	err := util.ValidateUUID(server.Flavor)
 	if err != nil {
-		return
+		return err
 	}
 	err = util.ValidateUUID(server.Image)
 	if err != nil {
-		return
+		return err
 	}
 	err = util.ValidateUUID(server.Imageref)
 	if err != nil {
-		return
+		return err
 	}
 
 	for _, network := range server.Network {
 		err = util.ValidateUUID(network.Network)
 		if err != nil {
-			return
+			return err
 		}
 		err := util.ValidateIpv4Address(network.FixedIp)
 		if err != nil {
-			return
+			return err
 		}
 	}
 	name, err := util.ValidateName(server.Name, util.NameRegex)
 	if err != nil || !name {
-		return
+		return err
 	}
+	return nil
 }
