@@ -132,7 +132,10 @@ func (c *VmImageController) CreateImage() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
-	ValidateBodyParam(c , image, clientIp)
+	err = c.ValidateBodyParam(image, clientIp)
+	if err != nil{
+		return
+	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -190,25 +193,26 @@ func (c *VmImageController) ImportImage() {
 	c.handleLoggingForSuccessV1(clientIp, "Import image is successful")
 }
 
-func ValidateBodyParam(c *VmImageController, image models.Image, clientIp string) {
+func (c *VmImageController) ValidateBodyParam (image models.Image, clientIp string) error {
 		name, err := util.ValidateName(image.Name, util.NameRegex)
 		if err != nil || !name {
-			return
+			return err
 		}
 	    name, err = util.ValidateName(image.Containerformat, util.NameRegex)
 	    if err != nil || !name {
-		return
+		return err
 	    }
 	    name, err = util.ValidateName(image.Diskformat, util.NameRegex)
 	    if err != nil || !name {
-		return
+		return err
 	    }
-		if !(unicode.IsNumber(image.Mindisk)) {
+		if (unicode.IsNumber(image.Mindisk)) {
 			c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
-			return
+			return err
 		}
-		if !(unicode.IsNumber(image.Minram)) {
+		if (unicode.IsNumber(image.Minram)) {
 			c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
-			return
+			return err
 		}
+		return nil
 	}
