@@ -20,6 +20,12 @@ type FlavorManagerServer struct {
 	Address string
 }
 
+// Network manager server
+type NetworkManagerServer struct {
+	server  *grpc.Server
+	Address string
+}
+
 // Security group manager server
 type SecurityGroupManagerServer struct {
 	server  *grpc.Server
@@ -57,6 +63,28 @@ func (c FlavorManagerServer) DeleteFlavor(ctx context.Context, request *resservi
 
 func (c FlavorManagerServer) QueryFlavor(ctx context.Context, request *resservice.QueryFlavorRequest) (*resservice.QueryFlavorResponse, error) {
 	resp := &resservice.QueryFlavorResponse{
+		Response: SUCCESS_RETURN,
+	}
+	return  resp, nil
+}
+
+
+func (c NetworkManagerServer) CreateNetwork(ctx context.Context, request *resservice.CreateNetworkRequest) (*resservice.CreateNetworkResponse, error) {
+	resp := &resservice.CreateNetworkResponse{
+		Response: SUCCESS_RETURN,
+	}
+	return  resp, nil
+}
+
+func (c NetworkManagerServer) DeleteNetwork(ctx context.Context, request *resservice.DeleteNetworkRequest) (*resservice.DeleteNetworkResponse, error) {
+	resp := &resservice.DeleteNetworkResponse{
+		Response: SUCCESS_RETURN,
+	}
+	return  resp, nil
+}
+
+func (c NetworkManagerServer) QueryNetwork(ctx context.Context, request *resservice.QueryNetworkRequest) (*resservice.QueryNetworkResponse, error) {
+	resp := &resservice.QueryNetworkResponse{
 		Response: SUCCESS_RETURN,
 	}
 	return  resp, nil
@@ -165,11 +193,13 @@ func (s *ServerGRPC) Listen() (err error) {
 	// Create server without TLS credentials
 	s.server = grpc.NewServer()
 	var appFlavorManagerServer FlavorManagerServer
+	var appNetworkManagerServer NetworkManagerServer
 	var appSecurityGroupManageServer SecurityGroupManagerServer
 	var appVmManageServer VmManagerServer
 	var appVmImageMangeServer VmImageMangerServer
 
 	resservice.RegisterFlavorManagerServer(s.server, appFlavorManagerServer)
+	resservice.RegisterNetworkManagerServer(s.server, appNetworkManagerServer)
 	resservice.RegisterSecurityGroupManagerServer(s.server, appSecurityGroupManageServer)
 	resservice.RegisterVmManagerServer(s.server, appVmManageServer)
 	resservice.RegisterVmImageMangerServer(s.server, appVmImageMangeServer)

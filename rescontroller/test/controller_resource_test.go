@@ -70,6 +70,7 @@ var (
 	prometheusPort       = "PROMETHEUS_PORT"
 	testGetKpi           = "TestGetKpi"
 	getFlavorFailed         = "Get flavor failed"
+	getNetworkFailed         = "Get network failed"
 	getCapability        = "Get Capability "
 	statusFailed         = "status failed"
 	getCapabilityDataFailed = "Get Capability data failed"
@@ -122,6 +123,56 @@ func TestQueryFlavorSuccess(t *testing.T) {
 
 		// Check for success case wherein the status value will be default i.e. 0
 		assert.Equal(t, 0, flavorController.Ctx.ResponseWriter.Status, getFlavorFailed)
+
+		//response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+
+	})
+}
+
+func TestQueryNetworkSuccess(t *testing.T) {
+
+	// Mock the required API
+	patch1 := gomonkey.ApplyFunc(util.ClearByteArray, func(_ []byte) {
+		// do nothing
+	})
+	defer patch1.Reset()
+
+	var c *beego.Controller
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), serveJson, func(*beego.Controller, ...bool) {
+		go func() {
+			// do nothing
+		}()
+	})
+	defer patch2.Reset()
+
+
+	//// Common steps
+	_, extraParams, testDb := getCommonParameters("127.0.0.1")
+
+	t.Run("TestGetNetwork", func(t *testing.T) {
+
+		// Get Request
+		networkRequest, _ := getHttpRequest("https://edgegallery:8094/rescontroller/v1/tenants/"+tenantIdentifier+
+			hosts+ipAddress+"/networks", extraParams, "file", "", "GET", []byte(""))
+
+		// Prepare Input
+		networkInput := &context.BeegoInput{Context: &context.Context{Request: networkRequest}}
+		setRessourceParam(networkInput, ipAddress)
+
+		// Prepare beego controller
+		networkBeegoController := beego.Controller{Ctx: &context.Context{Input: networkInput,
+			Request: networkRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
+			Data: make(map[interface{}]interface{})}
+
+		// Create network controller with mocked DB and prepared Beego controller
+		networkController := &controllers.NetworkController{controllers.BaseController{Db: testDb,
+			Controller: networkBeegoController}}
+
+		// Test KPI
+		networkController.QueryNetwork()
+
+		// Check for success case wherein the status value will be default i.e. 0
+		assert.Equal(t, 0, networkController.Ctx.ResponseWriter.Status, getNetworkFailed)
 
 		//response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
 
