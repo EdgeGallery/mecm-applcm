@@ -78,9 +78,9 @@ func TestGetDbAdapterSuccess(t *testing.T) {
 }
 
 func TestGetGetClientSuccess(t *testing.T) {
-	_, err := adapter.GetClient(util.DeployType, ipAddress)
+	_, err := adapter.GetClient(util.DeployType, tenantIdentifier, ipAddress)
 	assert.Error(t, err, "TestGetGetClientSuccess execution result")
-	_, err = adapter.GetClient("default", ipAddress)
+	_, err = adapter.GetClient("default",tenantIdentifier, ipAddress)
 	assert.Error(t, err, "TestGetGetClientSuccess execution result")
 }
 

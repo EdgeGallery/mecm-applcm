@@ -240,6 +240,7 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
+		TenantId:      tenantId,
 	}
 	resp, err := c.client.Query(ctx, req)
 	if resp == nil {
@@ -258,6 +259,7 @@ func (c *mockGrpcClient) QueryKpiInfo(accessToken string, hostIP string) (respon
 	req := &lcmservice.QueryKPIRequest{
 		AccessToken:   accessToken,
 		HostIp:        hostIP,
+		TenantId:      tenantId,
 	}
 	resp, err := c.client.QueryKPI(ctx, req)
 	if resp == nil {
@@ -278,6 +280,7 @@ func (c *mockGrpcClient) WorkloadEvents(accessToken string, appInsId string, hos
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
+		TenantId:      tenantId,
 	}
 	resp, err := c.client.WorkloadEvents(ctx, req)
 	if resp == nil {
@@ -296,6 +299,7 @@ func (c *mockGrpcClient) Terminate(hostIP string, accessToken string, appInsId s
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
+		TenantId:      tenantId,
 	}
 	resp, err := c.client.Terminate(ctx, req)
 	if resp == nil {
@@ -310,6 +314,7 @@ func (c *mockGrpcClient) RemoveConfig(hostIP string, accessToken string) (status
 	defer cancel()
 	req := &lcmservice.RemoveCfgRequest{
 		HostIp:      hostIP,
+		TenantId:    tenantId,
 		AccessToken: accessToken,
 	}
 	resp, err := c.client.RemoveConfig(ctx, req)
@@ -341,6 +346,13 @@ func (c *mockGrpcClient) UploadConfig(deployArtifact string, hostIP string,
 		},
 	}
 	_ = stream.Send(req)
+	req = &lcmservice.UploadCfgRequest{
+		Data: &lcmservice.UploadCfgRequest_TenantId{
+			TenantId: tenantId,
+		},
+	}
+	_ = stream.Send(req)
+
 	req = &lcmservice.UploadCfgRequest{
 		Data: &lcmservice.UploadCfgRequest_HostIp{
 			HostIp: hostIP,
