@@ -33,7 +33,8 @@ WORKDIR $HOME
 
 COPY requirements.txt $HOME/
 
-RUN $HOME/venv/bin/pip3 install -r $HOME/requirements.txt -i https://mirrors.aliyun.com/pypi/simple
+RUN $HOME/venv/bin/pip3 install -r $HOME/requirements.txt -i https://mirrors.aliyun.com/pypi/simple && \
+    chmod -R 550 $HOME/venv
 
 # 构建运行时镜像
 FROM base
