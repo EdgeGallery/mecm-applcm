@@ -64,20 +64,20 @@ var (
 )
 
 func testDeploySuccess(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
 	var c *config.AppAuthConfigBuilder
 	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), addValues,
 		func(*config.AppAuthConfigBuilder, *os.File) (string, string, error) {
-		go func() {
-			// do nothing
-		}()
-		return "test", namespace, nil
-	})
+			go func() {
+				// do nothing
+			}()
+			return "test", namespace, nil
+		})
 	defer patch2.Reset()
 
 	patch3 := gomonkey.ApplyFunc(loader.Load, func(_ string) (*chart.Chart, error) {
@@ -108,14 +108,14 @@ func testDeploySuccess(t *testing.T) {
 	var i *action.Install
 	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(i), "Run",
 		func(*action.Install, *chart.Chart, map[string]interface{}) (*release.Release, error) {
-		go func() {
-			// do nothing
-		}()
-		return &release.Release{}, nil
-	})
+			go func() {
+				// do nothing
+			}()
+			return &release.Release{}, nil
+		})
 	defer patch4.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	appPkgRecord := &models.AppPackage{
 		TenantId: tenantIdentifier,
 		HostIp: hostIpAddress,
@@ -128,9 +128,9 @@ func testDeploySuccess(t *testing.T) {
 
 
 func testDeployFailure(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -162,7 +162,7 @@ func testDeployFailure(t *testing.T) {
 		})
 	defer patch4.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	appPkgRec := &models.AppPackage{
 		TenantId: tenantIdentifier,
 		HostIp: hostIpAddress,
@@ -175,9 +175,9 @@ func testDeployFailure(t *testing.T) {
 
 func testUnDeploySuccess(t *testing.T) {
 
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -209,7 +209,7 @@ func testUnDeploySuccess(t *testing.T) {
 		})
 	defer patch4.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 
 	patch5 := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(_ string, _ string) (*restclient.Config, error) {
 		// do nothing
@@ -233,9 +233,9 @@ func testUnDeploySuccess(t *testing.T) {
 }
 
 func testWorkloadEvents(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -265,7 +265,7 @@ func testWorkloadEvents(t *testing.T) {
 	})
 	defer patch6.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	result, _ := client.WorkloadEvents(relName, namespace)
@@ -273,9 +273,9 @@ func testWorkloadEvents(t *testing.T) {
 }
 
 func testQueryInfo(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -305,7 +305,7 @@ func testQueryInfo(t *testing.T) {
 	})
 	defer patch6.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	result, _ := client.Query(relName, namespace)
@@ -313,9 +313,9 @@ func testQueryInfo(t *testing.T) {
 }
 
 func testQueryKpi(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -338,7 +338,7 @@ func testQueryKpi(t *testing.T) {
 	defer patch5.Reset()
 
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -428,9 +428,9 @@ func TestSplitManifestYaml(t *testing.T) {
 
 
 func TestGetClientSet(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -444,18 +444,18 @@ func TestGetClientSet(t *testing.T) {
 		})
 	defer patch4.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
-	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
+	client.Kubeconfig = baseDir + directory + "/" + tenantId+ "/" +hostIpAddress
 	_, _, result  := client.GetClientSet("release", "test")
 	assert.NotEmpty(t, result, "Test get client set execution result")
 }
 
 
 func TestGetClientSet1(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -477,7 +477,7 @@ func TestGetClientSet1(t *testing.T) {
 	})
 	defer patch5.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	_, _, result  := client.GetClientSet("release1", "test")
@@ -486,9 +486,9 @@ func TestGetClientSet1(t *testing.T) {
 
 
 func TestGetClientSet2(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -518,7 +518,7 @@ func TestGetClientSet2(t *testing.T) {
 	})
 	defer patch6.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	_, _, result  := client.GetClientSet("release2", "test")
@@ -527,9 +527,9 @@ func TestGetClientSet2(t *testing.T) {
 
 
 func TestGetClientSet3(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -549,7 +549,7 @@ func TestGetClientSet3(t *testing.T) {
 	})
 	defer patch5.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	_, _, result  := client.GetClientSet("release3", "test")
@@ -572,15 +572,15 @@ func TestGetPodInfo(t *testing.T) {
 
 	patch5 := gomonkey.ApplyFunc(adapter.GetPodMetrics, func(_ *rest.Config, _, _ string) (podMetrics *v1beta1.PodMetrics, err error) {
 		podMetrics = &v1beta1.PodMetrics{Containers: []v1beta1.ContainerMetrics{
-		{
-			Name: "container1-1",
-			Usage: v1.ResourceList{
-				v1.ResourceCPU:     *resource.NewMilliQuantity(1, resource.DecimalSI),
-				v1.ResourceMemory:  *resource.NewQuantity(2*(1024*1024), resource.DecimalSI),
-				v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
+			{
+				Name: "container1-1",
+				Usage: v1.ResourceList{
+					v1.ResourceCPU:     *resource.NewMilliQuantity(1, resource.DecimalSI),
+					v1.ResourceMemory:  *resource.NewQuantity(2*(1024*1024), resource.DecimalSI),
+					v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
+				},
 			},
-		},
-	}, }
+		}, }
 		return podMetrics, nil
 	})
 	defer patch5.Reset()
@@ -677,9 +677,9 @@ func TestGetPodInfo2(t *testing.T) {
 
 
 func TestGetResourcesBySelector(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -698,7 +698,7 @@ func TestGetResourcesBySelector(t *testing.T) {
 		return serviceInfo, nil
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -718,9 +718,9 @@ func TestGetResourcesBySelector(t *testing.T) {
 }
 
 func TestGetResourcesBySelector1(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -739,7 +739,7 @@ func TestGetResourcesBySelector1(t *testing.T) {
 		return serviceInfo, errors.New("error")
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -759,9 +759,9 @@ func TestGetResourcesBySelector1(t *testing.T) {
 }
 
 func TestGetResourcesBySelector2(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -780,7 +780,7 @@ func TestGetResourcesBySelector2(t *testing.T) {
 		return serviceInfo, nil
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -801,9 +801,9 @@ func TestGetResourcesBySelector2(t *testing.T) {
 
 
 func TestUpdatePodInfo(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -817,7 +817,7 @@ func TestUpdatePodInfo(t *testing.T) {
 		return podList, nil
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -825,7 +825,7 @@ func TestUpdatePodInfo(t *testing.T) {
 		Host:            https + net.JoinHostPort(hostIpAddress, "1234"),
 		BearerToken:     token,
 	}
-//	var labelSelector models.LabelSelector
+	//	var labelSelector models.LabelSelector
 	var label models.LabelList
 	var cs *kubernetes.Clientset
 	var appInfo models.AppInfo
@@ -838,9 +838,9 @@ func TestUpdatePodInfo(t *testing.T) {
 }
 
 func TestUpdatePodInfo2(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -862,7 +862,7 @@ func TestUpdatePodInfo2(t *testing.T) {
 		return podList, nil
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -884,9 +884,9 @@ func TestUpdatePodInfo2(t *testing.T) {
 
 
 func TestUpdatePodInfo3(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -908,7 +908,7 @@ func TestUpdatePodInfo3(t *testing.T) {
 		return podList, errors.New("error")
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -930,9 +930,9 @@ func TestUpdatePodInfo3(t *testing.T) {
 
 
 func TestGetTotalCpuDiskMemory(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -954,7 +954,7 @@ func TestGetTotalCpuDiskMemory(t *testing.T) {
 		return nodeList, nil
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -966,9 +966,9 @@ func TestGetTotalCpuDiskMemory(t *testing.T) {
 
 
 func TestGetTotalCpuDiskMemory2(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -990,7 +990,7 @@ func TestGetTotalCpuDiskMemory2(t *testing.T) {
 		return nodeList, errors.New("error")
 	})
 	defer patch3.Reset()
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -1001,13 +1001,13 @@ func TestGetTotalCpuDiskMemory2(t *testing.T) {
 }
 
 func TestWorkloadEvents2(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
-	// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
+		// do nothing
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
@@ -1017,9 +1017,9 @@ func TestWorkloadEvents2(t *testing.T) {
 }
 
 func TestWorkloadEvents3(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1033,7 +1033,7 @@ func TestWorkloadEvents3(t *testing.T) {
 	})
 	defer patch2.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	var hc *adapter.HelmClient
 	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(hc), getClientSet,
 		func(_ *adapter.HelmClient, _, _ string) (clientset *kubernetes.Clientset, manifest []adapter.Manifest, err error) {
@@ -1059,9 +1059,9 @@ func TestWorkloadEvents3(t *testing.T) {
 
 
 func TestWorkloadEvents4(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1075,7 +1075,7 @@ func TestWorkloadEvents4(t *testing.T) {
 	})
 	defer patch2.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	var hc *adapter.HelmClient
 	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(hc), getClientSet,
 		func(_ *adapter.HelmClient, _, _ string) (clientset *kubernetes.Clientset, manifest []adapter.Manifest, err error) {
@@ -1105,9 +1105,9 @@ func TestWorkloadEvents4(t *testing.T) {
 }
 
 func TestWorkloadEvents5(t *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1121,7 +1121,7 @@ func TestWorkloadEvents5(t *testing.T) {
 	})
 	defer patch2.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	var hc *adapter.HelmClient
 	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(hc), getClientSet,
 		func(_ *adapter.HelmClient, _, _ string) (clientset *kubernetes.Clientset, manifest []adapter.Manifest, err error) {
@@ -1145,9 +1145,9 @@ func TestWorkloadEvents5(t *testing.T) {
 }
 
 func TestGetPodDescInfo(_ *testing.T) {
-	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(_ string) (*adapter.HelmClient, error) {
+	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1159,7 +1159,7 @@ func TestGetPodDescInfo(_ *testing.T) {
 	})
 	defer patch2.Reset()
 
-	client, _ := adapter.NewHelmClient(hostIpAddress)
+	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	var cs *kubernetes.Clientset
 
 	baseDir, _ := os.Getwd()

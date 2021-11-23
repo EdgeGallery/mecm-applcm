@@ -25,10 +25,10 @@ import (
 
 
 // Get client based on deploy type
-func GetClient(deployType string, hostIp string) (client ClientIntf, err error) {
+func GetClient(deployType string, tenantId string, hostIp string) (client ClientIntf, err error) {
 	switch deployType {
 	case util.DeployType:
-		hc, err := NewHelmClient(hostIp)
+		hc, err := NewHelmClient(tenantId, hostIp)
 		if os.IsNotExist(err) {
 			log.Error(util.KubeConfigNotFound)
 			return nil, errors.New(util.KubeConfigNotFound)
