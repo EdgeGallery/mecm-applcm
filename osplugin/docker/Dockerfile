@@ -16,7 +16,8 @@
 FROM swr.cn-north-4.myhuaweicloud.com/eg-common/ubuntu:20.04 AS base
 
 RUN apt-get update && \
-    apt-get install -y python3 python3-venv libpq5
+    apt-get install -y python3 python3-venv libpq5 && \
+    rm -rf /var/lib/apt/lists/*
 
 # 构建pip3依赖镜像并下载依赖
 FROM base AS development
@@ -53,22 +54,21 @@ RUN groupadd -r -g $GID $GROUP_NAME &&\
 
 WORKDIR $HOME
 
-COPY --from=development $HOME/venv $HOME/venv
-
 COPY . $HOME/bin
 
 RUN rm -rf bin/tests bin/.gitignore bin/README.MD bin/requirements.txt bin/docker &&\
     mv $HOME/bin/config-pro.ini $HOME/config.ini && chmod 640 $HOME/config.ini &&\
     chmod 750 $HOME &&\
     chmod -R 550 $HOME/bin &&\
-    chmod -R 550 $HOME/venv && \
     chmod 777 /etc/hosts &&\
     mkdir -m 700 $HOME/ssl &&\
     mkdir -m 750 $HOME/log &&\
     mkdir -m 750 $HOME/config &&\
     mkdir -m 750 $HOME/package &&\
-
+    mkdir -m 550 $HOME/venv &&\
     chown -hR $USER_NAME:$GROUP_NAME $HOME
+
+COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/venv $HOME/venv
 
 USER $USER_NAME
 
