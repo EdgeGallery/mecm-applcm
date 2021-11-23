@@ -50,7 +50,6 @@ const (
 	ClientIpaddressInvalid          = "clientIp address is invalid"
 	FailedToUnmarshal        string = "failed to unmarshal request"
 	MecHostRecDoesNotExist   string = "Mec host info record does not exist in database"
-	FailedToCreateClient     string = "failed to create client: %v"
 	InvalidToken             string = "invalid token"
 	Forbidden                string = "forbidden"
 	IllegalTenantId          string = "Illegal TenantId"
@@ -58,12 +57,16 @@ const (
 	FailedToGetClient               = "Failed to get client"
 	FlavorId                        = ":flavorId"
 	SecurityGroupId                 = ":securityGroupId"
+	NetworkId                       = ":networkId"
+
 	ServerId                        = ":serverId"
 	ImageId                         = ":imageId"
 
 	RequestBodyTooLarge            = "request body too large"
 	CreateFlavorSuccess            = "Create flavor is successful"
 	DeleteFlavorSuccess            = "Delete flavor is successful"
+	CreateNetworkSuccess           = "Create network is successful"
+	DeleteNetworkSuccess           = "Delete network is successful"
 	PluginErrorReport              = "Failed to do operate on Plugin"
 	MaxSize                  int   = 20
 	MaxBackups               int   = 50
@@ -85,65 +88,14 @@ const (
 	QueryServer                   = "/v1/tenants/:tenantId/hosts/:hostIp/servers/:serverId"
 
 	//Base Error Code
-	ErrCodeForbidden         int = 31000
-	ErrCodeTokenInvalid      int = 31001
-	ErrCodeIPInvalid         int = 31002
-	ErrCodeMecHostInvalid    int = 31003
-	ErrCodeBodyTooLarge      int = 31005
-	ErrCodeHostNotExist      int = 31006
-	ErrCodeAppIdInvalid      int = 31007
-	ErrCodePackageIdInvalid  int = 31008
-	ErrCodeTenantIdInvalid   int = 31009
-	ErrCodeAppNameInvalid    int = 31010
-	ErrCodePackDistributed   int = 31012
-	ErrCodeInstanceIsExist   int = 31013
-	ErrCodeProcessAkSkFailed int = 31014
-	ErrCodeHostNotFoundInPlg int = 31015
-	ErrorReportByPlugin      int = 31016
-	ErrCodeWriteResFailed    int = 31018
-	ErrCodeInvalidCapId      int = 31020
-	ErrCodeCallForMep        int = 31022
-	ErrCodeFailedToMarshal   int = 31023
-	ErrCodeFailedToUnMarshal int = 31024
-	ErrCodeTenantNumUpToMax  int = 31025
-	ErrCodeInvalidRequest    int = 31027
-	ErrCodeOriginInvalid     int = 31029
-	ErrCodeGetVimFailed      int = 31032
-	ErrCodeDeleteFileFailed  int = 31034
-	ErrCodeInstanceIdInvalid int = 31035
-
-	//File Error Code
-	ErrCodeFileCanNotRead   int = 31100
-	ErrCodeFileNameTooLang  int = 31102
-	ErrCodeFileToBig        int = 31103
-	ErrCodeFailedToSaveFile int = 31104
-	ErrCodeFailedToExtract  int = 31105
-	ErrCodeFailedGetDetails int = 31106
-	ErrCodePackNumUptoMax   int = 31107
+	ErrCodeIPInvalid         int = 31000
+	ErrCodeHostNotExist      int = 31001
 
 	//Plugin Error Code
 	ErrCodeFailedGetPlugin      int = 31201
 	ErrCodePluginReportFailed   int = 31202
-	ErrCodeGetWorkloadFailed    int = 31203
-	ErrCodeFailedGetClient      int = 31204
-	ErrCodeUploadToPluginFailed int = 31205
-	ErrCodePluginNotFound       int = 31206
-
-	//DB Error Code
-	ErrCodeInsertDataFailed  int = 31300
-	ErrCodeNotFoundInDB      int = 31301
-	ErrCodeDeleteDataFailed  int = 31302
-	ErrCodeRecordNotExist    int = 31303
-	ErrCodeReportByDB        int = 31305
-	ErrCodeSaveAppInfoFailed int = 31304
-
-	//Instantiate Error Code
-	ErrCodePluginInstFailed  int = 31601
-	ErrCodeDeleteAuthCfgFail int = 31602
-
 
 	ErrCodeInternalServer int = 31503
-	ErrCodeBadRequest     int = 31400
 
 	NameRegex     = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-]*[\\d\\p{L}]$"
 
@@ -382,7 +334,7 @@ func ValidateSrcAddress(id string) error {
 }
 
 // Validate user name
-func ValidateUserName(name string, regex string) (bool, error) {
+func ValidateName(name string, regex string) (bool, error) {
 	if len(name) > 15 {
 		return false, errors.New("name length is larger than max size")
 	}

@@ -321,3 +321,55 @@ func (c *PluginAdapter) DeleteServer(hostIp, accessToken, tenantId, serverId str
 	log.Info("Delete server is success with status: ", status)
 	return status, nil
 }
+
+// Create Network
+func (c *PluginAdapter) CreateNetwork(network models.Network, hostIp, accessToken, tenantId string) (status string,
+	error error) {
+	log.Info("Create Network started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.CreateNetwork(ctx, network, hostIp, accessToken, tenantId)
+	if err != nil {
+		log.Error("failed to create network")
+		return util.Failure, err
+	}
+
+	log.Info("Create network is success with status: ", status)
+	return status, nil
+}
+
+// Query network
+func (c *PluginAdapter) QueryNetwork(hostIp, accessToken, tenantId, networkId string) (response string, error error) {
+	log.Info("Query network started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	response, err := c.client.QueryNetwork(ctx, hostIp, accessToken, tenantId, networkId)
+	if err != nil {
+		log.Error("failed to query network")
+		return util.Failure, err
+	}
+
+	log.Info("Query network is success with status: success")
+	return response, nil
+}
+
+// Delete network
+func (c *PluginAdapter) DeleteNetwork(hostIp, accessToken, tenantId, networkId string) (status string, error error) {
+	log.Info("Delete network started")
+
+	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
+	defer cancel()
+
+	status, err := c.client.DeleteNetwork(ctx, hostIp, accessToken, tenantId, networkId)
+	if err != nil {
+		log.Error("failed to delete network")
+		return util.Failure, err
+	}
+
+	log.Info("Delete network is success with status:", status)
+	return status, nil
+}

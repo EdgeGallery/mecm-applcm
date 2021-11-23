@@ -52,6 +52,11 @@ func (c *VmController) CreateServer() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
+	err = ValidateBody(server, clientIp)
+	if err != nil{
+		return
+	}
+
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -63,12 +68,7 @@ func (c *VmController) CreateServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create server is successful")
+	c.SendResponse(clientIp, response, "Create server is successful")
 }
 
 // @Title Query Server
@@ -92,7 +92,7 @@ func (c *VmController) QueryServer() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.ServerId) {
-		serverId = c.GetId(util.ServerId)
+		serverId, err = c.GetId(util.ServerId, clientIp)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -106,12 +106,7 @@ func (c *VmController) QueryServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query server is successful")
+	c.SendResponse(clientIp, response, "Query server is successful")
 }
 
 // @Title Operate Server
@@ -140,7 +135,12 @@ func (c *VmController) OperateServer() {
 		return
 	}
 
-	serverId := c.GetId(util.ServerId)
+	name, err := util.ValidateName(operateServer.Createimage.Name, util.NameRegex)
+	if err != nil || !name {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Operator server create image name is invalid")
+		return
+	}
+	serverId, err := c.GetId(util.ServerId, clientIp)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -152,12 +152,7 @@ func (c *VmController) OperateServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Operate server is successful")
+	c.SendResponse(clientIp, response, "Operate server is successful")
 }
 
 // @Title Delete Server
@@ -178,7 +173,7 @@ func (c *VmController) DeleteServer() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	serverId := c.GetId(util.ServerId)
+	serverId, err := c.GetId(util.ServerId,clientIp)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -192,4 +187,36 @@ func (c *VmController) DeleteServer() {
 	}
 
 	c.handleLoggingForSuccess(nil, clientIp, "Delete server is successful")
+}
+
+func ValidateBody( server models.Server , clientIp string) error {
+
+	err := util.ValidateUUID(server.Flavor)
+	if err != nil {
+		return err
+	}
+	err = util.ValidateUUID(server.Image)
+	if err != nil {
+		return err
+	}
+	err = util.ValidateUUID(server.Imageref)
+	if err != nil {
+		return err
+	}
+
+	for _, network := range server.Network {
+		err = util.ValidateUUID(network.Network)
+		if err != nil {
+			return err
+		}
+		err := util.ValidateIpv4Address(network.FixedIp)
+		if err != nil {
+			return err
+		}
+	}
+	name, err := util.ValidateName(server.Name, util.NameRegex)
+	if err != nil || !name {
+		return err
+	}
+	return nil
 }

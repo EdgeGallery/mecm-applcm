@@ -37,7 +37,7 @@ type SecurityGroupController struct {
 // @Param   body          body    models.SecurityGroup   true      "The security group information"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup" [post]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups" [post]
 func (c *SecurityGroupController) CreateSecurityGroup() {
 	log.Info("Create security group request received.")
 
@@ -55,6 +55,12 @@ func (c *SecurityGroupController) CreateSecurityGroup() {
 		return
 	}
 
+	name, err := util.ValidateName(securityGroup.Name, util.NameRegex)
+	if err != nil || !name {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Name is invalid")
+		return
+	}
+
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -65,12 +71,7 @@ func (c *SecurityGroupController) CreateSecurityGroup() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create security group is successful")
+	c.SendResponse(clientIp, response, "Create security group is successful")
 }
 
 // @Title Query Security Group
@@ -81,7 +82,7 @@ func (c *SecurityGroupController) CreateSecurityGroup() {
 // @Param   securityGroupId       path 	     string	true   "securityGroupId"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId" [get]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId" [get]
 func (c *SecurityGroupController) QuerySecurityGroup() {
 	log.Info("Query security group request received.")
 	var securityGroupdId = ""
@@ -94,7 +95,7 @@ func (c *SecurityGroupController) QuerySecurityGroup() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.SecurityGroupId) {
-		securityGroupdId = c.GetId(util.SecurityGroupId)
+		securityGroupdId, err = c.GetId(util.SecurityGroupId, clientIp)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -108,12 +109,7 @@ func (c *SecurityGroupController) QuerySecurityGroup() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query security group is successful")
+	c.SendResponse(clientIp, response, "Query security group is successful")
 }
 
 // @Title Delete Security Group
@@ -124,7 +120,7 @@ func (c *SecurityGroupController) QuerySecurityGroup() {
 // @Param   securityGroupId       path 	     string	true   "securityGroupId"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId" [delete]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId" [delete]
 func (c *SecurityGroupController) DeleteSecurityGroup() {
 	log.Info("Delete security group by security group id request received.")
 	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
@@ -134,7 +130,7 @@ func (c *SecurityGroupController) DeleteSecurityGroup() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	securityGroupId := c.GetId(util.SecurityGroupId)
+	securityGroupId, err := c.GetId(util.SecurityGroupId, clientIp)
 
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -175,7 +171,12 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 		return
 	}
 
-	adapter, err := c.GetAdapter(clientIp, vim)
+	err = ValidateBodyPara(securityGroupRules, clientIp)
+	if err != nil{
+		return
+	}
+
+		adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
 	}
@@ -185,12 +186,7 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create security group is successful")
+	c.SendResponse(clientIp, response, "Create security group rule is successful")
 }
 
 // @Title Query Security Group rule
@@ -214,7 +210,7 @@ func (c *SecurityGroupController) QuerySecurityGroupRules() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.SecurityGroupId) {
-		securityGroupdId = c.GetId(util.SecurityGroupId)
+		securityGroupdId, err = c.GetId(util.SecurityGroupId, clientIp)
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -227,12 +223,7 @@ func (c *SecurityGroupController) QuerySecurityGroupRules() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query security group rule is successful")
+	c.SendResponse(clientIp, response, "Query security group rule is successful")
 }
 
 // @Title Delete Security Group rule
@@ -244,7 +235,7 @@ func (c *SecurityGroupController) QuerySecurityGroupRules() {
 // @Param   securityGroupRuleId   path 	     string	true   "securityGroupRuleId"
 // @Success 200 ok
 // @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroup/:securityGroupId/securityGroupRules/:securityGroupRuleId" [delete]
+// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules/:securityGroupRuleId" [delete]
 func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 	log.Info("Delete security group rules by security group rules id request received.")
 	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
@@ -254,7 +245,7 @@ func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	securityGroupRuleId := c.GetId(":securityGroupRuleId")
+	securityGroupRuleId, err := c.GetId(":securityGroupRuleId",clientIp)
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -266,4 +257,20 @@ func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 		return
 	}
 	c.handleLoggingForSuccess(nil, clientIp, "Delete security group rule is successful")
+}
+
+func ValidateBodyPara( securityGroupRules models.SecurityGroupRules, clientIp string) error {
+	err :=  util.ValidateUUID(securityGroupRules.Securitygroupid)
+    if err != nil {
+     return err
+    }
+     err = util.ValidateUUID(securityGroupRules.RemoteGroupID)
+     if err != nil {
+     return err
+   }
+	name, err := util.ValidateName(securityGroupRules.Direction, util.NameRegex)
+	if err != nil || !name {
+		return err
+	}
+	return nil
 }

@@ -21,6 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"rescontroller/models"
 	"rescontroller/util"
+	"unicode"
 	"unsafe"
 )
 
@@ -63,7 +64,10 @@ func (c *FlavorController) CreateFlavor() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
-
+	err = c.ValidateBodyParams(flavor, clientIp)
+	if err!=nil {
+        return
+	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -81,6 +85,7 @@ func (c *FlavorController) CreateFlavor() {
 	}
 	c.handleLoggingForSuccessV1(clientIp, util.CreateFlavorSuccess)
 }
+
 
 // @Title Query Flavor
 // @Description Query Flavor
@@ -103,7 +108,10 @@ func (c *FlavorController) QueryFlavor() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.FlavorId) {
-		flavorId = c.GetId(util.FlavorId)
+		flavorId, err = c.GetId(util.FlavorId,clientIp)
+		if err != nil {
+			return
+		}
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -143,7 +151,10 @@ func (c *FlavorController) DeleteFlavor() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	flavorId := c.GetId(util.FlavorId)
+	flavorId, err := c.GetId(util.FlavorId,clientIp)
+	if err != nil {
+		return
+	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -155,4 +166,30 @@ func (c *FlavorController) DeleteFlavor() {
 		return
 	}
 	c.handleLoggingForSuccess(nil, clientIp, util.DeleteFlavorSuccess)
+}
+
+func (c *FlavorController) ValidateBodyParams(flavor models.Flavor, clientIp string) error {
+	//add validation code here
+	name, err := util.ValidateName(flavor.Name, util.NameRegex)
+	if err != nil || !name {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Name is invalid")
+		return err
+	}
+	if (unicode.IsNumber(flavor.Disk)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Disk input is invalid is not a number")
+		return err
+	}
+	if (unicode.IsNumber(flavor.Vcpus)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Vcpus input is invalid is not a number")
+		return err
+	}
+	if (unicode.IsNumber(flavor.Ram)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Ram input is invalid is not a number")
+		return err
+	}
+	if (unicode.IsNumber(flavor.Swap)){
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Swap input is invalid is not a number")
+		return err
+	}
+	return nil
 }

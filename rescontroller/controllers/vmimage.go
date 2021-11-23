@@ -21,6 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"rescontroller/models"
 	"rescontroller/util"
+	"unicode"
 	"unsafe"
 )
 
@@ -50,7 +51,10 @@ func (c *VmImageController) QueryImages() {
 	defer util.ClearByteArray(bKey)
 
 	if c.IsIdAvailable(util.ImageId) {
-		imageId = c.GetId(util.ImageId)
+		imageId, err = c.GetId(util.ImageId,clientIp)
+		if err != nil {
+			return
+		}
 	}
 
 	adapter, err := c.GetAdapter(clientIp, vim)
@@ -64,12 +68,7 @@ func (c *VmImageController) QueryImages() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query security group is successful")
+	c.SendResponse(clientIp, response, "Query image is successful")
 }
 
 // @Title Delete Image
@@ -91,8 +90,10 @@ func (c *VmImageController) DeleteImage() {
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	defer util.ClearByteArray(bKey)
 
-	imageId := c.GetId(util.ImageId)
-
+	imageId, err := c.GetId(util.ImageId, clientIp)
+	if err != nil {
+		return
+	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -131,7 +132,10 @@ func (c *VmImageController) CreateImage() {
 		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
 		return
 	}
-
+	err = c.ValidateBodyParam(image, clientIp)
+	if err != nil{
+		return
+	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -143,12 +147,7 @@ func (c *VmImageController) CreateImage() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Create image is successful")
+	c.SendResponse(clientIp, response, "Create image is successful")
 }
 
 // @Title Import Image
@@ -193,3 +192,27 @@ func (c *VmImageController) ImportImage() {
 	}
 	c.handleLoggingForSuccessV1(clientIp, "Import image is successful")
 }
+
+func (c *VmImageController) ValidateBodyParam (image models.Image, clientIp string) error {
+		name, err := util.ValidateName(image.Name, util.NameRegex)
+		if err != nil || !name {
+			return err
+		}
+	    name, err = util.ValidateName(image.Containerformat, util.NameRegex)
+	    if err != nil || !name {
+		return err
+	    }
+	    name, err = util.ValidateName(image.Diskformat, util.NameRegex)
+	    if err != nil || !name {
+		return err
+	    }
+		if (unicode.IsNumber(image.Mindisk)) {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
+			return err
+		}
+		if (unicode.IsNumber(image.Minram)) {
+			c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
+			return err
+		}
+		return nil
+	}
