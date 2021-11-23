@@ -80,6 +80,8 @@ func doTest(t *testing.T) {
 
 	testCreateFlavor(t, extraParams, testDb)
 	testDeleteFlavor(t, extraParams, testDb)
+	testCreateNetwork(t, extraParams, testDb)
+	testDeleteNetwork(t, extraParams, testDb)
 
 
 }
