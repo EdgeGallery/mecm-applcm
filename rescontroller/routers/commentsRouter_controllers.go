@@ -47,7 +47,7 @@ func init() {
 	initAPI(util.VmImagecontroller, "QueryImages", util.QueryImages, util.GET)
 	initAPI(util.VmImagecontroller, "DeleteImage", util.QueryImages, util.DELETE)
 	initAPI(util.VmImagecontroller, "CreateImage", "/v1/tenants/:tenantId/hosts/:hostIp/images", util.POST)
-	initAPI(util.VmImagecontroller, "ImportImage", "/v1/tenants/:tenantId/hosts/:hostIp/images", util.POST)
+	initAPI(util.VmImagecontroller, "ImportImage",  util.QueryImages, util.POST)
 
 	initAPI(util.VmController, "CreateServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers", util.POST)
 	initAPI(util.VmController, "QueryServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers", util.GET)
