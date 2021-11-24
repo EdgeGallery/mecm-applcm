@@ -98,7 +98,7 @@ func NewHelmClient(tenantId string, hostIP string) (*HelmClient, error) {
 	// Kubeconfig file will be picked based on host IP and will be check for existence
 	exists, err := fileExists(kubeconfigPath + tenantId + "/" +hostIP)
 	if exists {
-		return &HelmClient{HostIP: hostIP, Kubeconfig: kubeconfigPath + hostIP}, nil
+		return &HelmClient{HostIP: hostIP, Kubeconfig: kubeconfigPath + tenantId + "/" + hostIP}, nil
 	} else {
 		log.Error("No file exist with name")
 		return nil, err
