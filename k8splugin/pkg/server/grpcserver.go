@@ -161,7 +161,7 @@ func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.Workloa
 	}
 
 	// Input validation
-	hostIp, tenantId, appInsId, err := s.validateInputParamsForPodDesc(req)
+	hostIp, appInsId, tenantId, err := s.validateInputParamsForPodDesc(req)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.WorkloadEvents, util.FailedToValInputParams)
 		return resp, err
@@ -713,7 +713,7 @@ func (s *ServerGRPC) validateInputParamsForPodDesc(
 	if err != nil {
 		return "", "","", s.logError(status.Error(codes.InvalidArgument, util.TenantIdIsInvalid))
 	}
-	return hostIp, appInsId,tenantId, nil
+	return hostIp, appInsId, tenantId, nil
 }
 
 // Validate input parameters for Query
