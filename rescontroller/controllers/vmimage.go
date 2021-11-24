@@ -194,25 +194,25 @@ func (c *VmImageController) ImportImage() {
 }
 
 func (c *VmImageController) ValidateBodyParam (image models.Image, clientIp string) error {
-		name, err := util.ValidateName(image.Name, util.NameRegex)
-		if err != nil || !name {
-			return err
-		}
-	    name, err = util.ValidateName(image.Containerformat, util.NameRegex)
-	    if err != nil || !name {
+	name, err := util.ValidateName(image.Name, util.NameRegex)
+	if err != nil || !name {
 		return err
-	    }
-	    name, err = util.ValidateName(image.Diskformat, util.NameRegex)
-	    if err != nil || !name {
-		return err
-	    }
-		if (unicode.IsNumber(image.Mindisk)) {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
-			return err
-		}
-		if (unicode.IsNumber(image.Minram)) {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
-			return err
-		}
-		return nil
 	}
+	name, err = util.ValidateName(image.Containerformat, util.NameRegex)
+	if err != nil || !name {
+		return err
+	}
+	name, err = util.ValidateName(image.Diskformat, util.NameRegex)
+	if err != nil || !name {
+		return err
+	}
+	if (unicode.IsNumber(image.Mindisk)) {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
+		return err
+	}
+	if (unicode.IsNumber(image.Minram)) {
+		c.HandleLoggingForError(clientIp, util.BadRequest, "Mindisk input is invalid is not a number")
+		return err
+	}
+	return nil
+}

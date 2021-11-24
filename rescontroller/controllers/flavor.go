@@ -65,8 +65,8 @@ func (c *FlavorController) CreateFlavor() {
 		return
 	}
 	err = c.ValidateBodyParams(flavor, clientIp)
-	if err!=nil {
-        return
+	if err != nil {
+		return
 	}
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
@@ -78,14 +78,8 @@ func (c *FlavorController) CreateFlavor() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, util.CreateFlavorSuccess)
+	c.SendResponse(clientIp, response, util.CreateFlavorSuccess)
 }
-
 
 // @Title Query Flavor
 // @Description Query Flavor
@@ -124,12 +118,7 @@ func (c *FlavorController) QueryFlavor() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, "Query flavor is successful")
+	c.SendResponse(clientIp, response, "Query flavor is successful")
 }
 
 // @Title Delete Flavor

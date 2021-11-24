@@ -126,7 +126,7 @@ func (c *NetworkController) QueryNetwork() {
 		return
 	}
 	if c.IsIdAvailable(util.NetworkId) {
-		networkId, err = c.GetId(util.SecurityGroupId, clientIp)
+		networkId, err = c.GetId(util.NetworkId, clientIp)
 	}
 
 	pluginInfo := util.GetPluginInfo(vim)

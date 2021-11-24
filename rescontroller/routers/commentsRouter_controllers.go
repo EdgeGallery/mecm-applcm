@@ -25,10 +25,10 @@ import (
 func init() {
 	initAPI(util.Flavorcontroller, "HealthCheck", "/v1/health", util.GET)
 
-	initAPI(util.Flavorcontroller, "CreateFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavor", util.POST)
-	initAPI(util.Flavorcontroller, "QueryFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavor", util.GET)
-	initAPI(util.Flavorcontroller, "QueryFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavor/:flavorId", util.GET)
-	initAPI(util.Flavorcontroller, "DeleteFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavor/:flavorId", util.DELETE)
+	initAPI(util.Flavorcontroller, "CreateFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavors", util.POST)
+	initAPI(util.Flavorcontroller, "QueryFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavors", util.GET)
+	initAPI(util.Flavorcontroller, "QueryFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavors/:flavorId", util.GET)
+	initAPI(util.Flavorcontroller, "DeleteFlavor", "/v1/tenants/:tenantId/hosts/:hostIp/flavors/:flavorId", util.DELETE)
 
 	initAPI(util.Networkcontroller, "CreateNetwork", "/v1/tenants/:tenantId/hosts/:hostIp/networks", util.POST)
 	initAPI(util.Networkcontroller, "QueryNetwork", "/v1/tenants/:tenantId/hosts/:hostIp/networks", util.GET)
@@ -47,7 +47,7 @@ func init() {
 	initAPI(util.VmImagecontroller, "QueryImages", util.QueryImages, util.GET)
 	initAPI(util.VmImagecontroller, "DeleteImage", util.QueryImages, util.DELETE)
 	initAPI(util.VmImagecontroller, "CreateImage", "/v1/tenants/:tenantId/hosts/:hostIp/images", util.POST)
-	initAPI(util.VmImagecontroller, "ImportImage", "/v1/tenants/:tenantId/hosts/:hostIp/images", util.POST)
+	initAPI(util.VmImagecontroller, "ImportImage",  util.QueryImages, util.POST)
 
 	initAPI(util.VmController, "CreateServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers", util.POST)
 	initAPI(util.VmController, "QueryServer", "/v1/tenants/:tenantId/hosts/:hostIp/servers", util.GET)
