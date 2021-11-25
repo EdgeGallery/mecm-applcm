@@ -14,27 +14,20 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
-from concurrent import futures
 
-from core.log import logger
+from internal.resourcemanager.resourcemanager_pb2 import ImportVmImageRequest
+from tests.grpc.client import test_host_ip, test_tenant_id, image_stub
+from tests.resources.gen_token import test_access_token
 
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
-
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
+import_image_request = ImportVmImageRequest(
+    accessToken=test_access_token,
+    hostIp=test_host_ip,
+    tenantId=test_tenant_id,
+    imageId='8b7955ce-6b56-49d6-bfb7-e1677a7fa0a3',
+    resourceUri='https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img'
 )
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
-
-
-def exception_handler(worker):
-    worker_exception = worker.exception()
-    if worker_exception:
-        logger.exception("Worker return exception: {}".format(worker_exception))
+if __name__ == '__main__':
+    resp = image_stub.importVmImage(import_image_request)
+    print(resp)

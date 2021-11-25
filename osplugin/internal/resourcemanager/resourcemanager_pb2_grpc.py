@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from internal.resourcemanager import resourcemanager_pb2 as resourcemanager__pb2
+import internal.resourcemanager.resourcemanager_pb2 as resourcemanager__pb2
 
 
 class VmImageMangerStub(object):

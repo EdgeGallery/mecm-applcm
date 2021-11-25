@@ -29,11 +29,10 @@ from service.flavor_service import FlavorService
 from service.network_service import NetworkService
 from service.security_group_service import SecurityGroupService
 from service.vm_service import VmService
-from service.vm_image_service import VmImageService
-from task import upload_thread_pool, check_thread_pool, download_thread_pool
+from service.image_service import ImageService
 
 LISTEN_PORT = 8234
-MAX_MESSAGE_LENGTH = 1024 * 1024 * 2
+MAX_MESSAGE_LENGTH = 1024 * 1024 * 4
 LOG = logger
 
 
@@ -52,7 +51,7 @@ def serve():
     )
     lcmservice_pb2_grpc.add_AppLCMServicer_to_server(AppLcmService(), server)
     resourcemanager_pb2_grpc.add_VmManagerServicer_to_server(VmService(), server)
-    resourcemanager_pb2_grpc.add_VmImageMangerServicer_to_server(VmImageService(), server)
+    resourcemanager_pb2_grpc.add_VmImageMangerServicer_to_server(ImageService(), server)
     resourcemanager_pb2_grpc.add_FlavorManagerServicer_to_server(FlavorService(), server)
     resourcemanager_pb2_grpc.add_NetworkManagerServicer_to_server(NetworkService(), server)
     resourcemanager_pb2_grpc.add_SecurityGroupManagerServicer_to_server(SecurityGroupService(), server)
@@ -80,7 +79,4 @@ def serve():
         LOG.info("Started server on %s", listen_addr)
         server.wait_for_termination()
     except KeyboardInterrupt:
-        upload_thread_pool.shutdown()
-        download_thread_pool.shutdown()
-        check_thread_pool.shutdown()
         LOG.info('Server stopped')

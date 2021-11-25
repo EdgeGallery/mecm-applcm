@@ -18,6 +18,8 @@
 # -*- coding: utf-8 -*-
 import json
 
+from novaclient.exceptions import NotFound
+
 import utils
 from core.log import logger
 from core.openstack_utils import create_nova_client
@@ -57,8 +59,8 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
                                      disk=request.flavor.disk,
                                      swap=request.flavor.swap)
 
-        if request.extraSpecs is not None:
-            flavor.set_keys(request.extraSpecs)
+        if request.flavor.extraSpecs:
+            flavor.set_keys(dict(request.flavor.extraSpecs))
 
         LOG.info('success create flavor %s', flavor)
         resp.status = 'Success'
@@ -83,7 +85,10 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         nova = create_nova_client(host_ip, request.tenantId)
 
-        nova.flavors.delete(request.flavorId)
+        try:
+            nova.flavors.delete(request.flavorId)
+        except NotFound:
+            LOG.debug('flavor not found, skip delete')
         LOG.info('success delete flavor %s', request.flavorId)
         resp.status = 'Success'
         return resp
@@ -112,10 +117,32 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
             'msg': 'success'
         }
 
-        if request.flavorId is not None:
-            resp_data['data'] = nova.flavors.get(request.flavorId)
+        if not request.flavorId:
+            resp_data['data'] = []
+            flavors = nova.flavors.list()
+            for flavor in flavors:
+                resp_data['data'].append({
+                    'id': flavor.id,
+                    'name': flavor.name
+                })
         else:
-            resp_data['data'] = nova.flavors.list()
+            try:
+                flavor = nova.flavors.get(request.flavorId)
+                extra_specs = flavor.get_keys()
+                resp_data['data'] = {
+                    'id': flavor.id,
+                    'name': flavor.name,
+                    'vcpus': flavor.vcpus,
+                    'ram': flavor.ram,
+                    'disk': flavor.disk,
+                    'rxtx': flavor.rxtx_factor,
+                    'swap': flavor.swap,
+                    'extra_specs': dict(extra_specs)
+                }
+            except NotFound:
+                resp_data['code'] = 404
+                resp_data['msg'] = 'flavor %s not found' % request.flavorId
+
         resp.response = json.dumps(resp_data)
 
         LOG.info('query flavor message success')

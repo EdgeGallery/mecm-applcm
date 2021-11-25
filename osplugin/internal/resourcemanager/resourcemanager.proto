@@ -150,7 +150,7 @@ message OperateVmRequest {
 }
 
 message OperateVmResponse {
-  string status = 1;
+  string response = 1;
 }
 
 message DeleteVmRequest {

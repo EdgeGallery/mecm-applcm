@@ -35,24 +35,13 @@ def start_check_stack_status(app_instance_id):
     Args:
         app_instance_id:
     """
-    check_thread_pool.submit(check_stack_status, app_instance_id)
-
-
-def check_stack_status(app_instance_id):
-    """
-    check_stack_status
-    Args:
-        app_instance_id:
-    """
-    time.sleep(5)
-    try:
-        do_check_stack_status(app_instance_id)
-    except Exception as exception:
-        LOG.error(exception, exc_info=True)
+    check_thread_pool.submit(do_check_stack_status, app_instance_id)
 
 
 @db_session
 def do_check_stack_status(app_instance_id):
+    time.sleep(5)
+
     app_ins_mapper = AppInsMapper.get(app_instance_id=app_instance_id)
     if not app_ins_mapper:
         LOG.debug('app ins: %s db record not found', app_instance_id)

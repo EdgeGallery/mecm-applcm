@@ -42,6 +42,7 @@ ACTIVE = 'active'
 KILLED = 'killed'
 DOWNLOADING = 'downloading'
 COMPRESSING = 'compressing'
+WAITING = 'waiting'
 PUSHING = 'pushing'
 
 UPLOADED = 'uploaded'
@@ -176,17 +177,20 @@ def validate_input_params(param):
     """
     校验通用参数,host_ip和token，返回host_ip
     Args:
-        param: 包含host_ip和token
+        param: 包含hostIp和accessToken
     Returns:
         host_ip
     """
-    access_token = param.access_token
-    host_ip = param.host_ip
+    access_token = param.accessToken
+    host_ip = param.hostIp
     if not validate_access_token(access_token):
         LOG.error('accessToken not valid')
         return None
     if not validate_ipv4_address(host_ip):
         LOG.error('hostIp not match ipv4')
+        return None
+    if param.tenantId is None:
+        LOG.error('tenantId is required')
         return None
     return host_ip
 
@@ -196,13 +200,14 @@ class StreamReader(IOBase):
         self.data_iter = request_iter
         self.is_end = False
 
-    def read(self) -> bytes:
+    def read(self, size) -> bytes:
         if self.is_end:
-            yield bytes()
-        else:
-            for request in self.data_iter:
-                yield request.content
+            return bytes()
+        request = next(self.data_iter, None)
+        if request is None:
             self.is_end = True
+            return bytes()
+        return request.content
 
     def fileno(self) -> int:
         raise IOError('not a file')

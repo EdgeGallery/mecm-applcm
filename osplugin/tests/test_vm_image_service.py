@@ -26,7 +26,7 @@ from pony.orm import db_session, commit
 
 from core.models import VmImageInfoMapper
 from internal.lcmservice import lcmservice_pb2
-from service.vm_image_service import VmImageService
+from service.image_service import VmImageService
 from tests.resources import gen_token
 from tests.resources.test_data import mock_nova_client, mock_glance_client
 

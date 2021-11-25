@@ -31,12 +31,12 @@ class BaseRequest:
     """
     基础请求参数
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
 
     def __init__(self, request):
-        self.access_token = request.accessToken
-        self.host_ip = request.hostIp
+        self.accessToken = request.accessToken
+        self.hostIp = request.hostIp
 
     def get_access_token(self):
         """
@@ -44,7 +44,7 @@ class BaseRequest:
         Returns:
 
         """
-        return self.access_token
+        return self.accessToken
 
     def get_host_ip(self):
         """
@@ -52,15 +52,15 @@ class BaseRequest:
         Returns:
 
         """
-        return self.host_ip
+        return self.accessToken
 
 
 class UploadPackageRequest:
     """
     上传请求体封装
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
     app_package_id = None
     tenant_id = None
 
@@ -72,11 +72,11 @@ class UploadPackageRequest:
         with open(self.tmp_package_file_path, 'ab') as file:
             for request in request_iterator:
                 if request.accessToken:
-                    self.access_token = request.accessToken
+                    self.accessToken = request.accessToken
                 elif request.appPackageId:
                     self.app_package_id = request.appPackageId
                 elif request.hostIp:
-                    self.host_ip = request.hostIp
+                    self.hostIp = request.hostIp
                 elif request.tenantId:
                     self.tenant_id = request.tenantId
                 elif request.package:
@@ -102,8 +102,8 @@ class InstantiateRequest:
     """
     实例化请求体封装
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
     app_instance_id = None
     app_package_id = None
     app_package_path = None
@@ -112,9 +112,9 @@ class InstantiateRequest:
     ak_sk_lcm_gen = None
 
     def __init__(self, request):
-        self.access_token = request.accessToken
+        self.accessToken = request.accessToken
+        self.hostIp = request.hostIp
         self.app_instance_id = request.appInstanceId
-        self.host_ip = request.hostIp
         self.app_package_id = request.appPackageId
         self.tenant_id = request.tenantId
         self.app_package_path = _APP_PACKAGE_PATH_FORMATTER\
@@ -138,24 +138,24 @@ class InstantiateRequest:
         Returns:
 
         """
-        return self.host_ip
+        return self.hostIp
 
 
 class UploadCfgRequest:
     """
     配置上传请求体封装
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
     config_file = None
     tenant_id = None
 
     def __init__(self, request_iterator):
         for request in request_iterator:
             if request.accessToken:
-                self.access_token = request.accessToken
+                self.accessToken = request.accessToken
             elif request.hostIp:
-                self.host_ip = request.hostIp
+                self.hostIp = request.hostIp
             elif request.configFile:
                 self.config_file = request.configFile
             elif request.tenantId:
@@ -175,7 +175,7 @@ class UploadCfgRequest:
         Returns:
 
         """
-        return self.host_ip
+        return self.hostIp
 
 
 class AppInsMapper(db.Entity):
@@ -188,7 +188,7 @@ class AppInsMapper(db.Entity):
     tenant_id = Required(str, max_len=64)
     stack_id = Required(str, max_len=64, unique=True)
     operational_status = Required(str, max_len=128)
-    operation_info = Optional(str, max_len=256, nullable=True)
+    operation_info = Optional(str, nullable=True)
 
     def get_table_name(self):
         """
@@ -226,11 +226,15 @@ class VmImageInfoMapper(db.Entity):
     host_ip = Required(str, max_len=15)
     image_name = Required(str, max_len=64)
     status = Required(str, max_len=20)
-    tenant_id = Optional(str, max_len=64)
+    tenant_id = Required(str, max_len=64)
+
+    image_size = Optional(int, size=64)
+    checksum = Optional(str, max_len=64)
+
     app_package_id = Optional(str, max_len=64)
-    image_size = Optional(int, size=64, nullable=True)
-    checksum = Optional(str, max_len=64, nullable=True)
-    compress_task_id = Optional(str, max_len=64, nullable=True)
+    compress_task_id = Optional(str, max_len=64)
+    compress_task_status = Optional(str, max_len=20)
+    remote_url = Optional(str)
 
     def get_table_name(self):
         """
@@ -249,6 +253,16 @@ class VmImageInfoMapper(db.Entity):
         :return:
         """
         return select(x for x in cls if x.app_package_id == app_package_id and x.host_ip == host_ip)
+
+    @classmethod
+    def find_many(cls, host_ip, tenant_id):
+        """
+        根据查询条件查询多个实例对象
+        :param host_ip:
+        :param tenant_id: 查询条件
+        :return:
+        """
+        return select(x for x in cls if x.tenant_id == tenant_id and x.host_ip == host_ip)
 
 
 db.generate_mapping(create_tables=True)
