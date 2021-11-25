@@ -340,17 +340,6 @@ message DeleteSecurityGroupRuleResponse {
   string status = 4;
 }
 
-message QuerySecurityGroupRuleRequest {
-  string accessToken = 1;
-  string hostIp = 2;
-  string tenantId = 3;
-  string securityGroupId = 4;
-}
-
-message QuerySecurityGroupRuleResponse {
-  string response = 1;
-}
-
 // resource manager entity end
 
 service VmImageManger {
@@ -388,5 +377,4 @@ service SecurityGroupManager {
 
   rpc createSecurityGroupRule(CreateSecurityGroupRuleRequest) returns (CreateSecurityGroupRuleResponse) {}
   rpc deleteSecurityGroupRule(DeleteSecurityGroupRuleRequest) returns (DeleteSecurityGroupRuleResponse) {}
-  rpc querySecurityGroupRule(QuerySecurityGroupRuleRequest) returns (QuerySecurityGroupRuleResponse) {}
 }

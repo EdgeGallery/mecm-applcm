@@ -18,6 +18,8 @@
 # -*- coding: utf-8 -*-
 import json
 
+from neutronclient.common.exceptions import NotFound
+
 import utils
 from core.log import logger
 from core.openstack_utils import create_neutron_client
@@ -74,7 +76,10 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
 
         neutron = create_neutron_client(host_ip, request.tenantId)
 
-        neutron.delete_security_group(request.securityGroupId)
+        try:
+            neutron.delete_security_group(request.securityGroupId)
+        except NotFound:
+            LOG.debug('skip not found security group %s', request.securityGroupId)
         LOG.info("delete security group success")
 
         return DeleteSecurityGroupResponse(status='Success')
@@ -100,10 +105,36 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
             'code': 200,
             'msg': 'success'
         }
-        if request.securityGroupId is not None:
-            resp_data['data'] = neutron.show_security_group(request.securityGroupId)
+        if request.securityGroupId:
+            try:
+                security_group = neutron.show_security_group(request.securityGroupId)['security_group']
+                resp_data['data'] = {
+                    'id': security_group['id'],
+                    'name': security_group['name'],
+                    'securityGroupRules': []
+                }
+                for security_rule in security_group['security_group_rules']:
+                    resp_data['data']['securityGroupRules'].append({
+                        'id': security_rule['id'],
+                        'protocol': security_rule['protocol'],
+                        'portRangeMax': security_rule['port_range_max'],
+                        'portRangeMin': security_rule['port_range_min'],
+                        'remoteGroupId': security_rule['remote_group_id'],
+                        'remoteIpPrefix': security_rule['remote_ip_prefix'],
+                        'ethertype': security_rule['ethertype'],
+                        'direction': security_rule['direction']
+                    })
+            except NotFound:
+                resp_data['code'] = 404
+                resp_data['msg'] = 'security group %s not found' % request.securityGroupId
         else:
-            resp_data['data'] = neutron.list_security_groups()
+            resp_data['data'] = []
+            security_groups = neutron.list_security_groups()['security_groups']
+            for security_group in security_groups:
+                resp_data['data'].append({
+                    'id': security_group['id'],
+                    'name': security_group['name']
+                })
 
         LOG.info("success query security group")
         return QuerySecurityGroupResponse(response=json.dumps(resp_data))
@@ -127,14 +158,19 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
 
         security_group_rule = {
             'security_group_id': request.securityGroupRule.securityGroupId,
-            'direction': request.securityGroupRule.direction,
-            'protocol': request.securityGroupRule.protocol,
-            'ethertype': request.securityGroupRule.ethertype,
-            'port_range_max': request.securityGroupRule.portRangeMax,
-            'port_range_min': request.securityGroupRule.portRangeMin,
-            'remote_ip_prefix': request.securityGroupRule.remoteIpPrefix,
-            'remote_group_id': request.securityGroupRule.remoteGroupId
+            'direction': request.securityGroupRule.direction or 'ingress',
+            'ethertype': request.securityGroupRule.ethertype or 'IPv4'
         }
+        if request.securityGroupRule.protocol:
+            security_group_rule['protocol'] = request.securityGroupRule.protocol
+        if request.securityGroupRule.portRangeMax:
+            security_group_rule['port_range_max'] = request.securityGroupRule.portRangeMax
+        if request.securityGroupRule.portRangeMin:
+            security_group_rule['port_range_min'] = request.securityGroupRule.portRangeMin
+        if request.securityGroupRule.remoteIpPrefix:
+            security_group_rule['remote_ip_prefix'] = request.securityGroupRule.remoteIpPrefix
+        if request.securityGroupRule.remoteGroupId:
+            security_group_rule['remote_group_id'] = request.securityGroupRule.remoteGroupId
         neutron.create_security_group_rule({'security_group_rule': security_group_rule})
 
         LOG.info("success create security group rule")
@@ -158,37 +194,11 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
 
         neutron = create_neutron_client(host_ip, request.tenantId)
 
-        neutron.delete_security_group_rule(request.securityGroupRuleId)
+        try:
+            neutron.delete_security_group_rule(request.securityGroupRuleId)
+        except NotFound:
+            LOG.debug('skip not found security rule %s', request.securityGroupRuleId)
 
         LOG.info('success delete security group rule')
 
         return DeleteSecurityGroupRuleResponse(status='success')
-
-    def querySecurityGroupRule(self, request, context):
-        """
-
-        Args:
-            request:
-            context:
-
-        Returns:
-
-        """
-        LOG.info('received query security group rule message')
-        host_ip = utils.validate_input_params(request)
-        if host_ip is None:
-            return QuerySecurityGroupRuleResponse(response='{"code":400}')
-
-        neutron = create_neutron_client(host_ip, request.tenantId)
-
-        resp_data = {
-            'code': 200,
-            'msg': 'success'
-        }
-        if request.securityGroupRuleId is not None:
-            resp_data['data'] = neutron.show_security_group_rule(request.securityGroupRuleId)
-        else:
-            resp_data['data'] = neutron.list_security_group_rules(security_group=request.securityGroupId)
-
-        LOG.info('success query security group rule message')
-        return QuerySecurityGroupRuleResponse(response=json.dumps(resp_data))

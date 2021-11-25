@@ -43,6 +43,7 @@ app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
 image_stub = resourcemanager_pb2_grpc.VmImageMangerStub(channel)
 flavor_stub = resourcemanager_pb2_grpc.FlavorManagerStub(channel)
 network_stub = resourcemanager_pb2_grpc.NetworkManagerStub(channel)
+security_group_stub = resourcemanager_pb2_grpc.SecurityGroupManagerStub(channel)
 server_stub = resourcemanager_pb2_grpc.VmManagerStub(channel)
 
 test_host_ip = '192.168.1.218'
