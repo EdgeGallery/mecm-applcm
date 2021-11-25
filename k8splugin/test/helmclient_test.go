@@ -58,7 +58,8 @@ var (
 	configFile            = "/usr/app/artificats/config/"
 	namespace             = "default"
 	failedToGetClientSet = "failed to get clientset"
-	outputSuccess        = "{\"Output\":\"Success\"}"
+	//outputSuccess        = "{\"Output\":\"Success\"}"
+	outputSuccess        = "{\"data\":null,\"retCode\":0,\"message\":\"Query pod statistics is successful\",\"params\":null}"
 	getClientSet         = "GetClientSet"
 	https                = "https://"
 )
