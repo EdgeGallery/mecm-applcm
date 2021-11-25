@@ -241,8 +241,10 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 		s.displayResponseMsg(ctx, util.Query, "chart not found for workloadId")
 		return resp, err
 	}
+	var response models.OupPutResponse
+	rStruct := json.Unmarshal([]byte(r), &response)
 
-	result, err := json.Marshal(s.handleSuccessReturn(r, "Query pod statistics is successful"))
+	result, err := json.Marshal(s.handleSuccessReturn(rStruct, "Query pod statistics is successful"))
 	if err != nil {
 		log.Errorf("Chart not found for workloadId: %s. Err: %s", appInstanceRecord.WorkloadId, err)
 		s.displayResponseMsg(ctx, util.Query, "chart not found for workloadId")

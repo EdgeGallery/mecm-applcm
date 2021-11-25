@@ -135,3 +135,7 @@ type ReturnResponse struct {
 	Message string      `json:"message"`
 	Params  []string    `json:"params"`
 }
+
+type OupPutResponse struct {
+	Output    string `json:"Output"`
+}
