@@ -241,21 +241,10 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 		s.displayResponseMsg(ctx, util.Query, "chart not found for workloadId")
 		return resp, err
 	}
-	var response models.OupPutResponse
-	rStruct := json.Unmarshal([]byte(r), &response)
-
-	result, err := json.Marshal(s.handleSuccessReturn(rStruct, "Query pod statistics is successful"))
-	if err != nil {
-		log.Errorf("Chart not found for workloadId: %s. Err: %s", appInstanceRecord.WorkloadId, err)
-		s.displayResponseMsg(ctx, util.Query, "chart not found for workloadId")
-		return resp, err
-	}
-
 	resp = &lcmservice.QueryResponse{
-		Response: string(result),
+		Response: r,
 	}
 	s.handleLoggingForSuccess(ctx, util.Query, "Query pod statistics is successful")
-
 	return resp, nil
 }
 
@@ -885,16 +874,6 @@ func (s *ServerGRPC) handleLoggingForSuccess(ctx context.Context, rpcName string
 
 	log.Info("Response message for ClientIP [" + clientIp + "]" +
 		util.RpcName + rpcName + "] Result [Success: " + msg + ".]")
-}
-
-func (s *ServerGRPC) handleSuccessReturn(object interface{}, msg string) *models.ReturnResponse {
-	result := &models.ReturnResponse{
-		Data:    object,
-		RetCode: 0,
-		Message: msg,
-		Params:  nil,
-	}
-	return result
 }
 
 // Display received message

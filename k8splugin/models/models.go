@@ -128,14 +128,3 @@ type MetricInfo struct {
 	CpuUsage  map[string]int64 `json:"cpuusage"`
 	MemUsage  map[string]int64 `json:"memusage"`
 }
-
-type ReturnResponse struct {
-	Data    interface{} `json:"data"`
-	RetCode int         `json:"retCode"`
-	Message string      `json:"message"`
-	Params  []string    `json:"params"`
-}
-
-type OupPutResponse struct {
-	Output    string `json:"Output"`
-}
