@@ -14,3 +14,18 @@
 # limitations under the License.
 
 """
+# -*- coding: utf-8 -*-
+from internal.resourcemanager.resourcemanager_pb2 import DeleteNetworkRequest
+from tests.grpc.client import network_stub, test_host_ip, test_tenant_id
+from tests.resources.gen_token import test_access_token
+
+delete_network_request = DeleteNetworkRequest(
+    accessToken=test_access_token,
+    tenantId=test_tenant_id,
+    hostIp=test_host_ip,
+    networkId='700bd453-7c20-452c-bf46-70309bca8091'
+)
+
+if __name__ == '__main__':
+    resp = network_stub.deleteNetwork(delete_network_request)
+    print(resp)

@@ -212,23 +212,20 @@ message CreateNetworkRequest {
   message Network {
     string name = 1;
     bool adminStateUp = 2;
-    string dnsDomain = 3;
-    int32 mtu = 4;
-    bool portSecurityEnabled = 5;
-    string providerNetworkType = 6;
-    string providerPhysicalNetwork = 7;
-    int32 providerSegmentationId = 8;
-    string qosPolicyId = 9;
-    bool routerExternal = 10;
+    int32 mtu = 3;
+    string providerNetworkType = 4;
+    string providerPhysicalNetwork = 5;
+    int32 providerSegmentationId = 6;
+    string qosPolicyId = 7;
+    bool routerExternal = 8;
     message Segment {
       int32 providerSegmentationId = 1;
       string providerPhysicalNetwork = 2;
       string providerNetworkType = 3;
     }
-    repeated Segment segments = 11;
-    bool shared = 12;
-    bool vlanTransparent = 13;
-    bool isDefault = 14;
+    repeated Segment segments = 9;
+    bool shared = 10;
+    bool isDefault = 11;
     message Subnet {
       string name = 1;
       bool enableDhcp = 2;
@@ -244,7 +241,7 @@ message CreateNetworkRequest {
       string ipv6AddressMode = 8;
       string ipv6RaMode = 9;
     }
-    repeated Subnet subnets = 15;
+    repeated Subnet subnets = 12;
   }
   Network network = 4;
 }

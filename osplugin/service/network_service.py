@@ -18,6 +18,8 @@
 # -*- coding: utf-8 -*-
 import json
 
+from neutronclient.common.exceptions import NotFound
+
 import utils
 from core.log import logger
 from core.openstack_utils import create_neutron_client
@@ -51,50 +53,57 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
 
         network_data = {
             'name': request.network.name,
-            'admin_state_up': request.network.adminStateUp,
-            'dns_domain': request.network.dnsDomain,
-            'mtu': request.network.mtu,
-            'port_security_enable': request.network.portSecurityEnabled,
-            'provider:network_type': request.network.providerNetworkType,
-            'provider:physical_network': request.network.providerPhysicalNetwork,
-            'provider:segmentation_id': request.network.providerSegmentationId,
-            'qos_policy_id': request.network.qosPolicyId,
-            'router:external': request.network.routerExternal,
-            'segments': [],
-            'shared': request.network.shared,
-            'vlan_transparent': request.network.vlanTransparent,
-            'is_default': request.network.isDefault,
+            'admin_state_up': request.network.adminStateUp or True,
+            'router:external': request.network.routerExternal or False,
+            'shared': request.network.shared or False,
+            'is_default': request.network.isDefault or False
         }
-
+        if request.network.mtu:
+            network_data['mtu'] = request.network.mtu
+        if request.network.providerNetworkType:
+            network_data['provider:network_type'] = request.network.providerNetworkType
+        if request.network.providerPhysicalNetwork:
+            network_data['provider:physical_network'] = request.network.providerPhysicalNetwork
+        if request.network.providerSegmentationId:
+            network_data['provider:segmentation_id'] = request.network.providerSegmentationId
+        if request.network.qosPolicyId:
+            network_data['qos_policy_id'] = request.network.qosPolicyId
+        if request.network.segments:
+            network_data['segments'] = []
         for segment in request.network.segments:
             network_data['segments'].append({
-                'provider_segmentation_id': segment.providerSegmentationId,
-                'provider_physical_network': segment.providerPhysicalNetwork,
-                'provider_network_type': segment.providerNetworkType
+                'provider_segmentation_id': segment.providerSegmentationId or None,
+                'provider_physical_network': segment.providerPhysicalNetwork or None,
+                'provider_network_type': segment.providerNetworkType or None
             })
 
-        network = neutron.create_network({'network': network_data})
+        network = neutron.create_network({'network': network_data})['network']
 
         LOG.info('resp network %s', network)
 
         for req_subnet in request.network.subnets:
             subnet_data = {
                 'name': req_subnet.name,
-                'enable_dhcp': req_subnet.enableDhcp,
+                'enable_dhcp': req_subnet.enableDhcp or True,
                 'network_id': network['id'],
-                'dns_nameservers': req_subnet.dnsNamesevers,
-                'allocation_pools': [],
-                'ip_version': req_subnet.ipVersion,
-                'gateway_ip': req_subnet.gatewayIp,
+                'ip_version': req_subnet.ipVersion or 4,
                 'cidr': req_subnet.cidr,
-                'ipv6_address_mode': req_subnet.ipv6AddressMode,
-                'ipv6_ra_mode': req_subnet.ipv6RaMode
             }
-            for req_pool in req_subnet.allocationPools:
-                subnet_data['allocation_pools'].append({
-                    'start': req_pool.start,
-                    'end': req_pool.end
-                })
+            if req_subnet.dnsNameservers:
+                subnet_data['dns_nameservers'] = req_subnet.dnsNameservers
+            if req_subnet.gatewayIp:
+                subnet_data['gateway_ip'] = req_subnet.gatewayIp
+            if req_subnet.ipv6AddressMode:
+                subnet_data['ipv6_address_mode'] = req_subnet.ipv6AddressMode
+            if req_subnet.ipv6RaMode:
+                subnet_data['ipv6_ra_mode'] = req_subnet.ipv6RaMode
+            if req_subnet.allocationPools:
+                subnet_data['allocation_pools'] = []
+                for req_pool in req_subnet.allocationPools:
+                    subnet_data['allocation_pools'].append({
+                        'start': req_pool.start or None,
+                        'end': req_pool.end or None
+                    })
             neutron.create_subnet({'subnet': subnet_data})
 
         LOG.info("success create network %s", network)
@@ -116,7 +125,10 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
             return DeleteNetworkResponse(status='Failure')
         neutron = create_neutron_client(host_ip, request.tenantId)
 
-        neutron.delete_network(request.networkId)
+        try:
+            neutron.delete_network(request.networkId)
+        except NotFound:
+            LOG.debug('skip not found network %s', request.networkId)
         LOG.info("success delete network %s", request.networkId)
         return DeleteNetworkResponse(status='Success')
 
@@ -140,10 +152,27 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
             'code': 200,
             'msg': 'success'
         }
-        if request.networkId is not None:
-            resp_data['data'] = neutron.show_network(request.networkId)
+        if not request.networkId:
+            networks = neutron.list_networks()['networks']
+            resp_data['data'] = []
+            for network in networks:
+                network_data = {
+                    'id': network['id'],
+                    'name': network['name'],
+                    'subnets': []
+                }
+                for subnet_id in network['subnets']:
+                    subnet = neutron.show_subnet(subnet_id)['subnet']
+                    network_data['subnets'].append({'cidr': subnet['cidr']})
+                resp_data['data'].append(network_data)
+
         else:
-            resp_data['data'] = neutron.list_networks()
+            network = neutron.show_network(request.networkId)['network']
+            subnets = []
+            for subnet_id in network['subnets']:
+                subnets.append(neutron.show_subnet(subnet_id)['subnet'])
+            network['subnets'] = subnets
+            resp_data['data'] = network
 
         LOG.info("success query network")
         return QueryNetworkResponse(response=json.dumps(resp_data))
