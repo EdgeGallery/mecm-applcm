@@ -2130,19 +2130,7 @@ func (c *LcmControllerV2) DistributionStatus() {
 		return
 	}
 
-	res, err := json.Marshal(appPkgs)
-	if err != nil {
-		c.writeErrorResponse(util.FailedToMarshal, util.BadRequest)
-		return
-	}
-
-	_, err = c.Ctx.ResponseWriter.Write(res)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-
-	c.handleLoggingForSuccessV1(clientIp, "Query app package records successful")
+	c.handleLoggingForSuccess(appPkgs, clientIp, "Query app package records successful")
 }
 
 // @Title Sync app package records
