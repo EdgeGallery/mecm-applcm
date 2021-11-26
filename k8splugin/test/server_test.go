@@ -33,6 +33,7 @@ import (
 )
 
 var (
+	tenantId              string      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
 	hostIpAddress         string      = ipAddress
 	filePermission        os.FileMode = 0750
 	directory             string      = "/config/"
@@ -50,7 +51,7 @@ func TestServer(t *testing.T) {
 	})
 	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyFunc(adapter.GetClient, func(_ string, _ string) (adapter.ClientIntf, error) {
+	patch2 := gomonkey.ApplyFunc(adapter.GetClient, func(_ string, tenantId string, _ string) (adapter.ClientIntf, error) {
 		// do something
 		return &mockedHelmClient{}, nil
 	})

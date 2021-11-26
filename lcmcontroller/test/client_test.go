@@ -81,7 +81,7 @@ func doTest(t *testing.T) {
 
 	// Common steps
 	baseDir, _ := os.Getwd()
-	path := baseDir + "/positioning_with_mepagent_new.csar"
+	path := baseDir + "/positioning_with_mepagent_new.zip"
 	controllers.PackageFolderPath = baseDir + directory
 	_ = os.Mkdir(baseDir+directory, filePermission)
 	extraParams := map[string]string{
@@ -113,18 +113,6 @@ func doTest(t *testing.T) {
 
 	// Test work load events
 	testWorkloadEvents(t, nil, "", testDb, "Success")
-
-	// Test create image
-	testCreateImage(t, extraParams, testDb)
-
-	// Test get image
-	testGetImage(t, extraParams, testDb)
-
-	// Test get image file
-	testGetImageFile(t, extraParams, testDb)
-
-	// Test delete image file
-	testDeleteImage(t, extraParams, testDb)
 
 	// Test query
 	testQuery(t, nil, "", testDb, "{\"Output\":\"Success\"}")

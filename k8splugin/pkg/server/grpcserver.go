@@ -161,14 +161,14 @@ func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.Workloa
 	}
 
 	// Input validation
-	hostIp, appInsId, err := s.validateInputParamsForPodDesc(req)
+	hostIp, appInsId, tenantId, err := s.validateInputParamsForPodDesc(req)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.WorkloadEvents, util.FailedToValInputParams)
 		return resp, err
 	}
 
 	// Get Client
-	client, err := adapter.GetClient(util.DeployType, hostIp)
+	client, err := adapter.GetClient(util.DeployType, tenantId, hostIp)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.WorkloadEvents, util.FailedToGetClient)
 		return resp, err
@@ -181,7 +181,7 @@ func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.Workloa
 	if readErr != nil {
 		log.Error(util.AppRecordDoesNotExit)
 		s.displayResponseMsg(ctx, util.Query, util.AppRecordDoesNotExit)
-		return resp, err
+ 		return resp, err
 	}
 
 	// Query Chart
@@ -211,14 +211,14 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 	}
 
 	// Input validation
-	hostIp, appInsId, err := s.validateInputParamsForQuery(req)
+	tenantId, hostIp, appInsId, err := s.validateInputParamsForQuery(req)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Query, util.FailedToValInputParams)
 		return resp, err
 	}
 
 	// Get Client
-	client, err := adapter.GetClient(util.DeployType, hostIp)
+	client, err := adapter.GetClient(util.DeployType, tenantId, hostIp)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Query, util.FailedToGetClient)
 		return resp, err
@@ -262,14 +262,14 @@ func (s *ServerGRPC) QueryKPI(ctx context.Context, req *lcmservice.QueryKPIReque
 	}
 
 	// Input validation
-	hostIp, err := s.validateInputParamsForQueryKPI(req)
+	tenantId, hostIp, err := s.validateInputParamsForQueryKPI(req)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.QueryKPI, util.FailedToValInputParams)
 		return resp, err
 	}
 
 	// Get Client
-	client, err := adapter.GetClient(util.DeployType, hostIp)
+	client, err := adapter.GetClient(util.DeployType, tenantId, hostIp)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.QueryKPI, util.FailedToGetClient)
 		return resp, err
@@ -302,7 +302,7 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 		return resp, err
 	}
 
-	hostIp, appInsId, err := s.validateInputParamsForTerm(req)
+	tenantId, hostIp, appInsId, err := s.validateInputParamsForTerm(req)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Terminate, util.FailedToValInputParams)
 		return resp, err
@@ -318,7 +318,7 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 	}
 
 	// Get Client
-	client, err := adapter.GetClient(util.DeployType, hostIp)
+	client, err := adapter.GetClient(util.DeployType,tenantId, hostIp)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Terminate, util.FailedToGetClient)
 		return resp, err
@@ -375,7 +375,7 @@ func (s *ServerGRPC) Instantiate(ctx context.Context,
 	}
 
 	// Get Client
-	client, err := adapter.GetClient(util.DeployType, hostIp)
+	client, err := adapter.GetClient(util.DeployType, tenantId, hostIp)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.Instantiate, util.FailedToGetClient)
 		return resp, err
@@ -411,7 +411,7 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 		return err
 	}
 
-	hostIp, err := s.validateInputParamsForUploadCfg(stream)
+	hostIp, tenantId, err := s.validateInputParamsForUploadCfg(stream)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.UploadConfig, util.FailedToValInputParams)
 		sendUploadCfgResponse(stream, &res)
@@ -425,13 +425,13 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 		return err
 	}
 
-	if !util.CreateDir(KubeconfigPath) {
+	if !util.CreateDir(KubeconfigPath + tenantId) {
 		s.displayResponseMsg(ctx, util.UploadConfig, "failed to create config directory")
 		sendUploadCfgResponse(stream, &res)
 		return err
 	}
 
-	configPath := KubeconfigPath + hostIp
+	configPath := KubeconfigPath + tenantId + "/" + hostIp
 	newFile, err := os.Create(configPath)
 	if err != nil {
 		s.displayResponseMsg(ctx, util.UploadConfig, "failed to create config path")
@@ -473,12 +473,18 @@ func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 		return resp, err
 	}
 
-	hostIp, err := s.validateInputParamsForRemoveCfg(request)
+	hostIp, tenantId, err := s.validateInputParamsForRemoveCfg(request)
 	if err != nil {
-		s.displayResponseMsg(ctx, util.RemoveConfig, util.FailedToValInputParams)
+		s.displayResponseMsg(ctx, util.UploadConfig, util.FailedToValInputParams)
 		return resp, err
 	}
-	configPath := KubeconfigPath + hostIp
+	//
+	//hostIp, err := s.validateInputParamsForRemoveCfg(request)
+	//if err != nil {
+	//	s.displayResponseMsg(ctx, util.RemoveConfig, util.FailedToValInputParams)
+	//	return resp, err
+	//}
+	configPath := KubeconfigPath + tenantId + "/" + hostIp
 	err = os.Remove(configPath)
 	if err != nil {
 		log.Error("failed to remove host config file")
@@ -494,22 +500,29 @@ func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 }
 
 // Validate input parameters for remove config
-func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (string, error) {
+func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (hostIp string,
+	tenantId string,err error) {
 	accessToken := request.GetAccessToken()
-	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
-			return "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+			return "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
 		} else {
-			return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+			return "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 		}
 	}
-	hostIp := request.GetHostIp()
+	hostIp = request.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+		return "","", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
-	return hostIp, nil
+
+	tenantId = request.GetTenantId()
+	err = util.ValidateUUID(tenantId)
+	if err != nil {
+		return "","", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+	return hostIp, tenantId, nil
 }
 
 // Context Error
@@ -534,14 +547,14 @@ func (s *ServerGRPC) logError(err error) error {
 
 // Validate input parameters for termination
 func (s *ServerGRPC) validateInputParamsForTerm(
-	req *lcmservice.TerminateRequest) (hostIp string, appInsId string, err error) {
+	req *lcmservice.TerminateRequest) (tenantId string, hostIp string, appInsId string, err error) {
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
-			return "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+			return "", "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
 		} else {
-			return "", "", s.logError(status.Error(codes.InvalidArgument,
+			return "", "", "", s.logError(status.Error(codes.InvalidArgument,
 				util.AccssTokenIsInvalid))
 		}
 	}
@@ -549,18 +562,22 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument,
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.HostIpIsInvalid))
 	}
 
 	appInsId = req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument,
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AppInsIdValid))
 	}
-
-	return hostIp, appInsId, nil
+	tenantId = req.GetTenantId()
+	err = util.ValidateUUID(tenantId)
+	if err != nil {
+		return "","", "", s.logError(status.Error(codes.InvalidArgument, util.TenantIdIsInvalid))
+	}
+	return tenantId, hostIp, appInsId, nil
 }
 
 // Validate input parameters for termination
@@ -622,7 +639,7 @@ func (s *ServerGRPC) validateInputParamsForInstantiate(
 
 // Validate input parameters for upload configuration
 func (s *ServerGRPC) validateInputParamsForUploadCfg(
-	stream lcmservice.AppLCM_UploadConfigServer) (hostIp string, err error) {
+	stream lcmservice.AppLCM_UploadConfigServer) (hostIp string, tenantId string, err error) {
 	// Receive metadata which is accesstoken
 	req, err := stream.Recv()
 	if err != nil {
@@ -633,10 +650,23 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		if err.Error() == util.Forbidden {
-			return "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
+			return "", "", s.logError(status.Error(codes.PermissionDenied, util.Forbidden))
 		} else {
-			return "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
+			return "", "", s.logError(status.Error(codes.InvalidArgument, util.AccssTokenIsInvalid))
 		}
+	}
+
+	// Receive metadata which is host ip
+	req, err = stream.Recv()
+	if err != nil {
+		log.Error(util.CannotReceivePackage)
+		return
+	}
+
+	tenantId = req.GetTenantId()
+	err = util.ValidateUUID(tenantId)
+	if err != nil {
+		return "","", s.logError(status.Error(codes.InvalidArgument, util.TenantIdIsInvalid))
 	}
 
 	// Receive metadata which is host ip
@@ -648,41 +678,78 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+		return "","", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
 
-	return hostIp, nil
+
+	return hostIp, tenantId, nil
 }
 
 // Validate input parameters for pod describe
 func (s *ServerGRPC) validateInputParamsForPodDesc(
-	req *lcmservice.WorkloadEventsRequest) (hostIp string, podName string, err error) {
+	req *lcmservice.WorkloadEventsRequest) (hostIp string, podName string,tenantId string, err error) {
 
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole, util.MecmGuestRole})
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument,
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument,
 			util.AccssTokenIsInvalid))
 	}
 
 	hostIp = req.GetHostIp()
 	err = util.ValidateIpv4Address(hostIp)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
 
 	appInsId := req.GetAppInstanceId()
 	err = util.ValidateUUID(appInsId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
+		return "", "","", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
 	}
 
-	return hostIp, appInsId, nil
+	tenantId = req.GetTenantId()
+	err = util.ValidateUUID(appInsId)
+	if err != nil {
+		return "", "","", s.logError(status.Error(codes.InvalidArgument, util.TenantIdIsInvalid))
+	}
+	return hostIp, appInsId, tenantId, nil
 }
 
 // Validate input parameters for Query
 func (s *ServerGRPC) validateInputParamsForQuery(
-	req *lcmservice.QueryRequest) (hostIp string, appInsId string, err error) {
+	req *lcmservice.QueryRequest) (tenantId string, hostIp string, appInsId string, err error) {
+
+	accessToken := req.GetAccessToken()
+	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
+	if err != nil {
+		return "", "","" , s.logError(status.Error(codes.InvalidArgument,
+			util.AccssTokenIsInvalid))
+	}
+
+	hostIp = req.GetHostIp()
+	err = util.ValidateIpv4Address(hostIp)
+	if err != nil {
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
+	}
+
+	appInsId = req.GetAppInstanceId()
+	err = util.ValidateUUID(appInsId)
+	if err != nil {
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
+	}
+	tenantId = req.GetTenantId()
+	err = util.ValidateUUID(tenantId)
+	if err != nil {
+		return "", "", "", s.logError(status.Error(codes.InvalidArgument, util.TenantIdIsInvalid))
+	}
+
+	return tenantId, hostIp, appInsId, nil
+}
+
+// Validate input parameters for Query kpi
+func (s *ServerGRPC) validateInputParamsForQueryKPI(
+	req *lcmservice.QueryKPIRequest) (tenantId string, hostIp string, err error) {
 
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
@@ -696,34 +763,12 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 	if err != nil {
 		return "", "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
 	}
-
-	appInsId = req.GetAppInstanceId()
-	err = util.ValidateUUID(appInsId)
+	tenantId = req.GetTenantId()
+	err = util.ValidateUUID(tenantId)
 	if err != nil {
-		return "", "", s.logError(status.Error(codes.InvalidArgument, util.AppInsIdValid))
+		return "", "", s.logError(status.Error(codes.InvalidArgument, util.TenantIdIsInvalid))
 	}
-
-	return hostIp, appInsId, nil
-}
-
-// Validate input parameters for Query kpi
-func (s *ServerGRPC) validateInputParamsForQueryKPI(
-	req *lcmservice.QueryKPIRequest) (hostIp string, err error) {
-
-	accessToken := req.GetAccessToken()
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
-	if err != nil {
-		return "", s.logError(status.Error(codes.InvalidArgument,
-			util.AccssTokenIsInvalid))
-	}
-
-	hostIp = req.GetHostIp()
-	err = util.ValidateIpv4Address(hostIp)
-	if err != nil {
-		return "", s.logError(status.Error(codes.InvalidArgument, util.HostIpIsInvalid))
-	}
-
-	return hostIp, nil
+	return tenantId, hostIp, nil
 }
 
 // Get upload configuration file
@@ -1325,4 +1370,5 @@ func (c *ServerGRPC) getAppPackageRecord(hostIp, appPkgId, tenantId string) (*mo
 	}
 	return appPkgRecord, nil
 }
+
 

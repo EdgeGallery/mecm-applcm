@@ -16,9 +16,7 @@
 package pluginAdapter
 
 import (
-	"bytes"
 	"context"
-	beegoCtx "github.com/astaxie/beego/context"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
@@ -55,13 +53,13 @@ func (c *PluginAdapter) Instantiate(tenantId string, accessToken string, appInsI
 }
 
 // Query application
-func (c *PluginAdapter) Query(accessToken, appInsId, host string) (response string, error error) {
+func (c *PluginAdapter) Query(accessToken, appInsId, host string,tenantId string) (response string, error error) {
 	log.Info("Query started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	response, err := c.client.Query(ctx, accessToken, appInsId, host)
+	response, err := c.client.Query(ctx, accessToken, appInsId, host,tenantId)
 	if err != nil {
 		log.Errorf("failed to query information")
 		return "", err
@@ -72,13 +70,13 @@ func (c *PluginAdapter) Query(accessToken, appInsId, host string) (response stri
 
 
 // Query application
-func (c *PluginAdapter) QueryKPI(accessToken, host string) (response string, error error) {
+func (c *PluginAdapter) QueryKPI(accessToken, host string, tenantId string) (response string, error error) {
 	log.Info("Query KPI started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	response, err := c.client.QueryKPI(ctx, accessToken, host)
+	response, err := c.client.QueryKPI(ctx, accessToken, host,tenantId)
 	if err != nil {
 		log.Errorf("failed to query kpi information")
 		return "", err
@@ -88,13 +86,13 @@ func (c *PluginAdapter) QueryKPI(accessToken, host string) (response string, err
 }
 
 // Terminate application
-func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId string) (status string, error error) {
+func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId string, tenantId string) (status string, error error) {
 	log.Info("Terminate started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.Terminate(ctx, host, accessToken, appInsId)
+	status, err := c.client.Terminate(ctx, host, tenantId, accessToken, appInsId)
 	if err != nil {
 		log.Error("failed to terminate application")
 		return util.Failure, err
@@ -105,14 +103,14 @@ func (c *PluginAdapter) Terminate(host string, accessToken string, appInsId stri
 }
 
 // Upload configuration
-func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string) (status string,
-	error error) {
+func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessToken string, tenantId string) (
+	status string, error error) {
 	log.Info("Upload config started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.UploadConfig(ctx, file, host, accessToken)
+	status, err := c.client.UploadConfig(ctx, tenantId, file, host, accessToken)
 	if err != nil {
 		log.Error("failed to upload configuration")
 		return util.Failure, err
@@ -123,12 +121,12 @@ func (c *PluginAdapter) UploadConfig(file multipart.File, host string, accessTok
 }
 
 // Remove configuration
-func (c *PluginAdapter) RemoveConfig(host string, accessToken string) (status string, error error) {
+func (c *PluginAdapter) RemoveConfig(host string, accessToken string, tenantId string) (status string, error error) {
 	log.Info("Remove config started")
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	status, err := c.client.RemoveConfig(ctx, host, accessToken)
+	status, err := c.client.RemoveConfig(ctx, host, tenantId, accessToken)
 	if err != nil {
 		log.Error("failed to remove configuration")
 		return util.Failure, err
@@ -139,89 +137,18 @@ func (c *PluginAdapter) RemoveConfig(host string, accessToken string) (status st
 }
 
 // Get workload description
-func (c *PluginAdapter) GetWorkloadDescription(accessToken, host, appInsId string) (response string, error error) {
+func (c *PluginAdapter) GetWorkloadDescription(accessToken, host, appInsId string, tenantId string) (response string, error error) {
 	log.Info("Get workload description started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	response, err := c.client.WorkloadDescription(ctx, accessToken, appInsId, host)
+	response, err := c.client.WorkloadDescription(ctx, accessToken, appInsId, host, tenantId)
 	if err != nil {
 		log.Errorf("failed to get workload description")
 		return "", err
 	}
 	log.Info("Queried workload description completed with status: Success")
-	return response, nil
-}
-
-// Create VM Image
-func (c *PluginAdapter) CreateVmImage(host, accessToken, appInsId, vmId, tenantId string) (response string, error error) {
-	log.Info("Create VM Image started")
-
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
-	defer cancel()
-
-	response, err := c.client.CreateVmImage(ctx, accessToken, appInsId, host, vmId, tenantId)
-	if err != nil {
-		log.Error("failed to create VM image")
-		return util.Failure, err
-	}
-
-	log.Info("VM image creation completed with response: ", response)
-	return response, nil
-}
-
-// Delete VM Image
-func (c *PluginAdapter) DeleteVmImage(host string, accessToken string, appInsId string,
-	imageId string) (status string, error error) {
-	log.Info("Delete VM Image started")
-
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
-	defer cancel()
-
-	status, err := c.client.DeleteVmImage(ctx, accessToken, appInsId, host, imageId)
-	if err != nil {
-		log.Error("failed to delete VM image")
-		return util.Failure, err
-	}
-
-	log.Info("VM image deletion completed with status: ", status)
-	return status, nil
-}
-
-// Query VM Image
-func (c *PluginAdapter) QueryVmImage(host string, accessToken string, appInsId string,
-	imageId string) (status string, error error) {
-	log.Info("Query VM Image started")
-
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
-	defer cancel()
-
-	response, err := c.client.QueryVmImage(ctx, accessToken, appInsId, host, imageId)
-	if err != nil {
-		log.Error("failed to query VM image")
-		return util.Failure, err
-	}
-
-	log.Info("VM image query completed with response: ", response)
-	return response, nil
-}
-
-// Query VM Image
-func (c *PluginAdapter) DownloadVmImage(imgCtrlr *beegoCtx.Response, host string, accessToken string, appInsId string, imageId string,
-	chunkNum int32) (buf *bytes.Buffer, error error) {
-	log.Info("Download VM Image chunk started")
-
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Hour)
-	defer cancel()
-
-	response, err := c.client.DownloadVmImage(ctx, accessToken, appInsId, host, imageId, chunkNum)
-	if err != nil {
-		log.Error("failed to download VM image chunk")
-		return response, err
-	}
-
-	log.Info("VM image chunk download completed successfully")
 	return response, nil
 }
 

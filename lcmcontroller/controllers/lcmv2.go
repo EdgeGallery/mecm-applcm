@@ -59,6 +59,12 @@ func (c *LcmControllerV2) UploadConfigV2() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 	_, err = c.IsPermitted(accessToken, clientIp)
@@ -75,6 +81,8 @@ func (c *LcmControllerV2) UploadConfigV2() {
 	hostInfoRec := &models.MecHost{
 		MecHostId: hostIp,
 	}
+
+
 
 	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
 	if readErr != nil {
@@ -93,7 +101,7 @@ func (c *LcmControllerV2) UploadConfigV2() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	_, err = adapter.UploadConfig(file, hostIp, accessToken)
+	_, err = adapter.UploadConfig(file, hostIp, accessToken, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
@@ -215,6 +223,11 @@ func (c *LcmControllerV2) UploadPackageV2() {
 		PackageId: packageId,
 	}
 	c.handleLoggingForSuccess(appPkgResp, clientIp, util.UploadPackageSuccess)
+}
+
+func (c *LcmControllerV2) handleLoggingForSuccessV1(clientIp string, msg string) {
+	log.Info("Response for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
 }
 
 func (c *LcmControllerV2) handleLoggingForSuccess(object interface{}, clientIp string, msg string) {
@@ -501,13 +514,14 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, "")
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.IsPermitted(accessToken, clientIp)
 	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
+		util.ClearByteArray(bKey)
 		return
 	}
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	hostIp, vim, hostInfoRec, err := c.GetInputParametersForRemoveCfg(clientIp)
+
+	hostIp, vim, hostInfoRec, tenantId, err := c.GetInputParametersForRemoveCfg(clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -521,7 +535,7 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 		return
 	}
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	_, err = adapter.RemoveConfig(hostIp, accessToken)
+	_, err = adapter.RemoveConfig(hostIp, accessToken, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
@@ -556,10 +570,14 @@ func (c *LcmControllerV2) GetVim(clientIp string, hostIp string) (string, error)
 }
 
 // Get in put parameters for remove configuration
-func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, error) {
+func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (string, string, *models.MecHost, string, error) {
 	hostIp, err := c.GetHostIP(clientIp)
 	if err != nil {
-		return "", "", &models.MecHost{}, err
+		return "", "", &models.MecHost{}, "", err
+	}
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return "", "", &models.MecHost{}, "", err
 	}
 
 	hostInfoRec := &models.MecHost{
@@ -570,15 +588,15 @@ func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (strin
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound,
 			util.MecHostRecDoesNotExist, util.ErrCodeHostNotExist)
-		return "", "", hostInfoRec, err
+		return "", "", hostInfoRec, "", err
 	}
 
 	vim, err := c.GetVim(clientIp, hostIp)
 	if err != nil {
-		return "", "", hostInfoRec, err
+		return "", "", hostInfoRec, "", err
 	}
 
-	return hostIp, vim, hostInfoRec, err
+	return hostIp, vim, hostInfoRec, tenantId, err
 }
 
 // Get host IP
@@ -756,10 +774,28 @@ func (c *LcmControllerV2) ValidateToken(accessToken string, req models.Instantia
 	if err != nil {
 		return "", "", "", "", "", err
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+	name, err := c.GetUserName(clientIp)
 	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
 		return "", "", "", "", "", err
+	}
+
+	key, err := c.GetKey(clientIp)
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+		if err != nil {
+			c.HandleLoggingForTokenFailure(clientIp, err.Error())
+			return "", "", "", "", "", err
+		}
+	} else {
+		if name != "" && key != "" {
+			err := c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return "", "", "", "", "", err
+			}
+		}
 	}
 	return appInsId, tenantId, hostIp, packageId, appName, nil
 }
@@ -995,7 +1031,7 @@ func (c *LcmControllerV2) TerminateV2() {
 		return
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, accessToken, appInfoRecord.AppInstanceId, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
@@ -1095,16 +1131,9 @@ func (c *LcmControllerV2) QueryV2() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.GetTenantId(clientIp)
+
+	tenantId, err:= c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusUnauthorized, util.AuthorizationFailed, util.ErrCodeTokenInvalid)
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -1132,7 +1161,7 @@ func (c *LcmControllerV2) QueryV2() {
 		return
 	}
 
-	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost)
+	response, err := adapter.Query(accessToken, appInsId, appInfoRecord.MecHost, tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
@@ -1143,7 +1172,12 @@ func (c *LcmControllerV2) QueryV2() {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrorReportByPlugin)
 		return
 	}
-	c.handleLoggingForSuccess(response, clientIp, "Query workload statistics is successful")
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Query workload statistics is successful")
 }
 
 // @Title Query kpi
@@ -1165,6 +1199,11 @@ func (c *LcmControllerV2) QueryKPI() {
 		return
 	}
 
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return
+	}
+
 	vim, err := c.GetVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -1176,7 +1215,7 @@ func (c *LcmControllerV2) QueryKPI() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	response, err := adapter.QueryKPI(accessToken, hostIp)
+	response, err := adapter.QueryKPI(accessToken, hostIp, tenantId)
 	util.ClearByteArray(bKey)
 	c.HandleKPI(clientIp, err, response)
 }
@@ -1218,8 +1257,12 @@ func (c *LcmControllerV2) HandleKPI(clientIp string, err error, response string)
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(),util.ErrCodePluginReportFailed)
 		return
 	} else {
-		strings.Replace(response, "\\n", "", -1)
-		c.handleLoggingForSuccess(response, clientIp, "Query kpi is successful")
+		_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+		if err != nil {
+			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+			return
+		}
+		c.handleLoggingForSuccessV1(clientIp, "Query kpi is successful")
 	}
 }
 
@@ -1271,8 +1314,12 @@ func (c *LcmControllerV2) QueryMepCapabilities() {
 		return
 	}
 
-	strings.Replace(mepCapabilities, "\\n", "", -1)
-	c.handleLoggingForSuccess(mepCapabilities, clientIp, "Query mep capabilities is successful")
+	_, err = c.Ctx.ResponseWriter.Write([]byte(mepCapabilities))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Query mep capabilities is successful")
 }
 
 // Get mep capability id from url
@@ -1307,16 +1354,8 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.GetTenantId(clientIp)
+	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-	err = util.ValidateAccessToken(accessToken,
-		[]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, tenantId)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusUnauthorized, util.AuthorizationFailed, util.ErrCodeTokenInvalid)
-		util.ClearByteArray(bKey)
 		return
 	}
 
@@ -1343,7 +1382,8 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 		util.ClearByteArray(bKey)
 		return
 	}
-	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId)
+	response, err := adapter.GetWorkloadDescription(accessToken, appInfoRecord.MecHost, appInsId,
+		tenantId)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		res := strings.Contains(err.Error(), "not found")
@@ -1354,7 +1394,12 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetWorkloadFailed)
 		return
 	}
-	c.handleLoggingForSuccess(response, clientIp, "Workload description is successful")
+	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+		return
+	}
+	c.handleLoggingForSuccessV1(clientIp, "Workload description is successful")
 }
 
 // @Title Sync app instances stale records
@@ -1545,11 +1590,24 @@ func (c *LcmControllerV2) GetClientIpAndValidateAccessToken(receiveMsg string, a
 		return clientIp, bKey, accessToken, err
 	}
 	c.displayReceivedMsg(clientIp)
-	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
-	err = util.ValidateAccessToken(accessToken, allowedRoles, tenantId)
+	name, key, err := c.GetUserNameAndKey(clientIp)
 	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
 		return clientIp, bKey, accessToken, err
+	}
+	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken, allowedRoles, tenantId)
+		if err != nil {
+			c.HandleLoggingForTokenFailure(clientIp, err.Error())
+			return clientIp, bKey, accessToken, err
+		}
+	} else {
+		if name != "" && key != "" {
+			err = c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return
+			}
+		}
 	}
 	bKey = *(*[]byte)(unsafe.Pointer(&accessToken))
 	return clientIp, bKey, accessToken, nil
@@ -2289,10 +2347,25 @@ func (c *LcmControllerV2) IsPermitted(accessToken, clientIp string) (string, err
 			return tenantId, err
 		}
 	}
-	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+
+	name, key, err := c.CheckUserNameAndKey(clientIp)
 	if err != nil {
-		c.HandleLoggingForTokenFailure(clientIp, err.Error())
 		return tenantId, err
+	}
+
+	if accessToken != "" {
+		err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole}, tenantId)
+		if err != nil {
+			c.HandleLoggingForTokenFailure(clientIp, err.Error())
+			return tenantId, err
+		}
+	} else {
+		if name != "" && key != "" {
+			err := c.validateCredentials(clientIp, name, key)
+			if err != nil {
+				return tenantId, err
+			}
+		}
 	}
 	return tenantId, nil
 }

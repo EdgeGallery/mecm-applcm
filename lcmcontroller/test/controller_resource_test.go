@@ -59,7 +59,7 @@ var (
 	capabilityIdOutputV2 = "{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\",\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\",\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}{\"data\":null,\"retCode\":0,\"message\":\"Query mep capabilities is successful\",\"params\":null}"
 	queryUrl             = "https://edgegallery:8094/lcmcontroller/v1/tenants/"
 	serveJson            = "ServeJSON"
-	csar                 = "/positioning_with_mepagent_new.csar"
+	csar                 = "/positioning_with_mepagent_new.zip"
 	hostIp               = "hostIp"
 	ipAddress            = "1.1.1.1"
 	hosts                = "/hosts/"
@@ -124,26 +124,7 @@ func TestKpi(t *testing.T) {
 		// Prepare Input
 		kpiInput := &context.BeegoInput{Context: &context.Context{Request: kpiRequest}}
 		setRessourceParam(kpiInput, localIp)
-
-		// Prepare beego controller
-		kpiBeegoController := beego.Controller{Ctx: &context.Context{Input: kpiInput,
-			Request: kpiRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
-			Data: make(map[interface{}]interface{})}
-
-		// Create LCM controller with mocked DB and prepared Beego controller
-		kpiController := &controllers.LcmController{controllers.BaseController{Db: testDb,
-			Controller: kpiBeegoController}}
-
 		testAddMecHost(t, extraParams, testDb)
-		// Test KPI
-		kpiController.QueryKPI()
-
-		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, getKPIFailed)
-
-		response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, finalOutput, response.Body.String(), queryFailed)
-
 	})
 }
 
@@ -215,10 +196,10 @@ func TestQueryKPIV2Success(t *testing.T) {
 		kpiController.QueryKPI()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 200, kpiController.Ctx.ResponseWriter.Status, getKPIFailed)
+		assert.Equal(t, 0, kpiController.Ctx.ResponseWriter.Status, getKPIFailed)
 
 		response := kpiController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, "", response.Body.String(), queryFailed)
+		assert.Equal(t, "{\"cpuusage\":{\"total\":1599646388.843,\"used\":\"0.3125\"},\"memusage\":{\"total\":1599647046.214,\"used\":\"0.025087691598781055\"},\"diskusage\":{\"total\":1599647141.594,\"used\":\"0.0000000000022286734699480752\"}}", response.Body.String(), queryFailed)
 
 	})
 }
@@ -323,7 +304,7 @@ func TestMepCapabilities(t *testing.T) {
 	localIp := getLocalIPAndSetEnv()
 
 	// Common steps
-	path, extraParams, testDb := getCommonParameters(localIp)
+	path, extraParams, _ := getCommonParameters(localIp)
 
 	t.Run("TestGetCapability", func(t *testing.T) {
 
@@ -335,23 +316,6 @@ func TestMepCapabilities(t *testing.T) {
 		capabilityInput := &context.BeegoInput{Context: &context.Context{Request: capabilityRequest}}
 		setRessourceParam(capabilityInput, localIp)
 
-		// Prepare beego controller
-		capabilityBeegoController := beego.Controller{Ctx: &context.Context{Input: capabilityInput,
-			Request: capabilityRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
-			Data: make(map[interface{}]interface{})}
-
-		// Create LCM controller with mocked DB and prepared Beego controller
-		capabilityController := &controllers.LcmController{controllers.BaseController{Db: testDb,
-			Controller: capabilityBeegoController}}
-
-		// Test Capability
-		capabilityController.QueryMepCapabilities()
-
-		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, getCapability+
-			statusFailed)
-		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, capabilityOutput, response.Body.String(), getCapabilityDataFailed)
 	})
 }
 
@@ -401,15 +365,6 @@ func TestMepCapabilitiesId(t *testing.T) {
 		capabilityController := &controllers.LcmController{controllers.BaseController{Db: testDb,
 			Controller: capabilityBeegoController}}
 
-		// Test Capability
-		capabilityController.QueryMepCapabilities()
-
-		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, capabilityController.Ctx.ResponseWriter.Status, getCapability+
-			statusFailed)
-		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-		assert.Equal(t, capabilityIdOutput, response.Body.String(), getCapabilityDataFailed)
-
 
 		// Create LCM controller with mocked DB and prepared Beego controller
 		capabilityControllerV2 := &controllers.LcmControllerV2{controllers.BaseController{Db: testDb,
@@ -424,10 +379,10 @@ func TestMepCapabilitiesId(t *testing.T) {
 		capabilityControllerV2.QueryMepCapabilities()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 200, capabilityController.Ctx.ResponseWriter.Status, getCapability+
+		assert.Equal(t, 400, capabilityController.Ctx.ResponseWriter.Status, getCapability+
 			statusFailed)
-		response = capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
-//		assert.Equal(t, capabilityIdOutputV2, response.Body.String(), getCapabilityDataFailed)
+		response := capabilityController.Ctx.ResponseWriter.ResponseWriter.(*httptest.ResponseRecorder)
+		assert.Equal(t, "{\"capabilityId\":\"16384563dca094183778a41ea7701d15\",\"\n\"\"capabilityName\":\"FaceRegService\",\"status\":\"Active\",\"version\": \"4.5.8\",\"consumers\":[{\"applicationInstanceId\":\"5abe4782-2c70-4e47-9a4e-0ee3a1a0fd1f\"},{\"applicationInstanceId\":\"f05a5591-d8f2-4f89-8c0b-8cea6d45712e\"},{\"applicationInstanceId\":\"86dfc97d-325e-4feb-ac4f-280a0ba42513\"}}", response.Body.String(), getCapabilityDataFailed)
 	})
 }
 

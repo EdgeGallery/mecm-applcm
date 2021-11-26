@@ -217,10 +217,9 @@ const (
 	AccessTokenIsInvalid = "accessToken is invalid"
 	Lcmcontroller        = "lcmcontroller/controllers:LcmController"
 	Lcmcontrollerv2      = "lcmcontroller/controllers:LcmControllerV2"
-	Imagecontroller      = "lcmcontroller/controllers:ImageController"
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Mepcontroller        = "lcmcontroller/controllers:MepController"
-	Hosts                = "/v1/hosts"
+	Hosts                = "/v1/tenants/:tenantId/hosts"
 	DELETE               = "delete"
 	GET                  = "get"
 	POST                 = "post"
@@ -237,7 +236,6 @@ const (
 
 	PkgUrlPathV2 = "/v2/tenants/:tenantId/packages/:packageId"
 	QueryMepCapabilities = "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities"
-	QueryMepCapabilitiesV1 = "/v1/tenants/:tenantId/hosts/:hostIp/mep_capabilities"
 
 	//mep service calling
 	ErrCallFromMep        string = "failed to execute rest calling, check if mep service is ready."
@@ -276,7 +274,7 @@ func GetAppConfig(k string) string {
 // Validate UUID
 func ValidateUUID(id string) error {
 	if id == "" {
-		return errors.New("require app instance id")
+		return errors.New("require id")
 	}
 	validate := validator.New()
 	res := validate.Var(id, "required,uuid")
@@ -338,8 +336,8 @@ func ValidateFileExtensionEmpty(fileName string) error {
 // Validate file extenstion
 func ValidateFileExtensionCsar(fileName string) error {
 	extension := filepath.Ext(fileName)
-	if extension != ".csar" {
-		return errors.New("file extension is not csar")
+	if extension != ".csar" && extension != ".zip" {
+		return errors.New("file extension is not csar or zip")
 	}
 	return nil
 }
