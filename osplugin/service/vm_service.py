@@ -18,6 +18,7 @@
 # -*- coding: utf-8 -*-
 import json
 
+from novaclient.exceptions import NotFound
 from pony.orm import db_session, commit
 
 import utils
@@ -54,10 +55,15 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
 
         nova = create_nova_client(host_ip, request.tenantId)
 
+        availability_zone = None
+        config_drive = None
+        security_groups = None
+        userdata = None
         networks = None
-        if request.networks and len(request.networks) > 0:
+
+        if request.server.networks and len(request.server.networks) > 0:
             networks = []
-            for network in request.networks:
+            for network in request.server.networks:
                 if utils.validate_ipv4_address(network.fixedIp):
                     networks.append({
                         'net-id': network.network,
@@ -73,14 +79,23 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
                         'net-id': network.network
                     })
 
+        if request.server.availabilityZone:
+            availability_zone = request.server.availabilityZone
+        if request.server.configDrive:
+            config_drive = request.server.configDrive
+        if request.server.securityGroups:
+            security_groups = request.server.securityGroups
+        if request.server.userData:
+            userdata = request.server.userData
+
         server = nova.servers.create(request.server.name,
                                      request.server.image,
                                      request.server.flavor,
-                                     availability_zone=request.server.availablityZone,
-                                     config_drive=request.server.configDrive,
-                                     security_groups=request.server.securityGroups,
+                                     availability_zone=availability_zone,
+                                     config_drive=config_drive,
+                                     security_groups=security_groups,
                                      nics=networks,
-                                     userdata=request.server.user_data
+                                     userdata=userdata
                                      )
         LOG.info('success boot server %s', server.id)
         return CreateVmResponse(status='Success')
@@ -106,10 +121,36 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
             'code': 200,
             'msg': 'success'
         }
-        if request.vmId is not None:
-            resp_data['data'] = nova.servers.get(request.vmId)
+        if request.vmId:
+            try:
+                server = nova.servers.get(request.vmId)
+                resp_data['data'] = {
+                    'id': server.id,
+                    'name': server.name,
+                    'status': server.status,
+                    'addresses': server.addresses,
+                    'flavor': server.flavor,
+                    'image': server.image,
+                    'securityGroups': server.security_groups
+                }
+            except NotFound:
+                resp_data = {
+                    'code': 404,
+                    'msg': 'server %s not found' % request.vmId
+                }
         else:
-            resp_data['data'] = nova.servers.list()
+            resp_data['data'] = []
+            servers = nova.servers.list()
+            for server in servers:
+                resp_data['data'].append({
+                    'id': server.id,
+                    'name': server.name,
+                    'status': server.status,
+                    'addresses': server.addresses,
+                    'flavor': server.flavor,
+                    'image': server.image,
+                    'securityGroups': server.security_groups
+                })
 
         LOG.info('success query vm')
         return QueryVmResponse(response=json.dumps(resp_data))
@@ -142,9 +183,12 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
                 reboot_type = request.reboot.type
             nova.servers.reboot(request.vmId, reboot_type=reboot_type)
         elif request.action == 'createImage':
+            metadata = None
+            if request.createImage.metadata:
+                metadata = dict(request.createImage.metadata)
             resp_data['data'] = nova.servers.create_image(request.vmId,
                                                           request.createImage.name,
-                                                          request.createImage.metadata)
+                                                          metadata=metadata)
             with db_session:
                 VmImageInfoMapper(
                     image_id=resp_data['data'],
@@ -196,7 +240,10 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
 
         nova = create_nova_client(host_ip, request.tenantId)
 
-        nova.servers.delete(request.vmId)
+        try:
+            nova.servers.delete(request.vmId)
+        except NotFound:
+            LOG.debug('skip not found server %s', request.vmId)
 
         LOG.info('success delete vm')
         return DeleteVmResponse(status='Success')

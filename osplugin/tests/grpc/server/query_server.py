@@ -15,20 +15,19 @@
 
 """
 # -*- coding: utf-8 -*-
-
-from internal.resourcemanager.resourcemanager_pb2 import QueryVmImageRequest
-from tests.grpc.client import test_host_ip, test_tenant_id, image_stub
+from internal.resourcemanager.resourcemanager_pb2 import QueryVmRequest
+from tests.grpc.client import server_stub, test_host_ip, test_tenant_id
 from tests.resources.gen_token import test_access_token
 
-query_vm_image = QueryVmImageRequest(
+query_server = QueryVmRequest(
     accessToken=test_access_token,
     hostIp=test_host_ip,
     tenantId=test_tenant_id
 )
 
 if __name__ == '__main__':
-    resp = image_stub.queryVmImage(query_vm_image)
+    resp = server_stub.queryVm(query_server)
     print(resp)
-    query_vm_image.imageId = '5e776006-8231-4175-9ee4-e2d8c7db9e09'
-    resp = image_stub.queryVmImage(query_vm_image)
+    query_server.vmId = '61fcdb06-9375-4711-9fbd-2989a4e0f9a6'
+    resp = server_stub.queryVm(query_server)
     print(resp)
