@@ -14,27 +14,25 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
-from concurrent import futures
+from internal.resourcemanager.resourcemanager_pb2 import OperateVmRequest
+from tests.grpc.client import server_stub, test_host_ip, test_tenant_id
+from tests.resources.gen_token import test_access_token
 
-from core.log import logger
-
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
-
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
+create_image = OperateVmRequest(
+    accessToken=test_access_token,
+    hostIp=test_host_ip,
+    tenantId=test_tenant_id,
+    vmId='61fcdb06-9375-4711-9fbd-2989a4e0f9a6',
+    action='createImage',
+    createImage=OperateVmRequest.CreateImage(
+        name='vm01-image',
+        metadata={
+            'x86': 'true'
+        }
+    )
 )
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
-
-
-def exception_handler(worker):
-    worker_exception = worker.exception()
-    if worker_exception:
-        logger.exception("Worker return exception: {}".format(worker_exception))
+if __name__ == '__main__':
+    resp = server_stub.operateVm(create_image)
+    print(resp)

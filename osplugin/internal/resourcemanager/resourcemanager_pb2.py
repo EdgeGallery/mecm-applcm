@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x15resourcemanager.proto\x12\x18internal.resourcemanager\"\x85\x03\n\x14\x43reateVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x43\n\x05image\x18\x04 \x01(\x0b\x32\x34.internal.resourcemanager.CreateVmImageRequest.Image\x1a\xf0\x01\n\x05Image\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0f\x63ontainerFormat\x18\x02 \x01(\t\x12\x12\n\ndiskFormat\x18\x03 \x01(\t\x12\x0e\n\x06minRam\x18\x04 \x01(\x05\x12\x0f\n\x07minDisk\x18\x05 \x01(\x05\x12X\n\nproperties\x18\x06 \x03(\x0b\x32\x44.internal.resourcemanager.CreateVmImageRequest.Image.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\")\n\x15\x43reateVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"]\n\x13QueryVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\"(\n\x14QueryVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"^\n\x14\x44\x65leteVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\")\n\x15\x44\x65leteVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"`\n\x16\x44ownloadVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\"*\n\x17\x44ownloadVmImageResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\"s\n\x14ImportVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\x12\x13\n\x0bresourceUri\x18\x05 \x01(\t\")\n\x15ImportVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\x81\x01\n\x14UploadVmImageRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x02 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x03 \x01(\tH\x00\x12\x11\n\x07imageId\x18\x04 \x01(\tH\x00\x12\x11\n\x07\x63ontent\x18\x05 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\")\n\x15UploadVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\x94\x03\n\x0f\x43reateVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12@\n\x06server\x18\x04 \x01(\x0b\x32\x30.internal.resourcemanager.CreateVmRequest.Server\x1a\x87\x02\n\x06Server\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x66lavor\x18\x02 \x01(\t\x12\r\n\x05image\x18\x03 \x01(\t\x12\x18\n\x10\x61vailabilityZone\x18\x04 \x01(\t\x12\x10\n\x08userData\x18\x05 \x01(\t\x12\x13\n\x0b\x63onfigDrive\x18\x06 \x01(\x08\x12\x16\n\x0esecurityGroups\x18\x07 \x03(\t\x12J\n\x08networks\x18\x08 \x03(\x0b\x32\x38.internal.resourcemanager.CreateVmRequest.Server.Network\x1a+\n\x07Network\x12\x0f\n\x07network\x18\x01 \x01(\t\x12\x0f\n\x07\x66ixedIp\x18\x02 \x01(\t\"$\n\x10\x43reateVmResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"U\n\x0eQueryVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\"#\n\x0fQueryVmResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\xb6\x03\n\x10OperateVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\x12\x0e\n\x06\x61\x63tion\x18\x05 \x01(\t\x12\x41\n\x06reboot\x18\x06 \x01(\x0b\x32\x31.internal.resourcemanager.OperateVmRequest.Reboot\x12K\n\x0b\x63reateImage\x18\x07 \x01(\x0b\x32\x36.internal.resourcemanager.OperateVmRequest.CreateImage\x1a\x16\n\x06Reboot\x12\x0c\n\x04type\x18\x01 \x01(\t\x1a\xa4\x01\n\x0b\x43reateImage\x12\x0c\n\x04name\x18\x01 \x01(\t\x12V\n\x08metadata\x18\x02 \x03(\x0b\x32\x44.internal.resourcemanager.OperateVmRequest.CreateImage.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x11OperateVmResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"V\n\x0f\x44\x65leteVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\"$\n\x10\x44\x65leteVmResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\xf0\x02\n\x13\x43reateFlavorRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x44\n\x06\x66lavor\x18\x04 \x01(\x0b\x32\x34.internal.resourcemanager.CreateFlavorRequest.Flavor\x1a\xdb\x01\n\x06\x46lavor\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05vcpus\x18\x02 \x01(\x05\x12\x0b\n\x03ram\x18\x03 \x01(\x05\x12\x0c\n\x04\x64isk\x18\x04 \x01(\x05\x12\x0c\n\x04swap\x18\x05 \x01(\x05\x12X\n\nextraSpecs\x18\x08 \x03(\x0b\x32\x44.internal.resourcemanager.CreateFlavorRequest.Flavor.ExtraSpecsEntry\x1a\x31\n\x0f\x45xtraSpecsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"(\n\x14\x43reateFlavorResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"^\n\x13\x44\x65leteFlavorRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x10\n\x08\x66lavorId\x18\x04 \x01(\t\"(\n\x14\x44\x65leteFlavorResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"]\n\x12QueryFlavorRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x10\n\x08\x66lavorId\x18\x04 \x01(\t\"\'\n\x13QueryFlavorResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\xd9\x07\n\x14\x43reateNetworkRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x1a\x89\x07\n\x07Network\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0c\x61\x64minStateUp\x18\x02 \x01(\x08\x12\x11\n\tdnsDomain\x18\x03 \x01(\t\x12\x0b\n\x03mtu\x18\x04 \x01(\x05\x12\x1b\n\x13portSecurityEnabled\x18\x05 \x01(\x08\x12\x1b\n\x13providerNetworkType\x18\x06 \x01(\t\x12\x1f\n\x17providerPhysicalNetwork\x18\x07 \x01(\t\x12\x1e\n\x16providerSegmentationId\x18\x08 \x01(\x05\x12\x13\n\x0bqosPolicyId\x18\t \x01(\t\x12\x16\n\x0erouterExternal\x18\n \x01(\x08\x12P\n\x08segments\x18\x0b \x03(\x0b\x32>.internal.resourcemanager.CreateNetworkRequest.Network.Segment\x12\x0e\n\x06shared\x18\x0c \x01(\x08\x12\x17\n\x0fvlanTransparent\x18\r \x01(\x08\x12\x11\n\tisDefault\x18\x0e \x01(\x08\x12\x10\n\x08tenantId\x18\x0f \x01(\t\x12N\n\x07subnets\x18\x10 \x03(\x0b\x32=.internal.resourcemanager.CreateNetworkRequest.Network.Subnet\x1ag\n\x07Segment\x12\x1e\n\x16providerSegmentationId\x18\x01 \x01(\x05\x12\x1f\n\x17providerPhysicalNetwork\x18\x02 \x01(\t\x12\x1b\n\x13providerNetworkType\x18\x03 \x01(\t\x1a\xb8\x02\n\x06Subnet\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\nenableDhcp\x18\x02 \x01(\x08\x12\x16\n\x0e\x64nsNameservers\x18\x03 \x03(\t\x12\x65\n\x0f\x61llocationPools\x18\x04 \x03(\x0b\x32L.internal.resourcemanager.CreateNetworkRequest.Network.Subnet.AllocationPool\x12\x11\n\tipVersion\x18\x05 \x01(\x05\x12\x11\n\tgatewayIp\x18\x06 \x01(\t\x12\x0c\n\x04\x63idr\x18\x07 \x01(\t\x12\x17\n\x0fipv6AddressMode\x18\x08 \x01(\t\x12\x12\n\nipv6RaMode\x18\t \x01(\t\x1a,\n\x0e\x41llocationPool\x12\r\n\x05start\x18\x01 \x01(\t\x12\x0b\n\x03\x65nd\x18\x02 \x01(\t\")\n\x15\x43reateNetworkResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"`\n\x14\x44\x65leteNetworkRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x11\n\tnetworkId\x18\x04 \x01(\t\")\n\x15\x44\x65leteNetworkResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"_\n\x13QueryNetworkRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x11\n\tnetworkId\x18\x04 \x01(\t\"(\n\x14QueryNetworkResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\xcd\x01\n\x1a\x43reateSecurityGroupRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12Y\n\rsecurityGroup\x18\x04 \x01(\x0b\x32\x42.internal.resourcemanager.CreateSecurityGroupRequest.SecurityGroup\x1a\x1d\n\rSecurityGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\"/\n\x1b\x43reateSecurityGroupResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"l\n\x1a\x44\x65leteSecurityGroupRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x17\n\x0fsecurityGroupId\x18\x04 \x01(\t\"/\n\x1b\x44\x65leteSecurityGroupResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"k\n\x19QuerySecurityGroupRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x17\n\x0fsecurityGroupId\x18\x04 \x01(\t\".\n\x1aQuerySecurityGroupResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\x80\x03\n\x1e\x43reateSecurityGroupRuleRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x65\n\x11securityGroupRule\x18\x04 \x01(\x0b\x32J.internal.resourcemanager.CreateSecurityGroupRuleRequest.SecurityGroupRule\x1a\xbf\x01\n\x11SecurityGroupRule\x12\x17\n\x0fsecurityGroupId\x18\x01 \x01(\t\x12\x11\n\tdirection\x18\x02 \x01(\t\x12\x10\n\x08protocol\x18\x03 \x01(\t\x12\x11\n\tethertype\x18\x04 \x01(\t\x12\x14\n\x0cportRangeMax\x18\x05 \x01(\x05\x12\x14\n\x0cportRangeMin\x18\x06 \x01(\x05\x12\x16\n\x0eremoteIpPrefix\x18\x08 \x01(\t\x12\x15\n\rremoteGroupId\x18\t \x01(\t\"3\n\x1f\x43reateSecurityGroupRuleResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"t\n\x1e\x44\x65leteSecurityGroupRuleRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x1b\n\x13securityGroupRuleId\x18\x04 \x01(\t\"3\n\x1f\x44\x65leteSecurityGroupRuleResponse\x12\x10\n\x08response\x18\x04 \x01(\t\"o\n\x1dQuerySecurityGroupRuleRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x17\n\x0fsecurityGroupId\x18\x04 \x01(\t\"2\n\x1eQuerySecurityGroupRuleResponse\x12\x10\n\x08response\x18\x01 \x01(\t2\xce\x05\n\rVmImageManger\x12r\n\rcreateVmImage\x12..internal.resourcemanager.CreateVmImageRequest\x1a/.internal.resourcemanager.CreateVmImageResponse\"\x00\x12t\n\ruploadVmImage\x12..internal.resourcemanager.UploadVmImageRequest\x1a/.internal.resourcemanager.UploadVmImageResponse\"\x00(\x01\x12r\n\rdeleteVmImage\x12..internal.resourcemanager.DeleteVmImageRequest\x1a/.internal.resourcemanager.DeleteVmImageResponse\"\x00\x12z\n\x0f\x64ownloadVmImage\x12\x30.internal.resourcemanager.DownloadVmImageRequest\x1a\x31.internal.resourcemanager.DownloadVmImageResponse\"\x00\x30\x01\x12r\n\rimportVmImage\x12..internal.resourcemanager.ImportVmImageRequest\x1a/.internal.resourcemanager.ImportVmImageResponse\"\x00\x12o\n\x0cqueryVmImage\x12-.internal.resourcemanager.QueryVmImageRequest\x1a..internal.resourcemanager.QueryVmImageResponse\"\x00\x32\x9f\x03\n\tVmManager\x12\x63\n\x08\x63reateVm\x12).internal.resourcemanager.CreateVmRequest\x1a*.internal.resourcemanager.CreateVmResponse\"\x00\x12`\n\x07queryVm\x12(.internal.resourcemanager.QueryVmRequest\x1a).internal.resourcemanager.QueryVmResponse\"\x00\x12\x66\n\toperateVm\x12*.internal.resourcemanager.OperateVmRequest\x1a+.internal.resourcemanager.OperateVmResponse\"\x00\x12\x63\n\x08\x64\x65leteVm\x12).internal.resourcemanager.DeleteVmRequest\x1a*.internal.resourcemanager.DeleteVmResponse\"\x00\x32\xdf\x02\n\rFlavorManager\x12o\n\x0c\x63reateFlavor\x12-.internal.resourcemanager.CreateFlavorRequest\x1a..internal.resourcemanager.CreateFlavorResponse\"\x00\x12o\n\x0c\x64\x65leteFlavor\x12-.internal.resourcemanager.DeleteFlavorRequest\x1a..internal.resourcemanager.DeleteFlavorResponse\"\x00\x12l\n\x0bqueryFlavor\x12,.internal.resourcemanager.QueryFlavorRequest\x1a-.internal.resourcemanager.QueryFlavorResponse\"\x00\x32\xe9\x02\n\x0eNetworkManager\x12r\n\rcreateNetwork\x12..internal.resourcemanager.CreateNetworkRequest\x1a/.internal.resourcemanager.CreateNetworkResponse\"\x00\x12r\n\rdeleteNetwork\x12..internal.resourcemanager.DeleteNetworkRequest\x1a/.internal.resourcemanager.DeleteNetworkResponse\"\x00\x12o\n\x0cqueryNetwork\x12-.internal.resourcemanager.QueryNetworkRequest\x1a..internal.resourcemanager.QueryNetworkResponse\"\x00\x32\xde\x06\n\x14SecurityGroupManager\x12\x84\x01\n\x13\x63reateSecurityGroup\x12\x34.internal.resourcemanager.CreateSecurityGroupRequest\x1a\x35.internal.resourcemanager.CreateSecurityGroupResponse\"\x00\x12\x84\x01\n\x13\x64\x65leteSecurityGroup\x12\x34.internal.resourcemanager.DeleteSecurityGroupRequest\x1a\x35.internal.resourcemanager.DeleteSecurityGroupResponse\"\x00\x12\x81\x01\n\x12querySecurityGroup\x12\x33.internal.resourcemanager.QuerySecurityGroupRequest\x1a\x34.internal.resourcemanager.QuerySecurityGroupResponse\"\x00\x12\x90\x01\n\x17\x63reateSecurityGroupRule\x12\x38.internal.resourcemanager.CreateSecurityGroupRuleRequest\x1a\x39.internal.resourcemanager.CreateSecurityGroupRuleResponse\"\x00\x12\x90\x01\n\x17\x64\x65leteSecurityGroupRule\x12\x38.internal.resourcemanager.DeleteSecurityGroupRuleRequest\x1a\x39.internal.resourcemanager.DeleteSecurityGroupRuleResponse\"\x00\x12\x8d\x01\n\x16querySecurityGroupRule\x12\x37.internal.resourcemanager.QuerySecurityGroupRuleRequest\x1a\x38.internal.resourcemanager.QuerySecurityGroupRuleResponse\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x15resourcemanager.proto\x12\x18internal.resourcemanager\"\x85\x03\n\x14\x43reateVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x43\n\x05image\x18\x04 \x01(\x0b\x32\x34.internal.resourcemanager.CreateVmImageRequest.Image\x1a\xf0\x01\n\x05Image\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0f\x63ontainerFormat\x18\x02 \x01(\t\x12\x12\n\ndiskFormat\x18\x03 \x01(\t\x12\x0e\n\x06minRam\x18\x04 \x01(\x05\x12\x0f\n\x07minDisk\x18\x05 \x01(\x05\x12X\n\nproperties\x18\x06 \x03(\x0b\x32\x44.internal.resourcemanager.CreateVmImageRequest.Image.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\")\n\x15\x43reateVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"n\n\x13QueryVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x14\n\x07imageId\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\n\n\x08_imageId\"(\n\x14QueryVmImageResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"^\n\x14\x44\x65leteVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\"\'\n\x15\x44\x65leteVmImageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"`\n\x16\x44ownloadVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\"*\n\x17\x44ownloadVmImageResponse\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\"s\n\x14ImportVmImageRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0f\n\x07imageId\x18\x04 \x01(\t\x12\x13\n\x0bresourceUri\x18\x05 \x01(\t\"\'\n\x15ImportVmImageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"\x81\x01\n\x14UploadVmImageRequest\x12\x15\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\tH\x00\x12\x10\n\x06hostIp\x18\x02 \x01(\tH\x00\x12\x12\n\x08tenantId\x18\x03 \x01(\tH\x00\x12\x11\n\x07imageId\x18\x04 \x01(\tH\x00\x12\x11\n\x07\x63ontent\x18\x05 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"\'\n\x15UploadVmImageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"\x94\x03\n\x0f\x43reateVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12@\n\x06server\x18\x04 \x01(\x0b\x32\x30.internal.resourcemanager.CreateVmRequest.Server\x1a\x87\x02\n\x06Server\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x66lavor\x18\x02 \x01(\t\x12\r\n\x05image\x18\x03 \x01(\t\x12\x18\n\x10\x61vailabilityZone\x18\x04 \x01(\t\x12\x10\n\x08userData\x18\x05 \x01(\t\x12\x13\n\x0b\x63onfigDrive\x18\x06 \x01(\x08\x12\x16\n\x0esecurityGroups\x18\x07 \x03(\t\x12J\n\x08networks\x18\x08 \x03(\x0b\x32\x38.internal.resourcemanager.CreateVmRequest.Server.Network\x1a+\n\x07Network\x12\x0f\n\x07network\x18\x01 \x01(\t\x12\x0f\n\x07\x66ixedIp\x18\x02 \x01(\t\"\"\n\x10\x43reateVmResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"U\n\x0eQueryVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\"#\n\x0fQueryVmResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\xb6\x03\n\x10OperateVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\x12\x0e\n\x06\x61\x63tion\x18\x05 \x01(\t\x12\x41\n\x06reboot\x18\x06 \x01(\x0b\x32\x31.internal.resourcemanager.OperateVmRequest.Reboot\x12K\n\x0b\x63reateImage\x18\x07 \x01(\x0b\x32\x36.internal.resourcemanager.OperateVmRequest.CreateImage\x1a\x16\n\x06Reboot\x12\x0c\n\x04type\x18\x01 \x01(\t\x1a\xa4\x01\n\x0b\x43reateImage\x12\x0c\n\x04name\x18\x01 \x01(\t\x12V\n\x08metadata\x18\x02 \x03(\x0b\x32\x44.internal.resourcemanager.OperateVmRequest.CreateImage.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"%\n\x11OperateVmResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"V\n\x0f\x44\x65leteVmRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x0c\n\x04vmId\x18\x04 \x01(\t\"\"\n\x10\x44\x65leteVmResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"\xf0\x02\n\x13\x43reateFlavorRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x44\n\x06\x66lavor\x18\x04 \x01(\x0b\x32\x34.internal.resourcemanager.CreateFlavorRequest.Flavor\x1a\xdb\x01\n\x06\x46lavor\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05vcpus\x18\x02 \x01(\x05\x12\x0b\n\x03ram\x18\x03 \x01(\x05\x12\x0c\n\x04\x64isk\x18\x04 \x01(\x05\x12\x0c\n\x04swap\x18\x05 \x01(\x05\x12X\n\nextraSpecs\x18\x08 \x03(\x0b\x32\x44.internal.resourcemanager.CreateFlavorRequest.Flavor.ExtraSpecsEntry\x1a\x31\n\x0f\x45xtraSpecsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"&\n\x14\x43reateFlavorResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"^\n\x13\x44\x65leteFlavorRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x10\n\x08\x66lavorId\x18\x04 \x01(\t\"&\n\x14\x44\x65leteFlavorResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"]\n\x12QueryFlavorRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x10\n\x08\x66lavorId\x18\x04 \x01(\t\"\'\n\x13QueryFlavorResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\x90\x08\n\x14\x43reateNetworkRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12G\n\x07network\x18\x04 \x01(\x0b\x32\x36.internal.resourcemanager.CreateNetworkRequest.Network\x1a\xf7\x06\n\x07Network\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0c\x61\x64minStateUp\x18\x02 \x01(\x08\x12\x11\n\tdnsDomain\x18\x03 \x01(\t\x12\x0b\n\x03mtu\x18\x04 \x01(\x05\x12\x1b\n\x13portSecurityEnabled\x18\x05 \x01(\x08\x12\x1b\n\x13providerNetworkType\x18\x06 \x01(\t\x12\x1f\n\x17providerPhysicalNetwork\x18\x07 \x01(\t\x12\x1e\n\x16providerSegmentationId\x18\x08 \x01(\x05\x12\x13\n\x0bqosPolicyId\x18\t \x01(\t\x12\x16\n\x0erouterExternal\x18\n \x01(\x08\x12P\n\x08segments\x18\x0b \x03(\x0b\x32>.internal.resourcemanager.CreateNetworkRequest.Network.Segment\x12\x0e\n\x06shared\x18\x0c \x01(\x08\x12\x17\n\x0fvlanTransparent\x18\r \x01(\x08\x12\x11\n\tisDefault\x18\x0e \x01(\x08\x12N\n\x07subnets\x18\x0f \x03(\x0b\x32=.internal.resourcemanager.CreateNetworkRequest.Network.Subnet\x1ag\n\x07Segment\x12\x1e\n\x16providerSegmentationId\x18\x01 \x01(\x05\x12\x1f\n\x17providerPhysicalNetwork\x18\x02 \x01(\t\x12\x1b\n\x13providerNetworkType\x18\x03 \x01(\t\x1a\xb8\x02\n\x06Subnet\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\nenableDhcp\x18\x02 \x01(\x08\x12\x16\n\x0e\x64nsNameservers\x18\x03 \x03(\t\x12\x65\n\x0f\x61llocationPools\x18\x04 \x03(\x0b\x32L.internal.resourcemanager.CreateNetworkRequest.Network.Subnet.AllocationPool\x12\x11\n\tipVersion\x18\x05 \x01(\x05\x12\x11\n\tgatewayIp\x18\x06 \x01(\t\x12\x0c\n\x04\x63idr\x18\x07 \x01(\t\x12\x17\n\x0fipv6AddressMode\x18\x08 \x01(\t\x12\x12\n\nipv6RaMode\x18\t \x01(\t\x1a,\n\x0e\x41llocationPool\x12\r\n\x05start\x18\x01 \x01(\t\x12\x0b\n\x03\x65nd\x18\x02 \x01(\t\"\'\n\x15\x43reateNetworkResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"`\n\x14\x44\x65leteNetworkRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x11\n\tnetworkId\x18\x04 \x01(\t\"\'\n\x15\x44\x65leteNetworkResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"_\n\x13QueryNetworkRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x11\n\tnetworkId\x18\x04 \x01(\t\"(\n\x14QueryNetworkResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\xcd\x01\n\x1a\x43reateSecurityGroupRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12Y\n\rsecurityGroup\x18\x04 \x01(\x0b\x32\x42.internal.resourcemanager.CreateSecurityGroupRequest.SecurityGroup\x1a\x1d\n\rSecurityGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\"-\n\x1b\x43reateSecurityGroupResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"l\n\x1a\x44\x65leteSecurityGroupRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x17\n\x0fsecurityGroupId\x18\x04 \x01(\t\"-\n\x1b\x44\x65leteSecurityGroupResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"k\n\x19QuerySecurityGroupRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x17\n\x0fsecurityGroupId\x18\x04 \x01(\t\".\n\x1aQuerySecurityGroupResponse\x12\x10\n\x08response\x18\x01 \x01(\t\"\x80\x03\n\x1e\x43reateSecurityGroupRuleRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x65\n\x11securityGroupRule\x18\x04 \x01(\x0b\x32J.internal.resourcemanager.CreateSecurityGroupRuleRequest.SecurityGroupRule\x1a\xbf\x01\n\x11SecurityGroupRule\x12\x17\n\x0fsecurityGroupId\x18\x01 \x01(\t\x12\x11\n\tdirection\x18\x02 \x01(\t\x12\x10\n\x08protocol\x18\x03 \x01(\t\x12\x11\n\tethertype\x18\x04 \x01(\t\x12\x14\n\x0cportRangeMax\x18\x05 \x01(\x05\x12\x14\n\x0cportRangeMin\x18\x06 \x01(\x05\x12\x16\n\x0eremoteIpPrefix\x18\x08 \x01(\t\x12\x15\n\rremoteGroupId\x18\t \x01(\t\"1\n\x1f\x43reateSecurityGroupRuleResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"t\n\x1e\x44\x65leteSecurityGroupRuleRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x1b\n\x13securityGroupRuleId\x18\x04 \x01(\t\"1\n\x1f\x44\x65leteSecurityGroupRuleResponse\x12\x0e\n\x06status\x18\x04 \x01(\t\"o\n\x1dQuerySecurityGroupRuleRequest\x12\x13\n\x0b\x61\x63\x63\x65ssToken\x18\x01 \x01(\t\x12\x0e\n\x06hostIp\x18\x02 \x01(\t\x12\x10\n\x08tenantId\x18\x03 \x01(\t\x12\x17\n\x0fsecurityGroupId\x18\x04 \x01(\t\"2\n\x1eQuerySecurityGroupRuleResponse\x12\x10\n\x08response\x18\x01 \x01(\t2\xce\x05\n\rVmImageManger\x12r\n\rcreateVmImage\x12..internal.resourcemanager.CreateVmImageRequest\x1a/.internal.resourcemanager.CreateVmImageResponse\"\x00\x12t\n\ruploadVmImage\x12..internal.resourcemanager.UploadVmImageRequest\x1a/.internal.resourcemanager.UploadVmImageResponse\"\x00(\x01\x12r\n\rdeleteVmImage\x12..internal.resourcemanager.DeleteVmImageRequest\x1a/.internal.resourcemanager.DeleteVmImageResponse\"\x00\x12z\n\x0f\x64ownloadVmImage\x12\x30.internal.resourcemanager.DownloadVmImageRequest\x1a\x31.internal.resourcemanager.DownloadVmImageResponse\"\x00\x30\x01\x12r\n\rimportVmImage\x12..internal.resourcemanager.ImportVmImageRequest\x1a/.internal.resourcemanager.ImportVmImageResponse\"\x00\x12o\n\x0cqueryVmImage\x12-.internal.resourcemanager.QueryVmImageRequest\x1a..internal.resourcemanager.QueryVmImageResponse\"\x00\x32\x9f\x03\n\tVmManager\x12\x63\n\x08\x63reateVm\x12).internal.resourcemanager.CreateVmRequest\x1a*.internal.resourcemanager.CreateVmResponse\"\x00\x12`\n\x07queryVm\x12(.internal.resourcemanager.QueryVmRequest\x1a).internal.resourcemanager.QueryVmResponse\"\x00\x12\x66\n\toperateVm\x12*.internal.resourcemanager.OperateVmRequest\x1a+.internal.resourcemanager.OperateVmResponse\"\x00\x12\x63\n\x08\x64\x65leteVm\x12).internal.resourcemanager.DeleteVmRequest\x1a*.internal.resourcemanager.DeleteVmResponse\"\x00\x32\xdf\x02\n\rFlavorManager\x12o\n\x0c\x63reateFlavor\x12-.internal.resourcemanager.CreateFlavorRequest\x1a..internal.resourcemanager.CreateFlavorResponse\"\x00\x12o\n\x0c\x64\x65leteFlavor\x12-.internal.resourcemanager.DeleteFlavorRequest\x1a..internal.resourcemanager.DeleteFlavorResponse\"\x00\x12l\n\x0bqueryFlavor\x12,.internal.resourcemanager.QueryFlavorRequest\x1a-.internal.resourcemanager.QueryFlavorResponse\"\x00\x32\xe9\x02\n\x0eNetworkManager\x12r\n\rcreateNetwork\x12..internal.resourcemanager.CreateNetworkRequest\x1a/.internal.resourcemanager.CreateNetworkResponse\"\x00\x12r\n\rdeleteNetwork\x12..internal.resourcemanager.DeleteNetworkRequest\x1a/.internal.resourcemanager.DeleteNetworkResponse\"\x00\x12o\n\x0cqueryNetwork\x12-.internal.resourcemanager.QueryNetworkRequest\x1a..internal.resourcemanager.QueryNetworkResponse\"\x00\x32\xde\x06\n\x14SecurityGroupManager\x12\x84\x01\n\x13\x63reateSecurityGroup\x12\x34.internal.resourcemanager.CreateSecurityGroupRequest\x1a\x35.internal.resourcemanager.CreateSecurityGroupResponse\"\x00\x12\x84\x01\n\x13\x64\x65leteSecurityGroup\x12\x34.internal.resourcemanager.DeleteSecurityGroupRequest\x1a\x35.internal.resourcemanager.DeleteSecurityGroupResponse\"\x00\x12\x81\x01\n\x12querySecurityGroup\x12\x33.internal.resourcemanager.QuerySecurityGroupRequest\x1a\x34.internal.resourcemanager.QuerySecurityGroupResponse\"\x00\x12\x90\x01\n\x17\x63reateSecurityGroupRule\x12\x38.internal.resourcemanager.CreateSecurityGroupRuleRequest\x1a\x39.internal.resourcemanager.CreateSecurityGroupRuleResponse\"\x00\x12\x90\x01\n\x17\x64\x65leteSecurityGroupRule\x12\x38.internal.resourcemanager.DeleteSecurityGroupRuleRequest\x1a\x39.internal.resourcemanager.DeleteSecurityGroupRuleResponse\"\x00\x12\x8d\x01\n\x16querySecurityGroupRule\x12\x37.internal.resourcemanager.QuerySecurityGroupRuleRequest\x1a\x38.internal.resourcemanager.QuerySecurityGroupRuleResponse\"\x00\x62\x06proto3'
 )
 
 
@@ -261,9 +261,14 @@ _QUERYVMIMAGEREQUEST = _descriptor.Descriptor(
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
+    _descriptor.OneofDescriptor(
+      name='_imageId', full_name='internal.resourcemanager.QueryVmImageRequest._imageId',
+      index=0, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
   ],
   serialized_start=486,
-  serialized_end=579,
+  serialized_end=596,
 )
 
 
@@ -294,8 +299,8 @@ _QUERYVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=581,
-  serialized_end=621,
+  serialized_start=598,
+  serialized_end=638,
 )
 
 
@@ -347,8 +352,8 @@ _DELETEVMIMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=623,
-  serialized_end=717,
+  serialized_start=640,
+  serialized_end=734,
 )
 
 
@@ -361,7 +366,7 @@ _DELETEVMIMAGERESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.DeleteVmImageResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.DeleteVmImageResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -379,8 +384,8 @@ _DELETEVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=719,
-  serialized_end=760,
+  serialized_start=736,
+  serialized_end=775,
 )
 
 
@@ -432,8 +437,8 @@ _DOWNLOADVMIMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=762,
-  serialized_end=858,
+  serialized_start=777,
+  serialized_end=873,
 )
 
 
@@ -464,8 +469,8 @@ _DOWNLOADVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=860,
-  serialized_end=902,
+  serialized_start=875,
+  serialized_end=917,
 )
 
 
@@ -524,8 +529,8 @@ _IMPORTVMIMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=904,
-  serialized_end=1019,
+  serialized_start=919,
+  serialized_end=1034,
 )
 
 
@@ -538,7 +543,7 @@ _IMPORTVMIMAGERESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.ImportVmImageResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.ImportVmImageResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -556,8 +561,8 @@ _IMPORTVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1021,
-  serialized_end=1062,
+  serialized_start=1036,
+  serialized_end=1075,
 )
 
 
@@ -621,8 +626,8 @@ _UPLOADVMIMAGEREQUEST = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1065,
-  serialized_end=1194,
+  serialized_start=1078,
+  serialized_end=1207,
 )
 
 
@@ -635,7 +640,7 @@ _UPLOADVMIMAGERESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.UploadVmImageResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.UploadVmImageResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -653,8 +658,8 @@ _UPLOADVMIMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1196,
-  serialized_end=1237,
+  serialized_start=1209,
+  serialized_end=1248,
 )
 
 
@@ -692,8 +697,8 @@ _CREATEVMREQUEST_SERVER_NETWORK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1601,
-  serialized_end=1644,
+  serialized_start=1612,
+  serialized_end=1655,
 )
 
 _CREATEVMREQUEST_SERVER = _descriptor.Descriptor(
@@ -772,8 +777,8 @@ _CREATEVMREQUEST_SERVER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1381,
-  serialized_end=1644,
+  serialized_start=1392,
+  serialized_end=1655,
 )
 
 _CREATEVMREQUEST = _descriptor.Descriptor(
@@ -824,8 +829,8 @@ _CREATEVMREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1240,
-  serialized_end=1644,
+  serialized_start=1251,
+  serialized_end=1655,
 )
 
 
@@ -838,7 +843,7 @@ _CREATEVMRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.CreateVmResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.CreateVmResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -856,8 +861,8 @@ _CREATEVMRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1646,
-  serialized_end=1682,
+  serialized_start=1657,
+  serialized_end=1691,
 )
 
 
@@ -909,8 +914,8 @@ _QUERYVMREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1684,
-  serialized_end=1769,
+  serialized_start=1693,
+  serialized_end=1778,
 )
 
 
@@ -941,8 +946,8 @@ _QUERYVMRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1771,
-  serialized_end=1806,
+  serialized_start=1780,
+  serialized_end=1815,
 )
 
 
@@ -973,8 +978,8 @@ _OPERATEVMREQUEST_REBOOT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2058,
-  serialized_end=2080,
+  serialized_start=2067,
+  serialized_end=2089,
 )
 
 _OPERATEVMREQUEST_CREATEIMAGE_METADATAENTRY = _descriptor.Descriptor(
@@ -1011,8 +1016,8 @@ _OPERATEVMREQUEST_CREATEIMAGE_METADATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2200,
-  serialized_end=2247,
+  serialized_start=2209,
+  serialized_end=2256,
 )
 
 _OPERATEVMREQUEST_CREATEIMAGE = _descriptor.Descriptor(
@@ -1049,8 +1054,8 @@ _OPERATEVMREQUEST_CREATEIMAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2083,
-  serialized_end=2247,
+  serialized_start=2092,
+  serialized_end=2256,
 )
 
 _OPERATEVMREQUEST = _descriptor.Descriptor(
@@ -1122,8 +1127,8 @@ _OPERATEVMREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1809,
-  serialized_end=2247,
+  serialized_start=1818,
+  serialized_end=2256,
 )
 
 
@@ -1154,8 +1159,8 @@ _OPERATEVMRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2249,
-  serialized_end=2286,
+  serialized_start=2258,
+  serialized_end=2295,
 )
 
 
@@ -1207,8 +1212,8 @@ _DELETEVMREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2288,
-  serialized_end=2374,
+  serialized_start=2297,
+  serialized_end=2383,
 )
 
 
@@ -1221,7 +1226,7 @@ _DELETEVMRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.DeleteVmResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.DeleteVmResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1239,8 +1244,8 @@ _DELETEVMRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2376,
-  serialized_end=2412,
+  serialized_start=2385,
+  serialized_end=2419,
 )
 
 
@@ -1278,8 +1283,8 @@ _CREATEFLAVORREQUEST_FLAVOR_EXTRASPECSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2734,
-  serialized_end=2783,
+  serialized_start=2741,
+  serialized_end=2790,
 )
 
 _CREATEFLAVORREQUEST_FLAVOR = _descriptor.Descriptor(
@@ -1344,8 +1349,8 @@ _CREATEFLAVORREQUEST_FLAVOR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2564,
-  serialized_end=2783,
+  serialized_start=2571,
+  serialized_end=2790,
 )
 
 _CREATEFLAVORREQUEST = _descriptor.Descriptor(
@@ -1396,8 +1401,8 @@ _CREATEFLAVORREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2415,
-  serialized_end=2783,
+  serialized_start=2422,
+  serialized_end=2790,
 )
 
 
@@ -1410,7 +1415,7 @@ _CREATEFLAVORRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.CreateFlavorResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.CreateFlavorResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1428,8 +1433,8 @@ _CREATEFLAVORRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2785,
-  serialized_end=2825,
+  serialized_start=2792,
+  serialized_end=2830,
 )
 
 
@@ -1481,8 +1486,8 @@ _DELETEFLAVORREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2827,
-  serialized_end=2921,
+  serialized_start=2832,
+  serialized_end=2926,
 )
 
 
@@ -1495,7 +1500,7 @@ _DELETEFLAVORRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.DeleteFlavorResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.DeleteFlavorResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1513,8 +1518,8 @@ _DELETEFLAVORRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2923,
-  serialized_end=2963,
+  serialized_start=2928,
+  serialized_end=2966,
 )
 
 
@@ -1566,8 +1571,8 @@ _QUERYFLAVORREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2965,
-  serialized_end=3058,
+  serialized_start=2968,
+  serialized_end=3061,
 )
 
 
@@ -1598,8 +1603,8 @@ _QUERYFLAVORRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3060,
-  serialized_end=3099,
+  serialized_start=3063,
+  serialized_end=3102,
 )
 
 
@@ -1644,8 +1649,8 @@ _CREATENETWORKREQUEST_NETWORK_SEGMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3669,
-  serialized_end=3772,
+  serialized_start=3727,
+  serialized_end=3830,
 )
 
 _CREATENETWORKREQUEST_NETWORK_SUBNET_ALLOCATIONPOOL = _descriptor.Descriptor(
@@ -1682,8 +1687,8 @@ _CREATENETWORKREQUEST_NETWORK_SUBNET_ALLOCATIONPOOL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4043,
-  serialized_end=4087,
+  serialized_start=4101,
+  serialized_end=4145,
 )
 
 _CREATENETWORKREQUEST_NETWORK_SUBNET = _descriptor.Descriptor(
@@ -1769,8 +1774,8 @@ _CREATENETWORKREQUEST_NETWORK_SUBNET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3775,
-  serialized_end=4087,
+  serialized_start=3833,
+  serialized_end=4145,
 )
 
 _CREATENETWORKREQUEST_NETWORK = _descriptor.Descriptor(
@@ -1880,15 +1885,8 @@ _CREATENETWORKREQUEST_NETWORK = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tenantId', full_name='internal.resourcemanager.CreateNetworkRequest.Network.tenantId', index=14,
-      number=15, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='subnets', full_name='internal.resourcemanager.CreateNetworkRequest.Network.subnets', index=15,
-      number=16, type=11, cpp_type=10, label=3,
+      name='subnets', full_name='internal.resourcemanager.CreateNetworkRequest.Network.subnets', index=14,
+      number=15, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -1905,8 +1903,8 @@ _CREATENETWORKREQUEST_NETWORK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3182,
-  serialized_end=4087,
+  serialized_start=3258,
+  serialized_end=4145,
 )
 
 _CREATENETWORKREQUEST = _descriptor.Descriptor(
@@ -1938,6 +1936,13 @@ _CREATENETWORKREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='network', full_name='internal.resourcemanager.CreateNetworkRequest.network', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1950,8 +1955,8 @@ _CREATENETWORKREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3102,
-  serialized_end=4087,
+  serialized_start=3105,
+  serialized_end=4145,
 )
 
 
@@ -1964,7 +1969,7 @@ _CREATENETWORKRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.CreateNetworkResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.CreateNetworkResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1982,8 +1987,8 @@ _CREATENETWORKRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4089,
-  serialized_end=4130,
+  serialized_start=4147,
+  serialized_end=4186,
 )
 
 
@@ -2035,8 +2040,8 @@ _DELETENETWORKREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4132,
-  serialized_end=4228,
+  serialized_start=4188,
+  serialized_end=4284,
 )
 
 
@@ -2049,7 +2054,7 @@ _DELETENETWORKRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.DeleteNetworkResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.DeleteNetworkResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -2067,8 +2072,8 @@ _DELETENETWORKRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4230,
-  serialized_end=4271,
+  serialized_start=4286,
+  serialized_end=4325,
 )
 
 
@@ -2120,8 +2125,8 @@ _QUERYNETWORKREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4273,
-  serialized_end=4368,
+  serialized_start=4327,
+  serialized_end=4422,
 )
 
 
@@ -2152,8 +2157,8 @@ _QUERYNETWORKRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4370,
-  serialized_end=4410,
+  serialized_start=4424,
+  serialized_end=4464,
 )
 
 
@@ -2184,8 +2189,8 @@ _CREATESECURITYGROUPREQUEST_SECURITYGROUP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4589,
-  serialized_end=4618,
+  serialized_start=4643,
+  serialized_end=4672,
 )
 
 _CREATESECURITYGROUPREQUEST = _descriptor.Descriptor(
@@ -2236,8 +2241,8 @@ _CREATESECURITYGROUPREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4413,
-  serialized_end=4618,
+  serialized_start=4467,
+  serialized_end=4672,
 )
 
 
@@ -2250,7 +2255,7 @@ _CREATESECURITYGROUPRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.CreateSecurityGroupResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.CreateSecurityGroupResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -2268,8 +2273,8 @@ _CREATESECURITYGROUPRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4620,
-  serialized_end=4667,
+  serialized_start=4674,
+  serialized_end=4719,
 )
 
 
@@ -2321,8 +2326,8 @@ _DELETESECURITYGROUPREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4669,
-  serialized_end=4777,
+  serialized_start=4721,
+  serialized_end=4829,
 )
 
 
@@ -2335,7 +2340,7 @@ _DELETESECURITYGROUPRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.DeleteSecurityGroupResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.DeleteSecurityGroupResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -2353,8 +2358,8 @@ _DELETESECURITYGROUPRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4779,
-  serialized_end=4826,
+  serialized_start=4831,
+  serialized_end=4876,
 )
 
 
@@ -2406,8 +2411,8 @@ _QUERYSECURITYGROUPREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4828,
-  serialized_end=4935,
+  serialized_start=4878,
+  serialized_end=4985,
 )
 
 
@@ -2438,8 +2443,8 @@ _QUERYSECURITYGROUPRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4937,
-  serialized_end=4983,
+  serialized_start=4987,
+  serialized_end=5033,
 )
 
 
@@ -2519,8 +2524,8 @@ _CREATESECURITYGROUPRULEREQUEST_SECURITYGROUPRULE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5179,
-  serialized_end=5370,
+  serialized_start=5229,
+  serialized_end=5420,
 )
 
 _CREATESECURITYGROUPRULEREQUEST = _descriptor.Descriptor(
@@ -2571,8 +2576,8 @@ _CREATESECURITYGROUPRULEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4986,
-  serialized_end=5370,
+  serialized_start=5036,
+  serialized_end=5420,
 )
 
 
@@ -2585,7 +2590,7 @@ _CREATESECURITYGROUPRULERESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.CreateSecurityGroupRuleResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.CreateSecurityGroupRuleResponse.status', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -2603,8 +2608,8 @@ _CREATESECURITYGROUPRULERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5372,
-  serialized_end=5423,
+  serialized_start=5422,
+  serialized_end=5471,
 )
 
 
@@ -2656,8 +2661,8 @@ _DELETESECURITYGROUPRULEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5425,
-  serialized_end=5541,
+  serialized_start=5473,
+  serialized_end=5589,
 )
 
 
@@ -2670,7 +2675,7 @@ _DELETESECURITYGROUPRULERESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='response', full_name='internal.resourcemanager.DeleteSecurityGroupRuleResponse.response', index=0,
+      name='status', full_name='internal.resourcemanager.DeleteSecurityGroupRuleResponse.status', index=0,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -2688,8 +2693,8 @@ _DELETESECURITYGROUPRULERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5543,
-  serialized_end=5594,
+  serialized_start=5591,
+  serialized_end=5640,
 )
 
 
@@ -2741,8 +2746,8 @@ _QUERYSECURITYGROUPRULEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5596,
-  serialized_end=5707,
+  serialized_start=5642,
+  serialized_end=5753,
 )
 
 
@@ -2773,14 +2778,17 @@ _QUERYSECURITYGROUPRULERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5709,
-  serialized_end=5759,
+  serialized_start=5755,
+  serialized_end=5805,
 )
 
 _CREATEVMIMAGEREQUEST_IMAGE_PROPERTIESENTRY.containing_type = _CREATEVMIMAGEREQUEST_IMAGE
 _CREATEVMIMAGEREQUEST_IMAGE.fields_by_name['properties'].message_type = _CREATEVMIMAGEREQUEST_IMAGE_PROPERTIESENTRY
 _CREATEVMIMAGEREQUEST_IMAGE.containing_type = _CREATEVMIMAGEREQUEST
 _CREATEVMIMAGEREQUEST.fields_by_name['image'].message_type = _CREATEVMIMAGEREQUEST_IMAGE
+_QUERYVMIMAGEREQUEST.oneofs_by_name['_imageId'].fields.append(
+  _QUERYVMIMAGEREQUEST.fields_by_name['imageId'])
+_QUERYVMIMAGEREQUEST.fields_by_name['imageId'].containing_oneof = _QUERYVMIMAGEREQUEST.oneofs_by_name['_imageId']
 _UPLOADVMIMAGEREQUEST.oneofs_by_name['data'].fields.append(
   _UPLOADVMIMAGEREQUEST.fields_by_name['accessToken'])
 _UPLOADVMIMAGEREQUEST.fields_by_name['accessToken'].containing_oneof = _UPLOADVMIMAGEREQUEST.oneofs_by_name['data']
@@ -2817,6 +2825,7 @@ _CREATENETWORKREQUEST_NETWORK_SUBNET.containing_type = _CREATENETWORKREQUEST_NET
 _CREATENETWORKREQUEST_NETWORK.fields_by_name['segments'].message_type = _CREATENETWORKREQUEST_NETWORK_SEGMENT
 _CREATENETWORKREQUEST_NETWORK.fields_by_name['subnets'].message_type = _CREATENETWORKREQUEST_NETWORK_SUBNET
 _CREATENETWORKREQUEST_NETWORK.containing_type = _CREATENETWORKREQUEST
+_CREATENETWORKREQUEST.fields_by_name['network'].message_type = _CREATENETWORKREQUEST_NETWORK
 _CREATESECURITYGROUPREQUEST_SECURITYGROUP.containing_type = _CREATESECURITYGROUPREQUEST
 _CREATESECURITYGROUPREQUEST.fields_by_name['securityGroup'].message_type = _CREATESECURITYGROUPREQUEST_SECURITYGROUP
 _CREATESECURITYGROUPRULEREQUEST_SECURITYGROUPRULE.containing_type = _CREATESECURITYGROUPRULEREQUEST
@@ -3307,8 +3316,8 @@ _VMIMAGEMANGER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=5762,
-  serialized_end=6480,
+  serialized_start=5808,
+  serialized_end=6526,
   methods=[
   _descriptor.MethodDescriptor(
     name='createVmImage',
@@ -3383,8 +3392,8 @@ _VMMANAGER = _descriptor.ServiceDescriptor(
   index=1,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=6483,
-  serialized_end=6898,
+  serialized_start=6529,
+  serialized_end=6944,
   methods=[
   _descriptor.MethodDescriptor(
     name='createVm',
@@ -3439,8 +3448,8 @@ _FLAVORMANAGER = _descriptor.ServiceDescriptor(
   index=2,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=6901,
-  serialized_end=7252,
+  serialized_start=6947,
+  serialized_end=7298,
   methods=[
   _descriptor.MethodDescriptor(
     name='createFlavor',
@@ -3485,8 +3494,8 @@ _NETWORKMANAGER = _descriptor.ServiceDescriptor(
   index=3,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=7255,
-  serialized_end=7616,
+  serialized_start=7301,
+  serialized_end=7662,
   methods=[
   _descriptor.MethodDescriptor(
     name='createNetwork',
@@ -3531,8 +3540,8 @@ _SECURITYGROUPMANAGER = _descriptor.ServiceDescriptor(
   index=4,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=7619,
-  serialized_end=8481,
+  serialized_start=7665,
+  serialized_end=8527,
   methods=[
   _descriptor.MethodDescriptor(
     name='createSecurityGroup',

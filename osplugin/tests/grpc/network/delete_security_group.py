@@ -16,25 +16,18 @@
 """
 
 # -*- coding: utf-8 -*-
-from concurrent import futures
 
-from core.log import logger
+from internal.resourcemanager.resourcemanager_pb2 import DeleteSecurityGroupRequest
+from tests.grpc.client import security_group_stub, test_host_ip, test_tenant_id
+from tests.resources.gen_token import test_access_token
 
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
-
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
+delete_security_group_request = DeleteSecurityGroupRequest(
+    accessToken=test_access_token,
+    hostIp=test_host_ip,
+    tenantId=test_tenant_id,
+    securityGroupId='49427f47-45ee-4042-9d1d-6cb1ea8fd768'
 )
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
-
-
-def exception_handler(worker):
-    worker_exception = worker.exception()
-    if worker_exception:
-        logger.exception("Worker return exception: {}".format(worker_exception))
+if __name__ == '__main__':
+    resp = security_group_stub.deleteSecurityGroup(delete_security_group_request)
+    print(resp)

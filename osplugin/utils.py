@@ -21,6 +21,7 @@ import os
 import re
 import uuid
 import zipfile
+from io import IOBase
 from pathlib import Path
 
 import jwt
@@ -41,6 +42,7 @@ ACTIVE = 'active'
 KILLED = 'killed'
 DOWNLOADING = 'downloading'
 COMPRESSING = 'compressing'
+WAITING = 'waiting'
 PUSHING = 'pushing'
 
 UPLOADED = 'uploaded'
@@ -169,3 +171,55 @@ def validate_uuid(param):
         return False
     pattern = re.compile(_UUID_PATTERN)
     return pattern.match(param)
+
+
+def validate_input_params(param):
+    """
+    校验通用参数,host_ip和token，返回host_ip
+    Args:
+        param: 包含hostIp和accessToken
+    Returns:
+        host_ip
+    """
+    access_token = param.accessToken
+    host_ip = param.hostIp
+    if not validate_access_token(access_token):
+        LOG.error('accessToken not valid')
+        return None
+    if not validate_ipv4_address(host_ip):
+        LOG.error('hostIp not match ipv4')
+        return None
+    if not param.tenantId:
+        LOG.error('tenantId is required')
+        return None
+    return host_ip
+
+
+class StreamReader(IOBase):
+    def __init__(self, request_iter):
+        self.data_iter = request_iter
+        self.is_end = False
+
+    def read(self, size) -> bytes:
+        if self.is_end:
+            return bytes()
+        request = next(self.data_iter, None)
+        if request is None:
+            self.is_end = True
+            return bytes()
+        return request.content
+
+    def fileno(self) -> int:
+        raise IOError('not a file')
+
+    def isatty(self) -> bool:
+        return False
+
+    def readable(self) -> bool:
+        return True
+
+    def seek(self, __offset: int, __whence: int = ...) -> int:
+        raise IOError('can not seek!')
+
+    def seekable(self) -> bool:
+        return False

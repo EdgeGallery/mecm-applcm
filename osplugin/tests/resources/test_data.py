@@ -33,6 +33,7 @@ mock_glance_client.images.get.return_value = {
 }
 mock_glance_client.images.create.return_value = {
     'id': 'abc123123',
+    'name': 'test',
     'status': 'queued'
 }
 mock_glance_client.images.upload.return_value = None

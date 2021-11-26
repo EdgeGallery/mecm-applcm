@@ -14,27 +14,18 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
-from concurrent import futures
+from internal.resourcemanager.resourcemanager_pb2 import DeleteNetworkRequest
+from tests.grpc.client import network_stub, test_host_ip, test_tenant_id
+from tests.resources.gen_token import test_access_token
 
-from core.log import logger
-
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
-
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
+delete_network_request = DeleteNetworkRequest(
+    accessToken=test_access_token,
+    tenantId=test_tenant_id,
+    hostIp=test_host_ip,
+    networkId='700bd453-7c20-452c-bf46-70309bca8091'
 )
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
-
-
-def exception_handler(worker):
-    worker_exception = worker.exception()
-    if worker_exception:
-        logger.exception("Worker return exception: {}".format(worker_exception))
+if __name__ == '__main__':
+    resp = network_stub.deleteNetwork(delete_network_request)
+    print(resp)

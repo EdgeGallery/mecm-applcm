@@ -14,27 +14,20 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
-from concurrent import futures
+from internal.resourcemanager.resourcemanager_pb2 import QueryVmRequest
+from tests.grpc.client import server_stub, test_host_ip, test_tenant_id
+from tests.resources.gen_token import test_access_token
 
-from core.log import logger
-
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
-
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
+query_server = QueryVmRequest(
+    accessToken=test_access_token,
+    hostIp=test_host_ip,
+    tenantId=test_tenant_id
 )
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
-
-
-def exception_handler(worker):
-    worker_exception = worker.exception()
-    if worker_exception:
-        logger.exception("Worker return exception: {}".format(worker_exception))
+if __name__ == '__main__':
+    resp = server_stub.queryVm(query_server)
+    print(resp)
+    query_server.vmId = '61fcdb06-9375-4711-9fbd-2989a4e0f9a6'
+    resp = server_stub.queryVm(query_server)
+    print(resp)
