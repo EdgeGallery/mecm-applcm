@@ -80,10 +80,24 @@ func doTest(t *testing.T) {
 
 	testCreateFlavor(t, extraParams, testDb)
 	testDeleteFlavor(t, extraParams, testDb)
+
+	testCreateSecurityGroup(t, extraParams, testDb)
+	testCreateSecurityGroupRule(t, extraParams, testDb)
+	testDeleteSecurityGroupRule(t, extraParams, testDb)
+	testDeleteSecurityGroup(t, extraParams, testDb)
+
+	testCreateImage(t, extraParams, testDb)
+	testImportImage(t, extraParams, testDb)
+	testDeleteImage(t, extraParams, testDb)
+
+	testCreateServer(t, extraParams, testDb)
+	testOperateServer(t, extraParams, testDb)
+	testDeleteServer(t, extraParams, testDb)
+	testDeleteServer1(t, extraParams, testDb)
+	testDeleteServer2(t, extraParams, testDb)
+
 	testCreateNetwork(t, extraParams, testDb)
 	testDeleteNetwork(t, extraParams, testDb)
-
-
 }
 
 func startServer() {
