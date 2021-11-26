@@ -84,7 +84,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         )
         commit()
 
-        resp.response = json.dumps({'imageId': image['id']})
+        resp.response = json.dumps({'code': 200, 'data': {'imageId': image['id']}})
         LOG.info('create image record created')
         return resp
 
@@ -133,7 +133,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'resourceUrl': image_info.remote_url
         }
 
-        resp.response = json.dumps(res_dir)
+        resp.response = json.dumps({'code': 200, 'data': res_dir})
         return resp
 
     @db_session

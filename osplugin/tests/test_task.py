@@ -59,8 +59,9 @@ class TasksTest(unittest.TestCase):
             app_ins_info = AppInsMapper.get(app_instance_id='appIns01')
             self.assertEqual(utils.FAILURE, app_ins_info.operational_status)
 
+    @mock.patch('task.image_task.add_download_then_compress_image_task')
     @mock.patch('task.image_task.create_glance_client')
-    def test_do_check_image_status(self, create_glance_client):
+    def test_do_check_image_status(self, create_glance_client, add_download_then_compress_image_task):
         """
 
         Args:
@@ -70,6 +71,7 @@ class TasksTest(unittest.TestCase):
 
         """
         create_glance_client.return_value = mock_glance_client
+        add_download_then_compress_image_task.return_value = None
 
         with db_session:
             VmImageInfoMapper(
@@ -112,18 +114,19 @@ class TasksTest(unittest.TestCase):
         with db_session:
             VmImageInfoMapper(
                 image_id='test_image1',
-                host_ip='10.10.10.10',
+                host_ip='10.10.10.11',
                 image_name='test_image1',
-                status='downloading',
-                tenant_id='test_tenant'
+                status='active',
+                tenant_id='test_tenant',
+                compress_task_status='waiting'
             )
             commit()
 
-        do_download_then_compress_image('test_image1', '10.10.10.10')
+        do_download_then_compress_image('test_image1', '10.10.10.11')
 
         with db_session:
-            image_info = VmImageInfoMapper.get(image_id='test_image1', host_ip='10.10.10.10')
-            self.assertEqual(utils.COMPRESSING, image_info.status)
+            image_info = VmImageInfoMapper.get(image_id='test_image1', host_ip='10.10.10.11')
+            self.assertEqual(utils.COMPRESSING, image_info.compress_task_status)
 
     @mock.patch('task.image_task.add_push_image_task')
     @mock.patch('task.image_task.requests')
@@ -146,18 +149,19 @@ class TasksTest(unittest.TestCase):
                 image_id='test_image2',
                 host_ip='10.10.10.10',
                 image_name='test_image2',
-                status='compressing',
-                tenant_id='test_tenant'
+                status='active',
+                tenant_id='test_tenant',
+                compress_task_status='compressing'
             )
             commit()
 
         do_check_compress_status('test_image2', '10.10.10.10')
 
+        utils.delete_dir(f'{base_dir}/vmImage')
+
         with db_session:
             image_info = VmImageInfoMapper.get(image_id='test_image2', host_ip='10.10.10.10')
-            self.assertEqual(utils.PUSHING, image_info.status)
-
-        utils.delete_dir(f'{base_dir}/vmImage')
+            self.assertEqual(utils.PUSHING, image_info.compress_task_status)
 
     @mock.patch('task.image_task.requests')
     def test_do_push_image(self, requests):
@@ -173,8 +177,9 @@ class TasksTest(unittest.TestCase):
                 image_id='test_image3',
                 host_ip='10.10.10.10',
                 image_name='test_image3',
-                status='pushing',
-                tenant_id='test_tenant'
+                status='active',
+                tenant_id='test_tenant',
+                compress_task_status='pushing'
             )
             commit()
 
@@ -184,12 +189,11 @@ class TasksTest(unittest.TestCase):
 
         do_push_image('test_image3', '10.10.10.10')
 
+        utils.delete_dir(f'{base_dir}/vmImage')
+
         with db_session:
             image_info = VmImageInfoMapper.get(image_id='test_image3', host_ip='10.10.10.10')
-            self.assertEqual(utils.ACTIVE, image_info.status)
-            self.assertEqual('mock_image_id', image_info.compress_task_id)
-
-        utils.delete_dir(f'{base_dir}/vmImage')
+            self.assertEqual(utils.SUCCESS, image_info.compress_task_status)
 
     @mock.patch('task.app_package_task.start_check_package_status')
     def test_do_check_package_status(self, start_check_package_status):
@@ -204,6 +208,7 @@ class TasksTest(unittest.TestCase):
             VmImageInfoMapper(
                 image_id='image_id1',
                 image_name='image_name1',
+                tenant_id='tenant001',
                 app_package_id='app_package_id1',
                 host_ip='10.10.10.10',
                 status='active'
@@ -211,6 +216,7 @@ class TasksTest(unittest.TestCase):
             VmImageInfoMapper(
                 image_id='image_id2',
                 image_name='image_name2',
+                tenant_id='tenant001',
                 app_package_id='app_package_id1',
                 host_ip='10.10.10.10',
                 status='active'

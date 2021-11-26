@@ -396,7 +396,7 @@ def do_push_image(image_id, host_ip):
         commit()
     except Exception as exception:
         logger.error(exception, exc_info=True)
-        image_info.status = utils.FAILURE
+        image_info.compress_task_status = utils.FAILURE
         commit()
     finally:
         utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.qcow2')

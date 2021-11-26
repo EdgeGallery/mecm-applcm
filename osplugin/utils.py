@@ -189,7 +189,7 @@ def validate_input_params(param):
     if not validate_ipv4_address(host_ip):
         LOG.error('hostIp not match ipv4')
         return None
-    if param.tenantId is None:
+    if not param.tenantId:
         LOG.error('tenantId is required')
         return None
     return host_ip
