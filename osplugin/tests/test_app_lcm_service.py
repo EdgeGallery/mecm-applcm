@@ -67,6 +67,7 @@ class AppLcmServiceTest(unittest.TestCase):
         ]
         response = self.app_lcm_service.uploadPackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
+        utils.delete_dir('package/' + self.host_ip + '/pkg002')
 
     @mock.patch("service.app_lcm_service.create_glance_client")
     def test_delete_package(self, create_glance_client):
@@ -75,7 +76,7 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         with db_session:
             AppPkgMapper(
-                app_package_id='pkg001',
+                app_package_id='pkg002',
                 host_ip=self.host_ip,
                 status='active'
             )
@@ -84,7 +85,7 @@ class AppLcmServiceTest(unittest.TestCase):
                 host_ip=self.host_ip,
                 image_name='image001',
                 status='active',
-                app_package_id='pkg001',
+                app_package_id='pkg002',
                 image_size=1024,
                 checksum='2',
                 tenant_id='abcabc'
@@ -97,7 +98,7 @@ class AppLcmServiceTest(unittest.TestCase):
             accessToken=self.access_token,
             hostIp=self.host_ip,
             tenantId='tenant001',
-            appPackageId='pkg001'
+            appPackageId='pkg002'
         )
         response = self.app_lcm_service.deletePackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
@@ -113,7 +114,7 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         with db_session:
             AppPkgMapper(
-                app_package_id='pkg001',
+                app_package_id='pkg003',
                 host_ip=self.host_ip,
                 status='uploaded'
             )
@@ -126,7 +127,7 @@ class AppLcmServiceTest(unittest.TestCase):
             hostIp=self.host_ip,
             tenantId='tenant001',
             appInstanceId='test001',
-            appPackageId='pkg001',
+            appPackageId='pkg003',
             parameters={
                 'ak': 'ak',
                 'sk': 'sk'
@@ -194,7 +195,7 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         with db_session:
             AppPkgMapper(
-                app_package_id='pkgquery001',
+                app_package_id='pkgQuery001',
                 host_ip=self.host_ip,
                 status='active'
             )
@@ -203,7 +204,7 @@ class AppLcmServiceTest(unittest.TestCase):
                 host_ip=self.host_ip,
                 image_name='image001',
                 status='active',
-                app_package_id='pkgquery001',
+                app_package_id='pkgQuery001',
                 tenant_id='abcabc'
             )
             VmImageInfoMapper(
@@ -211,14 +212,14 @@ class AppLcmServiceTest(unittest.TestCase):
                 host_ip=self.host_ip,
                 image_name='image002',
                 status='killed',
-                app_package_id='pkgquery001',
+                app_package_id='pkgQuery001',
                 tenant_id='abcabc'
             )
             commit()
         request = lcmservice_pb2.QueryPackageStatusRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
-            packageId='pkgquery001'
+            packageId='pkgQuery001'
         )
         response = self.app_lcm_service.queryPackageStatus(request, None)
         LOG.info(response.response)

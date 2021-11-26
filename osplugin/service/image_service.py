@@ -102,7 +102,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'msg': 'success'
         }
         if not request.imageId:
-            image_list = VmImageInfoMapper.find_many(host_ip, request.tenantId)
+            image_list = VmImageInfoMapper.find_many(host_ip=host_ip, tenant_id=request.tenantId)
             resp_data['data'] = []
             for image in image_list:
                 resp_data['data'].append({

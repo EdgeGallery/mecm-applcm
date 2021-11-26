@@ -122,7 +122,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.debug('unzip package')
             utils.unzip(parameters.tmp_package_file_path, app_package_path)
             pkg = CsarPkg(app_package_id, app_package_path)
-            pkg.check_image(host_ip, parameters.tenant_id)
+            pkg.check_image(host_ip, parameters.tenantId)
             pkg.translate()
             start_check_package_status(app_package_id, host_ip)
             resp.status = utils.SUCCESS
@@ -236,7 +236,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'parameters': parameters
         }
         LOG.debug('init heat client')
-        heat = create_heat_client(host_ip, parameter.tenant_id)
+        heat = create_heat_client(host_ip, parameter.tenantId)
         try:
             LOG.debug('发送创建stack请求')
             stack_resp = heat.stacks.create(**fields)
@@ -245,7 +245,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return resp
         AppInsMapper(app_instance_id=app_instance_id,
                      host_ip=host_ip,
-                     tenant_id=parameter.tenant_id,
+                     tenant_id=parameter.tenantId,
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
         commit()
@@ -477,7 +477,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.info('configFile is required')
             return res
 
-        config_path_dir = utils.RC_FILE_DIR + '/' + parameter.tenant_id
+        config_path_dir = utils.RC_FILE_DIR + '/' + parameter.tenantId
         if not utils.exists_path(config_path_dir):
             utils.create_dir(config_path_dir)
         config_path = config_path_dir + '/' + host_ip
@@ -485,7 +485,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         try:
             with open(config_path, 'wb') as new_file:
                 new_file.write(config_file)
-            openstack_utils.set_rc(host_ip, parameter.tenant_id)
+            openstack_utils.set_rc(host_ip, parameter.tenantId)
             res.status = utils.SUCCESS
         except Exception as exception:
             LOG.error(exception, exc_info=True)
