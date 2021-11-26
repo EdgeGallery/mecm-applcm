@@ -176,7 +176,7 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 		return
 	}
 
-		adapter, err := c.GetAdapter(clientIp, vim)
+	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
 	}
@@ -261,13 +261,13 @@ func (c *SecurityGroupController) DeleteSecurityGroupRules() {
 
 func ValidateBodyPara( securityGroupRules models.SecurityGroupRules, clientIp string) error {
 	err :=  util.ValidateUUID(securityGroupRules.Securitygroupid)
-    if err != nil {
-     return err
-    }
-     err = util.ValidateUUID(securityGroupRules.RemoteGroupID)
-     if err != nil {
-     return err
-   }
+	if err != nil {
+		return err
+	}
+	err = util.ValidateUUID(securityGroupRules.RemoteGroupID)
+	if err != nil {
+		return err
+	}
 	name, err := util.ValidateName(securityGroupRules.Direction, util.NameRegex)
 	if err != nil || !name {
 		return err
