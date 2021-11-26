@@ -21,6 +21,7 @@ import re
 from core.exceptions import PackageNotValid, OsConfigNotValid
 from core.log import logger
 
+from gnocchiclient.v1.client import Client as GnocchiClient
 from glanceclient.v2.client import Client as GlanceClient
 from heatclient.v1.client import Client as HeatClient
 from keystoneclient.v3.client import Client as KeystoneClient
@@ -110,7 +111,8 @@ def create_keystone_client(host_ip, tenant_id):
     Returns:
 
     """
-    return KeystoneClient(session=get_session(host_ip, tenant_id))
+    rc_data = get_rc(host_ip, tenant_id)
+    return KeystoneClient(session=get_session(host_ip, tenant_id), endpoint_override=rc_data.auth_url)
 
 
 def create_neutron_client(host_ip, tenant_id):
@@ -125,6 +127,23 @@ def create_neutron_client(host_ip, tenant_id):
     """
     rc_data = get_rc(host_ip, tenant_id)
     return NeutronClient(session=get_session(host_ip, tenant_id), endpoint_override=rc_data.neutron_url)
+
+
+def create_gnocchi_client(host_ip, tenant_id):
+    """
+
+    Args:
+        host_ip:
+        tenant_id:
+
+    Returns:
+
+    """
+    rc_data = get_rc(host_ip, tenant_id)
+    adapter_options = None
+    if rc_data.gnocchi_url:
+        adapter_options = {'endpoint_override': rc_data.gnocchi_url}
+    return GnocchiClient(session=get_session(host_ip, tenant_id), adapter_options=adapter_options)
 
 
 def get_image_by_name_checksum(name, checksum, host_ip, tenant_id):
@@ -163,6 +182,7 @@ class RCFile:
     nova_url = None
     glance_url = None
     neutron_url = None
+    gnocchi_url = None
 
     def __init__(self, rc_path):
         try:
@@ -195,6 +215,8 @@ class RCFile:
                         self.cinder_url = group2
                     elif group1 == 'NEUTRON_URL':
                         self.neutron_url = group2
+                    elif group1 == 'GNOCCHI_URL':
+                        self.gnocchi_url = group2
         except Exception as exception:
             logger.error(exception, exc_info=True)
             raise OsConfigNotValid()
