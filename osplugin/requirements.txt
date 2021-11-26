@@ -1,13 +1,17 @@
 cryptography==3.3.1
+
 grpcio==1.36.1
 grpcio-tools==1.36.1
+
 keystoneauth1~=4.3.0
 pony==0.7.14
 protobuf==3.15.3
 psycopg2-binary==2.8.6
 pyjwt==2.0.0
+
 python-glanceclient==3.2.2
 python-heatclient==2.3.0
+python-neutronclient==7.6.0
 python-novaclient==17.3.0
 python-keystoneclient==4.3.0
 

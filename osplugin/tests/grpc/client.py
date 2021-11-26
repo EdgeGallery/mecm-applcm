@@ -18,6 +18,7 @@
 
 import grpc
 from internal.lcmservice import lcmservice_pb2_grpc
+from internal.resourcemanager import resourcemanager_pb2_grpc
 
 
 def _get_secure_channel(options):
@@ -39,4 +40,11 @@ DEFAULT_OPTIONS = [
 channel = grpc.insecure_channel(target='127.0.0.1:8234', options=DEFAULT_OPTIONS)
 
 app_lcm_stub = lcmservice_pb2_grpc.AppLCMStub(channel)
-vm_image_stub = lcmservice_pb2_grpc.VmImageStub(channel)
+image_stub = resourcemanager_pb2_grpc.VmImageMangerStub(channel)
+flavor_stub = resourcemanager_pb2_grpc.FlavorManagerStub(channel)
+network_stub = resourcemanager_pb2_grpc.NetworkManagerStub(channel)
+security_group_stub = resourcemanager_pb2_grpc.SecurityGroupManagerStub(channel)
+server_stub = resourcemanager_pb2_grpc.VmManagerStub(channel)
+
+test_host_ip = '192.168.1.218'
+test_tenant_id = 'tenant01'

@@ -18,15 +18,19 @@
 # -*- coding: utf-8 -*-
 import json
 import time
+
+from glanceclient.exc import HTTPNotFound
 from pony.orm import db_session, commit
 
 import requests
+
+import config
 import utils
 from config import image_push_url, base_dir
 from core.log import logger
 from core.models import VmImageInfoMapper
 from core.openstack_utils import create_glance_client
-from task import upload_thread_pool, check_thread_pool, download_thread_pool
+from task import upload_thread_pool, check_thread_pool, download_thread_pool, exception_handler
 from requests_toolbelt import MultipartEncoder
 
 LOG = logger
@@ -42,7 +46,8 @@ def start_check_image_status(image_id, host_ip):
     Returns:
 
     """
-    check_thread_pool.submit(do_check_image_status, image_id, host_ip)
+    future = check_thread_pool.submit(do_check_image_status, image_id, host_ip)
+    future.add_done_callback(exception_handler)
 
 
 @db_session
@@ -97,6 +102,7 @@ def add_upload_image_task(image_id, host_ip, file_path):
 
     """
     future = upload_thread_pool.submit(do_upload_image, image_id, host_ip, file_path)
+    future.add_done_callback(exception_handler)
     start_check_image_status(image_id, host_ip)
     return future
 
@@ -112,7 +118,8 @@ def add_import_image_task(image_id, host_ip, uri):
     Returns:
 
     """
-    upload_thread_pool.submit(do_import_image, image_id, host_ip, uri)
+    future = upload_thread_pool.submit(do_import_image, image_id, host_ip, uri)
+    future.add_done_callback(exception_handler)
     start_check_image_status(image_id, host_ip)
 
 
@@ -126,7 +133,8 @@ def add_download_then_compress_image_task(image_id, host_ip):
     Returns:
 
     """
-    download_thread_pool.submit(do_download_then_compress_image, image_id, host_ip)
+    future = download_thread_pool.submit(do_download_then_compress_image, image_id, host_ip)
+    future.add_done_callback(exception_handler)
 
 
 def add_check_compress_image_task(image_id, host_ip):
@@ -139,7 +147,8 @@ def add_check_compress_image_task(image_id, host_ip):
     Returns:
 
     """
-    check_thread_pool.submit(do_check_compress_status, image_id, host_ip)
+    future = check_thread_pool.submit(do_check_compress_status, image_id, host_ip)
+    future.add_done_callback(exception_handler)
 
 
 def add_push_image_task(image_id, host_ip):
@@ -152,7 +161,8 @@ def add_push_image_task(image_id, host_ip):
     Returns:
 
     """
-    upload_thread_pool.submit(do_push_image, image_id, host_ip)
+    future = upload_thread_pool.submit(do_push_image, image_id, host_ip)
+    future.add_done_callback(exception_handler)
 
 
 @db_session
@@ -167,35 +177,30 @@ def do_check_image_status(image_id, host_ip):
 
     """
     time.sleep(5)
+    image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
+    if image_info is None:
+        return
+    if image_info.status == utils.KILLED:
+        return
     try:
-        image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-        if image_info is None:
-            return
-        if image_info.status == utils.KILLED:
-            return
         glance = create_glance_client(host_ip, image_info.tenant_id)
         image = glance.images.get(image_id)
-    except Exception as exception:
-        LOG.error(exception, exc_info=True)
-        return
-    if image is None:
+    except HTTPNotFound:
         image_info.delete()
         commit()
+        return
+    except Exception as exception:
+        LOG.error(exception, exc_info=True)
+        start_check_image_status(image_id, host_ip)
         return
 
     LOG.debug('now image status is %s', image['status'])
     if image['status'] == utils.ACTIVE:
         image_info.checksum = image['checksum']
         image_info.image_size = image['size']
-        if image_info.app_package_id is None or image_info.app_package_id == '':
-            image_info.status = utils.DOWNLOADING
-            commit()
-            LOG.debug('download created image to local')
-            add_download_then_compress_image_task(image_id, host_ip)
-        else:
-            LOG.debug('image in package %s', image_info.app_package_id)
-            image_info.status = utils.ACTIVE
-            commit()
+        image_info.status = utils.ACTIVE
+        commit()
+        add_download_then_compress_image_task(image_id, host_ip)
     elif image['status'] == utils.KILLED:
         image_info.status = utils.KILLED
         commit()
@@ -233,13 +238,14 @@ def do_import_image(image_id, host_ip, uri):
     """
     上传远端镜像到openstack
     """
+    LOG.info('start import image from %s', uri)
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
     glance = create_glance_client(host_ip, image_info.tenant_id)
     try:
-        LOG.debug('start upload image %s', image_id)
+        LOG.info('start upload image %s', image_id)
         with requests.get(uri, stream=True) as resp_stream:
             glance.images.upload(image_id=image_id, image_data=resp_stream.raw)
-        LOG.debug('finished upload image %s', image_id)
+        LOG.info('finished upload image %s', image_id)
     except Exception as exception:
         image_info.status = utils.KILLED
         commit()
@@ -258,8 +264,11 @@ def do_download_then_compress_image(image_id, host_ip):
 
     """
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.DOWNLOADING:
+    if image_info is None or image_info.status != utils.ACTIVE or image_info.compress_task_status != utils.WAITING:
         return
+
+    image_info.compress_task_status = utils.DOWNLOADING
+    commit()
 
     glance_client = create_glance_client(host_ip=host_ip, tenant_id=image_info.tenant_id)
     try:
@@ -287,17 +296,17 @@ def do_download_then_compress_image(image_id, host_ip):
         data = response.json()
         if response.status_code != 200:
             logger.error('compress image failed, cause: %s', data['msg'])
-            image_info.status = utils.KILLED
+            image_info.compress_task_status = utils.FAILURE
             commit()
             utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.img')
             return
 
-        image_info.status = utils.COMPRESSING
+        image_info.compress_task_status = utils.COMPRESSING
         image_info.compress_task_id = data['requestId']
         commit()
     except Exception as exception:
         logger.error(exception, exc_info=True)
-        image_info.status = utils.KILLED
+        image_info.compress_task_status = utils.FAILURE
         commit()
         utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.img')
         return
@@ -319,7 +328,7 @@ def do_check_compress_status(image_id, host_ip):
     time.sleep(5)
 
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.COMPRESSING:
+    if image_info is None or image_info.compress_task_status != utils.COMPRESSING:
         return
 
     try:
@@ -332,7 +341,7 @@ def do_check_compress_status(image_id, host_ip):
 
         if data['status'] == 0:
             logger.debug('image: %s compress finished, start push', image_id)
-            image_info.status = utils.PUSHING
+            image_info.compress_task_status = utils.PUSHING
             add_push_image_task(image_id, host_ip)
         elif data['status'] == 1:
             logger.debug('image: %s are compressing, rate %f', image_id, data['rate'])
@@ -340,7 +349,7 @@ def do_check_compress_status(image_id, host_ip):
             return
         else:
             logger.debug('image: %s compress failed, cause %s', image_id, data['msg'])
-            image_info.status = utils.KILLED
+            image_info.compress_task_status = utils.FAILURE
             utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.qcow2')
         commit()
         utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.img')
@@ -360,7 +369,7 @@ def do_push_image(image_id, host_ip):
 
     """
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.PUSHING:
+    if image_info is None or image_info.compress_task_status != utils.PUSHING:
         return
     try:
         data = MultipartEncoder({
@@ -377,17 +386,17 @@ def do_push_image(image_id, host_ip):
         response = requests.post(image_push_url, data=data, headers=req_headers)
         if response.status_code != 200:
             logger.error('developer response an error: %s', response.json())
-            image_info.status = utils.KILLED
+            image_info.compress_task_status = utils.FAILURE
             commit()
             return
 
         response_data = response.json()
-        image_info.compress_task_id = response_data['imageId']
-        image_info.status = utils.ACTIVE
+        image_info.remote_url = config.image_push_url + '/' + response_data['imageId']
+        image_info.compress_task_status = utils.SUCCESS
         commit()
     except Exception as exception:
         logger.error(exception, exc_info=True)
-        image_info.status = utils.KILLED
+        image_info.compress_task_status = utils.FAILURE
         commit()
     finally:
         utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.qcow2')

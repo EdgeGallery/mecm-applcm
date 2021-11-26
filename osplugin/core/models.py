@@ -16,7 +16,7 @@
 """
 # -*- coding: utf-8 -*-
 
-from pony.orm import PrimaryKey, Required, Optional, select
+from pony.orm import PrimaryKey, Required, Optional, select, raw_sql
 
 import config
 import utils
@@ -31,12 +31,14 @@ class BaseRequest:
     """
     基础请求参数
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
+    tenantId = None
 
     def __init__(self, request):
-        self.access_token = request.accessToken
-        self.host_ip = request.hostIp
+        self.accessToken = request.accessToken
+        self.hostIp = request.hostIp
+        self.tenantId = request.tenantId
 
     def get_access_token(self):
         """
@@ -44,7 +46,7 @@ class BaseRequest:
         Returns:
 
         """
-        return self.access_token
+        return self.accessToken
 
     def get_host_ip(self):
         """
@@ -52,17 +54,17 @@ class BaseRequest:
         Returns:
 
         """
-        return self.host_ip
+        return self.accessToken
 
 
 class UploadPackageRequest:
     """
     上传请求体封装
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
+    tenantId = None
     app_package_id = None
-    tenant_id = None
 
     def __init__(self, request_iterator):
         task_id = utils.gen_uuid()
@@ -72,13 +74,13 @@ class UploadPackageRequest:
         with open(self.tmp_package_file_path, 'ab') as file:
             for request in request_iterator:
                 if request.accessToken:
-                    self.access_token = request.accessToken
+                    self.accessToken = request.accessToken
                 elif request.appPackageId:
                     self.app_package_id = request.appPackageId
                 elif request.hostIp:
-                    self.host_ip = request.hostIp
+                    self.hostIp = request.hostIp
                 elif request.tenantId:
-                    self.tenant_id = request.tenantId
+                    self.tenantId = request.tenantId
                 elif request.package:
                     file.write(request.package)
 
@@ -102,22 +104,22 @@ class InstantiateRequest:
     """
     实例化请求体封装
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
+    tenantId = None
     app_instance_id = None
     app_package_id = None
     app_package_path = None
-    tenant_id = None
     parameters = None
     ak_sk_lcm_gen = None
 
     def __init__(self, request):
-        self.access_token = request.accessToken
+        self.accessToken = request.accessToken
+        self.hostIp = request.hostIp
+        self.tenantId = request.tenantId
         self.app_instance_id = request.appInstanceId
-        self.host_ip = request.hostIp
         self.app_package_id = request.appPackageId
-        self.tenant_id = request.tenantId
-        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER\
+        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER \
             .format(base_dir=config.base_dir, host_ip=request.hostIp,
                     app_package_id=request.appPackageId)
 
@@ -138,28 +140,28 @@ class InstantiateRequest:
         Returns:
 
         """
-        return self.host_ip
+        return self.hostIp
 
 
 class UploadCfgRequest:
     """
     配置上传请求体封装
     """
-    access_token = None
-    host_ip = None
+    accessToken = None
+    hostIp = None
+    tenantId = None
     config_file = None
-    tenant_id = None
 
     def __init__(self, request_iterator):
         for request in request_iterator:
             if request.accessToken:
-                self.access_token = request.accessToken
+                self.accessToken = request.accessToken
             elif request.hostIp:
-                self.host_ip = request.hostIp
+                self.hostIp = request.hostIp
             elif request.configFile:
                 self.config_file = request.configFile
             elif request.tenantId:
-                self.tenant_id = request.tenantId
+                self.tenantId = request.tenantId
 
     def get_config_file(self):
         """
@@ -175,7 +177,7 @@ class UploadCfgRequest:
         Returns:
 
         """
-        return self.host_ip
+        return self.hostIp
 
 
 class AppInsMapper(db.Entity):
@@ -188,7 +190,7 @@ class AppInsMapper(db.Entity):
     tenant_id = Required(str, max_len=64)
     stack_id = Required(str, max_len=64, unique=True)
     operational_status = Required(str, max_len=128)
-    operation_info = Optional(str, max_len=256, nullable=True)
+    operation_info = Optional(str, nullable=True)
 
     def get_table_name(self):
         """
@@ -217,6 +219,22 @@ class AppPkgMapper(db.Entity):
     status = Required(str, max_len=10)
 
 
+def query(x, **kwargs):
+    """
+    构造查询语句
+    Args:
+        x:
+        **kwargs:
+
+    Returns:
+
+    """
+    for (key, value) in kwargs.items():
+        if not hasattr(x, key) or not getattr(x, key) == value:
+            return False
+    return True
+
+
 class VmImageInfoMapper(db.Entity):
     """
     t_vm_image_info表映射
@@ -226,11 +244,15 @@ class VmImageInfoMapper(db.Entity):
     host_ip = Required(str, max_len=15)
     image_name = Required(str, max_len=64)
     status = Required(str, max_len=20)
-    tenant_id = Optional(str, max_len=64)
+    tenant_id = Required(str, max_len=64)
+
+    image_size = Optional(int, size=64)
+    checksum = Optional(str, max_len=64)
+
     app_package_id = Optional(str, max_len=64)
-    image_size = Optional(int, size=64, nullable=True)
-    checksum = Optional(str, max_len=64, nullable=True)
-    compress_task_id = Optional(str, max_len=64, nullable=True)
+    compress_task_id = Optional(str, max_len=64)
+    compress_task_status = Optional(str, max_len=20)
+    remote_url = Optional(str)
 
     def get_table_name(self):
         """
@@ -241,14 +263,15 @@ class VmImageInfoMapper(db.Entity):
         return self._table_
 
     @classmethod
-    def find_many(cls, app_package_id, host_ip):
+    def find_many(cls, **kwargs):
         """
         根据查询条件查询多个实例对象
-        :param app_package_id: 查询条件
-        :param host_ip:
         :return:
         """
-        return select(x for x in cls if x.app_package_id == app_package_id and x.host_ip == host_ip)
+        result = select(x for x in cls)
+        for (key, value) in kwargs.items():
+            result = result.filter(lambda x: getattr(x, key) == value)
+        return result
 
 
 db.generate_mapping(create_tables=True)

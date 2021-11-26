@@ -15,19 +15,26 @@
 
 """
 # -*- coding: utf-8 -*-
-from internal.lcmservice import lcmservice_pb2
-from tests.grpc.client import vm_image_stub
+
+from internal.resourcemanager.resourcemanager_pb2 import CreateFlavorRequest
+from tests.grpc.client import flavor_stub, test_host_ip, test_tenant_id
 from tests.resources.gen_token import test_access_token
 
-
-request = lcmservice_pb2.CreateVmImageRequest(
+create_flavor_request = CreateFlavorRequest(
     accessToken=test_access_token,
-    tenantId='abcabc',
-    hostIp='10.10.9.75',
-    appInstanceId='appIns001',
-    vmId='447a9e1b-3ca8-49c3-9edd-d1d63809dede')
-
+    tenantId=test_tenant_id,
+    hostIp=test_host_ip,
+    flavor=CreateFlavorRequest.Flavor(
+        name='test-create-flavor',
+        vcpus=1,
+        ram=1024,
+        disk=20,
+        extraSpecs={
+            'x86': 'true'
+        }
+    )
+)
 
 if __name__ == '__main__':
-    response = vm_image_stub.createVmImage(request)
-    print(response)
+    resp = flavor_stub.createFlavor(create_flavor_request)
+    print(resp)

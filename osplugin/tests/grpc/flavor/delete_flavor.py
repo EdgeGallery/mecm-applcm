@@ -14,27 +14,19 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
-from concurrent import futures
 
-from core.log import logger
+from internal.resourcemanager.resourcemanager_pb2 import DeleteFlavorRequest
+from tests.grpc.client import flavor_stub, test_host_ip, test_tenant_id
+from tests.resources.gen_token import test_access_token
 
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
-
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
+delete_flavor_request = DeleteFlavorRequest(
+    accessToken=test_access_token,
+    tenantId=test_tenant_id,
+    hostIp=test_host_ip,
+    flavorId='b8921147-8fbb-4c60-93d8-b42504d23bca'
 )
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
-
-
-def exception_handler(worker):
-    worker_exception = worker.exception()
-    if worker_exception:
-        logger.exception("Worker return exception: {}".format(worker_exception))
+if __name__ == '__main__':
+    resp = flavor_stub.deleteFlavor(delete_flavor_request)
+    print(resp)

@@ -24,6 +24,7 @@ from core.log import logger
 from glanceclient.v2.client import Client as GlanceClient
 from heatclient.v1.client import Client as HeatClient
 from keystoneclient.v3.client import Client as KeystoneClient
+from neutronclient.v2_0.client import Client as NeutronClient
 from keystoneauth1 import identity, session
 from novaclient import client as nova_client
 
@@ -112,6 +113,20 @@ def create_keystone_client(host_ip, tenant_id):
     return KeystoneClient(session=get_session(host_ip, tenant_id))
 
 
+def create_neutron_client(host_ip, tenant_id):
+    """
+
+    Args:
+        host_ip:
+        tenant_id:
+
+    Returns:
+
+    """
+    rc_data = get_rc(host_ip, tenant_id)
+    return NeutronClient(session=get_session(host_ip, tenant_id), endpoint_override=rc_data.neutron_url)
+
+
 def get_image_by_name_checksum(name, checksum, host_ip, tenant_id):
     """
     根据名称和校验和获取镜像
@@ -147,6 +162,7 @@ class RCFile:
     heat_url = None
     nova_url = None
     glance_url = None
+    neutron_url = None
 
     def __init__(self, rc_path):
         try:
@@ -177,6 +193,8 @@ class RCFile:
                         self.nova_url = group2
                     elif group1 == 'CINDER_URL':
                         self.cinder_url = group2
+                    elif group1 == 'NEUTRON_URL':
+                        self.neutron_url = group2
         except Exception as exception:
             logger.error(exception, exc_info=True)
             raise OsConfigNotValid()

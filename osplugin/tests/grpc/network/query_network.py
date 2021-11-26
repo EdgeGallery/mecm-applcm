@@ -14,27 +14,20 @@
 # limitations under the License.
 
 """
-
 # -*- coding: utf-8 -*-
-from concurrent import futures
+from internal.resourcemanager.resourcemanager_pb2 import QueryNetworkRequest
+from tests.grpc.client import network_stub, test_host_ip, test_tenant_id
+from tests.resources.gen_token import test_access_token
 
-from core.log import logger
-
-upload_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='UploadTaskExecutor')
-
-download_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=1,
-    thread_name_prefix='DownloadTaskExecutor'
+query_network_request = QueryNetworkRequest(
+    accessToken=test_access_token,
+    hostIp=test_host_ip,
+    tenantId=test_tenant_id
 )
 
-check_thread_pool = futures.ThreadPoolExecutor(
-    max_workers=100,
-    thread_name_prefix='CheckStatusExecutor')
-
-
-def exception_handler(worker):
-    worker_exception = worker.exception()
-    if worker_exception:
-        logger.exception("Worker return exception: {}".format(worker_exception))
+if __name__ == '__main__':
+    resp = network_stub.queryNetwork(query_network_request)
+    print(resp)
+    query_network_request.networkId = '32b0f4fd-66ba-44b4-8a7e-ccdb0d7dc61e'
+    resp = network_stub.queryNetwork(query_network_request)
+    print(resp)

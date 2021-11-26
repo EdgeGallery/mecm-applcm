@@ -2,9 +2,12 @@
 
 ## grpc 代码生成
 
-```
+```shell
 python3 -m grpc_tools.protoc --python_out=internal/lcmservice --grpc_python_out=internal/lcmservice -I internal/lcmservice lcmservice.proto
+python3 -m grpc_tools.protoc --python_out=internal/resourcemanager --grpc_python_out=internal/resourcemanager -I internal/resourcemanager resourcemanager.proto
+
 sed -i 's/import lcmservice_pb2 as lcmservice__pb2/import internal.lcmservice.lcmservice_pb2 as lcmservice__pb2/g' internal/lcmservice/lcmservice_pb2_grpc.py
+sed -i 's/import resourcemanager_pb2 as resourcemanager__pb2/import internal.resourcemanager.resourcemanager as resourcemanager__pb2/g' internal/resourcemanager/resourcemanager_pb2_grpc.py
 ```
 
 ## 依赖
