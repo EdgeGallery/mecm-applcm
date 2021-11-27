@@ -49,7 +49,7 @@ func (c *VmController) CreateServer() {
 	var server models.Server
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &server)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		c.writeErrorResponse(err.Error(), util.BadRequest)
 		return
 	}
 	err = ValidateBody(server, clientIp)

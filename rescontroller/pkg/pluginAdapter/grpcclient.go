@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	resservice "rescontroller/internal/resservice"
+	resservice "rescontroller/internal/internal_resourcemanager"
 	"rescontroller/models"
 	"rescontroller/util"
 )
@@ -108,7 +108,7 @@ func (c *ClientGRPC) CreateFlavor(ctx context.Context, flavor models.Flavor, hos
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query flavor
@@ -140,7 +140,7 @@ func (c *ClientGRPC) DeleteFlavor(ctx context.Context, hostIp, accessToken, tena
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create security group
@@ -160,7 +160,7 @@ func (c *ClientGRPC) CreateSecurityGroup(ctx context.Context, securityGroup mode
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query security group
@@ -192,7 +192,7 @@ func (c *ClientGRPC) DeleteSecurityGroup(ctx context.Context, hostIp, accessToke
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create security group rules
@@ -219,7 +219,7 @@ func (c *ClientGRPC) CreateSecurityGroupRules(ctx context.Context, securityGroup
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query security group rules
@@ -251,7 +251,7 @@ func (c *ClientGRPC) DeleteSecurityGroupRule(ctx context.Context, hostIp, access
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query images
@@ -283,7 +283,7 @@ func (c *ClientGRPC) DeleteImage(ctx context.Context, hostIp, accessToken, tenan
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create Image
@@ -325,7 +325,7 @@ func (c *ClientGRPC) ImportImage(ctx context.Context, importImage models.ImportI
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create Server
@@ -358,7 +358,7 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query Server
@@ -417,7 +417,7 @@ func (c *ClientGRPC) DeleteServer(ctx context.Context, hostIp, accessToken, tena
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create network
@@ -425,9 +425,7 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 	reqNetwork := &resservice.CreateNetworkRequest_Network{
 		Name:                    network.Name,
 		AdminStateUp:            network.Adminstateup,
-		DnsDomain:               network.Dnsdomain,
 		Mtu:                     network.Mtu,
-		PortSecurityEnabled:     network.Portsecurityenabled,
 		ProviderNetworkType:     network.Providernetworktype,
 		ProviderPhysicalNetwork: network.Providerphysicalnetwork,
 		ProviderSegmentationId:  network.Providersegmentationid,
@@ -435,7 +433,6 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 		RouterExternal:          network.Routerexternal,
 		Segments:                network.Segments,
 		Shared:                  network.Shared,
-		VlanTransparent:         network.Vlantransparent,
 		IsDefault:               network.Isdefault,
 		Subnets:                 network.Subnets,
 	}
@@ -449,7 +446,7 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query network
@@ -479,5 +476,5 @@ func (c *ClientGRPC) DeleteNetwork(ctx context.Context, hostIp, accessToken, ten
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
