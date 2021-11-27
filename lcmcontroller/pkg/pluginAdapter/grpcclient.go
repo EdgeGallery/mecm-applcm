@@ -264,7 +264,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, tenantId string, multipar
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Error("received upstream status response")
+		log.Error("received upstream status response", err.Error())
 		return util.Failure, err
 	}
 	return res.GetStatus(), err
