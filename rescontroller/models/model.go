@@ -18,7 +18,7 @@ package models
 
 import (
 	"github.com/astaxie/beego/orm"
-	resservice "rescontroller/internal/resservice"
+	"rescontroller/internal/internal_resourcemanager"
 	"time"
 )
 
@@ -143,7 +143,7 @@ type Server struct {
 	Securitygroups   []struct {
 		Name string `json:"name"`
 	} `json:"securityGroups"`
-	Network []*resservice.CreateVmRequest_Server_Network `json:"netWork"`
+	Network []*internal_resourcemanager.CreateVmRequest_Server_Network `json:"netWork"`
 }
 
 // Operate Server
@@ -158,19 +158,16 @@ type OperateServer struct {
 
 // Network info
 type Network struct {
-	Name                    string   `json:"name"`
-	Adminstateup            bool     `json:"adminStateUp"`
-	Dnsdomain               string   `json:"dnsDomain"`
-	Mtu                     int32    `json:"mtu"`
-	Portsecurityenabled     bool     `json:"portSecurityEnabled"`
-	Providernetworktype     string   `json:"providerNetworkType"`
-	Providerphysicalnetwork string   `json:"providerPhysicalNetwork"`
-	Providersegmentationid  int32    `json:"providerSegmentationId"`
-	Qospolicyid             string   `json:"qosPolicyId"`
-	Routerexternal          bool     `json:"routerExternal"`
-	Segments                []*resservice.CreateNetworkRequest_Network_Segment `json:"segments"`
-	Shared                  bool     `json:"shared"`
-	Vlantransparent         bool     `json:"vlanTransparent"`
-	Isdefault               bool     `json:"isDefault"`
-	Subnets                 []*resservice.CreateNetworkRequest_Network_Subnet `json:"subnets"`
+	Name                    string                                                           `json:"name"`
+	Adminstateup            bool                                                             `json:"adminStateUp"`
+	Mtu                     int32                                                            `json:"mtu"`
+	Providernetworktype     string                                                           `json:"providerNetworkType"`
+	Providerphysicalnetwork string                                                           `json:"providerPhysicalNetwork"`
+	Providersegmentationid  int32                                                            `json:"providerSegmentationId"`
+	Qospolicyid             string                                                           `json:"qosPolicyId"`
+	Routerexternal          bool                                                             `json:"routerExternal"`
+	Segments                []*internal_resourcemanager.CreateNetworkRequest_Network_Segment `json:"segments"`
+	Shared                  bool                                                             `json:"shared"`
+	Isdefault               bool                                                             `json:"isDefault"`
+	Subnets                 []*internal_resourcemanager.CreateNetworkRequest_Network_Subnet  `json:"subnets"`
 }

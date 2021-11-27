@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package resservice;
+package internal.resourcemanager;
 
 // resource manager entity start
 
@@ -56,7 +56,7 @@ message DeleteVmImageRequest {
 }
 
 message DeleteVmImageResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message ImportVmImageRequest {
@@ -68,7 +68,7 @@ message ImportVmImageRequest {
 }
 
 message ImportVmImageResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message CreateVmRequest {
@@ -93,7 +93,7 @@ message CreateVmRequest {
 }
 
 message CreateVmResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QueryVmRequest {
@@ -136,7 +136,7 @@ message DeleteVmRequest {
 }
 
 message DeleteVmResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message CreateFlavorRequest {
@@ -155,7 +155,7 @@ message CreateFlavorRequest {
 }
 
 message CreateFlavorResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteFlavorRequest {
@@ -166,7 +166,7 @@ message DeleteFlavorRequest {
 }
 
 message DeleteFlavorResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QueryFlavorRequest {
@@ -187,24 +187,20 @@ message CreateNetworkRequest {
   message Network {
     string name = 1;
     bool adminStateUp = 2;
-    string dnsDomain = 3;
-    int32 mtu = 4;
-    bool portSecurityEnabled = 5;
-    string providerNetworkType = 6;
-    string providerPhysicalNetwork = 7;
-    int32 providerSegmentationId = 8;
-    string qosPolicyId = 9;
-    bool routerExternal = 10;
+    int32 mtu = 3;
+    string providerNetworkType = 4;
+    string providerPhysicalNetwork = 5;
+    int32 providerSegmentationId = 6;
+    string qosPolicyId = 7;
+    bool routerExternal = 8;
     message Segment {
       int32 providerSegmentationId = 1;
       string providerPhysicalNetwork = 2;
       string providerNetworkType = 3;
     }
-    repeated Segment segments = 11;
-    bool shared = 12;
-    bool vlanTransparent = 13;
-    bool isDefault = 14;
-    string tenantId = 15;
+    repeated Segment segments = 9;
+    bool shared = 10;
+    bool isDefault = 11;
     message Subnet {
       string name = 1;
       bool enableDhcp = 2;
@@ -220,13 +216,13 @@ message CreateNetworkRequest {
       string ipv6AddressMode = 8;
       string ipv6RaMode = 9;
     }
-    repeated Subnet subnets = 16;
+    repeated Subnet subnets = 12;
   }
   Network network = 4;
 }
 
 message CreateNetworkResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteNetworkRequest {
@@ -237,7 +233,7 @@ message DeleteNetworkRequest {
 }
 
 message DeleteNetworkResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QueryNetworkRequest {
@@ -262,7 +258,7 @@ message CreateSecurityGroupRequest {
 }
 
 message CreateSecurityGroupResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteSecurityGroupRequest {
@@ -273,7 +269,7 @@ message DeleteSecurityGroupRequest {
 }
 
 message DeleteSecurityGroupResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message QuerySecurityGroupRequest {
@@ -305,7 +301,7 @@ message CreateSecurityGroupRuleRequest {
 }
 
 message CreateSecurityGroupRuleResponse {
-  string response = 1;
+  string status = 1;
 }
 
 message DeleteSecurityGroupRuleRequest {
@@ -316,7 +312,7 @@ message DeleteSecurityGroupRuleRequest {
 }
 
 message DeleteSecurityGroupRuleResponse {
-  string response = 4;
+  string status = 4;
 }
 
 message QuerySecurityGroupRuleRequest {

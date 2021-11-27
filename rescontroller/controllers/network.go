@@ -62,7 +62,7 @@ func (c *NetworkController) CreateNetwork() {
 	var network models.Network
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &network)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		c.writeErrorResponse(err.Error(), util.BadRequest)
 		return
 	}
 	err = c.ValidateBodyParams(network, clientIp)
