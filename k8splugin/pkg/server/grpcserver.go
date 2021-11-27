@@ -27,7 +27,7 @@ import (
 	"io"
 	"io/ioutil"
 	"k8splugin/conf"
-	"k8splugin/internal/lcmservice"
+	"k8splugin/internal/internal_lcmservice"
 	"k8splugin/models"
 	"k8splugin/pgdb"
 	"k8splugin/pkg/adapter"
@@ -126,7 +126,7 @@ func (s *ServerGRPC) Listen() (err error) {
 		s.server = grpc.NewServer(grpc.InTapHandle(NewRateLimit().Handler))
 	}
 
-	lcmservice.RegisterAppLCMServer(s.server, s)
+	internal_lcmservice.RegisterAppLCMServer(s.server, s)
 	log.Infof("Server registered with GRPC")
 
 	// Server start serving
@@ -148,9 +148,9 @@ func (t *RateLimit) Handler(ctx context.Context, info *tap.Info) (context.Contex
 }
 
 // Pod Description
-func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.WorkloadEventsRequest) (resp *lcmservice.WorkloadEventsResponse, err error) {
+func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *internal_lcmservice.WorkloadEventsRequest) (resp *internal_lcmservice.WorkloadEventsResponse, err error) {
 
-	resp = &lcmservice.WorkloadEventsResponse{
+	resp = &internal_lcmservice.WorkloadEventsResponse{
 		Response: util.Failure,
 	}
 
@@ -181,7 +181,7 @@ func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.Workloa
 	if readErr != nil {
 		log.Error(util.AppRecordDoesNotExit)
 		s.displayResponseMsg(ctx, util.Query, util.AppRecordDoesNotExit)
- 		return resp, err
+		return resp, err
 	}
 
 	// Query Chart
@@ -190,7 +190,7 @@ func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.Workloa
 		s.displayResponseMsg(ctx, util.WorkloadEvents, "failed to get pod describe information")
 		return resp, err
 	}
-	resp = &lcmservice.WorkloadEventsResponse{
+	resp = &internal_lcmservice.WorkloadEventsResponse{
 		Response: r,
 	}
 	s.handleLoggingForSuccess(ctx, util.WorkloadEvents, "Pod description is successful")
@@ -198,9 +198,9 @@ func (s *ServerGRPC) WorkloadEvents(ctx context.Context, req *lcmservice.Workloa
 }
 
 // Query application
-func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
+func (s *ServerGRPC) Query(ctx context.Context, req *internal_lcmservice.QueryRequest) (resp *internal_lcmservice.QueryResponse, err error) {
 
-	resp = &lcmservice.QueryResponse{
+	resp = &internal_lcmservice.QueryResponse{
 		Response: util.Failure,
 	}
 
@@ -241,7 +241,7 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 		s.displayResponseMsg(ctx, util.Query, "chart not found for workloadId")
 		return resp, err
 	}
-	resp = &lcmservice.QueryResponse{
+	resp = &internal_lcmservice.QueryResponse{
 		Response: r,
 	}
 	s.handleLoggingForSuccess(ctx, util.Query, "Query pod statistics is successful")
@@ -249,9 +249,9 @@ func (s *ServerGRPC) Query(ctx context.Context, req *lcmservice.QueryRequest) (r
 }
 
 // QueryKPI application
-func (s *ServerGRPC) QueryKPI(ctx context.Context, req *lcmservice.QueryKPIRequest) (resp *lcmservice.QueryKPIResponse, err error) {
+func (s *ServerGRPC) QueryKPI(ctx context.Context, req *internal_lcmservice.QueryKPIRequest) (resp *internal_lcmservice.QueryKPIResponse, err error) {
 
-	resp = &lcmservice.QueryKPIResponse{
+	resp = &internal_lcmservice.QueryKPIResponse{
 		Response: util.Failure,
 	}
 
@@ -281,7 +281,7 @@ func (s *ServerGRPC) QueryKPI(ctx context.Context, req *lcmservice.QueryKPIReque
 		s.displayResponseMsg(ctx, util.QueryKPI, "Query kpi statistics is failed")
 		return resp, err
 	}
-	resp = &lcmservice.QueryKPIResponse{
+	resp = &internal_lcmservice.QueryKPIResponse{
 		Response: r,
 	}
 	s.handleLoggingForSuccess(ctx, util.QueryKPI, "Query kpi statistics is successful")
@@ -290,9 +290,9 @@ func (s *ServerGRPC) QueryKPI(ctx context.Context, req *lcmservice.QueryKPIReque
 
 // Terminate application
 func (s *ServerGRPC) Terminate(ctx context.Context,
-	req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
+	req *internal_lcmservice.TerminateRequest) (resp *internal_lcmservice.TerminateResponse, err error) {
 
-	resp = &lcmservice.TerminateResponse{
+	resp = &internal_lcmservice.TerminateResponse{
 		Status: util.Failure,
 	}
 
@@ -336,7 +336,7 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 		s.displayResponseMsg(ctx, util.Terminate, "failed to delete app info record from database")
 		return resp, err
 	}
-	resp = &lcmservice.TerminateResponse{
+	resp = &internal_lcmservice.TerminateResponse{
 		Status: util.Success,
 	}
 
@@ -347,9 +347,9 @@ func (s *ServerGRPC) Terminate(ctx context.Context,
 
 
 func (s *ServerGRPC) Instantiate(ctx context.Context,
-	req *lcmservice.InstantiateRequest) (resp *lcmservice.InstantiateResponse, err error) {
+	req *internal_lcmservice.InstantiateRequest) (resp *internal_lcmservice.InstantiateResponse, err error) {
 
-	resp = &lcmservice.InstantiateResponse{
+	resp = &internal_lcmservice.InstantiateResponse{
 		Status: util.Failure,
 	}
 
@@ -399,8 +399,8 @@ func (s *ServerGRPC) Instantiate(ctx context.Context,
 }
 
 // Upload file configuration
-func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (err error) {
-	var res lcmservice.UploadCfgResponse
+func (s *ServerGRPC) UploadConfig(stream internal_lcmservice.AppLCM_UploadConfigServer) (err error) {
+	var res internal_lcmservice.UploadCfgResponse
 	res.Status = util.Failure
 
 	ctx := stream.Context()
@@ -461,9 +461,9 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 
 // Remove file configuration
 func (s *ServerGRPC) RemoveConfig(ctx context.Context,
-	request *lcmservice.RemoveCfgRequest) (*lcmservice.RemoveCfgResponse, error) {
+	request *internal_lcmservice.RemoveCfgRequest) (*internal_lcmservice.RemoveCfgResponse, error) {
 
-	resp := &lcmservice.RemoveCfgResponse{
+	resp := &internal_lcmservice.RemoveCfgResponse{
 		Status: util.Failure,
 	}
 
@@ -492,7 +492,7 @@ func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 		return resp, err
 	}
 
-	resp = &lcmservice.RemoveCfgResponse{
+	resp = &internal_lcmservice.RemoveCfgResponse{
 		Status: util.Success,
 	}
 	s.handleLoggingForSuccess(ctx, util.UploadConfig, "Remove config is successful")
@@ -500,7 +500,7 @@ func (s *ServerGRPC) RemoveConfig(ctx context.Context,
 }
 
 // Validate input parameters for remove config
-func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *lcmservice.RemoveCfgRequest) (hostIp string,
+func (s *ServerGRPC) validateInputParamsForRemoveCfg(request *internal_lcmservice.RemoveCfgRequest) (hostIp string,
 	tenantId string,err error) {
 	accessToken := request.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
@@ -547,7 +547,7 @@ func (s *ServerGRPC) logError(err error) error {
 
 // Validate input parameters for termination
 func (s *ServerGRPC) validateInputParamsForTerm(
-	req *lcmservice.TerminateRequest) (tenantId string, hostIp string, appInsId string, err error) {
+	req *internal_lcmservice.TerminateRequest) (tenantId string, hostIp string, appInsId string, err error) {
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
@@ -582,7 +582,7 @@ func (s *ServerGRPC) validateInputParamsForTerm(
 
 // Validate input parameters for termination
 func (s *ServerGRPC) validateInputParamsForInstantiate(
-	req *lcmservice.InstantiateRequest) (tenantId string, packageId string, hostIp string, appInsId string, ak string, sk string, err error) {
+	req *internal_lcmservice.InstantiateRequest) (tenantId string, packageId string, hostIp string, appInsId string, ak string, sk string, err error) {
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
@@ -639,7 +639,7 @@ func (s *ServerGRPC) validateInputParamsForInstantiate(
 
 // Validate input parameters for upload configuration
 func (s *ServerGRPC) validateInputParamsForUploadCfg(
-	stream lcmservice.AppLCM_UploadConfigServer) (hostIp string, tenantId string, err error) {
+	stream internal_lcmservice.AppLCM_UploadConfigServer) (hostIp string, tenantId string, err error) {
 	// Receive metadata which is accesstoken
 	req, err := stream.Recv()
 	if err != nil {
@@ -687,7 +687,7 @@ func (s *ServerGRPC) validateInputParamsForUploadCfg(
 
 // Validate input parameters for pod describe
 func (s *ServerGRPC) validateInputParamsForPodDesc(
-	req *lcmservice.WorkloadEventsRequest) (hostIp string, podName string,tenantId string, err error) {
+	req *internal_lcmservice.WorkloadEventsRequest) (hostIp string, podName string,tenantId string, err error) {
 
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole, util.MecmGuestRole})
@@ -718,7 +718,7 @@ func (s *ServerGRPC) validateInputParamsForPodDesc(
 
 // Validate input parameters for Query
 func (s *ServerGRPC) validateInputParamsForQuery(
-	req *lcmservice.QueryRequest) (tenantId string, hostIp string, appInsId string, err error) {
+	req *internal_lcmservice.QueryRequest) (tenantId string, hostIp string, appInsId string, err error) {
 
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
@@ -749,7 +749,7 @@ func (s *ServerGRPC) validateInputParamsForQuery(
 
 // Validate input parameters for Query kpi
 func (s *ServerGRPC) validateInputParamsForQueryKPI(
-	req *lcmservice.QueryKPIRequest) (tenantId string, hostIp string, err error) {
+	req *internal_lcmservice.QueryKPIRequest) (tenantId string, hostIp string, err error) {
 
 	accessToken := req.GetAccessToken()
 	err = util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
@@ -772,7 +772,7 @@ func (s *ServerGRPC) validateInputParamsForQueryKPI(
 }
 
 // Get upload configuration file
-func (s *ServerGRPC) getUploadConfigFile(stream lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error) {
+func (s *ServerGRPC) getUploadConfigFile(stream internal_lcmservice.AppLCM_UploadConfigServer) (but bytes.Buffer, err error) {
 	// Receive upload config file
 	file := bytes.Buffer{}
 	for {
@@ -913,8 +913,8 @@ func (s *ServerGRPC) getClientAddress(ctx context.Context) (remoteIp string, err
 }
 
 // Send upload config response
-func sendUploadCfgResponse(stream lcmservice.AppLCM_UploadConfigServer,
-	res *lcmservice.UploadCfgResponse) {
+func sendUploadCfgResponse(stream internal_lcmservice.AppLCM_UploadConfigServer,
+	res *internal_lcmservice.UploadCfgResponse) {
 	err := stream.SendAndClose(res)
 	if err != nil {
 		log.Errorf("cannot send response: %v", err)
@@ -923,8 +923,8 @@ func sendUploadCfgResponse(stream lcmservice.AppLCM_UploadConfigServer,
 }
 
 // Upload file configuration
-func (s *ServerGRPC) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer) (err error) {
-	var res lcmservice.UploadPackageResponse
+func (s *ServerGRPC) UploadPackage(stream internal_lcmservice.AppLCM_UploadPackageServer) (err error) {
+	var res internal_lcmservice.UploadPackageResponse
 	res.Status = util.Failure
 
 	ctx := stream.Context()
@@ -1012,8 +1012,8 @@ func (s *ServerGRPC) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer)
 }
 
 // Send upload config response
-func sendUploadPackageResponse(stream lcmservice.AppLCM_UploadPackageServer,
-	res *lcmservice.UploadPackageResponse) {
+func sendUploadPackageResponse(stream internal_lcmservice.AppLCM_UploadPackageServer,
+	res *internal_lcmservice.UploadPackageResponse) {
 	err := stream.SendAndClose(res)
 	if err != nil {
 		log.Errorf("cannot send response: %v", err)
@@ -1023,7 +1023,7 @@ func sendUploadPackageResponse(stream lcmservice.AppLCM_UploadPackageServer,
 
 // Validate input parameters for upload configuration
 func (s *ServerGRPC) validateInputParamsForUploadPackage(
-	stream lcmservice.AppLCM_UploadPackageServer) (hostIp, tenantId, packageId string, err error) {
+	stream internal_lcmservice.AppLCM_UploadPackageServer) (hostIp, tenantId, packageId string, err error) {
 	// Receive metadata which is accesstoken
 	req, err := stream.Recv()
 	if err != nil {
@@ -1081,7 +1081,7 @@ func (s *ServerGRPC) validateInputParamsForUploadPackage(
 }
 
 // Get upload package file
-func (s *ServerGRPC) getUploadPackageFile(stream lcmservice.AppLCM_UploadPackageServer) (but bytes.Buffer, err error) {
+func (s *ServerGRPC) getUploadPackageFile(stream internal_lcmservice.AppLCM_UploadPackageServer) (but bytes.Buffer, err error) {
 	// Receive upload package file
 	file := bytes.Buffer{}
 	for {
@@ -1114,9 +1114,9 @@ func (s *ServerGRPC) getUploadPackageFile(stream lcmservice.AppLCM_UploadPackage
 
 // Delete application package
 func (s *ServerGRPC) DeletePackage(ctx context.Context,
-	request *lcmservice.DeletePackageRequest) (*lcmservice.DeletePackageResponse, error) {
+	request *internal_lcmservice.DeletePackageRequest) (*internal_lcmservice.DeletePackageResponse, error) {
 
-	resp := &lcmservice.DeletePackageResponse{
+	resp := &internal_lcmservice.DeletePackageResponse{
 		Status: util.Failure,
 	}
 
@@ -1155,8 +1155,8 @@ func (s *ServerGRPC) DeletePackage(ctx context.Context,
 		s.displayResponseMsg(ctx, util.DeletePackage, util.FailedToDelAppPkg)
 		return resp, nil
 	}
-	
-	resp = &lcmservice.DeletePackageResponse{
+
+	resp = &internal_lcmservice.DeletePackageResponse{
 		Status: util.Success,
 	}
 	s.handleLoggingForSuccess(ctx, util.DeletePackage, "Deleted application package successfully")
@@ -1165,9 +1165,9 @@ func (s *ServerGRPC) DeletePackage(ctx context.Context,
 
 // Upload package status
 func (s *ServerGRPC) QueryPackageStatus(ctx context.Context,
-	request *lcmservice.QueryPackageStatusRequest) (*lcmservice.QueryPackageStatusResponse, error) {
+	request *internal_lcmservice.QueryPackageStatusRequest) (*internal_lcmservice.QueryPackageStatusResponse, error) {
 
-	resp := &lcmservice.QueryPackageStatusResponse{
+	resp := &internal_lcmservice.QueryPackageStatusResponse{
 		Response: "Distributed",
 	}
 
@@ -1197,13 +1197,13 @@ func (s *ServerGRPC) deletePackage(appPkgPath string) error {
 		return errors.New(util.FailedToDelAppPkg)
 	}
 	defer tenantDir.Close()
-	
+
 	_, err = tenantDir.Readdir(1)
-	
+
 	if err == io.EOF {
 		err := os.Remove(tenantPath)
 		if err != nil {
-            return errors.New(util.FailedToDelAppPkg)
+			return errors.New(util.FailedToDelAppPkg)
 		}
 		return nil
 	}
@@ -1211,7 +1211,7 @@ func (s *ServerGRPC) deletePackage(appPkgPath string) error {
 }
 
 // Validate input parameters for remove config
-func (s *ServerGRPC) validateInputParamsForDeletePackage(request *lcmservice.DeletePackageRequest) (string,
+func (s *ServerGRPC) validateInputParamsForDeletePackage(request *internal_lcmservice.DeletePackageRequest) (string,
 	string, string, error) {
 	accessToken := request.GetAccessToken()
 	err := util.ValidateAccessToken(accessToken, []string{util.MecmTenantRole, util.MecmAdminRole})
@@ -1317,7 +1317,7 @@ func (c *ServerGRPC) extractFiles(file *zip.File, zippedFile io.ReadCloser, tota
 }
 
 func (s *ServerGRPC) deleteDockerImagesFromHost(dockerImages string) error {
-    log.Info("Delete docker images")
+	log.Info("Delete docker images")
 	dockers := strings.Split(dockerImages, ",")
 	for i := range dockers {
 		log.WithFields(log.Fields{
