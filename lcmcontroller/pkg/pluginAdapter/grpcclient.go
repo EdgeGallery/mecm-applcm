@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"io"
-	"lcmcontroller/internal/lcmservice"
+	"lcmcontroller/internal/internal_lcmservice"
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"mime/multipart"
@@ -37,7 +37,7 @@ import (
 // GRPC client to different GRPC supported plugins
 type ClientGRPC struct {
 	conn        *grpc.ClientConn
-	client      lcmservice.AppLCMClient
+	client      internal_lcmservice.AppLCMClient
 	chunkSize   int
 }
 
@@ -84,13 +84,13 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c *ClientGRPC, err error) {
 		return c, err
 	}
 
-	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: lcmservice.NewAppLCMClient(conn)}, nil
+	return &ClientGRPC{chunkSize: cfg.ChunkSize, conn: conn, client: internal_lcmservice.NewAppLCMClient(conn)}, nil
 }
 
 // Instantiate application
 func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, accessToken string,
 	appInsId string, instantiateReq models.InstantiateRequest) (status string, error error) {
-	req := &lcmservice.InstantiateRequest{
+	req := &internal_lcmservice.InstantiateRequest{
 		HostIp:        instantiateReq.HostIp,
 		TenantId:      tenantId,
 		AppPackageId:  instantiateReq.PackageId,
@@ -110,7 +110,7 @@ func (c *ClientGRPC) Instantiate(ctx context.Context, tenantId string, accessTok
 func (c *ClientGRPC) Query(ctx context.Context, accessToken string,
 	appInsId string, hostIP string, tenantId string) (response string, error error) {
 
-	req := &lcmservice.QueryRequest{
+	req := &internal_lcmservice.QueryRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
@@ -127,7 +127,7 @@ func (c *ClientGRPC) Query(ctx context.Context, accessToken string,
 func (c *ClientGRPC) QueryKPI(ctx context.Context, accessToken, tenantId string, hostIP string) (response string,
 	error error) {
 
-	req := &lcmservice.QueryKPIRequest{
+	req := &internal_lcmservice.QueryKPIRequest{
 		AccessToken:   accessToken,
 		TenantId:      tenantId,
 		HostIp:        hostIP,
@@ -143,7 +143,7 @@ func (c *ClientGRPC) QueryKPI(ctx context.Context, accessToken, tenantId string,
 func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, tenantId string, accessToken string,
 	appInsId string) (status string, error error) {
 
-	req := &lcmservice.TerminateRequest{
+	req := &internal_lcmservice.TerminateRequest{
 		HostIp:        hostIP,
 		TenantId:      tenantId,
 		AccessToken:   accessToken,
@@ -159,7 +159,7 @@ func (c *ClientGRPC) Terminate(ctx context.Context, hostIP string, tenantId stri
 // Remove configuration
 func (c *ClientGRPC) RemoveConfig(ctx context.Context, tenantId string, hostIP string, accessToken string) (
 	status string, error error) {
-	req := &lcmservice.RemoveCfgRequest{
+	req := &internal_lcmservice.RemoveCfgRequest{
 		HostIp:      hostIP,
 		TenantId:    tenantId,
 		AccessToken: accessToken,
@@ -190,9 +190,9 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, tenantId string, multipar
 	defer stream.CloseSend()
 
 	//send metadata information
-	req := &lcmservice.UploadCfgRequest{
+	req := &internal_lcmservice.UploadCfgRequest{
 
-		Data: &lcmservice.UploadCfgRequest_AccessToken{
+		Data: &internal_lcmservice.UploadCfgRequest_AccessToken{
 			AccessToken: accessToken,
 		},
 	}
@@ -204,9 +204,9 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, tenantId string, multipar
 	}
 
 	//send metadata information
-	req = &lcmservice.UploadCfgRequest{
+	req = &internal_lcmservice.UploadCfgRequest{
 
-		Data: &lcmservice.UploadCfgRequest_TenantId{
+		Data: &internal_lcmservice.UploadCfgRequest_TenantId{
 			TenantId: tenantId,
 		},
 	}
@@ -218,9 +218,9 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, tenantId string, multipar
 	}
 
 	//send metadata information
-	req = &lcmservice.UploadCfgRequest{
+	req = &internal_lcmservice.UploadCfgRequest{
 
-		Data: &lcmservice.UploadCfgRequest_HostIp{
+		Data: &internal_lcmservice.UploadCfgRequest_HostIp{
 			HostIp: hostIP,
 		},
 	}
@@ -248,8 +248,8 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, tenantId string, multipar
 			return util.Failure, err
 		}
 
-		req := &lcmservice.UploadCfgRequest{
-			Data: &lcmservice.UploadCfgRequest_ConfigFile{
+		req := &internal_lcmservice.UploadCfgRequest{
+			Data: &internal_lcmservice.UploadCfgRequest_ConfigFile{
 				ConfigFile: buf[:n],
 			},
 		}
@@ -274,7 +274,7 @@ func (c *ClientGRPC) UploadConfig(ctx context.Context, tenantId string, multipar
 func (c *ClientGRPC) WorkloadDescription(ctx context.Context, accessToken string,
 	appInsId string, hostIP string, tenantId string) (response string, error error) {
 
-	req := &lcmservice.WorkloadEventsRequest{
+	req := &internal_lcmservice.WorkloadEventsRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
@@ -342,9 +342,9 @@ func (c *ClientGRPC) UploadPackage(ctx context.Context, tenantId string, appPkg 
 	defer file.Close()
 
 	//send metadata information
-	req := &lcmservice.UploadPackageRequest{
+	req := &internal_lcmservice.UploadPackageRequest{
 
-		Data: &lcmservice.UploadPackageRequest_AccessToken{
+		Data: &internal_lcmservice.UploadPackageRequest_AccessToken{
 			AccessToken: accessToken,
 		},
 	}
@@ -356,9 +356,9 @@ func (c *ClientGRPC) UploadPackage(ctx context.Context, tenantId string, appPkg 
 	}
 
 	//send metadata information
-	req = &lcmservice.UploadPackageRequest{
+	req = &internal_lcmservice.UploadPackageRequest{
 
-		Data: &lcmservice.UploadPackageRequest_AppPackageId{
+		Data: &internal_lcmservice.UploadPackageRequest_AppPackageId{
 			AppPackageId: packageId,
 		},
 	}
@@ -370,9 +370,9 @@ func (c *ClientGRPC) UploadPackage(ctx context.Context, tenantId string, appPkg 
 	}
 
 	//send metadata information
-	req = &lcmservice.UploadPackageRequest{
+	req = &internal_lcmservice.UploadPackageRequest{
 
-		Data: &lcmservice.UploadPackageRequest_HostIp{
+		Data: &internal_lcmservice.UploadPackageRequest_HostIp{
 			HostIp: hostIP,
 		},
 	}
@@ -384,9 +384,9 @@ func (c *ClientGRPC) UploadPackage(ctx context.Context, tenantId string, appPkg 
 	}
 
 	//send metadata information
-	req = &lcmservice.UploadPackageRequest{
+	req = &internal_lcmservice.UploadPackageRequest{
 
-		Data: &lcmservice.UploadPackageRequest_TenantId{
+		Data: &internal_lcmservice.UploadPackageRequest_TenantId{
 			TenantId: tenantId,
 		},
 	}
@@ -414,8 +414,8 @@ func (c *ClientGRPC) UploadPackage(ctx context.Context, tenantId string, appPkg 
 			return util.Failure, err
 		}
 
-		req := &lcmservice.UploadPackageRequest{
-			Data: &lcmservice.UploadPackageRequest_Package{
+		req := &internal_lcmservice.UploadPackageRequest{
+			Data: &internal_lcmservice.UploadPackageRequest_Package{
 				Package: buf[:n],
 			},
 		}
@@ -438,7 +438,7 @@ func (c *ClientGRPC) UploadPackage(ctx context.Context, tenantId string, appPkg 
 
 // Remove configuration
 func (c *ClientGRPC) DeletePackage(ctx context.Context, tenantId string, hostIP string, packageId string, accessToken string) (status string, error error) {
-	req := &lcmservice.DeletePackageRequest{
+	req := &internal_lcmservice.DeletePackageRequest{
 		HostIp:       hostIP,
 		TenantId:     tenantId,
 		AppPackageId: packageId,
@@ -462,7 +462,7 @@ func (c *ClientGRPC) DeletePackage(ctx context.Context, tenantId string, hostIP 
 // Upload Package status
 func (c *ClientGRPC) QueryPackageStatus(ctx context.Context, tenantId string, hostIP string, packageId string,
 	accessToken string) (status string, error error) {
-	req := &lcmservice.QueryPackageStatusRequest{
+	req := &internal_lcmservice.QueryPackageStatusRequest{
 		AccessToken:  accessToken,
 		PackageId: packageId,
 		HostIp:       hostIP,
