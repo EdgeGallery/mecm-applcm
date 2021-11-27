@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package lcmservice;
+package internal.lcmservice;
 
 // app lcm entity start
 

@@ -19,7 +19,7 @@ package test
 import (
 	log "github.com/sirupsen/logrus"
 	"io"
-	"k8splugin/internal/lcmservice"
+	"k8splugin/internal/internal_lcmservice"
 	"k8splugin/util"
 	"os"
 	"time"
@@ -35,9 +35,9 @@ const (
 )
 
 // mock GRPC client
-type mockGrpcClient struct {
+type  mockGrpcClient struct {
 	conn      *grpc.ClientConn
-	client    lcmservice.AppLCMClient
+	client    internal_lcmservice.AppLCMClient
 	chunkSize int
 }
 
@@ -52,7 +52,7 @@ func (c *mockGrpcClient) dialToServer(address string) {
 		log.Error("Error while dialing to server")
 	}
 	c.conn = conn
-	c.client = lcmservice.NewAppLCMClient(conn)
+	c.client = internal_lcmservice.NewAppLCMClient(conn)
 	c.chunkSize = size
 }
 // Upload Package
@@ -71,27 +71,27 @@ func (c *mockGrpcClient) UploadPkg(deployArtifact string, hostIP string,
 	defer stream.CloseSend()
 
 	//send metadata information
-	req := &lcmservice.UploadPackageRequest{
-		Data: &lcmservice.UploadPackageRequest_AccessToken{
+	req := &internal_lcmservice.UploadPackageRequest{
+		Data: &internal_lcmservice.UploadPackageRequest_AccessToken{
 			AccessToken: accessToken,
 		},
 	}
 	_ = stream.Send(req)
-	req = &lcmservice.UploadPackageRequest{
-		Data: &lcmservice.UploadPackageRequest_AppPackageId{
+	req = &internal_lcmservice.UploadPackageRequest{
+		Data: &internal_lcmservice.UploadPackageRequest_AppPackageId{
 			AppPackageId: packageId,
 		},
 	}
 	_ = stream.Send(req)
-	req = &lcmservice.UploadPackageRequest{
-		Data: &lcmservice.UploadPackageRequest_HostIp{
+	req = &internal_lcmservice.UploadPackageRequest{
+		Data: &internal_lcmservice.UploadPackageRequest_HostIp{
 			HostIp: hostIP,
 		},
 	}
 	_ = stream.Send(req)
 
-	req = &lcmservice.UploadPackageRequest{
-		Data: &lcmservice.UploadPackageRequest_TenantId{
+	req = &internal_lcmservice.UploadPackageRequest{
+		Data: &internal_lcmservice.UploadPackageRequest_TenantId{
 			TenantId: tenantId,
 		},
 	}
@@ -114,8 +114,8 @@ func (c *mockGrpcClient) UploadPkg(deployArtifact string, hostIP string,
 			log.Error("failed while copying from file to buf")
 			return util.Failure, err
 		}
-		req := &lcmservice.UploadPackageRequest{
-			Data: &lcmservice.UploadPackageRequest_Package{
+		req := &internal_lcmservice.UploadPackageRequest{
+			Data: &internal_lcmservice.UploadPackageRequest_Package{
 				Package: buf[:n],
 			},
 		}
@@ -140,7 +140,7 @@ func (c *mockGrpcClient) DeletePkg() (status string, error error) {
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
-	req := &lcmservice.DeletePackageRequest{
+	req := &internal_lcmservice.DeletePackageRequest{
 		HostIp:        hostIpAddress,
 		AccessToken:   token,
 		AppPackageId:  packageId,
@@ -151,7 +151,7 @@ func (c *mockGrpcClient) DeletePkg() (status string, error error) {
 	if resp == nil {
 		return "", err
 	}
-	req = &lcmservice.DeletePackageRequest{
+	req = &internal_lcmservice.DeletePackageRequest{
 		HostIp:        "256.1.1.1",
 		AccessToken:   token,
 		AppPackageId:  packageId,
@@ -160,7 +160,7 @@ func (c *mockGrpcClient) DeletePkg() (status string, error error) {
 	}
 	_, err = c.client.DeletePackage(ctx, req)
 	token1 := "1"
-	req = &lcmservice.DeletePackageRequest{
+	req = &internal_lcmservice.DeletePackageRequest{
 		HostIp:        hostIpAddress,
 		AccessToken:   token1,
 		AppPackageId:  packageId,
@@ -168,7 +168,7 @@ func (c *mockGrpcClient) DeletePkg() (status string, error error) {
 
 	}
 	_, err = c.client.DeletePackage(ctx, req)
-	req = &lcmservice.DeletePackageRequest{
+	req = &internal_lcmservice.DeletePackageRequest{
 		HostIp:        hostIpAddress,
 		AccessToken:   token,
 		AppPackageId:  "",
@@ -176,7 +176,7 @@ func (c *mockGrpcClient) DeletePkg() (status string, error error) {
 
 	}
 	_, err = c.client.DeletePackage(ctx, req)
-	req = &lcmservice.DeletePackageRequest{
+	req = &internal_lcmservice.DeletePackageRequest{
 		HostIp:        hostIpAddress,
 		AccessToken:   token,
 		AppPackageId:  packageId,
@@ -197,7 +197,7 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 	parameters := make(map[string]string)
 	parameters["ak"] = ak
 	parameters["sk"] = sk
-	req := &lcmservice.InstantiateRequest{
+	req := &internal_lcmservice.InstantiateRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
@@ -209,7 +209,7 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 	if resp == nil {
 		return "", err
 	}
-	req = &lcmservice.InstantiateRequest{
+	req = &internal_lcmservice.InstantiateRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
@@ -218,7 +218,7 @@ func (c *mockGrpcClient) Instantiate(deployArtifact string, hostIP string, acces
 		Parameters:    parameters,
 	}
 	_, err = c.client.Instantiate(ctx, req)
-	req = &lcmservice.InstantiateRequest{
+	req = &internal_lcmservice.InstantiateRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
@@ -236,7 +236,7 @@ func (c *mockGrpcClient) Query(accessToken string, appInsId string, hostIP strin
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
-	req := &lcmservice.QueryRequest{
+	req := &internal_lcmservice.QueryRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
@@ -256,7 +256,7 @@ func (c *mockGrpcClient) QueryKpiInfo(accessToken string, hostIP string) (respon
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
-	req := &lcmservice.QueryKPIRequest{
+	req := &internal_lcmservice.QueryKPIRequest{
 		AccessToken:   accessToken,
 		HostIp:        hostIP,
 		TenantId:      tenantId,
@@ -276,7 +276,7 @@ func (c *mockGrpcClient) WorkloadEvents(accessToken string, appInsId string, hos
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
-	req := &lcmservice.WorkloadEventsRequest{
+	req := &internal_lcmservice.WorkloadEventsRequest{
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
 		HostIp:        hostIP,
@@ -295,7 +295,7 @@ func (c *mockGrpcClient) Terminate(hostIP string, accessToken string, appInsId s
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
 
-	req := &lcmservice.TerminateRequest{
+	req := &internal_lcmservice.TerminateRequest{
 		HostIp:        hostIP,
 		AccessToken:   accessToken,
 		AppInstanceId: appInsId,
@@ -312,7 +312,7 @@ func (c *mockGrpcClient) Terminate(hostIP string, accessToken string, appInsId s
 func (c *mockGrpcClient) RemoveConfig(hostIP string, accessToken string) (status string, error error) {
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout*time.Second)
 	defer cancel()
-	req := &lcmservice.RemoveCfgRequest{
+	req := &internal_lcmservice.RemoveCfgRequest{
 		HostIp:      hostIP,
 		TenantId:    tenantId,
 		AccessToken: accessToken,
@@ -340,21 +340,21 @@ func (c *mockGrpcClient) UploadConfig(deployArtifact string, hostIP string,
 	defer stream.CloseSend()
 
 	//send metadata information
-	req := &lcmservice.UploadCfgRequest{
-		Data: &lcmservice.UploadCfgRequest_AccessToken{
+	req := &internal_lcmservice.UploadCfgRequest{
+		Data: &internal_lcmservice.UploadCfgRequest_AccessToken{
 			AccessToken: accessToken,
 		},
 	}
 	_ = stream.Send(req)
-	req = &lcmservice.UploadCfgRequest{
-		Data: &lcmservice.UploadCfgRequest_TenantId{
+	req = &internal_lcmservice.UploadCfgRequest{
+		Data: &internal_lcmservice.UploadCfgRequest_TenantId{
 			TenantId: tenantId,
 		},
 	}
 	_ = stream.Send(req)
 
-	req = &lcmservice.UploadCfgRequest{
-		Data: &lcmservice.UploadCfgRequest_HostIp{
+	req = &internal_lcmservice.UploadCfgRequest{
+		Data: &internal_lcmservice.UploadCfgRequest_HostIp{
 			HostIp: hostIP,
 		},
 	}
@@ -377,8 +377,8 @@ func (c *mockGrpcClient) UploadConfig(deployArtifact string, hostIP string,
 			log.Error("failed while copying from file to buf")
 			return util.Failure, err
 		}
-		req := &lcmservice.UploadCfgRequest{
-			Data: &lcmservice.UploadCfgRequest_ConfigFile{
+		req := &internal_lcmservice.UploadCfgRequest{
+			Data: &internal_lcmservice.UploadCfgRequest_ConfigFile{
 				ConfigFile: buf[:n],
 			},
 		}

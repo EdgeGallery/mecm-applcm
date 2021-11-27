@@ -2462,6 +2462,7 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 
 			pluginInfo, client, err := c.GetPluginAndClient(clientIp, p.PackageId, tenantId, ph.HostIp)
 			if err != nil {
+				log.Error("Error happens then continue")
 				continue
 			}
 
