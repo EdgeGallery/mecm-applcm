@@ -333,6 +333,7 @@ def do_check_compress_status(image_id, host_ip):
         if data['status'] == 0:
             logger.debug('image: %s compress finished, start push', image_id)
             image_info.status = utils.PUSHING
+            commit()
             add_push_image_task(image_id, host_ip)
         elif data['status'] == 1:
             logger.debug('image: %s are compressing, rate %f', image_id, data['rate'])
@@ -341,8 +342,8 @@ def do_check_compress_status(image_id, host_ip):
         else:
             logger.debug('image: %s compress failed, cause %s', image_id, data['msg'])
             image_info.status = utils.KILLED
+            commit()
             utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2')
-        commit()
         utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.img')
     except Exception as exception:
         logger.error(exception, exc_info=True)
@@ -394,3 +395,4 @@ def do_push_image(image_id, host_ip):
         commit()
     finally:
         utils.delete_dir(f'/usr/app/vmImage/{host_ip}/{image_id}.qcow2')
+
