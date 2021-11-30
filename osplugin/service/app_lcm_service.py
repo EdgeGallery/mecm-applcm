@@ -410,9 +410,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'code': 200,
             'msg': 'success'
         }
-        quota = nova.quotas.defaults(nova.project_id)
+        quotas = nova.limits.get(tenant_id=nova.project_id).absolute
 
-        quota_dict = {'instances': quota.instances, 'cores': quota.cores, 'ram': quota.ram}
+        quota_dict = {}
+
+        for quota in quotas:
+            quota_dict[quota.name] = quota.value
 
         resp_data['data'] = quota_dict
         resp.response = json.dumps(resp_data)
