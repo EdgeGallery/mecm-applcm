@@ -24,7 +24,8 @@ from core.csar.pkg import get_hot_yaml_path, CsarPkg
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
-from core.openstack_utils import create_glance_client, create_heat_client
+from core.openstack_utils import create_glance_client, create_heat_client, create_gnocchi_client, \
+    create_keystone_client, create_nova_client
 
 import glanceclient.exc
 
@@ -396,7 +397,31 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         Returns:
 
         """
+        LOG.info('received query kpi message')
         resp = QueryKPIResponse(response=utils.FAILURE_JSON)
+
+        host_ip = utils.validate_input_params(BaseRequest(request))
+        if host_ip is None:
+            return resp
+
+        nova = create_nova_client(host_ip, request.tenantId)
+
+        resp_data = {
+            'code': 200,
+            'msg': 'success'
+        }
+        quotas = nova.limits.get(tenant_id=nova.project_id).absolute
+
+        quota_dict = {}
+
+        for quota in quotas:
+            quota_dict[quota.name] = quota.value
+
+        resp_data['data'] = quota_dict
+        resp.response = json.dumps(resp_data)
+
+        LOG.info('success query kpi')
+
         return resp
 
     @db_session

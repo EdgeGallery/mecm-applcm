@@ -179,8 +179,10 @@ def do_check_image_status(image_id, host_ip):
     time.sleep(5)
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
     if image_info is None:
+        LOG.debug('image not found in database')
         return
     if image_info.status == utils.KILLED:
+        LOG.debug('image status is killed')
         return
     try:
         glance = create_glance_client(host_ip, image_info.tenant_id)
@@ -264,7 +266,11 @@ def do_download_then_compress_image(image_id, host_ip):
 
     """
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.status != utils.ACTIVE or image_info.compress_task_status != utils.WAITING:
+    if image_info is None:
+        LOG.debug('image not found in database')
+        return
+    if image_info.status != utils.ACTIVE or image_info.compress_task_status != utils.WAITING:
+        LOG.debug('image not active or not waiting compress, skip compress')
         return
 
     image_info.compress_task_status = utils.DOWNLOADING
@@ -328,7 +334,11 @@ def do_check_compress_status(image_id, host_ip):
     time.sleep(5)
 
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.compress_task_status != utils.COMPRESSING:
+    if image_info is None:
+        LOG.debug('image not found in database')
+        return
+    if image_info.compress_task_status != utils.COMPRESSING:
+        LOG.debug('image not compressing, skip check compressing')
         return
 
     try:
@@ -342,6 +352,7 @@ def do_check_compress_status(image_id, host_ip):
         if data['status'] == 0:
             logger.debug('image: %s compress finished, start push', image_id)
             image_info.compress_task_status = utils.PUSHING
+            commit()
             add_push_image_task(image_id, host_ip)
         elif data['status'] == 1:
             logger.debug('image: %s are compressing, rate %f', image_id, data['rate'])
@@ -350,8 +361,8 @@ def do_check_compress_status(image_id, host_ip):
         else:
             logger.debug('image: %s compress failed, cause %s', image_id, data['msg'])
             image_info.compress_task_status = utils.FAILURE
+            commit()
             utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.qcow2')
-        commit()
         utils.delete_dir(f'{base_dir}/vmImage/{host_ip}/{image_id}.img')
     except Exception as exception:
         logger.error(exception, exc_info=True)
@@ -369,7 +380,10 @@ def do_push_image(image_id, host_ip):
 
     """
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
-    if image_info is None or image_info.compress_task_status != utils.PUSHING:
+    if image_info is None:
+        LOG.debug('image not found in database')
+    if image_info.compress_task_status != utils.PUSHING:
+        LOG.debug('compress not finished, skip push')
         return
     try:
         data = MultipartEncoder({

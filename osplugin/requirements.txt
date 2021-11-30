@@ -1,5 +1,6 @@
 cryptography==3.3.1
 
+gnocchiclient==7.0.7
 grpcio==1.36.1
 grpcio-tools==1.36.1
 

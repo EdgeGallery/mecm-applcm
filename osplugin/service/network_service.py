@@ -18,7 +18,7 @@
 # -*- coding: utf-8 -*-
 import json
 
-from neutronclient.common.exceptions import NotFound
+from neutronclient.common.exceptions import NotFound, NeutronClientException
 
 import utils
 from core.log import logger
@@ -49,6 +49,16 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return CreateNetworkResponse(status='Failure')
+
+        i = 0
+        for req_subnet in request.network.subnets:
+            if not req_subnet.name:
+                req_subnet.name = f'net-{i}'
+            if not req_subnet.cidr:
+                logger.error(f'network.subnets[{i}].cidr required')
+                return CreateNetworkResponse(status='Failure')
+            i = i + 1
+
         neutron = create_neutron_client(host_ip, request.tenantId)
 
         network_data = {
@@ -84,11 +94,12 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
         for req_subnet in request.network.subnets:
             subnet_data = {
                 'name': req_subnet.name,
+                'cidr': req_subnet.cidr,
                 'enable_dhcp': req_subnet.enableDhcp or True,
                 'network_id': network['id'],
                 'ip_version': req_subnet.ipVersion or 4,
-                'cidr': req_subnet.cidr,
             }
+            i = i + 1
             if req_subnet.dnsNameservers:
                 subnet_data['dns_nameservers'] = req_subnet.dnsNameservers
             if req_subnet.gatewayIp:
@@ -159,11 +170,19 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
                 network_data = {
                     'id': network['id'],
                     'name': network['name'],
+                    'shared': network['shared'],
+                    'external': network['router:external'],
+                    'status': network['status'],
+                    'adminState': network['admin_state_up'],
+                    'availabilityZones': network['availability_zones'],
                     'subnets': []
                 }
                 for subnet_id in network['subnets']:
-                    subnet = neutron.show_subnet(subnet_id)['subnet']
-                    network_data['subnets'].append({'cidr': subnet['cidr']})
+                    try:
+                        subnet = neutron.show_subnet(subnet_id)['subnet']
+                        network_data['subnets'].append({'cidr': subnet['cidr'], 'name': subnet['name']})
+                    except NeutronClientException:
+                        network_data['subnets'].append({'cidr': '', 'name': ''})
                 resp_data['data'].append(network_data)
 
         else:
