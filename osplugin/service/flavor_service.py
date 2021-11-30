@@ -18,7 +18,7 @@
 # -*- coding: utf-8 -*-
 import json
 
-from novaclient.exceptions import NotFound
+from novaclient.exceptions import NotFound, ClientException
 
 import utils
 from core.log import logger
@@ -53,11 +53,18 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         nova = create_nova_client(host_ip, request.tenantId)
 
-        flavor = nova.flavors.create(name=request.flavor.name,
-                                     ram=request.flavor.ram,
-                                     vcpus=request.flavor.vcpus,
-                                     disk=request.flavor.disk,
-                                     swap=request.flavor.swap)
+        try:
+            flavor = nova.flavors.create(name=request.flavor.name,
+                                         ram=request.flavor.ram,
+                                         vcpus=request.flavor.vcpus,
+                                         disk=request.flavor.disk,
+                                         swap=request.flavor.swap)
+        except ClientException as client_exception:
+            resp.status = json.dumps({
+                'retCode': client_exception.code,
+                'message': client_exception.message
+            })
+            return resp
 
         if request.flavor.extraSpecs:
             flavor.set_keys(dict(request.flavor.extraSpecs))
@@ -123,21 +130,31 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
             for flavor in flavors:
                 resp_data['data'].append({
                     'id': flavor.id,
-                    'name': flavor.name
-                })
-        else:
-            try:
-                flavor = nova.flavors.get(request.flavorId)
-                extra_specs = flavor.get_keys()
-                resp_data['data'] = {
-                    'id': flavor.id,
+                    'description': flavor.description,
                     'name': flavor.name,
                     'vcpus': flavor.vcpus,
                     'ram': flavor.ram,
                     'disk': flavor.disk,
                     'rxtx': flavor.rxtx_factor,
-                    'swap': flavor.swap,
-                    'extra_specs': dict(extra_specs)
+                    'ephemeralDisk': flavor.ephemeral,
+                    'isPublic': flavor.is_public,
+                })
+        else:
+            try:
+                flavor = nova.flavors.get(request.flavorId)
+                logger.info(flavor)
+                extra_specs = flavor.get_keys()
+                resp_data['data'] = {
+                    'id': flavor.id,
+                    'description': flavor.description,
+                    'name': flavor.name,
+                    'vcpus': flavor.vcpus,
+                    'ram': flavor.ram,
+                    'disk': flavor.disk,
+                    'rxtx': flavor.rxtx_factor,
+                    'ephemeralDisk': flavor.ephemeral,
+                    'isPublic': flavor.is_public,
+                    'extraSpecs': dict(extra_specs)
                 }
             except NotFound:
                 resp_data['code'] = 404

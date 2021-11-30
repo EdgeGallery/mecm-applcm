@@ -17,9 +17,9 @@
 
 # -*- coding: utf-8 -*-
 import json
-import time
 from io import BytesIO
 
+from glanceclient.exc import HTTPException
 from pony.orm import commit, db_session
 
 import config
@@ -74,7 +74,15 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         metadata['min_disk'] = request.image.minDisk
 
         glance = create_glance_client(host_ip, request.tenantId)
-        image = glance.images.create(**metadata)
+
+        try:
+            image = glance.images.create(**metadata)
+        except HTTPException as http_exception:
+            resp.response = json.dumps({
+                'retCode': http_exception.code,
+                'msg': http_exception.details
+            })
+            return resp
         VmImageInfoMapper(
             image_id=image['id'],
             image_name=image['name'],
@@ -102,15 +110,18 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'msg': 'success'
         }
         if not request.imageId:
-            image_list = VmImageInfoMapper.find_many(host_ip=host_ip, tenant_id=request.tenantId)
             resp_data['data'] = []
-            for image in image_list:
+            glance = create_glance_client(host_ip, request.tenantId)
+            images = glance.images.list()
+            for image in images:
                 resp_data['data'].append({
-                    'imageId': image.image_id,
-                    'imageName': image.image_name,
-                    'status': image.status,
-                    'size': image.image_size,
-                    'checksum': image.checksum,
+                    'imageId': image['id'],
+                    'imageName': image['name'],
+                    'status': image['status'],
+                    'size': image['size'],
+                    'checksum': image['checksum'],
+                    'visibility': image['visibility'],
+                    'protected': image['protected']
                 })
             resp.response = json.dumps(resp_data)
             return resp
