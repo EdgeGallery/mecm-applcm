@@ -1085,21 +1085,6 @@ func (c *LcmControllerV2) GetAppInstId(clientIp string) (string, error) {
 	return appInsId, nil
 }
 
-// Get app info record
-func (c *LcmControllerV2) GetAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {
-	appInfoRecord := &models.AppInfoRecord{
-		AppInstanceId: appInsId,
-	}
-
-	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
-	if readErr != nil {
-		c.HandleForErrorCode(clientIp, util.StatusNotFound,
-			"App info record does not exist in database", util.ErrCodeNotFoundInDB)
-		return nil, readErr
-	}
-	return appInfoRecord, nil
-}
-
 // Handle logging
 func (c *LcmControllerV2) HandleLoggingForFailure(clientIp string, errorString string) {
 	if strings.Contains(errorString, util.Forbidden) {
@@ -2332,7 +2317,7 @@ func handleSuccessReturn(object interface{}, msg string) *models.ReturnResponse 
 	return result
 }
 
-func (c *LcmControllerV2) IsPermitted(accessToken, clientIp string) (string, error) {
+func (c *BaseController) IsPermitted(accessToken, clientIp string) (string, error) {
 	var tenantId = ""
 	var err error
 
@@ -2486,4 +2471,5 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 	}
 	return appPkgs, nil
 }
+
 

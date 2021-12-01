@@ -220,6 +220,7 @@ const (
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Mepcontroller        = "lcmcontroller/controllers:MepController"
 	Hosts                = "/v1/tenants/:tenantId/hosts"
+	AllHosts             = "/v1/hosts"
 	DELETE               = "delete"
 	GET                  = "get"
 	POST                 = "post"
@@ -787,6 +788,7 @@ func GetPluginInfo(vim string) string {
 	pluginPortVar := pluginAddrVar + PluginPortSuffix
 	pluginPort := GetPluginPort(pluginPortVar)
 	pluginInfo := pluginAddr + ":" + pluginPort
+	log.Info("pluginInfo is: " + pluginInfo)
 	return pluginInfo
 }
 
