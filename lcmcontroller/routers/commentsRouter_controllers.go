@@ -27,7 +27,7 @@ func init() {
 	initAPI(util.Lcmcontroller, "HealthCheck", "/v1/health", util.GET)
 	initAPI(util.Lcmcontroller, "ChangeKey", "/v1/password", util.POST)
 	initAPI(util.Lcmcontroller, "LoginPage", "/v1/login", util.POST)
-	initAPI(util.Lcmcontroller, "Profile", "/v2/tenants/:tenantId/app_instances/:appInstanceId/profile", util.POST)
+	initAPI(util.Lcmcontroller, "Profile", "/v1/tenants/:tenantId/app_instances/:appInstanceId/profile", util.POST)
 	initAPI(util.MecHostcontroller, "AddMecHost", util.Hosts, util.POST)
 	initAPI(util.MecHostcontroller, "UpdateMecHost", util.Hosts, "put")
 	initAPI(util.MecHostcontroller, "GetMecHost", util.Hosts, util.GET)
