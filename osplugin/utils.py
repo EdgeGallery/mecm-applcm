@@ -187,6 +187,8 @@ def validate_input_params(param):
         LOG.error('accessToken not valid')
         return None
     if not validate_ipv4_address(host_ip):
+        LOG.error('hostIp')
+        LOG.error(host_ip)
         LOG.error('hostIp not match ipv4')
         return None
     if not param.tenantId:
