@@ -76,7 +76,7 @@ func (c *PluginAdapter) QueryKPI(accessToken, host string, tenantId string) (res
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	response, err := c.client.QueryKPI(ctx, accessToken, host,tenantId)
+	response, err := c.client.QueryKPI(ctx, accessToken,tenantId, host)
 	if err != nil {
 		log.Errorf("failed to query kpi information")
 		return "", err
