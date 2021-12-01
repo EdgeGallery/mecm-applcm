@@ -20,6 +20,7 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"lcmcontroller/config"
@@ -461,4 +462,108 @@ func (c *LcmController) GetInputParametersForChangeKey(clientIp string) (name st
 	return name, key, newKey, nil
 }
 
+// @Title Profile application
+// @Description Execute sh file of application
+// @Param	tenantId	path 	string	true   "tenantId"
+// @Param	appInstanceId   path 	string	true   "appInstanceId"
+// @Param       access_token    header  string  true   "access token"
+// @Success 200 ok
+// @Failure 400 bad request
+// @router /tenants/:tenantId/app_instances/:appInstanceId/terminate [post]
+func (c *LcmController) Profile() {
+	log.Info("Application profile execute request received.")
 
+	clientIp := c.Ctx.Input.IP()
+	err := util.ValidateSrcAddress(clientIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.ClientIpaddressInvalid, util.ErrCodeIPInvalid)
+		return
+	}
+	c.displayReceivedMsg(clientIp)
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+
+	tenantId, err := c.IsPermitted(accessToken, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInsId, err := c.GetAppInstId(clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	appInfoRecord, err := c.GetAppInfoRecord(appInsId, clientIp)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
+	packageId := appInfoRecord.AppPackageId;
+	pkgPath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId
+	result, err := c.ExecuteFile(pkgPath)
+	if err != nil {
+		c.HandleLoggingForFailure(clientIp, err.Error())
+		return
+	}
+
+	c.handleForNewSuccess(result, clientIp, "Script execute is successful")
+}
+
+func (c *LcmController) ExecuteFile(pkgPath string) (string, error) {
+	pkgPath = pkgPath + "Artifacts/Deployment/Scripts"
+	scriptDir := path.Dir(pkgPath)
+	files, err := ioutil.ReadDir(scriptDir)
+	if err != nil {
+		log.Error("failed to read directory")
+		return "", nil
+	}
+
+	var shellPath string
+	for _, filename := range files {
+		if filepath.Ext(filename.Name()) == ".sh" {
+			shellPath = filename.Name()
+			break
+		}
+	}
+
+	argv := make([]string, 1)
+	attr := new(os.ProcAttr)
+	newProcess, err := os.StartProcess(shellPath, argv, attr)  //运行脚本
+	if err != nil {
+		log.Error("failed to execute script", err.Error())
+	}
+	fmt.Println("Process PID", newProcess.Pid)
+	processState, err := newProcess.Wait() //等待命令执行完
+	if err != nil {
+		log.Error("failed to execute script", err.Error())
+	}
+	return processState.String(), nil
+}
+
+func (c *LcmController) handleForNewSuccess(object interface{}, clientIp string, msg string) {
+	log.Info("Response for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
+		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
+	returnContent := handleSuccessReturn(object, msg)
+	c.Data["json"] = returnContent
+	c.Ctx.ResponseWriter.WriteHeader(util.SuccessCode)
+	c.ServeJSON()
+}
+
+
+// Get app info record
+func (c *BaseController) GetAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {
+	appInfoRecord := &models.AppInfoRecord{
+		AppInstanceId: appInsId,
+	}
+
+	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
+	if readErr != nil {
+		c.HandleForErrorCode(clientIp, util.StatusNotFound,
+			"App info record does not exist in database", util.ErrCodeNotFoundInDB)
+		return nil, readErr
+	}
+	return appInfoRecord, nil
+}
