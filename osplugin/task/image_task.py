@@ -403,7 +403,7 @@ def do_push_image(image_id, host_ip):
             image_info.compress_task_status = utils.FAILURE
             commit()
             return
-
+        logger.debug('end push image: %s to developer', image_id)
         response_data = response.json()
         image_info.remote_url = config.image_push_url + '/' + response_data['imageId']
         image_info.compress_task_status = utils.SUCCESS
