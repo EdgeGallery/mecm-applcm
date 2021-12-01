@@ -130,7 +130,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
             for flavor in flavors:
                 resp_data['data'].append({
                     'id': flavor.id,
-                    'description': flavor.description,
+                    'description': getattr(flavor, 'description', None),
                     'name': flavor.name,
                     'vcpus': flavor.vcpus,
                     'ram': flavor.ram,
@@ -146,7 +146,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
                 extra_specs = flavor.get_keys()
                 resp_data['data'] = {
                     'id': flavor.id,
-                    'description': flavor.description,
+                    'description': getattr(flavor, 'description', None),
                     'name': flavor.name,
                     'vcpus': flavor.vcpus,
                     'ram': flavor.ram,
