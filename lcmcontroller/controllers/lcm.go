@@ -20,7 +20,6 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"lcmcontroller/config"
