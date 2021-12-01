@@ -501,8 +501,8 @@ func (c *LcmController) Profile() {
 		return
 	}
 
-	packageId := appInfoRecord.AppPackageId;
-	pkgPath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId
+	packageId := appInfoRecord.AppPackageId
+	pkgPath := PackageFolderPath + tenantId + "/" + packageId
 	result, err := c.ExecuteFile(pkgPath)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
@@ -513,9 +513,8 @@ func (c *LcmController) Profile() {
 }
 
 func (c *LcmController) ExecuteFile(pkgPath string) (string, error) {
-	pkgPath = pkgPath + "Artifacts/Deployment/Scripts"
-	scriptDir := path.Dir(pkgPath)
-	files, err := ioutil.ReadDir(scriptDir)
+	pkgPath = pkgPath + "/Artifacts/Deployment/Scripts"
+	files, err := ioutil.ReadDir(pkgPath)
 	if err != nil {
 		log.Error("failed to read directory")
 		return "", nil
@@ -531,11 +530,10 @@ func (c *LcmController) ExecuteFile(pkgPath string) (string, error) {
 
 	argv := make([]string, 1)
 	attr := new(os.ProcAttr)
-	newProcess, err := os.StartProcess(shellPath, argv, attr)  //运行脚本
+	newProcess, err := os.StartProcess(pkgPath + "/"+ shellPath, argv, attr)  //运行脚本
 	if err != nil {
 		log.Error("failed to execute script", err.Error())
 	}
-	fmt.Println("Process PID", newProcess.Pid)
 	processState, err := newProcess.Wait() //等待命令执行完
 	if err != nil {
 		log.Error("failed to execute script", err.Error())
