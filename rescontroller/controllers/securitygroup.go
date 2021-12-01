@@ -171,11 +171,6 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 		return
 	}
 
-	err = ValidateBodyPara(securityGroupRules, clientIp)
-	if err != nil{
-		return
-	}
-
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
