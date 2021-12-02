@@ -52,11 +52,6 @@ func (c *VmController) CreateServer() {
 		c.writeErrorResponse(err.Error(), util.BadRequest)
 		return
 	}
-	err = ValidateBody(server, clientIp)
-	if err != nil{
-		return
-	}
-
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
