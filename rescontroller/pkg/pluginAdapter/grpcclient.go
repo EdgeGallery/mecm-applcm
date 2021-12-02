@@ -336,7 +336,7 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 	var SecurityGroups   []string
 
 	for _, securityGroup := range server.Securitygroups {
-		SecurityGroups = append(SecurityGroups, securityGroup.Name)
+		SecurityGroups = append(SecurityGroups, securityGroup)
 	}
 
 	reqServer := &resservice.CreateVmRequest_Server{
