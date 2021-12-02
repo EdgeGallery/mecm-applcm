@@ -199,7 +199,7 @@ func ValidateBody( server models.Server , clientIp string) error {
 		return err
 	}
 
-	for _, network := range server.Network {
+	for _, network := range server.Networks {
 		err = util.ValidateUUID(network.Network)
 		if err != nil {
 			return err

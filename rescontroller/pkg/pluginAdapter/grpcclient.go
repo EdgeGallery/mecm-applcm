@@ -342,7 +342,7 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 		UserData:         server.UserData,
 		ConfigDrive:      server.Configdrive,
 		SecurityGroups:   server.Securitygroups,
-		Networks:         server.Network,
+		Networks:         server.Networks,
 	}
 
 	req := &resservice.CreateVmRequest{
