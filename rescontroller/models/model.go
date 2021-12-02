@@ -141,7 +141,7 @@ type Server struct {
 	UserData         string `json:"user_data"`
 	Configdrive      bool `json:"configDrive"`
 	Securitygroups   []string `json:"securityGroups"`
-	Network []*internal_resourcemanager.CreateVmRequest_Server_Network `json:"netWork"`
+	Networks []*internal_resourcemanager.CreateVmRequest_Server_Network `json:"netWorks"`
 }
 
 // Operate Server
