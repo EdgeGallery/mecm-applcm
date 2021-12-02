@@ -140,9 +140,7 @@ type Server struct {
 	Availabilityzone string `json:"availabilityZone"`
 	UserData         string `json:"user_data"`
 	Configdrive      bool `json:"configDrive"`
-	Securitygroups   []struct {
-		Name string `json:"name"`
-	} `json:"securityGroups"`
+	Securitygroups   []string `json:"securityGroups"`
 	Network []*internal_resourcemanager.CreateVmRequest_Server_Network `json:"netWork"`
 }
 
