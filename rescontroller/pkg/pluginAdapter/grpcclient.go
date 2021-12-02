@@ -351,7 +351,6 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 		TenantId:      tenantId,
 		Server:        reqServer,
 	}
-	log.Info(req)
 	resp, err := c.vmClient.CreateVm(ctx, req)
 	if err != nil {
 		return "", err

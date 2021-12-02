@@ -23,7 +23,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/golang/protobuf v1.4.2
-	github.com/lib/pq v1.7.0 // indirect
+	github.com/lib/pq v1.7.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 // indirect
