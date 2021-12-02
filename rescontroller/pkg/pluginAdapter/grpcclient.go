@@ -333,11 +333,6 @@ func (c *ClientGRPC) ImportImage(ctx context.Context, importImage models.ImportI
 // Create Server
 func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hostIp, accessToken,
 	tenantId string) (response string, error error) {
-	var SecurityGroups   []string
-
-	for _, securityGroup := range server.Securitygroups {
-		SecurityGroups = append(SecurityGroups, securityGroup)
-	}
 
 	reqServer := &resservice.CreateVmRequest_Server{
 		Name:             server.Name,
@@ -346,7 +341,7 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 		AvailabilityZone: server.Availabilityzone,
 		UserData:         server.UserData,
 		ConfigDrive:      server.Configdrive,
-		SecurityGroups:   SecurityGroups,
+		SecurityGroups:   server.Securitygroups,
 		Networks:         server.Network,
 	}
 
@@ -356,6 +351,7 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 		TenantId:      tenantId,
 		Server:        reqServer,
 	}
+	log.Info(req)
 	resp, err := c.vmClient.CreateVm(ctx, req)
 	if err != nil {
 		return "", err
