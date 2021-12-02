@@ -52,7 +52,7 @@ func (c *VmController) CreateServer() {
 		c.writeErrorResponse(err.Error(), util.BadRequest)
 		return
 	}
-
+	log.Info(server)
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
