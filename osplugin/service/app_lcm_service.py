@@ -406,6 +406,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         nova = create_nova_client(host_ip, request.tenantId)
 
+        neutron = create_neutron_client(host_ip, request.tenantId)
+
         resp_data = {
             'code': 200,
             'msg': 'success'
@@ -416,6 +418,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         for quota in quotas:
             quota_dict[quota.name] = quota.value
+
+        neutrinos = neutron.limits.get(tenant_id=nova.project_id).absolute
+
+        for neutronQ in neutrinos:
+            quota_dict[neutronQ.name] = neutronQ.value
 
         resp_data['data'] = quota_dict
         resp.response = json.dumps(resp_data)
