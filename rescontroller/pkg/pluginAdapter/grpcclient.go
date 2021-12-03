@@ -351,6 +351,7 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 		TenantId:      tenantId,
 		Server:        reqServer,
 	}
+	log.Info(req)
 	resp, err := c.vmClient.CreateVm(ctx, req)
 	if err != nil {
 		return "", err
@@ -395,6 +396,7 @@ func (c *ClientGRPC) OperateServer(ctx context.Context, operateServer models.Ope
 		Reboot:        rebootReq,
 		CreateImage:   createImageReq,
 	}
+	log.Info(req)
 	resp, err := c.vmClient.OperateVm(ctx, req)
 	if err != nil {
 		return "", err
@@ -440,6 +442,7 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 		TenantId:      tenantId,
 		Network:       reqNetwork,
 	}
+	log.Info(req)
 	resp, err := c.networkClient.CreateNetwork(ctx, req)
 	if err != nil {
 		return "", err
