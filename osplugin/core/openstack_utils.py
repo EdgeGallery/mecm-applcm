@@ -92,7 +92,6 @@ def create_nova_client(host_ip, tenant_id):
                               session=get_session(host_ip, tenant_id),
                               endpoint_override=rc_data.nova_url)
 
-
 def create_glance_client(host_ip, tenant_id):
     """
     创建glance客户端
