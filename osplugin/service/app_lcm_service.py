@@ -25,7 +25,7 @@ from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
 from core.openstack_utils import create_glance_client, create_heat_client, create_gnocchi_client, \
-    create_keystone_client, create_nova_client
+    create_keystone_client, create_neutron_client, create_nova_client
 
 import glanceclient.exc
 
