@@ -527,15 +527,20 @@ func (c *LcmController) ExecuteFile(pkgPath string) (string, error) {
 		}
 	}
 
+	if shellPath == "" {
+		return "", errors.New("script file not exists")
+	}
 	argv := make([]string, 1)
 	attr := new(os.ProcAttr)
 	newProcess, err := os.StartProcess(pkgPath + "/"+ shellPath, argv, attr)  //运行脚本
 	if err != nil {
 		log.Error("failed to execute script", err.Error())
+		return "", err
 	}
 	processState, err := newProcess.Wait() //等待命令执行完
 	if err != nil {
 		log.Error("failed to execute script", err.Error())
+		return "", err
 	}
 	return processState.String(), nil
 }
