@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import internal.resourcemanager.resourcemanager_pb2 as resourcemanager__pb2
+from internal.resourcemanager import resourcemanager_pb2 as resourcemanager__pb2
 
 
 class VmImageMangerStub(object):
@@ -685,11 +685,6 @@ class SecurityGroupManagerStub(object):
                 request_serializer=resourcemanager__pb2.DeleteSecurityGroupRuleRequest.SerializeToString,
                 response_deserializer=resourcemanager__pb2.DeleteSecurityGroupRuleResponse.FromString,
                 )
-        self.querySecurityGroupRule = channel.unary_unary(
-                '/internal.resourcemanager.SecurityGroupManager/querySecurityGroupRule',
-                request_serializer=resourcemanager__pb2.QuerySecurityGroupRuleRequest.SerializeToString,
-                response_deserializer=resourcemanager__pb2.QuerySecurityGroupRuleResponse.FromString,
-                )
 
 
 class SecurityGroupManagerServicer(object):
@@ -725,12 +720,6 @@ class SecurityGroupManagerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def querySecurityGroupRule(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_SecurityGroupManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -758,11 +747,6 @@ def add_SecurityGroupManagerServicer_to_server(servicer, server):
                     servicer.deleteSecurityGroupRule,
                     request_deserializer=resourcemanager__pb2.DeleteSecurityGroupRuleRequest.FromString,
                     response_serializer=resourcemanager__pb2.DeleteSecurityGroupRuleResponse.SerializeToString,
-            ),
-            'querySecurityGroupRule': grpc.unary_unary_rpc_method_handler(
-                    servicer.querySecurityGroupRule,
-                    request_deserializer=resourcemanager__pb2.QuerySecurityGroupRuleRequest.FromString,
-                    response_serializer=resourcemanager__pb2.QuerySecurityGroupRuleResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -856,22 +840,5 @@ class SecurityGroupManager(object):
         return grpc.experimental.unary_unary(request, target, '/internal.resourcemanager.SecurityGroupManager/deleteSecurityGroupRule',
             resourcemanager__pb2.DeleteSecurityGroupRuleRequest.SerializeToString,
             resourcemanager__pb2.DeleteSecurityGroupRuleResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def querySecurityGroupRule(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/internal.resourcemanager.SecurityGroupManager/querySecurityGroupRule',
-            resourcemanager__pb2.QuerySecurityGroupRuleRequest.SerializeToString,
-            resourcemanager__pb2.QuerySecurityGroupRuleResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

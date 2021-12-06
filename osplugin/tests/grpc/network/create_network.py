@@ -25,12 +25,10 @@ create_network_request = CreateNetworkRequest(
     hostIp=test_host_ip,
     network=CreateNetworkRequest.Network(
         name='test-create-net',
-        subnets=[
-            CreateNetworkRequest.Network.Subnet(
-                name='192_net',
-                cidr='192.168.111.0/24'
-            )
-        ]
+        subnet=CreateNetworkRequest.Network.Subnet(
+            name='192_net',
+            cidr='192.168.111.0/24'
+        )
     )
 )
 
