@@ -1,4 +1,4 @@
-// Copyright 2021 Huawei Technologies Co., Ltd.
+// Copyright 2020 Huawei Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,6 +59,17 @@ message DeleteVmImageResponse {
   string status = 1;
 }
 
+message DownloadVmImageRequest {
+  string accessToken = 1;
+  string hostIp = 2;
+  string tenantId = 3;
+  string imageId = 4;
+}
+
+message DownloadVmImageResponse {
+  bytes content = 1;
+}
+
 message ImportVmImageRequest {
   string accessToken = 1;
   string hostIp = 2;
@@ -68,6 +79,20 @@ message ImportVmImageRequest {
 }
 
 message ImportVmImageResponse {
+  string status = 1;
+}
+
+message UploadVmImageRequest {
+  oneof data {
+    string accessToken = 1;
+    string hostIp = 2;
+    string tenantId = 3;
+    string imageId = 4;
+    bytes content = 5;
+  }
+}
+
+message UploadVmImageResponse {
   string status = 1;
 }
 
@@ -216,7 +241,7 @@ message CreateNetworkRequest {
       string ipv6AddressMode = 8;
       string ipv6RaMode = 9;
     }
-    repeated Subnet subnets = 12;
+    Subnet subnet = 12;
   }
   Network network = 4;
 }
@@ -315,22 +340,13 @@ message DeleteSecurityGroupRuleResponse {
   string status = 4;
 }
 
-message QuerySecurityGroupRuleRequest {
-  string accessToken = 1;
-  string hostIp = 2;
-  string tenantId = 3;
-  string securityGroupId = 4;
-}
-
-message QuerySecurityGroupRuleResponse {
-  string response = 1;
-}
-
 // resource manager entity end
 
 service VmImageManger {
   rpc createVmImage(CreateVmImageRequest) returns (CreateVmImageResponse) {}
+  rpc uploadVmImage(stream UploadVmImageRequest) returns (UploadVmImageResponse) {}
   rpc deleteVmImage(DeleteVmImageRequest) returns (DeleteVmImageResponse) {}
+  rpc downloadVmImage(DownloadVmImageRequest) returns (stream DownloadVmImageResponse) {}
   rpc importVmImage(ImportVmImageRequest) returns (ImportVmImageResponse) {}
   rpc queryVmImage(QueryVmImageRequest) returns (QueryVmImageResponse) {}
 }
@@ -361,5 +377,4 @@ service SecurityGroupManager {
 
   rpc createSecurityGroupRule(CreateSecurityGroupRuleRequest) returns (CreateSecurityGroupRuleResponse) {}
   rpc deleteSecurityGroupRule(DeleteSecurityGroupRuleRequest) returns (DeleteSecurityGroupRuleResponse) {}
-  rpc querySecurityGroupRule(QuerySecurityGroupRuleRequest) returns (QuerySecurityGroupRuleResponse) {}
 }

@@ -157,22 +157,6 @@ func (c *PluginAdapter) CreateSecurityGroupRules(securityGroupRules models.Secur
 	return status, nil
 }
 
-// Query security group rules
-func (c *PluginAdapter) QuerySecurityGroupRules(hostIp, accessToken, tenantId, securityGroupId string) (response string, error error) {
-	log.Info("Query security group rules started")
-
-	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
-	defer cancel()
-
-	response, err := c.client.QuerySecurityGroupRules(ctx, hostIp, accessToken, tenantId, securityGroupId)
-	if err != nil {
-		return util.Failure, err
-	}
-
-	log.Info("Query security group rules is success with status: success")
-	return response, nil
-}
-
 // Delete security group rule
 func (c *PluginAdapter) DeleteSecurityGroupRule(hostIp, accessToken, tenantId, securityGroupRuleId string) (status string, error error) {
 	log.Info("Delete security group rule started")

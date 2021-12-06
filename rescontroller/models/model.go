@@ -167,5 +167,5 @@ type Network struct {
 	Segments                []*internal_resourcemanager.CreateNetworkRequest_Network_Segment `json:"segments"`
 	Shared                  bool                                                             `json:"shared"`
 	Isdefault               bool                                                             `json:"isDefault"`
-	Subnets                 []*internal_resourcemanager.CreateNetworkRequest_Network_Subnet  `json:"subnets"`
+	Subnet                  *internal_resourcemanager.CreateNetworkRequest_Network_Subnet    `json:"subnet"`
 }

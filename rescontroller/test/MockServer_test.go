@@ -44,6 +44,13 @@ type VmImageMangerServer struct {
 	Address string
 }
 
+func (c VmImageMangerServer) UploadVmImage(server resservice.VmImageManger_UploadVmImageServer) error {
+	panic("implement me")
+}
+
+func (c VmImageMangerServer) DownloadVmImage(request *resservice.DownloadVmImageRequest, server resservice.VmImageManger_DownloadVmImageServer) error {
+	panic("implement me")
+}
 
 const SUCCESS_RETURN = "Success"
 
@@ -117,12 +124,6 @@ func (c SecurityGroupManagerServer) CreateSecurityGroupRule(context.Context, *re
 func (c SecurityGroupManagerServer) DeleteSecurityGroupRule(context.Context, *resservice.DeleteSecurityGroupRuleRequest) (*resservice.DeleteSecurityGroupRuleResponse, error) {
 	resp := &resservice.DeleteSecurityGroupRuleResponse{
 		Status: SUCCESS_RETURN,
-	}
-	return  resp, nil
-}
-func (c SecurityGroupManagerServer) QuerySecurityGroupRule(context.Context, *resservice.QuerySecurityGroupRuleRequest) (*resservice.QuerySecurityGroupRuleResponse, error) {
-	resp := &resservice.QuerySecurityGroupRuleResponse{
-		Response: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }

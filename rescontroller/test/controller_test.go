@@ -531,6 +531,12 @@ func testCreateNetwork(t *testing.T, extraParams map[string]string, testDb dbAda
 
 	t.Run("TestCreateNetwork", func(t *testing.T) {
 
+		subnetBody,_ := json.Marshal(map[string]interface{}{
+			"name": "subnetA",
+			"gatewayIp": "192.168.3.1",
+			"cidr": "192.168.3.0/24",
+		})
+
 		requestBody, _ := json.Marshal(map[string]interface{}{
 			"name": "sample_network",
 			"adminStateUp": true,
@@ -545,6 +551,7 @@ func testCreateNetwork(t *testing.T, extraParams map[string]string, testDb dbAda
 			"shared": true,
 			"vlanTransparent": true,
 			"isDefault": true,
+			"subnets": subnetBody,
 			})
 
 		// Get Request

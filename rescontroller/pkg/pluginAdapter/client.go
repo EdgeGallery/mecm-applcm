@@ -34,8 +34,6 @@ type ClientIntf interface {
 		tenantId, securityGroupId string) (response string, error error)
 	CreateSecurityGroupRules(ctx context.Context, securityGroupRules models.SecurityGroupRules,
 		hostIP, accessToken, tenantId string) (status string, error error)
-	QuerySecurityGroupRules(ctx context.Context, hostIP, accessToken,
-		tenantId, securityGroupId string) (response string, error error)
 	DeleteSecurityGroupRule(ctx context.Context, hostIP, accessToken,
 		tenantId, securityGroupRuleId string) (response string, error error)
 	QueryImages(ctx context.Context, hostIP, accessToken,

@@ -223,22 +223,6 @@ func (c *ClientGRPC) CreateSecurityGroupRules(ctx context.Context, securityGroup
 	return resp.Status, err
 }
 
-// Query security group rules
-func (c *ClientGRPC) QuerySecurityGroupRules(ctx context.Context, hostIp, accessToken, tenantId,
-	securityGroupId string) (response string, error error) {
-	req := &resservice.QuerySecurityGroupRuleRequest{
-		AccessToken:          accessToken,
-		HostIp:               hostIp,
-		TenantId:             tenantId,
-		SecurityGroupId:      securityGroupId,
-	}
-	resp, err := c.securityGroupClient.QuerySecurityGroupRule(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	return resp.Response, err
-}
-
 // Delete security group rule
 func (c *ClientGRPC) DeleteSecurityGroupRule(ctx context.Context, hostIp, accessToken, tenantId,
 	securityGroupRuleId string) (response string, error error) {
@@ -434,7 +418,7 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 		Segments:                network.Segments,
 		Shared:                  network.Shared,
 		IsDefault:               network.Isdefault,
-		Subnets:                 network.Subnets,
+		Subnet:                  network.Subnet,
 	}
 	req := &resservice.CreateNetworkRequest{
 		AccessToken:   accessToken,
