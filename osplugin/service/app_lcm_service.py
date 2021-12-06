@@ -406,8 +406,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         nova = create_nova_client(host_ip, request.tenantId)
 
-        neutron = create_neutron_client(host_ip, request.tenantId)
-
         resp_data = {
             'code': 200,
             'msg': 'success'
