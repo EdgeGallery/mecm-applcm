@@ -25,7 +25,7 @@ from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
 from core.openstack_utils import create_glance_client, create_heat_client, create_gnocchi_client, \
-    create_keystone_client, create_neutron_client, create_nova_client
+    create_keystone_client, create_nova_client
 
 import glanceclient.exc
 
@@ -418,11 +418,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
 
         for quota in quotas:
             quota_dict[quota.name] = quota.value
-
-        neutrinos = neutron.limits.get(tenant_id=nova.project_id).absolute
-
-        for neutronQ in neutrinos:
-            quota_dict[neutronQ.name] = neutronQ.value
 
         resp_data['data'] = quota_dict
         resp.response = json.dumps(resp_data)
