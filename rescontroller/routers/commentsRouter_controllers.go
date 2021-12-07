@@ -40,7 +40,6 @@ func init() {
 	initAPI(util.SecurityGroupcontroller, "QuerySecurityGroup", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId", util.GET)
 	initAPI(util.SecurityGroupcontroller, "DeleteSecurityGroup", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId", util.DELETE)
 	initAPI(util.SecurityGroupcontroller, "CreateSecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules", util.POST)
-	initAPI(util.SecurityGroupcontroller, "QuerySecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules", util.GET)
 	initAPI(util.SecurityGroupcontroller, "DeleteSecurityGroupRules", "/v1/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules/:securityGroupRuleId", util.DELETE)
 
 	initAPI(util.VmImagecontroller, "QueryImages", "/v1/tenants/:tenantId/hosts/:hostIp/images", util.GET)
