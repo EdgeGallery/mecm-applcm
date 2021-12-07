@@ -20,17 +20,15 @@ require (
 	github.com/agiledragon/gomonkey v2.0.1+incompatible
 	github.com/astaxie/beego v1.12.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/golang/protobuf v1.4.2
 	github.com/lib/pq v1.7.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
-	github.com/satori/go.uuid v1.2.0
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
 	github.com/ulule/limiter/v3 v3.8.0
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0
 	google.golang.org/grpc v1.31.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
