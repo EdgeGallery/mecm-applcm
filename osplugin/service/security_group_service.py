@@ -25,8 +25,7 @@ from core.log import logger
 from core.openstack_utils import create_neutron_client
 from internal.resourcemanager import resourcemanager_pb2_grpc
 from internal.resourcemanager.resourcemanager_pb2 import CreateSecurityGroupResponse, DeleteSecurityGroupResponse, \
-    QuerySecurityGroupResponse, CreateSecurityGroupRuleResponse, DeleteSecurityGroupRuleResponse, \
-    QuerySecurityGroupRuleResponse
+    QuerySecurityGroupResponse, CreateSecurityGroupRuleResponse, DeleteSecurityGroupRuleResponse
 
 LOG = logger
 
