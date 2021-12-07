@@ -241,7 +241,7 @@ message CreateNetworkRequest {
       string ipv6AddressMode = 8;
       string ipv6RaMode = 9;
     }
-    repeated Subnet subnets = 12;
+    Subnet subnet = 12;
   }
   Network network = 4;
 }

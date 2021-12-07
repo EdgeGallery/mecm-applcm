@@ -91,7 +91,8 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
 
         LOG.info('resp network %s', network)
 
-        for req_subnet in request.network.subnets:
+        if request.network.subnet:
+            req_subnet = request.network.subnet
             subnet_data = {
                 'name': req_subnet.name,
                 'cidr': req_subnet.cidr,
@@ -99,7 +100,6 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
                 'network_id': network['id'],
                 'ip_version': req_subnet.ipVersion or 4,
             }
-            i = i + 1
             if req_subnet.dnsNameservers:
                 subnet_data['dns_nameservers'] = req_subnet.dnsNameservers
             if req_subnet.gatewayIp:

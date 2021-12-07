@@ -159,10 +159,9 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
         security_group_rule = {
             'security_group_id': request.securityGroupRule.securityGroupId,
             'direction': request.securityGroupRule.direction or 'ingress',
-            'ethertype': request.securityGroupRule.ethertype or 'IPv4'
+            'ethertype': request.securityGroupRule.ethertype or 'IPv4',
+            'protocol': request.securityGroupRule.protocol or 'any'
         }
-        if request.securityGroupRule.protocol:
-            security_group_rule['protocol'] = request.securityGroupRule.protocol
         if request.securityGroupRule.portRangeMax:
             security_group_rule['port_range_max'] = request.securityGroupRule.portRangeMax
         if request.securityGroupRule.portRangeMin:
