@@ -226,53 +226,6 @@ func TestQuerySecurityGroupSuccess(t *testing.T) {
 	})
 }
 
-func TestQuerySecurityGroupRulesSuccess(t *testing.T) {
-
-	// Mock the required API
-	patch1 := gomonkey.ApplyFunc(util.ClearByteArray, func(_ []byte) {
-		// do nothing
-	})
-	defer patch1.Reset()
-
-	var c *beego.Controller
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(c), serveJson, func(*beego.Controller, ...bool) {
-		go func() {
-			// do nothing
-		}()
-	})
-	defer patch2.Reset()
-
-
-	//// Common steps
-	_, extraParams, testDb := getCommonParameters("127.0.0.1")
-
-	t.Run("TestGetSecurityGroupRules", func(t *testing.T) {
-
-		// Get Request
-		securityGroupRuleRequest, _ := getHttpRequest("https://edgegallery:8094/rescontroller/v1/tenants/"+tenantIdentifier+
-			hosts+ipAddress+"/securityGroup", extraParams, "file", "", "GET", []byte(""))
-
-		// Prepare Input
-		securityGroupRuleInput := &context.BeegoInput{Context: &context.Context{Request: securityGroupRuleRequest}}
-		setRessourceParam(securityGroupRuleInput, ipAddress)
-
-		// Prepare beego controller
-		sgrBeegoController := beego.Controller{Ctx: &context.Context{Input: securityGroupRuleInput,
-			Request: securityGroupRuleRequest, ResponseWriter: &context.Response{ResponseWriter: httptest.NewRecorder()}},
-			Data: make(map[interface{}]interface{})}
-
-		// Create LCM controller with mocked DB and prepared Beego controller
-		securityGroupController := &controllers.SecurityGroupController{controllers.BaseController{Db: testDb,
-			Controller: sgrBeegoController}}
-
-		// Test KPI
-		securityGroupController.QuerySecurityGroupRules()
-
-		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, securityGroupController.Ctx.ResponseWriter.Status, "Get security group rules failed")
-	})
-}
-
 func TestQueryServerSuccess(t *testing.T) {
 
 	// Mock the required API
