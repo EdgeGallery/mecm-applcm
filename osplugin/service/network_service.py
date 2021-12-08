@@ -50,15 +50,6 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
         if host_ip is None:
             return CreateNetworkResponse(status='Failure')
 
-        i = 0
-        for req_subnet in request.network.subnets:
-            if not req_subnet.name:
-                req_subnet.name = f'net-{i}'
-            if not req_subnet.cidr:
-                logger.error(f'network.subnets[{i}].cidr required')
-                return CreateNetworkResponse(status='Failure')
-            i = i + 1
-
         neutron = create_neutron_client(host_ip, request.tenantId)
 
         network_data = {
