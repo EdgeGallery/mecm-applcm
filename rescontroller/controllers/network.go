@@ -65,10 +65,7 @@ func (c *NetworkController) CreateNetwork() {
 		c.writeErrorResponse(err.Error(), util.BadRequest)
 		return
 	}
-	err = c.ValidateBodyParams(network, clientIp)
-	if err != nil{
-		return
-	}
+
 
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
