@@ -163,7 +163,7 @@ def get_image_by_name_checksum(name, checksum, host_ip, tenant_id):
     for image in images:
         if image['checksum'] == checksum:
             return image
-    raise RuntimeError(f'image {name} 不存在')
+    return None
 
 
 class RCFile:
