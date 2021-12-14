@@ -181,7 +181,7 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	c.SendResponse(clientIp, response, "Create security group rule is successful")
+	c.handleLoggingForSuccess(response, clientIp, "Create security group rule is successful")
 }
 
 // @Title Delete Security Group rule

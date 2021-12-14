@@ -147,7 +147,7 @@ func (c *VmImageController) CreateImage() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	c.SendResponse(clientIp, response, "Create image is successful")
+	c.handleLoggingForSuccess(response, clientIp, "Create image is successful")
 }
 
 // @Title Import Image

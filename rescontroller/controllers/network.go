@@ -82,12 +82,12 @@ func (c *NetworkController) CreateNetwork() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	_, err = c.Ctx.ResponseWriter.Write([]byte(response))
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
-		return
-	}
-	c.handleLoggingForSuccessV1(clientIp, util.CreateNetworkSuccess)
+	//_, err = c.Ctx.ResponseWriter.Write([]byte(response))
+	//if err != nil {
+	//	c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.FailedToWriteRes, util.ErrCodeInternalServer)
+	//	return
+	//}
+	c.handleLoggingForSuccess(response, clientIp, util.CreateNetworkSuccess)
 }
 
 // @Title Query Network

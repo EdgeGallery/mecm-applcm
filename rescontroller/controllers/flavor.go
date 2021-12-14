@@ -78,7 +78,7 @@ func (c *FlavorController) CreateFlavor() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	c.SendResponse(clientIp, response, util.CreateFlavorSuccess)
+	c.handleLoggingForSuccess(response, clientIp, util.CreateFlavorSuccess)
 }
 
 // @Title Query Flavor
