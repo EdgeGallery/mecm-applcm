@@ -45,7 +45,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         """
         LOG.info('received create flavor message')
-        resp = CreateFlavorResponse(status='Failure')
+        resp = CreateFlavorResponse(status='{"data": null, "retCode": 500, "message": "Failure"}')
 
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
@@ -72,7 +72,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         LOG.info('success create flavor %s', flavor)
         resp.status = json.dumps({
-            'data': null,
+            'data': None,
             'retCode': 0,
             'message': 'Success'
         })
@@ -120,7 +120,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         """
         LOG.info('received query flavor message')
-        resp = QueryFlavorResponse(response='{"retCode": 500, "message": "failure"}')
+        resp = QueryFlavorResponse(response='{"data": null, "retCode": 500, "message": "Failure"}')
 
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
@@ -131,7 +131,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
         resp_data = {
             'data': None,
             'retCode': 200,
-            'message': 'success'
+            'message': 'Success'
         }
 
         if not request.flavorId:
