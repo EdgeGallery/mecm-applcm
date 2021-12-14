@@ -98,12 +98,7 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
                                      userdata=userdata
                                      )
         LOG.info('success boot server %s', server.id)
-        status = json.dumps({
-            'data': None,
-            'retCode': 0,
-            'message': 'Create network success'
-        })
-        return CreateVmResponse(status)
+        return CreateVmResponse(status='{"data": null, "retCode": 0, "message": "Create Success"}')
 
     def queryVm(self, request, context):
         """

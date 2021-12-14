@@ -93,7 +93,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         )
         commit()
 
-        resp.response = json.dumps({'data': {'imageId': image['id']}, 'retCode': 200, 'message': 'Create Image Success'})
+        resp.response = json.dumps({'data': {'imageId': image['id']}, 'retCode': 200, 'message': 'Create success'})
         LOG.info('create image record created')
         return resp
 
@@ -107,6 +107,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         host_ip = utils.validate_input_params(request)
 
         resp_data = {
+            'data': None,
             'retCode': 200,
             'message': 'Query Images Success'
         }
@@ -145,7 +146,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'resourceUrl': image_info.remote_url
         }
 
-        resp.response = json.dumps({'message': None, 'retCode': 200, 'data': res_dir})
+        resp.response = json.dumps({'data': res_dir, 'message': None, 'retCode': 200 })
         return resp
 
     @db_session
@@ -254,7 +255,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         resp.status = json.dumps({
             'data': None,
             'retCode': 0,
-            'message': 'Upload Image Success'
+            'message': 'Success'
         })
         return resp
 
@@ -277,9 +278,4 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         add_import_image_task(request.imageId, host_ip, request.resourceUri)
 
         LOG.info('success add import image task')
-        status = json.dumps({
-            'data': None,
-            'retCode': 0,
-            'message': 'Import Image Success'
-        })
-        return ImportVmImageResponse(status)
+        return ImportVmImageResponse(status='{"data": null, "retCode": 200, "message": "success"}')

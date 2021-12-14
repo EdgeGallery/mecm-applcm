@@ -109,12 +109,8 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
             neutron.create_subnet({'subnet': subnet_data})
 
         LOG.info("success create network %s", network)
-        status = json.dumps({
-            'data': None,
-            'retCode': 0,
-            'message': 'Create network success'
-        })
-        return CreateNetworkResponse(status)
+
+        return CreateNetworkResponse(status='{"data": null, "retCode": 200, "message": "success"}')
 
     def deleteNetwork(self, request, context):
         """
@@ -136,6 +132,7 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
             neutron.delete_network(request.networkId)
         except NotFound:
             LOG.debug('skip not found network %s', request.networkId)
+            return DeleteNetworkResponse(status='{"data": null, "retCode": 404, "message": "Network not found"}')
         LOG.info("success delete network %s", request.networkId)
         return DeleteNetworkResponse(status='{"data": null, "retCode": 0, "message": "Success"}')
 

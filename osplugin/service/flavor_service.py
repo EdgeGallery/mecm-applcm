@@ -89,7 +89,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         """
         LOG.info('received delete flavor message')
-        resp = DeleteFlavorResponse(status='Failure')
+        resp = DeleteFlavorResponse(status='{"data": null, "retCode": 400, "message": "HostIp is needed"}')
 
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
@@ -120,7 +120,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         """
         LOG.info('received query flavor message')
-        resp = QueryFlavorResponse(response='{"data": null, "retCode": 500, "message": "Failure"}')
+        resp = QueryFlavorResponse(response='{"data": null, "retCode": 500, "message": "HostIp is needed"}')
 
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
