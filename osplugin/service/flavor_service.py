@@ -61,6 +61,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
                                          swap=request.flavor.swap)
         except ClientException as client_exception:
             resp.status = json.dumps({
+                'data': None,
                 'retCode': client_exception.code,
                 'message': client_exception.message
             })
@@ -70,7 +71,11 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
             flavor.set_keys(dict(request.flavor.extraSpecs))
 
         LOG.info('success create flavor %s', flavor)
-        resp.status = 'Success'
+        resp.status = json.dumps({
+            'data': null,
+            'retCode': 0,
+            'message': 'Success'
+        })
         return resp
 
     def deleteFlavor(self, request, context):
@@ -97,7 +102,11 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
         except NotFound:
             LOG.debug('flavor not found, skip delete')
         LOG.info('success delete flavor %s', request.flavorId)
-        resp.status = 'Success'
+        resp.status = json.dumps({
+            'data': None,
+            'retCode': 0,
+            'message': 'Success'
+        })
         return resp
 
     def queryFlavor(self, request, context):
@@ -111,7 +120,7 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
 
         """
         LOG.info('received query flavor message')
-        resp = QueryFlavorResponse(response='{"code": 500, "msg": "failure"}')
+        resp = QueryFlavorResponse(response='{"retCode": 500, "message": "failure"}')
 
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
@@ -120,8 +129,9 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
         nova = create_nova_client(host_ip, request.tenantId)
 
         resp_data = {
-            'code': 200,
-            'msg': 'success'
+            'data': None,
+            'retCode': 200,
+            'message': 'success'
         }
 
         if not request.flavorId:
@@ -157,8 +167,9 @@ class FlavorService(resourcemanager_pb2_grpc.FlavorManagerServicer):
                     'extraSpecs': dict(extra_specs)
                 }
             except NotFound:
-                resp_data['code'] = 404
-                resp_data['msg'] = 'flavor %s not found' % request.flavorId
+                resp_data['data'] = None
+                resp_data['retCode'] = 404
+                resp_data['message'] = 'flavor %s not found' % request.flavorId
 
         resp.response = json.dumps(resp_data)
 
