@@ -408,8 +408,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         neutron = create_neutron_client(host_ip, request.tenantId)
 
         resp_data = {
-            'code': 200,
-            'msg': 'success'
+            'retCode': 200,
+            'message': 'success'
         }
 
         quotas = nova.limits.get().absolute
