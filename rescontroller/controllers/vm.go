@@ -40,7 +40,6 @@ type VmController struct {
 // @router /tenants/:tenantId/hosts/:hostIp/servers [post]
 func (c *VmController) CreateServer() {
 	log.Info("Create server request received.")
-	// Todo 拆分
 	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmAdminRole})
 	if err != nil {
 		return
@@ -64,7 +63,7 @@ func (c *VmController) CreateServer() {
 			util.ErrCodePluginReportFailed)
 		return
 	}
-	c.handleLoggingForSuccess(response, clientIp, "Create server is successful")
+	c.SendResponse(clientIp, response, "Create server is successful")
 }
 
 // @Title Query Server
