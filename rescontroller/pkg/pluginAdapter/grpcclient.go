@@ -122,7 +122,7 @@ func (c *ClientGRPC) QueryFlavor(ctx context.Context, hostIp, accessToken, tenan
 	}
 	resp, err := c.flavorClient.QueryFlavor(ctx, req)
 	if err != nil {
-		log.Error("Error ", err.Error())
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
@@ -250,7 +250,7 @@ func (c *ClientGRPC) QueryImages(ctx context.Context, hostIp, accessToken,
 	}
 	resp, err := c.vmImageClient.QueryVmImage(ctx, req)
 	if err != nil {
-		log.Error("Error ", err.Error())
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
@@ -354,7 +354,7 @@ func (c *ClientGRPC) QueryServer(ctx context.Context, hostIp, accessToken,
 	}
 	resp, err := c.vmClient.QueryVm(ctx, req)
 	if err != nil {
-		log.Error("Error ", err.Error())
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
@@ -444,7 +444,7 @@ func (c *ClientGRPC) QueryNetwork(ctx context.Context, hostIp, accessToken, tena
 	}
 	resp, err := c.networkClient.QueryNetwork(ctx, req)
 	if err != nil {
-		log.Error("Error ", err.Error())
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
