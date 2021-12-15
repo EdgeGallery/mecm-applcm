@@ -51,7 +51,7 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
         LOG.info('received create vm message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return CreateVmResponse(status='Failure')
+            return CreateVmResponse(status='{"data": null, "retCode": 500, "message": "Failure"}')
 
         nova = create_nova_client(host_ip, request.tenantId)
 
@@ -98,7 +98,7 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
                                      userdata=userdata
                                      )
         LOG.info('success boot server %s', server.id)
-        return CreateVmResponse(status='Success')
+        return CreateVmResponse(status='{"data": null, "retCode": 0, "message": "Create Success"}')
 
     def queryVm(self, request, context):
         """
@@ -113,13 +113,14 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
         LOG.info('received query vm message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return QueryVmResponse(response='{"code":400}')
+            return QueryVmResponse(response='{"data": null, "retCode":400, "message":"Params invalid"}')
 
         nova = create_nova_client(host_ip, request.tenantId)
 
         resp_data = {
-            'code': 200,
-            'msg': 'success'
+            'data': None,
+            'retCode': 200,
+            'message': 'Success'
         }
         if request.vmId:
             try:
@@ -135,8 +136,9 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
                 }
             except NotFound:
                 resp_data = {
-                    'code': 404,
-                    'msg': 'server %s not found' % request.vmId
+                    'data': None,
+                    'retCode': 404,
+                    'message': 'server %s not found' % request.vmId
                 }
         else:
             resp_data['data'] = []
@@ -168,13 +170,14 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
         LOG.info('received operate vm message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return OperateVmResponse(response='{"code":400}')
+            return OperateVmResponse(response='{"data": null, "retCode": 400, "message": "hostIp is needed"}')
 
         nova = create_nova_client(host_ip, request.tenantId)
 
         resp_data = {
-            'code': 200,
-            'msg': 'success'
+            'data': None,
+            'retCode': 200,
+            'message': 'Success'
         }
 
         if request.action == 'reboot':
@@ -218,10 +221,11 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
             return OperateVmResponse(response=json.dumps(resp_data))
         else:
             LOG.info('not support action %s', request.action)
-            return OperateVmResponse(response='{"code":400,"msg":"not support action %s"}' % request.action)
+            return OperateVmResponse(response='{"data": null, "retCode": 400,"message": "not support action %s"}'
+                                              % request.action)
 
         LOG.info('success operate vm')
-        return OperateVmResponse(response='{"code":200, "msg":"success"}')
+        return OperateVmResponse(response='{"data": null, "retCode": 200, "message": "success"}')
 
     def deleteVm(self, request, context):
         """
@@ -236,7 +240,7 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
         LOG.info('received delete vm message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return DeleteVmResponse(status='Failure')
+            return DeleteVmResponse(status='{"data": null, "retCode": 500, "message": "Failure"}')
 
         nova = create_nova_client(host_ip, request.tenantId)
 
@@ -246,4 +250,4 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
             LOG.debug('skip not found server %s', request.vmId)
 
         LOG.info('success delete vm')
-        return DeleteVmResponse(status='Success')
+        return DeleteVmResponse(status='{"data": null, "retCode":200, "message":"success"}')
