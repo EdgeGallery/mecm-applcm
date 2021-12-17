@@ -36,11 +36,11 @@ type AppInstanceInfo struct {
 
 // AppPackage info record
 type AppPackage struct {
-	AppPkgId      string `orm:"pk"`
-	HostIp        string
-	TenantId      string
-	PackageId     string
-	DockerImages  string
+	AppPkgId     string `orm:"pk"`
+	HostIp       string
+	TenantId     string
+	PackageId    string
+	DockerImages string
 }
 
 // AppInfo Information
@@ -60,17 +60,18 @@ type PodInfo struct {
 
 // ServiceInfo Information
 type ServiceInfo struct {
-	ServiceName  string         `json:"serviceName"`
-	ServiceType  string         `json:"type"`
-	Ports        []PortInfo    `json:"ports"`
+	ServiceName string     `json:"serviceName"`
+	ServiceType string     `json:"type"`
+	Ports       []PortInfo `json:"ports"`
 }
 
 // PortsList Information
 type PortInfo struct {
-	Port        string `json:"port"`
-	TargetPort  string `json:"targetPort"`
-	NodePort    string `json:"nodePort"`
+	Port       string `json:"port"`
+	TargetPort string `json:"targetPort"`
+	NodePort   string `json:"nodePort"`
 }
+
 // ContainerInfo Information
 type ContainerInfo struct {
 	ContainerName string         `json:"containername"`
@@ -108,23 +109,31 @@ type PodDescList struct {
 
 // SwImageDescriptor information
 type SwImageDescriptor struct {
-	Id               string `json:"id"`
-	Name             string `json:"name"`
-	Version          string `json:"version"`
-	Checksum         string `json:"checksum"`
-	ContainerFormat  string `json:"containerFormat"`
-	DiskFormat       string `json:"diskFormat"`
-	MinDisk          string `json:"minDisk"`
-	MinRam           string `json:"minRam"`
-	Architecture     string `json:"architecture"`
-	Size             string `json:"size"`
-	SwImage          string `json:"swImage"`
-	OperatingSystem  string `json:"operatingSystem"`
+	Id                                 string `json:"id"`
+	Name                               string `json:"name"`
+	Version                            string `json:"version"`
+	Checksum                           string `json:"checksum"`
+	ContainerFormat                    string `json:"containerFormat"`
+	DiskFormat                         string `json:"diskFormat"`
+	MinDisk                            string `json:"minDisk"`
+	MinRam                             string `json:"minRam"`
+	Architecture                       string `json:"architecture"`
+	Size                               string `json:"size"`
+	SwImage                            string `json:"swImage"`
+	OperatingSystem                    string `json:"operatingSystem"`
 	SupportedVirtualisationEnvironment string `json:"supportedVirtualisationEnvironment"`
 }
 
 // Metric Information
 type MetricInfo struct {
-	CpuUsage  map[string]int64 `json:"cpuusage"`
-	MemUsage  map[string]int64 `json:"memusage"`
+	CpuUsage map[string]int64 `json:"cpuusage"`
+	MemUsage map[string]int64 `json:"memusage"`
+}
+
+// Return response
+type ReturnResponse struct {
+	Data    interface{} `json:"data"`
+	RetCode int         `json:"retCode"`
+	Message string      `json:"message"`
+	Params  []string    `json:"params"`
 }

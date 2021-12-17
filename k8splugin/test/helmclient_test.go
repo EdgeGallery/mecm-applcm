@@ -46,17 +46,18 @@ import (
 	"reflect"
 	"testing"
 )
+
 var (
 	ipAddFormatter = "%d.%d.%d.%d"
 	fwdIp          = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
 		rand.Intn(util.MaxIPVal))
 
-	tenantIdentifier      = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
-	packageId             = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
-	relName               = "example"
-	addValues             = "AddValues"
-	configFile            = "/usr/app/artificats/config/"
-	namespace             = "default"
+	tenantIdentifier     = "e921ce54-82c8-4532-b5c6-8516cf75f7a6"
+	packageId            = "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98"
+	relName              = "example"
+	addValues            = "AddValues"
+	configFile           = "/usr/app/artificats/config/"
+	namespace            = "default"
 	failedToGetClientSet = "failed to get clientset"
 	outputSuccess        = "{\"Output\":\"Success\"}"
 	getClientSet         = "GetClientSet"
@@ -66,7 +67,7 @@ var (
 func testDeploySuccess(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -84,10 +85,9 @@ func testDeploySuccess(t *testing.T) {
 		// do nothing
 		c := new(chart.Chart)
 		c.Metadata = new(chart.Metadata)
-		return 	c, nil
+		return c, nil
 	})
 	defer patch3.Reset()
-
 
 	patch5 := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(_ string, _ string) (*restclient.Config, error) {
 		// do nothing
@@ -117,20 +117,19 @@ func testDeploySuccess(t *testing.T) {
 
 	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	appPkgRecord := &models.AppPackage{
-		TenantId: tenantIdentifier,
-		HostIp: hostIpAddress,
+		TenantId:  tenantIdentifier,
+		HostIp:    hostIpAddress,
 		PackageId: packageId,
 	}
-	result, _, _ := client.Deploy(appPkgRecord,  appInstanceIdentifier,  ak,  sk,
+	result, _, _ := client.Deploy(appPkgRecord, appInstanceIdentifier, ak, sk,
 		&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }
 
-
 func testDeployFailure(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -148,7 +147,7 @@ func testDeployFailure(t *testing.T) {
 		// do nothing
 		c := new(chart.Chart)
 		c.Metadata = new(chart.Metadata)
-		return 	c, nil
+		return c, nil
 	})
 	defer patch3.Reset()
 
@@ -164,11 +163,11 @@ func testDeployFailure(t *testing.T) {
 
 	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	appPkgRec := &models.AppPackage{
-		TenantId: tenantIdentifier,
-		HostIp: hostIpAddress,
+		TenantId:  tenantIdentifier,
+		HostIp:    hostIpAddress,
 		PackageId: packageId,
 	}
-	result, _, _ := client.Deploy(appPkgRec,  appInstanceIdentifier,  ak,  sk,
+	result, _, _ := client.Deploy(appPkgRec, appInstanceIdentifier, ak, sk,
 		&mockK8sPluginDb{appInstanceRecords: make(map[string]models.AppInstanceInfo)})
 	assert.Equal(t, "", result, "TestGetReleaseNamespaceSuccess execution result")
 }
@@ -177,7 +176,7 @@ func testUnDeploySuccess(t *testing.T) {
 
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -195,7 +194,7 @@ func testUnDeploySuccess(t *testing.T) {
 		// do nothing
 		c := new(chart.Chart)
 		c.Metadata = new(chart.Metadata)
-		return 	c, nil
+		return c, nil
 	})
 	defer patch3.Reset()
 
@@ -227,7 +226,6 @@ func testUnDeploySuccess(t *testing.T) {
 	})
 	defer patch6.Reset()
 
-
 	result := client.UnDeploy(relName, "test")
 	assert.Equal(t, result.Error(), failedToGetClientSet, "TestUnDeploySuccess execution result")
 }
@@ -235,7 +233,7 @@ func testUnDeploySuccess(t *testing.T) {
 func testWorkloadEvents(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -275,7 +273,7 @@ func testWorkloadEvents(t *testing.T) {
 func testQueryInfo(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -315,7 +313,7 @@ func testQueryInfo(t *testing.T) {
 func testQueryKpi(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -337,7 +335,6 @@ func testQueryKpi(t *testing.T) {
 	})
 	defer patch5.Reset()
 
-
 	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
@@ -357,14 +354,14 @@ func testQueryKpi(t *testing.T) {
 	defer patch6.Reset()
 
 	result, _ := client.QueryKPI()
-	assert.Equal(t, "{\"cpuusage\":{\"total\":0,\"used\":0},\"memusage\":{\"total\":0,\"used\":0}}", result, "Test query kpi execution result")
+	assert.Equal(t, "{\"data\":{\"cpuusage\":{\"total\":0,\"used\":0},\"memusage\":{\"total\":0,\"used\":0}},\"retCode\":0,\"message\":\"success\",\"params\":null}", result, "Test query kpi execution result")
 }
 
 func TestGetLabelSelector(t *testing.T) {
 	manifestBuf := []adapter.Manifest{}
 	manifest := adapter.Manifest{
 		APIVersion: "v1",
-		Kind: util.Deployment,
+		Kind:       util.Deployment,
 	}
 	manifest.Metadata.Labels.App = "appName1"
 	manifest.Metadata.Name = "name"
@@ -395,7 +392,7 @@ func TestGetJSONResponse2(t *testing.T) {
 	m := map[string]string{}
 	m["key1"] = "value1"
 
-	result , _ := adapter.GetJSONResponse(appInfo, m)
+	result, _ := adapter.GetJSONResponse(appInfo, m)
 	assert.Equal(t, "{\"key1\":\"value1\"}", result, "Test get json response2 result")
 }
 
@@ -406,7 +403,7 @@ func TestGetJSONResponse3(t *testing.T) {
 		return b, errors.New("error")
 	})
 	defer patch3.Reset()
-	result , _ := adapter.GetJSONResponse(appInfo, nil)
+	result, _ := adapter.GetJSONResponse(appInfo, nil)
 	assert.Equal(t, "", result, "Test get json response result for null response")
 }
 
@@ -426,11 +423,10 @@ func TestSplitManifestYaml(t *testing.T) {
 	assert.NotEmpty(t, result, "Test Split ManifestYaml execution result")
 }
 
-
 func TestGetClientSet(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -446,16 +442,15 @@ func TestGetClientSet(t *testing.T) {
 
 	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
-	client.Kubeconfig = baseDir + directory + "/" + tenantId+ "/" +hostIpAddress
-	_, _, result  := client.GetClientSet("release", "test")
+	client.Kubeconfig = baseDir + directory + "/" + tenantId + "/" + hostIpAddress
+	_, _, result := client.GetClientSet("release", "test")
 	assert.NotEmpty(t, result, "Test get client set execution result")
 }
-
 
 func TestGetClientSet1(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -480,15 +475,14 @@ func TestGetClientSet1(t *testing.T) {
 	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	_, _, result  := client.GetClientSet("release1", "test")
+	_, _, result := client.GetClientSet("release1", "test")
 	assert.NotEmpty(t, result, "Test get client set execution result")
 }
-
 
 func TestGetClientSet2(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -521,15 +515,14 @@ func TestGetClientSet2(t *testing.T) {
 	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	_, _, result  := client.GetClientSet("release2", "test")
+	_, _, result := client.GetClientSet("release2", "test")
 	assert.NotEmpty(t, result, "Test get client set2 execution result")
 }
-
 
 func TestGetClientSet3(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -552,7 +545,7 @@ func TestGetClientSet3(t *testing.T) {
 	client, _ := adapter.NewHelmClient(tenantId, hostIpAddress)
 	baseDir, _ := os.Getwd()
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
-	_, _, result  := client.GetClientSet("release3", "test")
+	_, _, result := client.GetClientSet("release3", "test")
 	assert.NotEmpty(t, result, "Test get client set3 execution result")
 }
 
@@ -562,7 +555,7 @@ func TestGetPodInfo(t *testing.T) {
 	pod.Kind = util.Deployment
 	pod.Namespace = namespace
 	pod.Name = "pod1"
-	pod.APIVersion= "v1"
+	pod.APIVersion = "v1"
 
 	podList := &v1.PodList{
 		TypeMeta: metav1.TypeMeta{},
@@ -580,7 +573,7 @@ func TestGetPodInfo(t *testing.T) {
 					v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
 				},
 			},
-		}, }
+		}}
 		return podMetrics, nil
 	})
 	defer patch5.Reset()
@@ -591,10 +584,9 @@ func TestGetPodInfo(t *testing.T) {
 	})
 	defer patch6.Reset()
 
-	_, result := adapter.GetPodInfo(podList,nil, nil, "config")
+	_, result := adapter.GetPodInfo(podList, nil, nil, "config")
 	assert.Nil(t, result, "Test Get Pod Info execution result")
 }
-
 
 func TestGetPodInfo1(t *testing.T) {
 
@@ -602,7 +594,7 @@ func TestGetPodInfo1(t *testing.T) {
 	pod.Kind = util.Deployment
 	pod.Namespace = namespace
 	pod.Name = "pod1"
-	pod.APIVersion= "v1"
+	pod.APIVersion = "v1"
 
 	podList := &v1.PodList{
 		TypeMeta: metav1.TypeMeta{},
@@ -620,7 +612,7 @@ func TestGetPodInfo1(t *testing.T) {
 					v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
 				},
 			},
-		}, }
+		}}
 		return podMetrics, errors.New("error")
 	})
 	defer patch5.Reset()
@@ -631,10 +623,9 @@ func TestGetPodInfo1(t *testing.T) {
 	})
 	defer patch6.Reset()
 
-	_, result := adapter.GetPodInfo(podList,nil, nil, "test")
+	_, result := adapter.GetPodInfo(podList, nil, nil, "test")
 	assert.Nil(t, result, "Test Get Pod Info1 execution result")
 }
-
 
 func TestGetPodInfo2(t *testing.T) {
 
@@ -642,7 +633,7 @@ func TestGetPodInfo2(t *testing.T) {
 	pod.Kind = util.Deployment
 	pod.Namespace = namespace
 	pod.Name = "pod1"
-	pod.APIVersion= "v1"
+	pod.APIVersion = "v1"
 
 	podList := &v1.PodList{
 		TypeMeta: metav1.TypeMeta{},
@@ -660,7 +651,7 @@ func TestGetPodInfo2(t *testing.T) {
 					v1.ResourceStorage: *resource.NewQuantity(3*(1024*1024), resource.DecimalSI),
 				},
 			},
-		}, }
+		}}
 		return podMetrics, nil
 	})
 	defer patch5.Reset()
@@ -671,15 +662,14 @@ func TestGetPodInfo2(t *testing.T) {
 	})
 	defer patch6.Reset()
 
-	_, result := adapter.GetPodInfo(podList,nil, nil, "config2")
+	_, result := adapter.GetPodInfo(podList, nil, nil, "config2")
 	assert.Error(t, result, "Test Get Pod Info2 execution result")
 }
-
 
 func TestGetResourcesBySelector(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -690,7 +680,6 @@ func TestGetResourcesBySelector(t *testing.T) {
 		return appInformation, response, nil
 	})
 	defer patch2.Reset()
-
 
 	patch3 := gomonkey.ApplyFunc(adapter.GetServiceInfo, func(_ *kubernetes.Clientset,
 		_ metav1.ListOptions, _ string) (serviceInfo models.ServiceInfo, err error) {
@@ -703,8 +692,8 @@ func TestGetResourcesBySelector(t *testing.T) {
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
 	kubeconfig := &rest.Config{
-		Host:            https + net.JoinHostPort(hostIpAddress, "1234"),
-		BearerToken:     token,
+		Host:        https + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken: token,
 	}
 	var labelSelector models.LabelSelector
 	var label models.LabelList
@@ -720,7 +709,7 @@ func TestGetResourcesBySelector(t *testing.T) {
 func TestGetResourcesBySelector1(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -731,7 +720,6 @@ func TestGetResourcesBySelector1(t *testing.T) {
 		return appInformation, response, nil
 	})
 	defer patch2.Reset()
-
 
 	patch3 := gomonkey.ApplyFunc(adapter.GetServiceInfo, func(_ *kubernetes.Clientset,
 		_ metav1.ListOptions, _ string) (serviceInfo models.ServiceInfo, err error) {
@@ -744,8 +732,8 @@ func TestGetResourcesBySelector1(t *testing.T) {
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
 	kubeconfig := &rest.Config{
-		Host:            https + net.JoinHostPort(hostIpAddress, "1234"),
-		BearerToken:     token,
+		Host:        https + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken: token,
 	}
 	var labelSelector models.LabelSelector
 	var label models.LabelList
@@ -761,7 +749,7 @@ func TestGetResourcesBySelector1(t *testing.T) {
 func TestGetResourcesBySelector2(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -772,7 +760,6 @@ func TestGetResourcesBySelector2(t *testing.T) {
 		return appInformation, response, errors.New("error")
 	})
 	defer patch2.Reset()
-
 
 	patch3 := gomonkey.ApplyFunc(adapter.GetServiceInfo, func(_ *kubernetes.Clientset,
 		_ metav1.ListOptions, _ string) (serviceInfo models.ServiceInfo, err error) {
@@ -785,8 +772,8 @@ func TestGetResourcesBySelector2(t *testing.T) {
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
 	kubeconfig := &rest.Config{
-		Host:            https + net.JoinHostPort(hostIpAddress, "1234"),
-		BearerToken:     token,
+		Host:        https + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken: token,
 	}
 	var labelSelector models.LabelSelector
 	var label models.LabelList
@@ -799,21 +786,15 @@ func TestGetResourcesBySelector2(t *testing.T) {
 	assert.Error(t, result, "Test Get resources by selector2 result")
 }
 
-
 func TestUpdatePodInfo(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
-
 	patch3 := gomonkey.ApplyFunc(adapter.GetPods, func(_ *kubernetes.Clientset, _ string, _ *models.LabelList) (podList *v1.PodList, err error) {
-		podList = &v1.PodList{Items:
-		[]v1.Pod{
-
-		},
-		}
+		podList = &v1.PodList{Items: []v1.Pod{}}
 		return podList, nil
 	})
 	defer patch3.Reset()
@@ -822,8 +803,8 @@ func TestUpdatePodInfo(t *testing.T) {
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
 	kubeconfig := &rest.Config{
-		Host:            https + net.JoinHostPort(hostIpAddress, "1234"),
-		BearerToken:     token,
+		Host:        https + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken: token,
 	}
 	//	var labelSelector models.LabelSelector
 	var label models.LabelList
@@ -840,10 +821,9 @@ func TestUpdatePodInfo(t *testing.T) {
 func TestUpdatePodInfo2(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
-
 
 	patch3 := gomonkey.ApplyFunc(adapter.GetPods, func(_ *kubernetes.Clientset, _ string, _ *models.LabelList) (podList *v1.PodList, err error) {
 		podList = &v1.PodList{Items: []v1.Pod{
@@ -867,8 +847,8 @@ func TestUpdatePodInfo2(t *testing.T) {
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
 	kubeconfig := &rest.Config{
-		Host:            https + net.JoinHostPort(hostIpAddress, "1234"),
-		BearerToken:     token,
+		Host:        https + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken: token,
 	}
 	//	var labelSelector models.LabelSelector
 	var label models.LabelList
@@ -882,14 +862,12 @@ func TestUpdatePodInfo2(t *testing.T) {
 	assert.Nil(t, result, "Test Update Pod Info2 result")
 }
 
-
 func TestUpdatePodInfo3(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
-
 
 	patch3 := gomonkey.ApplyFunc(adapter.GetPods, func(_ *kubernetes.Clientset, _ string, _ *models.LabelList) (podList *v1.PodList, err error) {
 		podList = &v1.PodList{Items: []v1.Pod{
@@ -913,8 +891,8 @@ func TestUpdatePodInfo3(t *testing.T) {
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 
 	kubeconfig := &rest.Config{
-		Host:            https + net.JoinHostPort(hostIpAddress, "1234"),
-		BearerToken:     token,
+		Host:        https + net.JoinHostPort(hostIpAddress, "1234"),
+		BearerToken: token,
 	}
 	//	var labelSelector models.LabelSelector
 	var label models.LabelList
@@ -928,14 +906,12 @@ func TestUpdatePodInfo3(t *testing.T) {
 	assert.Error(t, result, "Test Update Pod Info3 result")
 }
 
-
 func TestGetTotalCpuDiskMemory(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
-
 
 	patch3 := gomonkey.ApplyFunc(adapter.GetNodeList, func(_ *kubernetes.Clientset) (nodeList *v1.NodeList, err error) {
 		nodeList = &v1.NodeList{Items: []v1.Node{
@@ -964,14 +940,12 @@ func TestGetTotalCpuDiskMemory(t *testing.T) {
 	assert.Nil(t, result, "Test Get Total Cpu Disk Memory result")
 }
 
-
 func TestGetTotalCpuDiskMemory2(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
-
 
 	patch3 := gomonkey.ApplyFunc(adapter.GetNodeList, func(_ *kubernetes.Clientset) (nodeList *v1.NodeList, err error) {
 		nodeList = &v1.NodeList{Items: []v1.Node{
@@ -1003,7 +977,7 @@ func TestGetTotalCpuDiskMemory2(t *testing.T) {
 func TestWorkloadEvents2(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1019,7 +993,7 @@ func TestWorkloadEvents2(t *testing.T) {
 func TestWorkloadEvents3(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1056,12 +1030,10 @@ func TestWorkloadEvents3(t *testing.T) {
 	assert.Equal(t, "{\"pods\":null}", result, "Test workload events3 execution result")
 }
 
-
-
 func TestWorkloadEvents4(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1107,7 +1079,7 @@ func TestWorkloadEvents4(t *testing.T) {
 func TestWorkloadEvents5(t *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
@@ -1147,14 +1119,13 @@ func TestWorkloadEvents5(t *testing.T) {
 func TestGetPodDescInfo(_ *testing.T) {
 	patch1 := gomonkey.ApplyFunc(adapter.NewHelmClient, func(tenantId string, _ string) (*adapter.HelmClient, error) {
 		// do nothing
-		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId +"/" +ipAddress}, nil
+		return &adapter.HelmClient{HostIP: ipAddress, Kubeconfig: configFile + tenantId + "/" + ipAddress}, nil
 	})
 	defer patch1.Reset()
 
 	patch2 := gomonkey.ApplyFunc(adapter.GetEvents, func(_ *kubernetes.Clientset,
 		_ string, _ *v1.ObjectReference) (events *v1.EventList) {
-		events = &v1.EventList{Items: []v1.Event{
-		},}
+		events = &v1.EventList{Items: []v1.Event{}}
 		return events
 	})
 	defer patch2.Reset()
@@ -1167,10 +1138,10 @@ func TestGetPodDescInfo(_ *testing.T) {
 
 	client.Kubeconfig = baseDir + directory + "/" + hostIpAddress
 	ref := &v1.ObjectReference{
-		Kind:            util.Deployment,
-		APIVersion:      "v1",
-		Name:            "name",
-		Namespace:       namespace,
+		Kind:       util.Deployment,
+		APIVersion: "v1",
+		Name:       "name",
+		Namespace:  namespace,
 	}
 
 	pod := &v1.Pod{
