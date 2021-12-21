@@ -17,9 +17,11 @@
 package controllers
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"lcmcontroller/config"
 	"lcmcontroller/models"
@@ -211,7 +213,7 @@ func (c *LcmControllerV2) UploadPackageV2() {
 		util.ClearByteArray(bKey)
 		return
 	}
-
+	fmt.Println(pkgDetails)
 	err = c.InsertOrUpdateAppPkgRecord(appId, clientIp, tenantId, packageId, pkgDetails, origin)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -385,26 +387,49 @@ func (c *LcmControllerV2) GetPackageDetailsFromPackage(clientIp string,
 	}
 	defer mfYaml.Close()
 
-	mfFileBytes, err := readMfBytes(mfYaml)
-	if err != nil {
-		log.Error(util.FailedToAnalysisMfFile)
-		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
-	}
-
-	data, err := yaml.YAMLToJSON(mfFileBytes)
-	if err != nil {
-		log.Error(util.FailedToCovertYamlToJson + ", pls check mf file if struct is not correct.")
-		return pkgDetails, errors.New(util.FailedToCovertYamlToJson)
-	}
-
-	err = json.Unmarshal(data, &pkgDetails)
-	if err != nil {
-		log.Error(util.UnMarshalError + ", pls check if app version or desc was incorrectly set to a number.")
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.UnMarshalError,
-			util.ErrCodeFailedGetDetails)
-		return pkgDetails, err
-	}
+	ReadMfKeyVal(mfYaml, &pkgDetails)
 	return pkgDetails, nil
+}
+
+func ReadMfKeyVal(mfYaml *os.File, m *models.AppPkgDetails) {
+	scanner := bufio.NewScanner(mfYaml)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if checkLineStartWith(line, util.PkgDtlAppDescription) {
+			m.App_package_description = GetValue(line)
+		}
+		if checkLineStartWith(line, util.PkgDtlAppClass) {
+			m.App_class = GetValue(line)
+		}
+		if checkLineStartWith(line, util.PkgDtlAppVersion) {
+			m.App_package_version = GetValue(line)
+		}
+		if checkLineStartWith(line, util.PkgDtlAppRlsTime) {
+			m.App_release_data_time = GetValue(line)
+		}
+		if checkLineStartWith(line, util.PkgDtlAppType) {
+			m.App_type = GetValue(line)
+		}
+		if checkLineStartWith(line, util.PkgDtlAppName) {
+			m.App_product_name = GetValue(line)
+		}
+		if checkLineStartWith(line, util.PkgDtlAppId) {
+			m.App_provider_id = GetValue(line)
+		}
+	}
+}
+
+
+func GetValue(line string) string {
+	return strings.Trim(strings.Split(line, ":")[1]," ")
+}
+
+func checkLineStartWith(line string, s string) bool {
+	res := false
+	res = strings.HasPrefix(line, s)
+	return res
 }
 
 // get file with extension
