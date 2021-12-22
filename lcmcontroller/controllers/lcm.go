@@ -531,20 +531,14 @@ func (c *LcmController) ExecuteFile(pkgPath string) (string, error) {
 	if shellPath == "" {
 		return "", errors.New("script file not exists")
 	}
-	command := exec.Command(pkgPath + "/"+ shellPath)
-	err = command.Start()
+	cmd, err := exec.Command("/bin/sh", pkgPath + "/"+ shellPath).Output()
+
 	if nil != err {
 		log.Error("failed to execute script", err.Error())
 		return "", err
 	}
 
-	err = command.Wait()
-	if nil != err {
-		log.Error("failed to execute script", err.Error())
-		return "", err
-	}
-
-	return command.ProcessState.String(), nil
+	return string(cmd), nil
 }
 
 func (c *LcmController) handleForNewSuccess(object interface{}, clientIp string, msg string) {
