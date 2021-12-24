@@ -2381,11 +2381,14 @@ func (c *BaseController) IsPermitted(accessToken, clientIp string) (string, erro
 }
 
 func (c *LcmControllerV2) GetMecHostInfoRecord(hostIp string, clientIp string) (*models.MecHost, error) {
+
 	mecHostInfoRecord := &models.MecHost{
 		MecHostId: hostIp,
 	}
 
 	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
+	log.Info("Error is: ", readErr.Error())
+	log.Info("host ip : " + mecHostInfoRecord.MecHostId)
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound, util.MecHostRecDoesNotExist, util.ErrCodeHostNotExist)
 		return nil, readErr
