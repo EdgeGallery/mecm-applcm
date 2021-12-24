@@ -1213,7 +1213,7 @@ func (c *LcmControllerV2) QueryKPI() {
 	if err != nil {
 		return
 	}
-
+	log.Info("host ip is: " + hostIp)
 	vim, err := c.GetVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
