@@ -1213,7 +1213,7 @@ func (c *LcmControllerV2) QueryKPI() {
 	if err != nil {
 		return
 	}
-
+	log.Info("host ip is: " + hostIp)
 	vim, err := c.GetVim(clientIp, hostIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
@@ -2470,13 +2470,12 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 			var ph models.AppPackageHostStatusRecord
 			ph.HostIp = appPkgHost.HostIp
 
-			pluginInfo, client, err := c.GetPluginAndClient(clientIp, p.PackageId, tenantId, ph.HostIp)
-			if err != nil {
-				log.Error("Error happens then continue")
-				continue
-			}
-
 			if appPkgHost.Status != "Distributed" {
+				pluginInfo, client, err := c.GetPluginAndClient(clientIp, p.PackageId, tenantId, ph.HostIp)
+				if err != nil {
+					log.Error("Error happens then continue")
+					continue
+				}
 				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 				status, err = adapter.QueryPackageStatus(tenantId, ph.HostIp, p.PackageId, accessToken)
 				if err != nil {
