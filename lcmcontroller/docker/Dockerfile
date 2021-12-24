@@ -55,7 +55,6 @@ ENV ENV="/etc/profile"ni
 # Create an app user so our program doesn't run as root.
 RUN apk update &&\
     apk add shadow &&\
-	apk add curl &&\
     groupadd -r -g $GID $GROUP_NAME &&\
     useradd -r -u $UID -g $GID -d $HOME -s /sbin/nologin -c "Docker image user" $USER_NAME &&\
 	ulimit -n 2048
