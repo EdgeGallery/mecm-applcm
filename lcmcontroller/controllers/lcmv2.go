@@ -2387,9 +2387,9 @@ func (c *LcmControllerV2) GetMecHostInfoRecord(hostIp string, clientIp string) (
 	}
 
 	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
-	log.Info("Error is: ", readErr.Error())
 	log.Info("host ip : " + mecHostInfoRecord.MecHostId)
 	if readErr != nil {
+		log.Info("Error is: ", readErr.Error())
 		c.HandleForErrorCode(clientIp, util.StatusNotFound, util.MecHostRecDoesNotExist, util.ErrCodeHostNotExist)
 		return nil, readErr
 	}
