@@ -50,12 +50,12 @@ func (c *NetworkController) CreateNetwork() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmAdminRole}, accessToken, clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
+	hostIp, coningTenatnId, vim, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -76,7 +76,7 @@ func (c *NetworkController) CreateNetwork() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	response, err := adapter.CreateNetwork(network, hostIp, accessToken, tenantId)
+	response, err := adapter.CreateNetwork(network, hostIp, accessToken, coningTenatnId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
 			util.ErrCodePluginReportFailed)
@@ -113,12 +113,12 @@ func (c *NetworkController) QueryNetwork() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
+	hostIp, configTenantId, vim, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -135,7 +135,7 @@ func (c *NetworkController) QueryNetwork() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	response, err := adapter.QueryNetwork(hostIp, accessToken, tenantId, networkId)
+	response, err := adapter.QueryNetwork(hostIp, accessToken, configTenantId, networkId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
 			util.ErrCodePluginReportFailed)
@@ -170,12 +170,12 @@ func (c *NetworkController) DeleteNetwork() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
+	hostIp, configTenantId,  vim, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -190,7 +190,7 @@ func (c *NetworkController) DeleteNetwork() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	_, err = adapter.DeleteNetwork(hostIp, accessToken, tenantId, networkId)
+	_, err = adapter.DeleteNetwork(hostIp, accessToken, configTenantId, networkId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
 			util.ErrCodePluginReportFailed)

@@ -73,7 +73,7 @@ func doTest(t *testing.T) {
 		City: "xian",
 		Address: "xian",
 		Affinity: "shenzhen",
-		UserName: "root",
+		TenantId: "root",
 		Coordinates:"1,2",
 	}
 	testDb.mecHostRecords["1.1.1.1"] = *hostInfoRecord

@@ -1818,7 +1818,7 @@ func (c *LcmControllerV2) GetInputParametersForDelPkgOnHost(clientIp string) (st
 
 // Get vim and host ip from package host record
 func (c *LcmControllerV2) GetVimAndHostIpFromPkgHostRec(clientIp, packageId, tenantId, hostIp string) (string, string,
-	string,error) {
+	string, error) {
 	appPkgRecord, err := c.GetAppPackageRecord(packageId, tenantId, clientIp)
 	if err != nil {
 		return "", "", "", err
@@ -2087,7 +2087,9 @@ func (c *LcmControllerV2) GetClientIpAndIsPermitted(receiveMsg string) (clientIp
 func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, accessToken string) error {
 	for _, hostIp := range hosts.HostIp {
-		vim, err := c.GetVim(clientIp, hostIp)
+
+		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
+		vim, configTenantId, err := c.TenantIdAndVim(clientIp, hostIp)
 		if err != nil {
 			return err
 		}
@@ -2099,13 +2101,8 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 				util.ErrCodeFailedGetClient)
 			return err
 		}
-
-		vim, confitTenantId, err := c.TenantIdAndVim(clientIp, hostIp)
-
-		pkgFilePath := PackageFolderPath + confitTenantId + "/" + packageId + "/" + packageId + ".csar"
-
 		adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-		status, err := adapter.UploadPackage(confitTenantId, pkgFilePath, hostIp, packageId, accessToken)
+		status, err := adapter.UploadPackage(configTenantId, pkgFilePath, hostIp, packageId, accessToken)
 		if err != nil {
 			c.HandleLoggingForFailure(clientIp, err.Error())
 			err = c.UpdateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")

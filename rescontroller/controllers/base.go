@@ -316,7 +316,7 @@ func (c *BaseController) ValidateAccessTokenAndGetInputParameters(allowedRoles [
 	if err != nil {
 		return err, accessToken, clientIp, hostIp, vim, tenantId
 	}
-	hostIp, vim, tenantId, err = c.GetInputParameters(clientIp)
+	hostIp, tenantId, vim, err = c.GetInputParameters(clientIp)
 	if err != nil {
 		return err, accessToken, clientIp, hostIp, vim, tenantId
 	}
