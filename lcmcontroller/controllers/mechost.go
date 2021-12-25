@@ -151,13 +151,17 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 		request.Origin = "MEO"
 	}
 
+	if request.Public == "" {
+		request.Public = "false"
+	}
+
 	syncStatus := true
 	if request.Origin == "MEPM" {
 		syncStatus = false
 	}
 	// Insert or update host info record
 	hostInfoRecord := &models.MecHost{
-		MecHostId:          request.MechostIp,
+		MecHostId:          request.MechostIp + "_" + TenantId,
 		MechostIp:          request.MechostIp,
 		MechostName:        request.MechostName,
 		ZipCode:            request.ZipCode,
@@ -170,6 +174,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 		Vim:                request.Vim,
 		Origin:             request.Origin,
 		SyncStatus:         syncStatus,
+		Public:             request.Public,
 	}
 
 	count, err := c.Db.QueryCount(util.Mec_Host)
@@ -310,6 +315,24 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 	return nil
 }
 
+func (c *MecHostController) TenantIdAndVim(hostIp string, clientIp string) (string, string, error) {
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Get VIM from host table based on hostIp
+	vim := mecHostInfoRec.Vim
+
+	// Default to k8s for backward compatibility
+	if vim == "" {
+		log.Info("Setting plugin to default value which is k8s, as no VIM is mentioned explicitly")
+		vim = "k8s"
+	}
+	configTenantId := mecHostInfoRec.TenantId
+	return vim, configTenantId, nil
+}
+
 // Terminate application
 func (c *MecHostController) TerminateApplication(clientIp string, appInsId string) error {
 	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
@@ -317,7 +340,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	vim, err := c.GetVim(clientIp, appInfoRecord.MecHost)
+	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appInfoRecord.MecHost)
 	if err != nil {
 		return err
 	}
@@ -327,7 +350,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId, appInfoRecord.TenantId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId, configTenantId)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
 		return err
@@ -417,31 +440,26 @@ func (c *MecHostController) GetMecHost() {
 	c.handleLoggingForSuccess(clientIp, "Query MEC host info is successful")
 }
 
-func (c *MecHostController) GetMecHostByCond(clientIp string) (mecHosts []*models.MecHost) {
-	edgeKey, _ := c.getKey(clientIp)
-	if edgeKey != "" {
-		count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
-		if count == 0 {
-			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-			return mecHosts
-		}
-	} else {
-		tenantId,_ := c.GetTenantId(clientIp)
-		if tenantId == ""  {
-			count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
-			if count == 0 {
-				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-				return mecHosts
-			}
-		} else {
-			count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, util.TenantId, tenantId)
-			if count == 0 {
-				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-				return mecHosts
-			}
+func (c *MecHostController) GetMecHostByCond(clientIp string,) (mecHosts []*models.MecHost) {
+	tenantId, _ := c.GetTenantId(clientIp)
+	if tenantId == ""  {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.TenantIdIsInvalid, util.ErrCodeTenantIdInvalid)
+	}
+
+	count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
+	if count == 0 {
+		c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
+		return mecHosts
+	}
+
+	result := make([]*models.MecHost,0)
+
+	for _, mecHost := range mecHosts {
+		if mecHost.TenantId == tenantId || mecHost.Public == "true" {
+			result = append(result, mecHost)
 		}
 	}
-	return mecHosts
+	return result
 }
 
 // @Title Query AppInstance information

@@ -54,6 +54,7 @@ type MecHost struct {
 	Vim                string
 	Origin             string
 	SyncStatus         bool
+	Public             string
 	Hwcapabilities     []*MecHwCapability `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
 	AppInfoRecords     []*AppInfoRecord   `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
 }
@@ -265,8 +266,11 @@ type MecHostInfo struct {
 	Coordinates        string              `json:"coordinates"`
 	Vim                string              `json:"vim"`
 	Origin             string              `json:"origin"`
+	Public             string              `json:"public"`
 	Hwcapabilities     []MecHwCapabilities `json:"hwcapabilities"`
 }
+
+
 
 // Mec hardware capabilities
 type MecHwCapabilities struct {
