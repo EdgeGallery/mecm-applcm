@@ -425,6 +425,7 @@ func (c *BaseController) validateCredentials(clientIp, userName, key string) err
 
 	readErr := c.Db.ReadData(edgeAuthInfoRec, "name")
 	if readErr != nil {
+		log.Info("Query user with error: ", readErr.Error())
 		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"Edge auth info record does not exist in database")
 		return readErr
