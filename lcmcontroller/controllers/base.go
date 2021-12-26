@@ -320,7 +320,7 @@ func (c *BaseController) GetMecHostInfoRecord(hostIp string, clientIp string) (*
 		MecHostId: hostIp,
 	}
 
-	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
+	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostId)
 	if readErr != nil {
 		c.HandleLoggingForError(clientIp, util.StatusNotFound, util.MecHostRecDoesNotExist)
 		return nil, readErr

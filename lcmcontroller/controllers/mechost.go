@@ -161,7 +161,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 	}
 	// Insert or update host info record
 	hostInfoRecord := &models.MecHost{
-		MecHostId:          request.MechostIp + "_" + TenantId,
+		MecHostId:          request.MechostIp,
 		MechostIp:          request.MechostIp,
 		MechostName:        request.MechostName,
 		ZipCode:            request.ZipCode,
@@ -189,7 +189,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 		return err
 	}
 
-	err = c.Db.InsertOrUpdateData(hostInfoRecord, util.HostIp)
+	err = c.Db.InsertOrUpdateData(hostInfoRecord, util.HostId)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to save host info record to database.")
@@ -286,7 +286,7 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 		MecHostId: hostIp,
 	}
 
-	readErr := c.Db.ReadData(hostInfoRecord, util.HostIp)
+	readErr := c.Db.ReadData(hostInfoRecord, util.HostId)
 	if readErr != nil {
 		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"Mec host info record does not exist in database")
@@ -294,7 +294,7 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 	}
 	var origin = hostInfoRecord.Origin
 
-	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
+	err := c.Db.DeleteData(hostInfoRecord, util.HostId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -305,7 +305,7 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 	}
 
 	if strings.EqualFold(origin, "mepm") {
-		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
+		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
@@ -611,7 +611,7 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 	}
 	for _, mecHost := range mecHostsSync {
 		mecHost.SyncStatus = true
-		err = c.Db.InsertOrUpdateData(mecHost, util.HostIp)
+		err = c.Db.InsertOrUpdateData(mecHost, util.HostId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save mec host info record to database.")
 			return
@@ -656,7 +656,7 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 		return
 	}
 	for _, mecHostStaleRec := range mecHostStaleRecs {
-		err = c.Db.DeleteData(&mecHostStaleRec, util.HostIp)
+		err = c.Db.DeleteData(&mecHostStaleRec, util.HostId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return

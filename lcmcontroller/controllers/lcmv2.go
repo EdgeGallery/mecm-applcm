@@ -86,7 +86,7 @@ func (c *LcmControllerV2) UploadConfigV2() {
 		MecHostId: hostIp,
 	}
 
-	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	readErr := c.Db.ReadData(hostInfoRec, util.HostId)
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound,
 			util.MecHostRecDoesNotExist, util.ErrCodeHostNotExist)
@@ -112,7 +112,7 @@ func (c *LcmControllerV2) UploadConfigV2() {
 	}
 
 	hostInfoRec.ConfigUploadStatus = "Uploaded"
-	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
+	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostId)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.InsertDBWithError,
 			util.ErrCodeInsertDataFailed)
@@ -567,7 +567,7 @@ func (c *LcmControllerV2) RemoveConfigV2() {
 		return
 	}
 	hostInfoRec.ConfigUploadStatus = ""
-	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostIp)
+	err = c.Db.InsertOrUpdateData(hostInfoRec, util.HostId)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		log.Error("Failed to save mec host info record to database.")
 		return
@@ -625,14 +625,14 @@ func (c *LcmControllerV2) GetInputParametersForRemoveCfg(clientIp string) (strin
 		MecHostId: hostIp,
 	}
 
-	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	readErr := c.Db.ReadData(hostInfoRec, util.HostId)
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound,
 			util.MecHostRecDoesNotExist, util.ErrCodeHostNotExist)
 		return "", "", hostInfoRec, "", err
 	}
 
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, hostIp)
+	vim, configTenantId, err := c.TenantIdAndVim(hostIp, clientIp)
 	if err != nil {
 		return "", "", hostInfoRec, "", err
 	}
@@ -697,7 +697,7 @@ func (c *LcmControllerV2) InstantiateV2() {
 		return
 	}
 
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, hostIp)
+	vim, configTenantId, err := c.TenantIdAndVim(hostIp, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -893,7 +893,7 @@ func (c *LcmControllerV2) InsertOrUpdateAppInfoRecord(clientIp string, appInfoPa
 		MecHostId: appInfoParams.MecHost,
 	}
 
-	readErr := c.Db.ReadData(hostInfoRec, util.HostIp)
+	readErr := c.Db.ReadData(hostInfoRec, util.HostId)
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound,
 			util.MecHostRecDoesNotExist, util.ErrCodeNotFoundInDB)
@@ -1061,7 +1061,7 @@ func (c *LcmControllerV2) TerminateV2() {
 		return
 	}
 
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appInfoRecord.MecHost)
+	vim, configTenantId, err := c.TenantIdAndVim(appInfoRecord.MecHost, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1176,7 +1176,7 @@ func (c *LcmControllerV2) QueryV2() {
 		return
 	}
 
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appInfoRecord.MecHost)
+	vim, configTenantId, err := c.TenantIdAndVim(appInfoRecord.MecHost, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1227,7 +1227,7 @@ func (c *LcmControllerV2) QueryKPI() {
 	}
 
 	log.Info("host ip is: " + hostIp)
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, hostIp)
+	vim, configTenantId, err := c.TenantIdAndVim(hostIp, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1394,7 +1394,7 @@ func (c *LcmControllerV2) GetWorkloadDescription() {
 		return
 	}
 
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appInfoRecord.MecHost)
+	vim, configTenantId, err := c.TenantIdAndVim(appInfoRecord.MecHost, clientIp)
 	if err != nil {
 		util.ClearByteArray(bKey)
 		return
@@ -1698,7 +1698,7 @@ func (c *LcmControllerV2) DeleteAppPkgRecords(packageId, tenantId, clientIp stri
 // Send delete package
 func (c *LcmControllerV2) DeletePkg(appPkgHost *models.AppPackageHostRecord,
 	clientIp, packageId, accessToken string) error {
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appPkgHost.HostIp)
+	vim, configTenantId, err := c.TenantIdAndVim( appPkgHost.HostIp, clientIp)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetVimFailed)
 		return err
@@ -1830,7 +1830,7 @@ func (c *LcmControllerV2) GetVimAndHostIpFromPkgHostRec(clientIp, packageId, ten
 		return "", "", "", err
 	}
 
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appPkgHostRecord.HostIp)
+	vim, configTenantId, err := c.TenantIdAndVim(appPkgHostRecord.HostIp, clientIp)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetVimFailed)
 		return "", "", "", err
@@ -2084,7 +2084,7 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, accessToken string) error {
 	for _, hostIp := range hosts.HostIp {
 
-		vim, configTenantId, err := c.TenantIdAndVim(clientIp, hostIp)
+		vim, configTenantId, err := c.TenantIdAndVim(hostIp, clientIp)
 		if err != nil {
 			return err
 		}
@@ -2390,10 +2390,10 @@ func (c *BaseController) IsPermitted(accessToken, clientIp string) (string, erro
 func (c *LcmControllerV2) GetMecHostInfoRecord(hostIp string, clientIp string) (*models.MecHost, error) {
 
 	mecHostInfoRecord := &models.MecHost{
-		MechostIp: hostIp,
+		MecHostId: hostIp,
 	}
 
-	readErr := c.Db.ReadData(mecHostInfoRecord, util.MecHostIp)
+	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostId)
 	log.Info("host ip : " + mecHostInfoRecord.MecHostId)
 	if readErr != nil {
 		log.Info("Error is: ", readErr.Error())
