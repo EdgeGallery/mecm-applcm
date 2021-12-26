@@ -362,6 +362,7 @@ type AppInfoParams struct {
 	SyncStatus    bool
 	ClientIP      string
 	AccessToken   string
+	Vim           string
 }
 
 // Edge Authentication Info

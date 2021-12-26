@@ -697,14 +697,21 @@ func (c *LcmControllerV2) InstantiateV2() {
 		return
 	}
 
+	vim, configTenantId, err := c.TenantIdAndVim(params.ClientIP, params.MecHost)
+	if err != nil {
+		util.ClearByteArray(bKey)
+		return
+	}
+
 	appParams := &models.AppInfoParams{
 		AppInstanceId: appInsId,
 		MecHost:       hostIp,
-		TenantId:      tenantId,
+		TenantId:      configTenantId,
 		AppPackageId:  packageId,
 		AppName:       appName,
 		ClientIP:      clientIp,
 		AccessToken:   accessToken,
+		Vim:           vim,
 	}
 
 	DoPrepareParams(c, appParams, bKey)
@@ -713,11 +720,10 @@ func (c *LcmControllerV2) InstantiateV2() {
 
 func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		AppPkgId: params.AppPackageId,
-		HostIp: params.MecHost,
+		PkgHostKey: params.AppPackageId + params.TenantId + params.MecHost,
 	}
 
-	readErr := c.Db.ReadData(appPkgHostRecord, "app_package_id", "mec_host")
+	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
 	if readErr != nil {
 		c.HandleForErrorCode(params.ClientIP, util.StatusNotFound,
 			"App package host record not exists", util.ErrCodeNotFoundInDB)
@@ -746,13 +752,7 @@ func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []by
 }
 
 func DoInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte, req models.InstantiateRequest) {
-	vim, configTenantId, err := c.TenantIdAndVim(params.ClientIP, params.MecHost)
-	if err != nil {
-		util.ClearByteArray(bKey)
-		return
-	}
-
-	pluginInfo := util.GetPluginInfo(vim)
+	pluginInfo := util.GetPluginInfo(params.Vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
 	if err != nil {
 		util.ClearByteArray(bKey)
