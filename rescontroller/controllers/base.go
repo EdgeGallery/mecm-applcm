@@ -283,8 +283,8 @@ func (c *BaseController) GetVim(clientIp string, hostIp string) (string, string,
 }
 
 // Get input parameters for upload configuration
-func (c *BaseController) GetInputParameters(clientIp string) (hostIp string, tenantId string,
-	vim string, err error) {
+func (c *BaseController) GetInputParameters(clientIp string) (hostIp string, vim string,  tenantId string,
+	err error) {
 	hostIp, err = c.GetUrlHostIP(clientIp)
 	if err != nil {
 		return hostIp, vim, tenantId, err
@@ -316,7 +316,7 @@ func (c *BaseController) ValidateAccessTokenAndGetInputParameters(allowedRoles [
 	if err != nil {
 		return err, accessToken, clientIp, hostIp, vim, tenantId
 	}
-	hostIp, tenantId, vim, err = c.GetInputParameters(clientIp)
+	hostIp, vim, tenantId, err = c.GetInputParameters(clientIp)
 	if err != nil {
 		return err, accessToken, clientIp, hostIp, vim, tenantId
 	}
