@@ -971,7 +971,7 @@ func (c *LcmControllerV2) InsertOrUpdateAppPkgRecord(appId, clientIp, tenantId,
 		syncStatus = false
 	}
 	appPkgRecord := &models.AppPackageRecord{
-		AppPkgId:      packageId + tenantId,
+		AppPkgId:      packageId,
 		TenantId:      tenantId,
 		PackageId:     packageId,
 		AppId:         appId,
@@ -2012,23 +2012,18 @@ func (c *LcmControllerV2) DistributePackage() {
 		return
 	}
 
-	tenantId, err := c.GetTenantId(clientIp)
-	if err != nil {
-		return
-	}
-
 	appPkgRecord := &models.AppPackageRecord{
-		PackageId: packageId,
+		AppPkgId: packageId,
 	}
 
-	readErr := c.Db.ReadData(appPkgRecord, "package_id")
+	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound,
 			"App package does not exist", util.ErrCodeRecordNotExist)
 		return
 	}
 
-	err = c.ProcessUploadPackage(hosts, clientIp, tenantId, packageId, accessToken)
+	err = c.ProcessUploadPackage(hosts, clientIp, appPkgRecord.TenantId, packageId, accessToken)
 	if err != nil {
 		return
 	}
