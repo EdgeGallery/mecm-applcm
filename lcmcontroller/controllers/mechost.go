@@ -152,7 +152,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 	}
 
 	if request.Public == "" {
-		request.Public = "false"
+		request.Public = "true"
 	}
 
 	syncStatus := true
