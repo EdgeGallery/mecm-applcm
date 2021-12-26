@@ -283,7 +283,7 @@ func (c *BaseController) GetVim(clientIp string, hostIp string) (string, string,
 }
 
 // Get input parameters for upload configuration
-func (c *BaseController) GetInputParameters(clientIp string) (hostIp string, vim string,  tenantId string,
+func (c *BaseController) GetInputParameters(clientIp string) (hostIp string, vim string, tenantId string,
 	err error) {
 	hostIp, err = c.GetUrlHostIP(clientIp)
 	if err != nil {

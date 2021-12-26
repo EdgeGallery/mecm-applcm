@@ -55,7 +55,7 @@ func (c *NetworkController) CreateNetwork() {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, coningTenatnId, vim, err := c.GetInputParameters(clientIp)
+	hostIp, vim, coningTenatnId, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -118,7 +118,7 @@ func (c *NetworkController) QueryNetwork() {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, configTenantId, vim, err := c.GetInputParameters(clientIp)
+	hostIp, vim, configTenantId, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -175,7 +175,7 @@ func (c *NetworkController) DeleteNetwork() {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, configTenantId,  vim, err := c.GetInputParameters(clientIp)
+	hostIp, vim, configTenantId, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
