@@ -720,7 +720,7 @@ func (c *LcmControllerV2) InstantiateV2() {
 
 func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: params.AppPackageId + params.TenantId + params.MecHost,
+		PkgHostKey: params.AppPackageId + params.MecHost,
 	}
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
