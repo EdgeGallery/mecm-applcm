@@ -1659,7 +1659,7 @@ func (c *LcmControllerV2) ProcessDeletePackage(clientIp, packageId, tenantId, ac
 // Delete application package records
 func (c *LcmControllerV2) DeleteAppPkgRecords(packageId, tenantId, clientIp string) error {
 	appPkgRec := &models.AppPackageRecord{
-		AppPkgId: packageId + tenantId,
+		AppPkgId: packageId,
 	}
 
 	err := c.Db.ReadData(appPkgRec, util.AppPkgId)
@@ -1883,7 +1883,7 @@ func (c *LcmControllerV2) InsertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenan
 		return err
 	}
 	appPkgRec := &models.AppPackageRecord{
-		AppPkgId: packageId + tenantId,
+		AppPkgId: packageId,
 	}
 
 	readErr := c.Db.ReadData(appPkgRec, util.AppPkgId)
@@ -1897,7 +1897,7 @@ func (c *LcmControllerV2) InsertOrUpdateAppPkgHostRecord(hostIp, clientIp, tenan
 	}
 
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: packageId + tenantId + hostIp,
+		PkgHostKey: packageId + hostIp,
 		HostIp:     hostIp,
 		AppPkgId:   packageId,
 		Status:     distributionStatus,
@@ -1945,7 +1945,7 @@ func (c *LcmControllerV2) GetInputParametersForDistributionStatus(clientIp strin
 // Delete application pacakge records
 func (c *LcmControllerV2) DelAppPkgRecords(clientIp, packageId, tenantId, hostIp string) error {
 	appPkgHostRec := &models.AppPackageHostRecord{
-		PkgHostKey: packageId + tenantId + hostIp,
+		PkgHostKey: packageId + hostIp,
 	}
 
 	err := c.Db.ReadData(appPkgHostRec, util.PkgHostKey)
@@ -2100,7 +2100,7 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 		status, err := adapter.UploadPackage(configTenantId, pkgFilePath, hostIp, packageId, accessToken)
 		if err != nil {
 			c.HandleLoggingForFailure(clientIp, err.Error())
-			err = c.UpdateAppPkgRecord(hosts, clientIp, tenantId, packageId, hostIp, "Error")
+			err = c.UpdateAppPkgRecord(hosts, clientIp, configTenantId, packageId, hostIp, "Error")
 			return err
 		}
 		if status == util.Failure {
@@ -2444,7 +2444,7 @@ func (c *LcmControllerV2) GetAppPkgRecords(clientIp, packageId, tenantId string)
 				return appPkgRecords, errors.New(util.RecordDoesNotExist)
 			}
 		} else {
-			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId + tenantId)
+			count, _ := c.Db.QueryTable(util.AppPackageRecordId, &appPkgRecords, util.AppPkgId, packageId)
 			if count == 0 {
 				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
 				return appPkgRecords, errors.New(util.RecordDoesNotExist)
