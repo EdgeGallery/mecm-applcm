@@ -713,10 +713,11 @@ func (c *LcmControllerV2) InstantiateV2() {
 
 func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: params.AppPackageId + params.TenantId + params.MecHost,
+		AppPkgId: params.AppPackageId,
+		HostIp: params.MecHost,
 	}
 
-	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
+	readErr := c.Db.ReadData(appPkgHostRecord, "app_package_id", "mec_host")
 	if readErr != nil {
 		c.HandleForErrorCode(params.ClientIP, util.StatusNotFound,
 			"App package host record not exists", util.ErrCodeNotFoundInDB)
@@ -2017,10 +2018,10 @@ func (c *LcmControllerV2) DistributePackage() {
 	}
 
 	appPkgRecord := &models.AppPackageRecord{
-		AppPkgId: packageId + tenantId,
+		PackageId: packageId,
 	}
 
-	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
+	readErr := c.Db.ReadData(appPkgRecord, "package_id")
 	if readErr != nil {
 		c.HandleForErrorCode(clientIp, util.StatusNotFound,
 			"App package does not exist", util.ErrCodeRecordNotExist)
@@ -2088,12 +2089,11 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 	clientIp, tenantId, packageId, accessToken string) error {
 	for _, hostIp := range hosts.HostIp {
 
-		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
 		vim, configTenantId, err := c.TenantIdAndVim(clientIp, hostIp)
 		if err != nil {
 			return err
 		}
-
+		pkgFilePath := PackageFolderPath + configTenantId + "/" + packageId + "/" + packageId + ".csar"
 		pluginInfo := util.GetPluginInfo(vim)
 		client, err := pluginAdapter.GetClient(pluginInfo)
 		if err != nil {
