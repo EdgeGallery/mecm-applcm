@@ -263,11 +263,11 @@ func (c *BaseController) GetMecHostInfoRecord(hostIp string, clientIp string) (*
 }
 
 // Get vim name
-func (c *BaseController) GetVim(clientIp string, hostIp string) (string, error) {
+func (c *BaseController) GetVim(clientIp string, hostIp string) (string, string, error) {
 
 	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Get VIM from host table based on hostIp
@@ -278,23 +278,24 @@ func (c *BaseController) GetVim(clientIp string, hostIp string) (string, error) 
 		log.Info("Setting plugin to default value which is k8s, as no VIM is mentioned explicitly")
 		vim = "k8s"
 	}
-	return vim, nil
+	tenantId := mecHostInfoRec.TenantId
+	return vim, tenantId, nil
 }
 
 // Get input parameters for upload configuration
-func (c *BaseController) GetInputParameters(clientIp string) (hostIp string,
-	vim string, err error) {
+func (c *BaseController) GetInputParameters(clientIp string) (hostIp string, vim string, tenantId string,
+	err error) {
 	hostIp, err = c.GetUrlHostIP(clientIp)
 	if err != nil {
-		return hostIp, vim, err
+		return hostIp, vim, tenantId, err
 	}
 
-	vim, err = c.GetVim(clientIp, hostIp)
+	vim, tenantId, err = c.GetVim(clientIp, hostIp)
 	if err != nil {
-		return hostIp, vim, err
+		return hostIp, vim, tenantId, err
 	}
 
-	return hostIp, vim, nil
+	return hostIp, vim, tenantId, nil
 }
 
 func (c *BaseController) handleLoggingForSuccessV1(clientIp string, msg string) {
@@ -311,11 +312,11 @@ func (c *BaseController) ValidateAccessTokenAndGetInputParameters(allowedRoles [
 	}
 	c.displayReceivedMsg(clientIp)
 	accessToken = c.Ctx.Request.Header.Get(util.AccessToken)
-	tenantId, err = c.isPermitted(allowedRoles, accessToken, clientIp)
+	_, err = c.isPermitted(allowedRoles, accessToken, clientIp)
 	if err != nil {
 		return err, accessToken, clientIp, hostIp, vim, tenantId
 	}
-	hostIp, vim, err = c.GetInputParameters(clientIp)
+	hostIp, vim, tenantId, err = c.GetInputParameters(clientIp)
 	if err != nil {
 		return err, accessToken, clientIp, hostIp, vim, tenantId
 	}

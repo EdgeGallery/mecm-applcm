@@ -53,13 +53,13 @@ func (c *PluginAdapter) Instantiate(tenantId string, accessToken string, appInsI
 }
 
 // Query application
-func (c *PluginAdapter) Query(accessToken, appInsId, host string,tenantId string) (response string, error error) {
+func (c *PluginAdapter) Query(accessToken, appInsId, host string, tenantId string) (response string, error error) {
 	log.Info("Query started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), util.Timeout*time.Second)
 	defer cancel()
 
-	response, err := c.client.Query(ctx, accessToken, appInsId, host,tenantId)
+	response, err := c.client.Query(ctx, accessToken, appInsId, host, tenantId)
 	if err != nil {
 		log.Errorf("failed to query information")
 		return "", err

@@ -336,7 +336,7 @@ func getCommonParameters(localIp string) (string, map[string]string, *MockDb) {
 		City: "xian",
 		Address: "xian",
 		Affinity: "shenzhen",
-		UserName: "root",
+		TenantId: "root",
 		Coordinates:"1,2",
 	}
 	testDb.mecHostRecords["1.1.1.1"] = *hostInfoRecord

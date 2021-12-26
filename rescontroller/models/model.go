@@ -54,7 +54,7 @@ type MecHost struct {
 	City               string
 	Address            string
 	Affinity           string
-	UserName           string
+	TenantId           string
 	ConfigUploadStatus string
 	Coordinates        string
 	Vim                string

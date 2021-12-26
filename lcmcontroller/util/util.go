@@ -65,7 +65,8 @@ const (
 	AppPackageRecordId              = "app_package_record"
 	PkgHostKey                      = "pkg_host_key"
 	TenantId                        = "tenant_id"
-	HostIp                          = "mec_host_id"
+	HostId                          = "mec_host_id"
+	MecHostIp                       = "mec_host_ip"
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
 
