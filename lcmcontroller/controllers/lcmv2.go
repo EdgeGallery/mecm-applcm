@@ -719,41 +719,43 @@ func (c *LcmControllerV2) InstantiateV2() {
 		Vim:           vim,
 	}
 
-	DoPrepareParams(c, appParams, bKey)
+	err = DoPrepareParams(c, appParams, bKey)
+	if err != nil {
+		return
+	}
 	DoInstantiate(c, appParams, bKey, req)
 }
 
-func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) {
+func DoPrepareParams(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte) error{
+	appInfoRecord := &models.AppInfoRecord{
+		AppInstanceId: params.AppInstanceId,
+	}
+	readErr := c.Db.ReadData(appInfoRecord, util.AppInsId)
+	if readErr == nil {
+		c.HandleForErrorCode(params.ClientIP, util.BadRequest,
+			"App instance info record already exists", util.ErrCodeInstanceIsExist)
+		util.ClearByteArray(bKey)
+		return errors.New("AppInfoExists")
+	}
+
 	appPkgHostRecord := &models.AppPackageHostRecord{
 		PkgHostKey: params.AppPackageId + params.MecHost,
 	}
 
-	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
+	readErr = c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
 	if readErr != nil {
 		c.HandleForErrorCode(params.ClientIP, util.StatusNotFound,
 			"App package host record not exists", util.ErrCodeNotFoundInDB)
 		util.ClearByteArray(bKey)
-		return
+		return readErr
 	}
 	if appPkgHostRecord.Status != "Distributed" && appPkgHostRecord.Status != "uploaded"{
 		c.HandleForErrorCode(params.ClientIP, util.BadRequest,
 			"application package distribution status is:"+appPkgHostRecord.Status, util.ErrCodePackDistributed)
 		util.ClearByteArray(bKey)
-		return
+		return errors.New("AppStatusDistributing")
 	}
-
-	appInfoRecord := &models.AppInfoRecord{
-		AppInstanceId: params.AppInstanceId,
-	}
-
-	readErr = c.Db.ReadData(appInfoRecord, util.AppInsId)
-	if readErr == nil {
-		c.HandleForErrorCode(params.ClientIP, util.BadRequest,
-			"App instance info record already exists", util.ErrCodeInstanceIsExist)
-		util.ClearByteArray(bKey)
-		return
-	}
-
+	return nil
 }
 
 func DoInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte, req models.InstantiateRequest) {
