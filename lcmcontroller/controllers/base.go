@@ -267,7 +267,7 @@ func (c *BaseController) DeleteAppInfoRecord(appInsId string) error {
 // Delete app package record
 func (c *BaseController) DeleteAppPackageRecord(appPkgId string, tenantId string) error {
 	appPkgRecord := &models.AppPackageRecord{
-		AppPkgId: appPkgId + tenantId,
+		AppPkgId: appPkgId,
 	}
 
 	err := c.Db.DeleteData(appPkgRecord, util.AppPkgId)
