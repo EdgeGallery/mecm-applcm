@@ -1841,7 +1841,7 @@ func (c *LcmControllerV2) GetVimAndHostIpFromPkgHostRec(clientIp, packageId, ten
 // Get app package host record
 func (c *LcmControllerV2) GetAppPackageHostRecord(hostIp, appPkgId, tenantId, clientIp string) (*models.AppPackageHostRecord, error) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: appPkgId + tenantId + hostIp,
+		PkgHostKey: appPkgId + hostIp,
 	}
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)

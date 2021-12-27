@@ -176,7 +176,7 @@ func (c *BaseController) GetAppPackageRecord(appPkgId string, tenantId string, c
 // Get app package host record
 func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, clientIp string) (*models.AppPackageHostRecord, error) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: appPkgId + tenantId + hostIp,
+		PkgHostKey: appPkgId + hostIp,
 	}
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
@@ -281,7 +281,7 @@ func (c *BaseController) DeleteAppPackageRecord(appPkgId string, tenantId string
 // Delete app package host record
 func (c *BaseController) DeleteAppPackageHostRecord(hostIp, appPkgId, tenantId string) error {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: appPkgId + tenantId + hostIp,
+		PkgHostKey: appPkgId + hostIp,
 	}
 
 	err := c.Db.DeleteData(appPkgHostRecord, util.PkgHostKey)
