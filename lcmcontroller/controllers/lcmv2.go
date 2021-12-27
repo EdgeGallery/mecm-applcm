@@ -696,6 +696,10 @@ func (c *LcmControllerV2) InstantiateV2() {
 		c.HandleForErrorCode(clientIp, util.BadRequest, util.OriginIsInvalid, util.ErrCodeAppNameInvalid)
 		return
 	}
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return
+	}
 
 	vim, configTenantId, err := c.TenantIdAndVim(hostIp, clientIp)
 	if err != nil {
@@ -706,7 +710,8 @@ func (c *LcmControllerV2) InstantiateV2() {
 	appParams := &models.AppInfoParams{
 		AppInstanceId: appInsId,
 		MecHost:       hostIp,
-		TenantId:      configTenantId,
+		TenantId:      tenantId,
+		ConfitTenantId: configTenantId,
 		AppPackageId:  packageId,
 		AppName:       appName,
 		ClientIP:      clientIp,
@@ -788,7 +793,7 @@ func DoInstantiate(c *LcmControllerV2, params *models.AppInfoParams, bKey []byte
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	err, status := adapter.Instantiate(params.TenantId, params.AccessToken, params.AppInstanceId, req)
+	err, status := adapter.Instantiate(params.ConfitTenantId, params.AccessToken, params.AppInstanceId, req)
 	util.ClearByteArray(bKey)
 	if err != nil {
 		c.HandleErrorForInstantiateApp(acm, params.ClientIP, params.AppInstanceId, params.TenantId)
