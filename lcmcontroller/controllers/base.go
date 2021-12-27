@@ -161,7 +161,7 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 // Get app package record
 func (c *BaseController) GetAppPackageRecord(appPkgId string, tenantId string, clientIp string) (*models.AppPackageRecord, error) {
 	appPkgRecord := &models.AppPackageRecord{
-		AppPkgId: appPkgId + tenantId,
+		AppPkgId: appPkgId,
 	}
 
 	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
