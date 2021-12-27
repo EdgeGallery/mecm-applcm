@@ -2481,12 +2481,12 @@ func (c *LcmControllerV2) GetAppPkgs(clientIp, accessToken, tenantId string,
 			ph.HostIp = appPkgHost.HostIp
 
 			if appPkgHost.Status != "Distributed" {
-				pluginInfo, client, err := c.GetPluginAndClient(clientIp, p.PackageId, tenantId, ph.HostIp)
+				_, configTenantId, err := c.TenantIdAndVim(ph.HostIp, clientIp)
+				pluginInfo, client, err := c.GetPluginAndClient(clientIp, p.PackageId, configTenantId, ph.HostIp)
 				if err != nil {
 					log.Error("Error happens then continue")
 					continue
 				}
-				_, configTenantId, err := c.TenantIdAndVim(ph.HostIp, clientIp)
 				adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
 				status, err = adapter.QueryPackageStatus(configTenantId, ph.HostIp, p.PackageId, accessToken)
 				if err != nil {
