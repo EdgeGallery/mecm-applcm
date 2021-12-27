@@ -2088,7 +2088,7 @@ func (c *LcmControllerV2) ProcessUploadPackage(hosts models.DistributeRequest,
 		if err != nil {
 			return err
 		}
-		pkgFilePath := PackageFolderPath + configTenantId + "/" + packageId + "/" + packageId + ".csar"
+		pkgFilePath := PackageFolderPath + tenantId + "/" + packageId + "/" + packageId + ".csar"
 		pluginInfo := util.GetPluginInfo(vim)
 		client, err := pluginAdapter.GetClient(pluginInfo)
 		if err != nil {
