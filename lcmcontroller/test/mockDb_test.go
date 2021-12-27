@@ -24,12 +24,11 @@ import (
 )
 
 type MockDb struct {
-	appInstanceRecords map[string]models.AppInfoRecord
-	tenantRecords      map[string]models.TenantInfoRecord
-	appPackageRecords  map[string]models.AppPackageRecord
-	appPackageHostRecords  map[string]models.AppPackageHostRecord
-	mecHostRecords     map[string]models.MecHost
-
+	appInstanceRecords    map[string]models.AppInfoRecord
+	tenantRecords         map[string]models.TenantInfoRecord
+	appPackageRecords     map[string]models.AppPackageRecord
+	appPackageHostRecords map[string]models.AppPackageHostRecord
+	mecHostRecords        map[string]models.MecHost
 }
 
 func (db *MockDb) InitDatabase() error {
@@ -64,7 +63,7 @@ func (db *MockDb) InsertOrUpdateData(data interface{}, cols ...string) (err erro
 		}
 	}
 
-	if cols[0] == util.HostIp {
+	if cols[0] == util.HostId {
 		mecHost, ok := data.(*models.MecHost)
 		if ok {
 			db.mecHostRecords[mecHost.MecHostId] = *mecHost
@@ -84,7 +83,7 @@ func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
 			appInstance.TenantId = readAppInstance.TenantId
 			appInstance.MecHost = readAppInstance.MecHost
 			appInstance.DeployType = readAppInstance.DeployType
-			appInstance.Origin     = readAppInstance.Origin
+			appInstance.Origin = readAppInstance.Origin
 		}
 	}
 	if cols[0] == util.TenantId {
@@ -100,7 +99,7 @@ func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
 		appPackage, ok := data.(*models.AppPackageRecord)
 		if ok {
 			readAppPackage := db.appPackageRecords[appPackage.AppPkgId]
-			if (reflect.DeepEqual(readAppPackage,models.AppPackageRecord{})) {
+			if (reflect.DeepEqual(readAppPackage, models.AppPackageRecord{})) {
 				return errors.New("App package record not found")
 			}
 			appPackage.TenantId = readAppPackage.TenantId
@@ -114,7 +113,7 @@ func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
 		appPackageHost, ok := data.(*models.AppPackageHostRecord)
 		if ok {
 			readAppPackageHost := db.appPackageHostRecords[appPackageHost.PkgHostKey]
-			if (reflect.DeepEqual(readAppPackageHost,models.AppPackageHostRecord{})) {
+			if (reflect.DeepEqual(readAppPackageHost, models.AppPackageHostRecord{})) {
 				return errors.New("App package host record not found")
 			}
 			appPackageHost.TenantId = readAppPackageHost.TenantId
@@ -124,18 +123,19 @@ func (db *MockDb) ReadData(data interface{}, cols ...string) (err error) {
 		}
 	}
 
-	if cols[0] == util.HostIp {
+	if cols[0] == util.HostId {
 		mecHost, ok := data.(*models.MecHost)
 		if ok {
 			readMecHost := db.mecHostRecords[mecHost.MecHostId]
-			if (reflect.DeepEqual(readMecHost,models.MecHost{})) {
+			if (reflect.DeepEqual(readMecHost, models.MecHost{})) {
 				return errors.New("MEC host record not found")
 			}
 			mecHost.MecHostId = readMecHost.MecHostId
 			mecHost.MechostIp = readMecHost.MechostIp
 			mecHost.MechostName = readMecHost.MechostName
 			mecHost.Vim = readMecHost.Vim
-			mecHost.Origin     = readMecHost.Origin
+			mecHost.Origin = readMecHost.Origin
+			mecHost.TenantId = readMecHost.TenantId
 		}
 	}
 	if cols[0] == "app_pkg_name" {
@@ -169,7 +169,7 @@ func (db *MockDb) DeleteData(data interface{}, cols ...string) (err error) {
 		appPackage, ok := data.(*models.AppPackageRecord)
 		if ok {
 			readAppPackage := db.appPackageRecords[appPackage.AppPkgId]
-			if (reflect.DeepEqual(readAppPackage,models.AppPackageRecord{})) {
+			if (reflect.DeepEqual(readAppPackage, models.AppPackageRecord{})) {
 				return errors.New("App Package record not found")
 			}
 			delete(db.appPackageRecords, readAppPackage.AppPkgId)
@@ -180,18 +180,18 @@ func (db *MockDb) DeleteData(data interface{}, cols ...string) (err error) {
 		appPackageHost, ok := data.(*models.AppPackageHostRecord)
 		if ok {
 			readAppPackageHost := db.appPackageHostRecords[appPackageHost.PkgHostKey]
-			if (reflect.DeepEqual(readAppPackageHost,models.AppPackageRecord{})) {
+			if (reflect.DeepEqual(readAppPackageHost, models.AppPackageRecord{})) {
 				return errors.New("App Package host record not found")
 			}
 			delete(db.appPackageRecords, readAppPackageHost.PkgHostKey)
 		}
 	}
 
-	if cols[0] == util.HostIp {
+	if cols[0] == util.HostId {
 		mecHost, ok := data.(*models.MecHost)
 		if ok {
 			readMecHost := db.mecHostRecords[mecHost.MecHostId]
-			if (reflect.DeepEqual(readMecHost,models.MecHost{})) {
+			if (reflect.DeepEqual(readMecHost, models.MecHost{})) {
 				return errors.New("App Package record not found")
 			}
 			delete(db.mecHostRecords, readMecHost.MecHostId)
@@ -236,4 +236,3 @@ func (db *MockDb) QueryTable(tableName string, container interface{}, field stri
 func (db *MockDb) LoadRelated(md interface{}, name string) (int64, error) {
 	return 0, nil
 }
-
