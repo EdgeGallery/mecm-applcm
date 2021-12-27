@@ -24,6 +24,7 @@ import (
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"strings"
+	"unsafe"
 )
 
 // Mec Host Controller
@@ -46,6 +47,14 @@ func (c *MecHostController) AddMecHost() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.IsPermitted(accessToken, clientIp)
+	defer util.ClearByteArray(bKey)
+	if err != nil {
+		return
+	}
 
 	tenantId, err := c.GetTenantId(clientIp)
 	if err != nil {
@@ -230,6 +239,14 @@ func (c *MecHostController) DeleteMecHost() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.IsPermitted(accessToken, clientIp)
+	defer util.ClearByteArray(bKey)
+	if err != nil {
+		return
+	}
 
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
@@ -440,9 +457,9 @@ func (c *MecHostController) GetMecHost() {
 	c.handleLoggingForSuccess(clientIp, "Query MEC host info is successful")
 }
 
-func (c *MecHostController) GetMecHostByCond(clientIp string,) (mecHosts []*models.MecHost) {
+func (c *MecHostController) GetMecHostByCond(clientIp string) (mecHosts []*models.MecHost) {
 	tenantId, _ := c.GetTenantId(clientIp)
-	if tenantId == ""  {
+	if tenantId == "" {
 		c.HandleForErrorCode(clientIp, util.BadRequest, util.TenantIdIsInvalid, util.ErrCodeTenantIdInvalid)
 	}
 
@@ -452,7 +469,7 @@ func (c *MecHostController) GetMecHostByCond(clientIp string,) (mecHosts []*mode
 		return mecHosts
 	}
 
-	result := make([]*models.MecHost,0)
+	result := make([]*models.MecHost, 0)
 
 	for _, mecHost := range mecHosts {
 		if mecHost.TenantId == tenantId || mecHost.Public == "true" {
