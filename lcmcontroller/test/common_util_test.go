@@ -35,7 +35,7 @@ var (
 	ipAddFormatter = "%d.%d.%d.%d"
 	fwdIp          = fmt.Sprintf(ipAddFormatter, rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal), rand.Intn(util.MaxIPVal),
 		rand.Intn(util.MaxIPVal))
-	noMoreData     = 	"No more data"
+	noMoreData = "No more data"
 )
 
 // Creates a new file upload http request with optional extra params
@@ -92,7 +92,6 @@ func getHttpRequest(uri string, params map[string]string, paramName string, path
 	req.Header.Set("packageId", packageId)
 	req.Header.Set("X-Forwarded-For", fwdIp)
 	req.Header.Set("chunk_num", "0")
-
 
 	// Parse and create multipart form
 	_ = req.ParseMultipartForm(32 << 20)

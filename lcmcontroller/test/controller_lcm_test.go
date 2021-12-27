@@ -151,14 +151,14 @@ func testChangeKey(t *testing.T, extraParams map[string]string, path string, tes
 				return username, "testKey4", "", nil
 			})
 		defer patch7.Reset()
-		patch8:= gomonkey.ApplyMethod(reflect.TypeOf(keyController.Db), readData,
+		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(keyController.Db), readData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
 				return err
 			})
 		defer patch8.Reset()
 		keyController.ChangeKey()
 
-		patch9:= gomonkey.ApplyMethod(reflect.TypeOf(keyController.Db), readData,
+		patch9 := gomonkey.ApplyMethod(reflect.TypeOf(keyController.Db), readData,
 			func(_ *MockDb, _ interface{}, _ ...string) error {
 				return nil
 			})
@@ -334,7 +334,6 @@ func testLoginPage(t *testing.T, extraParams map[string]string, path string, tes
 	})
 }
 
-
 func testDeletePkg(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
 	t.Run("TestDeletePkg", func(_ *testing.T) {
@@ -373,7 +372,6 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 		//test case-1 for deletepkg of LcmV2Controller
 		result := deleteLcmv2Controller.DeletePkg(appPkgHostRecord, clientIp, packageId, accessToken)
 		assert.Empty(t, result, "deleted package for lcmv2 controller successfully")
-
 
 		//case-2
 		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(deleteController.Db), readData,
@@ -460,7 +458,7 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 			return err
 		})
 		defer patch12.Reset()
-		_, _, _, _, result10:= deleteLcmv2Controller.GetInputParametersForRemoveCfg(clientIp)
+		_, _, _, _, result10 := deleteLcmv2Controller.GetInputParametersForRemoveCfg(clientIp)
 		assert.NotEmpty(t, result10, "Error occurred as host does not exist ")
 
 		//case-2:
@@ -474,7 +472,7 @@ func testDeletePkg(t *testing.T, extraParams map[string]string, path string, tes
 			})
 		defer patch16.Reset()
 		_, _, _, _, result11 := deleteLcmv2Controller.GetInputParametersForRemoveCfg(clientIp)
-		assert.Empty(t, result11, "Error occurred as host does not exist ")
+		assert.Error(t, result11, "Error occurred as host does not exist ")
 	})
 }
 
@@ -626,7 +624,7 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 		assert.NotEmpty(t, result1, "Validate Add MecHost ZipCode City")
 
 		//case-1
-		result = instantiateController.InsertorUpdateMecHostRecord(clientIp,tenantId, mecHost)
+		result = instantiateController.InsertorUpdateMecHostRecord(clientIp, tenantId, mecHost, true)
 		assert.Empty(t, result, "error while Insert or Update MecHost Record")
 
 		//case-2
@@ -635,7 +633,7 @@ func testAddMecHostErr(t *testing.T, extraParams map[string]string, testDb dbAda
 				return err
 			})
 		defer patch6.Reset()
-		result = instantiateController.InsertorUpdateMecHostRecord(clientIp,tenantId, mecHost)
+		result = instantiateController.InsertorUpdateMecHostRecord(clientIp, tenantId, mecHost, true)
 		assert.NotEmpty(t, result, "error while Insert or Update MecHost Record")
 	})
 }
@@ -741,20 +739,6 @@ func testUploadConfigV2(t *testing.T, extraParams map[string]string, path string
 		uploadControllerLcmV2.UploadConfigV2()
 		assert.Equal(t, 400, uploadControllerLcmV2.Ctx.ResponseWriter.Status, "Config upload is failed")
 
-		//case-2
-		patch3 := gomonkey.ApplyFunc(util.ValidateSrcAddress, func(_ string) error {
-			return nil
-		})
-		defer patch3.Reset()
-		patch2 := gomonkey.ApplyMethod(reflect.TypeOf(uploadControllerLcmV2), getInputParametersForUploadCfg,
-			func(_ *controllers.LcmControllerV2, _ string) (hostIp string,
-				vim string, file multipart.File, err error) {
-				return "", "nil", file, err
-			})
-		defer patch2.Reset()
-		uploadControllerLcmV2.UploadConfigV2()
-		assert.Equal(t, 400, uploadControllerLcmV2.Ctx.ResponseWriter.Status, "Config upload failed error")
-
 		//case-3
 		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(uploadControllerLcmV2), getInputParametersForUploadCfg,
 			func(_ *controllers.LcmControllerV2, _ string) (string, string, multipart.File, error) {
@@ -816,10 +800,10 @@ func testUploadConfig3(t *testing.T, extraParams map[string]string, path string,
 		assert.Equal(t, 500, uploadControllerLcmV2.Ctx.ResponseWriter.Status,
 			"Config upload failed for plugin adapter")
 
-		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(uploadControllerLcmV2), isPermitted	,
-			func(_ *controllers.LcmControllerV2 , _, _ string) (string, error) {
-			return  "", nil
-		})
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(uploadControllerLcmV2), isPermitted,
+			func(_ *controllers.LcmControllerV2, _, _ string) (string, error) {
+				return "", nil
+			})
 		defer patch11.Reset()
 
 		//case-2
@@ -841,8 +825,8 @@ func testUploadConfig3(t *testing.T, extraParams map[string]string, path string,
 			return &mockClient{}, nil
 		})
 		defer patch7.Reset()
-		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(uploadControllerLcmV2), isPermitted, func(_ *controllers.LcmControllerV2 , _, _ string) (string, error) {
-			return  "", nil
+		patch14 := gomonkey.ApplyMethod(reflect.TypeOf(uploadControllerLcmV2), isPermitted, func(_ *controllers.LcmControllerV2, _, _ string) (string, error) {
+			return "", nil
 		})
 		defer patch14.Reset()
 
@@ -951,7 +935,7 @@ func testGetInputParametersForUploadCfg(t *testing.T, extraParams map[string]str
 
 		//case-1:
 		_, _, _, result := uploadController.GetInputParametersForUploadCfg(clientIp)
-		assert.NotEmpty(t, result, "error getting Input Parameters For Upload Cfg failed")
+		assert.Nil(t, result, "error getting Input Parameters For Upload Cfg failed")
 		//
 	})
 }
@@ -1278,8 +1262,8 @@ func testDoPrepareParams(t *testing.T, extraParams map[string]string, path strin
 		})
 		defer patch10.Reset()
 		instantiateReq2 := models.InstantiateRequest{
-			HostIp:     clientIp,
-			PackageId:  "",
+			HostIp:    clientIp,
+			PackageId: "",
 		}
 		_, _, _, _, _, result2 := initializeController.ValidateInstantiateInputParameters(clientIp, instantiateReq2)
 		assert.Empty(t, result2, "package id length is 0")
@@ -1290,8 +1274,8 @@ func testDoPrepareParams(t *testing.T, extraParams map[string]string, path strin
 
 		//case4:
 		instantiateReq3 := models.InstantiateRequest{
-			HostIp:     clientIp,
-			PackageId:  "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98e261211d80" +
+			HostIp: clientIp,
+			PackageId: "e261211d80d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98e261211d80" +
 				"d04cb6aed00e5cd1f2cd11b5a6ca9b8f85477bba2cd66fd79d5f98",
 		}
 		_, _, _, _, _, result3 := initializeController.ValidateInstantiateInputParameters(clientIp, instantiateReq3)
@@ -1320,7 +1304,6 @@ func testDoPrepareParams(t *testing.T, extraParams map[string]string, path strin
 		defer patch13.Reset()
 		_, _, _, _, _, result5 := initializeController.ValidateInstantiateInputParameters(clientIp, instantiateReq)
 		assert.NotEmpty(t, result5, "error while validating UUID")
-
 
 	})
 }
@@ -1419,8 +1402,8 @@ func testInsertOrUpdateAppInfoRecord(t *testing.T, extraParams map[string]string
 			return nil
 		})
 		defer patch7.Reset()
-		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(initializeController), isPermitted, func(_ *controllers.LcmControllerV2 , _, _ string) (string, error) {
-			return  "", nil
+		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(initializeController), isPermitted, func(_ *controllers.LcmControllerV2, _, _ string) (string, error) {
+			return "", nil
 		})
 		defer patch11.Reset()
 		patch8 := gomonkey.ApplyMethod(reflect.TypeOf(initializeController.Db), readData,
@@ -1531,7 +1514,6 @@ func testQueryV2(t *testing.T, extraParams map[string]string, path string, testD
 		queryController.SynchronizeUpdatedRecord()
 		_, _, _, _ = queryController.GetClientIpAndValidateAccessToken("msg", []string{"s1", "s2"}, tenantIdentifier)
 
-
 		// test case for GetUrlCapabilityId
 		patch6 := gomonkey.ApplyFunc(util.ValidateMepCapabilityId, func(_ string) error {
 			return err
@@ -1541,9 +1523,9 @@ func testQueryV2(t *testing.T, extraParams map[string]string, path string, testD
 		assert.Empty(t, result3, "error while getting url id")
 
 		patch11 := gomonkey.ApplyMethod(reflect.TypeOf(queryController), isPermitted,
-			func(_ *controllers.LcmControllerV2 , _, _ string) (string, error) {
-			return  "", err
-		})
+			func(_ *controllers.LcmControllerV2, _, _ string) (string, error) {
+				return "", err
+			})
 		defer patch11.Reset()
 		_, _, _, _, result8 := queryController.GetClientIpAndIsPermitted("message")
 		assert.NotEmpty(t, result8, "insert or update app data failed")
@@ -1573,7 +1555,6 @@ func testQueryV2(t *testing.T, extraParams map[string]string, path string, testD
 		_ = queryController.UpdateAppPkgRecord(distributeRequest, clientIp, tenantIdentifier, packageId, hostIp, SUCCESS_RETURN)
 	})
 }
-
 
 func testInsertOrUpdateAppPkgHostRecord(t *testing.T, extraParams map[string]string, path string, testDb dbAdapter.Database) {
 
