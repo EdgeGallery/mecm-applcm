@@ -319,7 +319,7 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 		return err
 	}
 
-	mecHostInfoRec, err := c.GetMecHostInfoRecord(clientIp, hostIp, tenantId)
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp, tenantId)
 	if err != nil {
 		return err
 	}
