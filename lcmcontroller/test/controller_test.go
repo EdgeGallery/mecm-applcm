@@ -539,6 +539,9 @@ func testSynchronizeAppPackageStaleRecordv2(t *testing.T, extraParams map[string
 		// Get Request
 		queryRequest, _ := getHttpRequest(tenantsPathV2+tenantIdentifier+"/packages/sync_deleted", extraParams, "file", path, "GET", []byte(""))
 
+		accessToken := createTokenAdmin(tenantIdentifier)
+		queryRequest.Header.Set("access_token", accessToken)
+
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
 		setParam(queryInput)
@@ -618,6 +621,8 @@ func testSynchronizeAppPackageUpdatedRecordV2(t *testing.T, extraParams map[stri
 		// Get Request
 		queryRequest, _ := getHttpRequest(tenantsPathV2+tenantIdentifier+"/packages/sync_updated", extraParams,
 			"file", path, "GET", []byte(""))
+		accessToken := createTokenAdmin(tenantIdentifier)
+		queryRequest.Header.Set("access_token", accessToken)
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -641,7 +646,7 @@ func testSynchronizeAppPackageUpdatedRecordV2(t *testing.T, extraParams map[stri
 
 		err := errors.New("error")
 
-		accessToken := createToken(tenantIdentifier)
+		accessToken = createToken(tenantIdentifier)
 		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(queryController.Db), insertOrUpdateData, func(_ *MockDb, _ interface{}, _ ...string) (error error) {
 			return err
 		})
@@ -958,7 +963,7 @@ func testTerminateV2(t *testing.T, extraParams map[string]string, path string, t
 		terminateController.TerminateV2()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 404, terminateController.Ctx.ResponseWriter.Status, terminateFailed)
+		assert.Equal(t, 200, terminateController.Ctx.ResponseWriter.Status, terminateFailed)
 
 		err := errors.New("error")
 

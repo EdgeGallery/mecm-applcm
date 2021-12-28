@@ -103,8 +103,24 @@ func createToken(userid string) string {
 	//Creating Access Token
 	atClaims := jwt.MapClaims{}
 	roleName := make([]string, 4)
-	roleName[0] = "ROLE_MECM_ADMIN"
 	roleName[1] = "ROLE_MECM_TENANT"
+	roleName[2] = "ROLE_APPSTORE_TENANT"
+	roleName[3] = "ROLE_DEVELOPER_TENANT"
+	atClaims["authorities"] = roleName
+	atClaims["user_name"] = "lcmcontroller"
+	atClaims["authorized"] = true
+	atClaims["userId"] = userid
+	atClaims["exp"] = time.Now().Add(time.Minute * 60).Unix()
+	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	token, _ := at.SignedString([]byte("jdnfksdmfksd"))
+	return token
+}
+
+func createTokenAdmin(userid string) string {
+	//Creating Access Token
+	atClaims := jwt.MapClaims{}
+	roleName := make([]string, 4)
+	roleName[0] = "ROLE_MECM_ADMIN"
 	roleName[2] = "ROLE_APPSTORE_TENANT"
 	roleName[3] = "ROLE_DEVELOPER_TENANT"
 	atClaims["authorities"] = roleName
