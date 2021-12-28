@@ -356,6 +356,7 @@ type AppInfoParams struct {
 	MecHost       string
 	DeployType    string
 	TenantId      string
+	ConfitTenantId string
 	AppPackageId  string
 	AppName       string
 	Origin        string
