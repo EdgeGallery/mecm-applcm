@@ -1840,7 +1840,7 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateController.DeleteMecHost()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 500, instantiateController.Ctx.ResponseWriter.Status,
+		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
 
 		//case-2
