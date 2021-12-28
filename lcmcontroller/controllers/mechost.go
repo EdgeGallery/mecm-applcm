@@ -40,6 +40,8 @@ type MecHostController struct {
 // @router /hosts [post]
 func (c *MecHostController) AddMecHost() {
 	log.Info("Add or update mec host request received.")
+	bAdminRole := false
+
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -54,6 +56,11 @@ func (c *MecHostController) AddMecHost() {
 	defer util.ClearByteArray(bKey)
 	if err != nil {
 		return
+	}
+	if accessToken != "" {
+		bAdminRole = util.IsAdminRole(accessToken)
+	} else {
+		bAdminRole = true
 	}
 
 	tenantId, err := c.GetTenantId(clientIp)
@@ -85,7 +92,7 @@ func (c *MecHostController) AddMecHost() {
 			return
 		}
 	}
-	err = c.InsertorUpdateMecHostRecord(clientIp, tenantId, request)
+	err = c.InsertorUpdateMecHostRecord(clientIp, tenantId, request, bAdminRole)
 	if err != nil {
 		c.writeErrorResponse("failed to insert or update mec host record", util.BadRequest)
 		return
@@ -154,14 +161,22 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 
 // Insert or update mec host record
 func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantId string,
-	request models.MecHostInfo) error {
+	request models.MecHostInfo, bAdminRole bool) error {
+	mecHostKey := ""
+	role := ""
 
 	if request.Origin == "" {
 		request.Origin = "MEO"
 	}
 
-	if request.Public == "" {
-		request.Public = "true"
+	if bAdminRole {
+		role = util.MecmAdminRole
+	}
+
+	if role == util.MecmAdminRole {
+		mecHostKey = request.MechostIp
+	} else {
+		mecHostKey = request.MechostIp + util.UnderScore + TenantId
 	}
 
 	syncStatus := true
@@ -170,7 +185,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 	}
 	// Insert or update host info record
 	hostInfoRecord := &models.MecHost{
-		MecHostId:          request.MechostIp,
+		MecHostId:          mecHostKey,
 		MechostIp:          request.MechostIp,
 		MechostName:        request.MechostName,
 		ZipCode:            request.ZipCode,
@@ -183,7 +198,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 		Vim:                request.Vim,
 		Origin:             request.Origin,
 		SyncStatus:         syncStatus,
-		Public:             request.Public,
+		Role:               role,
 	}
 
 	count, err := c.Db.QueryCount(util.Mec_Host)
@@ -299,19 +314,19 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 		}
 	}
 
-	hostInfoRecord := &models.MecHost{
-		MecHostId: hostIp,
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return err
 	}
 
-	readErr := c.Db.ReadData(hostInfoRecord, util.HostId)
-	if readErr != nil {
-		c.HandleLoggingForError(clientIp, util.StatusNotFound,
-			"Mec host info record does not exist in database")
-		return readErr
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp, tenantId)
+	if err != nil {
+		return err
 	}
-	var origin = hostInfoRecord.Origin
 
-	err := c.Db.DeleteData(hostInfoRecord, util.HostId)
+	var origin = mecHostInfoRec.Origin
+
+	err = c.Db.DeleteData(mecHostInfoRec, util.HostId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -332,8 +347,8 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 	return nil
 }
 
-func (c *MecHostController) TenantIdAndVim(hostIp string, clientIp string) (string, string, error) {
-	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp)
+func (c *MecHostController) TenantIdAndVim(hostIp, clientIp, tenantId string) (string, string, error) {
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp, tenantId)
 	if err != nil {
 		return "", "", err
 	}
@@ -357,7 +372,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appInfoRecord.MecHost)
+	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appInfoRecord.MecHost, appInfoRecord.TenantId)
 	if err != nil {
 		return err
 	}
@@ -472,7 +487,7 @@ func (c *MecHostController) GetMecHostByCond(clientIp string) (mecHosts []*model
 	result := make([]*models.MecHost, 0)
 
 	for _, mecHost := range mecHosts {
-		if mecHost.TenantId == tenantId || mecHost.Public == "true" {
+		if mecHost.TenantId == tenantId || mecHost.Role == util.MecmAdminRole {
 			result = append(result, mecHost)
 		}
 	}

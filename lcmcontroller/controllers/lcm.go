@@ -37,7 +37,7 @@ import (
 )
 
 var (
-	PackageFolderPath   = "/usr/app/packages/"
+	PackageFolderPath = "/usr/app/packages/"
 )
 
 // Lcm Controller
@@ -57,7 +57,7 @@ func extractCsarPackage(packagePath string) (string, error) {
 	err := os.MkdirAll(packageDir, 0750)
 	if err != nil {
 		log.Error(util.FailedToMakeDir)
-		return "" ,errors.New(util.FailedToMakeDir)
+		return "", errors.New(util.FailedToMakeDir)
 	}
 	for _, file := range zipReader.Reader.File {
 
@@ -164,10 +164,12 @@ func ProcessAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 	}
 
 	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig, applicationConfig)
-	err = acm.PostAppAuthConfig(clientIp)
-	if err != nil {
-		return err, config.AppConfigAdapter{}
-	}
+	/*	err = acm.PostAppAuthConfig(clientIp)
+		if err != nil {
+			return err, config.AppConfigAdapter{}
+		}
+
+	*/
 	return nil, acm
 }
 
@@ -326,7 +328,6 @@ func (c *LcmController) GetUrlPackageId(clientIp string) (string, error) {
 	return "", nil
 }
 
-
 func createDirectory(dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err = os.MkdirAll(dir, 0755)
@@ -389,7 +390,6 @@ func (c *LcmController) ChangeKey() {
 	c.handleLoggingForSuccess(clientIp, "Change key is successful")
 	c.ServeJSON()
 }
-
 
 // @Title Login Page
 // @Description Login Page
@@ -461,7 +461,6 @@ func (c *LcmController) GetInputParametersForChangeKey(clientIp string) (name st
 	return name, key, newKey, nil
 }
 
-
 func (c *LcmController) handleForNewSuccess(object interface{}, clientIp string, msg string) {
 	log.Info("Response for ClientIP [" + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
 		util.Resource + c.Ctx.Input.URL() + "] Result [Success: " + msg + ".]")
@@ -470,7 +469,6 @@ func (c *LcmController) handleForNewSuccess(object interface{}, clientIp string,
 	c.Ctx.ResponseWriter.WriteHeader(util.SuccessCode)
 	c.ServeJSON()
 }
-
 
 // Get app info record
 func (c *BaseController) GetAppInfoRecord(appInsId string, clientIp string) (*models.AppInfoRecord, error) {

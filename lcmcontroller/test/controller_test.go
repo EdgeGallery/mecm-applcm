@@ -539,6 +539,9 @@ func testSynchronizeAppPackageStaleRecordv2(t *testing.T, extraParams map[string
 		// Get Request
 		queryRequest, _ := getHttpRequest(tenantsPathV2+tenantIdentifier+"/packages/sync_deleted", extraParams, "file", path, "GET", []byte(""))
 
+		accessToken := createTokenAdmin(tenantIdentifier)
+		queryRequest.Header.Set("access_token", accessToken)
+
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
 		setParam(queryInput)
@@ -618,6 +621,8 @@ func testSynchronizeAppPackageUpdatedRecordV2(t *testing.T, extraParams map[stri
 		// Get Request
 		queryRequest, _ := getHttpRequest(tenantsPathV2+tenantIdentifier+"/packages/sync_updated", extraParams,
 			"file", path, "GET", []byte(""))
+		accessToken := createTokenAdmin(tenantIdentifier)
+		queryRequest.Header.Set("access_token", accessToken)
 
 		// Prepare Input
 		queryInput := &context.BeegoInput{Context: &context.Context{Request: queryRequest}}
@@ -641,7 +646,7 @@ func testSynchronizeAppPackageUpdatedRecordV2(t *testing.T, extraParams map[stri
 
 		err := errors.New("error")
 
-		accessToken := createToken(tenantIdentifier)
+		accessToken = createToken(tenantIdentifier)
 		patch6 := gomonkey.ApplyMethod(reflect.TypeOf(queryController.Db), insertOrUpdateData, func(_ *MockDb, _ interface{}, _ ...string) (error error) {
 			return err
 		})
@@ -980,10 +985,10 @@ func testTerminateV2(t *testing.T, extraParams map[string]string, path string, t
 		terminateBeegoControllerv2.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 		terminateController.TerminateV2()
 		//clientIp := clientIp
-		terminateController.GetMecHostInfoRecord(hostIp, clientIp)
+		terminateController.GetMecHostInfoRecord(hostIp, clientIp, tenantIdentifier)
 
 		accessToken = createToken(tenantIdentifier)
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "GetMecHostInfoRecord", func(_ *controllers.LcmControllerV2, _ string, _ string) (*models.MecHost, error) {
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(terminateController), "GetMecHostInfoRecord", func(_ *controllers.LcmControllerV2, _ string, _ string, _ string) (*models.MecHost, error) {
 			return nil, err
 		})
 		defer patch7.Reset()
@@ -1114,7 +1119,7 @@ func testInstantiate(t *testing.T, extraParams map[string]string, testDb dbAdapt
 
 		accessToken := createToken(tenantIdentifier)
 		patch3 := gomonkey.ApplyMethod(reflect.TypeOf(instantiateController), getVim,
-			func(_ *controllers.LcmController, _ string, _ string) (_ string, error error) {
+			func(_ *controllers.LcmController, _ string, _ string, _ string) (_ string, error error) {
 				return "", err
 			})
 		defer patch3.Reset()
@@ -1835,7 +1840,7 @@ func testDeleteMecHost(t *testing.T, extraParams map[string]string, testDb dbAda
 		instantiateController.DeleteMecHost()
 
 		// Check for success case wherein the status value will be default i.e. 0
-		assert.Equal(t, 0, instantiateController.Ctx.ResponseWriter.Status,
+		assert.Equal(t, 500, instantiateController.Ctx.ResponseWriter.Status,
 			deleteMecHostSuccess)
 
 		//case-2
@@ -2791,7 +2796,7 @@ func testRemoval(t *testing.T, extraParams map[string]string, path string, testD
 		removeBeegoController.Ctx.Request.Header.Set(util.AccessToken, accessToken)
 
 		accessToken = createToken(tenantIdentifier)
-		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), getVim, func(_ *controllers.LcmController, _ string, _ string) (string, error) {
+		patch7 := gomonkey.ApplyMethod(reflect.TypeOf(removeController), getVim, func(_ *controllers.LcmController, _ string, _ string, _ string) (string, error) {
 			return "", err
 		})
 		defer patch7.Reset()
