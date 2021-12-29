@@ -20,7 +20,7 @@ import json
 import os
 import uuid
 from core import openstack_utils
-from core.csar.pkg import get_hot_yaml_path, CsarPkg
+from core.csar.pkg import CsarPkg
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
@@ -61,7 +61,6 @@ def _get_output_data(output_list, heat, stack_id):
         output_value = output['output']['output_value']
         item = {
             'vmId': output_value['vmId'],
-            'vncUrl': output_value['vncUrl'],
             'networks': []
         }
         if 'networks' in output_value and output_value['networks'] is not None:
@@ -214,9 +213,18 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.error('app pkg %s not uploaded', parameter.app_package_id)
             return resp
 
-        LOG.debug('读取包的hot文件')
-        hot_yaml_path = get_hot_yaml_path(parameter.app_package_id,
-                                          parameter.app_package_path)
+        LOG.debug('读取包')
+        try:
+            csar_pkg = CsarPkg(parameter.app_package_id, parameter.app_package_path)
+        except FileNotFoundError:
+            LOG.info('%s 文件不存在', parameter.app_package_path)
+            return resp
+
+        LOG.debug('创建tosca network')
+        csar_pkg.create_request_networks(host_ip, parameter.tenantId)
+
+        LOG.debug('读取hot文件')
+        hot_yaml_path = csar_pkg.hot_path
         if hot_yaml_path is None:
             LOG.error("get hot yaml path failure, app package might not active")
             return resp
@@ -227,6 +235,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         for key in template['parameters'].keys():
             if key in parameter.parameters:
                 parameters[key] = parameter.parameters[key]
+
         if not parameter.ak_sk_lcm_gen and 'ak' in parameters and 'sk' in parameters:
             parameters['ak'] = ''
             parameters['sk'] = ''
@@ -236,7 +245,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'files': dict(list(tpl_files.items())),
             'parameters': parameters
         }
-        LOG.debug('init heat client')
+
         heat = create_heat_client(host_ip, parameter.tenantId)
         try:
             LOG.debug('发送创建stack请求')

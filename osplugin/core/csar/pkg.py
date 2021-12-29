@@ -30,7 +30,7 @@ from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
 from core.openstack_utils import TOSCA_TYPE_CLASS, \
-    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, get_image_by_name_checksum
+    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, get_image_by_name_checksum, create_neutron_client
 from task.image_task import add_import_image_task, create_image_record, add_upload_image_task
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
@@ -38,21 +38,6 @@ _APPD_TOSCA_METADATA_PATH = 'TOSCA_VNFD.meta'
 _APPD_R = '^Entry-Definitions: (.*)$'
 
 LOG = logger
-
-
-def get_hot_yaml_path(app_package_id, unzip_pkg_path):
-    """
-    获取hot模板路径
-    :param app_package_id:
-    :param unzip_pkg_path: 包解压路径
-    :return: hot模板路径
-    """
-    try:
-        csar_pkg = CsarPkg(app_package_id, unzip_pkg_path)
-    except FileNotFoundError:
-        LOG.info('%s 文件不存在', unzip_pkg_path)
-        return None
-    return csar_pkg.hot_path
 
 
 def _set_default_security_group(appd):
@@ -233,7 +218,7 @@ class CsarPkg:
         }
 
         # 设置ip，临时性
-        _set_default_ip(appd)
+        # _set_default_ip(appd)
         # Default security group rules
         _set_default_security_group(appd)
 
@@ -274,6 +259,72 @@ class CsarPkg:
                     resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
                     resource.set_properties(topology_template=appd['topology_template'],
                                             hot_file=hot)
+
+    def create_request_networks(self, host_ip, tenant_id):
+        if self.appd_file_path.endswith('.zip'):
+            cmcc_appd = CmccAppD(os.path.dirname(self.appd_file_path))
+            appd = cmcc_appd.appd
+        elif self.appd_file_path.endswith('.yaml'):
+            appd = yaml.load(self.appd_file_path, Loader=yaml.FullLoader)
+        else:
+            raise PackageNotValid('不支持的appd类型')
+
+        neutron = create_neutron_client(host_ip, tenant_id)
+
+        for name, template in appd['topology_template']['node_templates'].items():
+            if not template['type'] == 'tosca.nodes.nfv.VnfVirtualLink':
+                continue
+            vl_profile = template['properties']['vl_profile']
+            networks = neutron.list_networks(name=vl_profile['network_name'])
+            if len(networks) != 0:
+                continue
+            network_data = {
+                'name': vl_profile['network_name'],
+                'shared': False,
+                'is_default': False
+            }
+            segment = {}
+            if getattr(vl_profile, 'network_type', None):
+                segment['provider_network_type'] = vl_profile['network_type']
+            if getattr(vl_profile, 'physical_network', None):
+                segment['provider_physical_network'] = vl_profile['physical_network']
+            if getattr(vl_profile, 'provider_segmentation_id', None):
+                segment['provider_segmentation_id'] = vl_profile['provider_segmentation_id']
+            if len(segment.keys()) > 0:
+                network_data['segments'] = [segment]
+            if 'router_external' in vl_profile:
+                network_data['router:external'] = vl_profile['router_external']
+            network = neutron.create_network({'network': network_data})
+            if 'l3_protocol_data' in template['properties']['vl_profile'] \
+                    and len(template['properties']['vl_profile']['l3_protocol_data']) > 0:
+                for l3_protocol_data in template['properties']['vl_profile']['l3_protocol_data']:
+                    subnet = {
+                        'cidr': l3_protocol_data['cidr'],
+                        'network_id': network['id'],
+                        'ip_version': l3_protocol_data['ip_version']
+                    }
+                    if 'name' in l3_protocol_data:
+                        subnet['name'] = l3_protocol_data['name']
+                    if 'gateway_ip' in l3_protocol_data:
+                        subnet['gateway_ip'] = l3_protocol_data['gateway_ip']
+                    if 'dhcp_enabled' in l3_protocol_data:
+                        subnet['dhcp_enabled'] = l3_protocol_data['dhcp_enabled']
+                    if 'ipv6_ra_mode' in l3_protocol_data:
+                        subnet['ipv6_ra_mode'] = l3_protocol_data['ipv6_ra_mode']
+                    if 'ipv6_address_mode' in l3_protocol_data:
+                        subnet['ipv6_address_mode'] = l3_protocol_data['ipv6_address_mode']
+                    if 'dns_name_servers' in l3_protocol_data:
+                        subnet['dns_name_servers'] = l3_protocol_data['dns_name_servers']
+                    if 'ip_allocation_pools' in l3_protocol_data:
+                        subnet['allocation_pools'] = []
+                        for ip_allocation_pool in l3_protocol_data['ip_allocation_pools']:
+                            subnet['allocation_pools'].append({
+                                'start': ip_allocation_pool['start_ip_address'],
+                                'end': ip_allocation_pool['end_ip_address']
+                            })
+                    if 'host_routes' in l3_protocol_data:
+                        subnet['host_routes'] = l3_protocol_data['host_routes']
+                    neutron.create_subnet({'subnet': subnet})
 
 
 class CmccAppD:
