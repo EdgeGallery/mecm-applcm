@@ -397,7 +397,19 @@ class NovaServer(HOTBase):
         """
         image_name = self.template['properties']['sw_image_data']['name']
         if image_name in image_id_map:
-            self.properties['image'] = image_id_map[image_name]
+            if image_id_map[image_name]['format'] == 'iso':
+                image_size = int(image_id_map[image_name]['size'] / 1073741824) + 1
+                self.properties['block_device_mapping_v2'] = [
+                    {
+                        'boot_index': 0,
+                        'delete_on_termination': True,
+                        'device_type': 'cdrom',
+                        'image': image_id_map[image_name]['id'],
+                        'volume_size': image_size
+                    }
+                ]
+            else:
+                self.properties['image'] = image_id_map[image_name]['id']
         else:
             raise RuntimeError(f'image {image_name} not define in SwImageDesc.json')
 
@@ -604,7 +616,6 @@ class Flavor(HOTBase):
                 elif isinstance(flavor_extra_specs[key], (int, float)):
                     self.properties['extra_specs'][key] = str(flavor_extra_specs[key])
                 else:
-                    logger.info(flavor_extra_specs[key])
                     self.properties['extra_specs'][key] = flavor_extra_specs[key]
 
         _change_function(self.properties)

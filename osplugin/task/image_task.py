@@ -81,6 +81,7 @@ def create_image_record(sw_image, app_package_id, host_ip, tenant_id):
     VmImageInfoMapper(
         image_id=image['id'],
         image_name=sw_image.name,
+        disk_format=sw_image.disk_format,
         status=image['status'],
         app_package_id=app_package_id,
         host_ip=host_ip,

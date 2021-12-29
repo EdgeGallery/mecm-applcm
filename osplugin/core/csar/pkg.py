@@ -173,7 +173,11 @@ class CsarPkg:
             image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc.checksum)
             if image is not None:
                 LOG.debug('use exist image')
-                image_id_map[sw_image_desc.name] = image.image_id
+                image_id_map[sw_image_desc.name] = {
+                    'id': image.image_id,
+                    'format': image.disk_format,
+                    'size': image.image_size
+                }
                 continue
 
             image = get_image_by_name_checksum(sw_image_desc.name,
@@ -182,15 +186,22 @@ class CsarPkg:
                                                tenant_id)
             if image is not None:
                 LOG.debug('use image from plugin')
-                image_id_map[sw_image_desc.name] = image['id']
-
+                image_id_map[sw_image_desc.name] = {
+                    'id': image['id'],
+                    'format': image['diskFormat'],
+                    'size': image['size']
+                }
             elif sw_image_desc.sw_image.startswith('http'):
                 LOG.debug('use image from remote')
                 image_id = create_image_record(sw_image_desc,
                                                self.app_package_id,
                                                host_ip,
                                                tenant_id)
-                image_id_map[sw_image_desc.name] = image_id
+                image_id_map[sw_image_desc.name] = {
+                    'id': image_id,
+                    'format': sw_image_desc.disk_format,
+                    'size': sw_image_desc.size
+                }
                 add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
             else:
                 LOG.debug('use image from local')
@@ -198,7 +209,11 @@ class CsarPkg:
                                                self.app_package_id,
                                                host_ip,
                                                tenant_id)
-                image_id_map[sw_image_desc.name] = image_id
+                image_id_map[sw_image_desc.name] = {
+                    'id': image_id,
+                    'format': sw_image_desc.disk_format,
+                    'size': sw_image_desc.size
+                }
                 zip_index = sw_image_desc.sw_image.find('.zip')
                 zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index + 4]
                 img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'

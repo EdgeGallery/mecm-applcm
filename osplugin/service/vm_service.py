@@ -193,6 +193,7 @@ class VmService(resourcemanager_pb2_grpc.VmManagerServicer):
                 VmImageInfoMapper(
                     image_id=resp_data['data'],
                     image_name=request.createImage.name,
+                    disk_format='raw',
                     status=utils.QUEUED,
                     host_ip=host_ip,
                     tenant_id=request.tenantId,
