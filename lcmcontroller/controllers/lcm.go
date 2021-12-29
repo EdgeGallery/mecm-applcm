@@ -164,12 +164,11 @@ func ProcessAkSkConfig(appInsId, appName string, req *models.InstantiateRequest,
 	}
 
 	acm := config.NewAppConfigMgr(appInsId, appName, appAuthConfig, applicationConfig)
-	/*	err = acm.PostAppAuthConfig(clientIp)
-		if err != nil {
-			return err, config.AppConfigAdapter{}
-		}
+	err = acm.PostAppAuthConfig(clientIp)
+	if err != nil {
+		return err, config.AppConfigAdapter{}
+	}
 
-	*/
 	return nil, acm
 }
 
