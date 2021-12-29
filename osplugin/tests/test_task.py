@@ -78,6 +78,7 @@ class TasksTest(unittest.TestCase):
                 image_id='test_image',
                 host_ip='10.10.10.10',
                 image_name='test_image',
+                disk_format='qcow2',
                 status='queued',
                 tenant_id='test_tenant',
                 app_package_id='test_package'
@@ -116,6 +117,7 @@ class TasksTest(unittest.TestCase):
                 image_id='test_image1',
                 host_ip='10.10.10.11',
                 image_name='test_image1',
+                disk_format='qcow2',
                 status='active',
                 tenant_id='test_tenant',
                 compress_task_status='waiting'
@@ -149,6 +151,7 @@ class TasksTest(unittest.TestCase):
                 image_id='test_image2',
                 host_ip='10.10.10.10',
                 image_name='test_image2',
+                disk_format='qcow2',
                 status='active',
                 tenant_id='test_tenant',
                 compress_task_status='compressing'
@@ -177,6 +180,7 @@ class TasksTest(unittest.TestCase):
                 image_id='test_image3',
                 host_ip='10.10.10.10',
                 image_name='test_image3',
+                disk_format='qcow2',
                 status='active',
                 tenant_id='test_tenant',
                 compress_task_status='pushing'
@@ -208,6 +212,7 @@ class TasksTest(unittest.TestCase):
             VmImageInfoMapper(
                 image_id='image_id1',
                 image_name='image_name1',
+                disk_format='qcow2',
                 tenant_id='tenant001',
                 app_package_id='app_package_id1',
                 host_ip='10.10.10.10',
@@ -216,6 +221,7 @@ class TasksTest(unittest.TestCase):
             VmImageInfoMapper(
                 image_id='image_id2',
                 image_name='image_name2',
+                disk_format='qcow2',
                 tenant_id='tenant001',
                 app_package_id='app_package_id1',
                 host_ip='10.10.10.10',
