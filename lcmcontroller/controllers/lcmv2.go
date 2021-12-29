@@ -1074,13 +1074,13 @@ func (c *LcmControllerV2) TerminateV2() {
 		return
 	}
 
-	/*	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{}, config.ApplicationConfig{})
-		err = acm.DeleteAppAuthConfig(clientIp)
-		if err != nil {
-			c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteAuthCfgFail)
-			return
-		}
-	*/
+	acm := config.NewAppConfigMgr(appInsId, "", config.AppAuthConfig{}, config.ApplicationConfig{})
+	err = acm.DeleteAppAuthConfig(clientIp)
+	if err != nil {
+		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeDeleteAuthCfgFail)
+		return
+	}
+
 	var origin = appInfoRecord.Origin
 
 	err = c.DeleteAppInfoRecord(appInsId)
