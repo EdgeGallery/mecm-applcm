@@ -60,6 +60,8 @@ def _set_default_security_group(appd):
     注入默认安全组和安全组规则
     """
     topology_template = appd['topology_template']
+    if 'inputs' not in topology_template:
+        return
     if 'ue_ip_segment' not in topology_template['inputs'] \
             and 'mep_ip' not in topology_template['inputs']:
         return
@@ -88,6 +90,8 @@ def _set_default_ip(appd):
     主动注入IP，需要固定cp名称和ip参数
     """
     topology_template = appd['topology_template']
+    if 'inputs' not in topology_template:
+        return
     inputs = topology_template['inputs']
     node_templates = topology_template['node_templates']
     if 'app_mp1_ip' in inputs and 'EMS_VDU1_CP0' in node_templates:
@@ -170,42 +174,60 @@ class CsarPkg:
         """
         image_id_map = {}
         for sw_image_desc in self.sw_image_desc_list:
-            image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc.checksum)
+            image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc['checksum'])
             if image is not None:
                 LOG.debug('use exist image')
-                image_id_map[sw_image_desc.name] = image.image_id
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image.image_id,
+                    'format': image.disk_format,
+                    'size': image.image_size
+                }
                 continue
 
-            image = get_image_by_name_checksum(sw_image_desc.name,
-                                               sw_image_desc.checksum,
+            image = get_image_by_name_checksum(sw_image_desc['name'],
+                                               sw_image_desc['checksum'],
                                                host_ip,
                                                tenant_id)
             if image is not None:
-                LOG.debug('use image from plugin')
-                image_id_map[sw_image_desc.name] = image['id']
-
-            elif sw_image_desc.sw_image.startswith('http'):
+                LOG.debug('use image from os')
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image['id'],
+                    'format': image['diskFormat'],
+                    'size': image['size']
+                }
+            elif sw_image_desc['swImage'].startswith('http'):
                 LOG.debug('use image from remote')
                 image_id = create_image_record(sw_image_desc,
                                                self.app_package_id,
                                                host_ip,
                                                tenant_id)
-                image_id_map[sw_image_desc.name] = image_id
-                add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image_id,
+                    'format': sw_image_desc['diskFormat'],
+                    'size': sw_image_desc['size']
+                }
+                add_import_image_task(image_id, host_ip, sw_image_desc['swImage'])
             else:
                 LOG.debug('use image from local')
                 image_id = create_image_record(sw_image_desc,
                                                self.app_package_id,
                                                host_ip,
                                                tenant_id)
-                image_id_map[sw_image_desc.name] = image_id
-                zip_index = sw_image_desc.sw_image.find('.zip')
-                zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index + 4]
-                img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
-                img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index + 4:]
-                logger.debug('image dir %s', img_tmp_file)
-                if not utils.exists_path(img_tmp_dir):
-                    utils.unzip(zip_file_path, img_tmp_dir)
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image_id,
+                    'format': sw_image_desc['diskFormat'],
+                    'size': sw_image_desc['size']
+                }
+                zip_index = sw_image_desc['swImage'].find('.zip')
+                if zip_index != -1:
+                    zip_file_path = self.base_dir + '/' + sw_image_desc['swImage'][0: zip_index + 4]
+                    img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
+                    img_tmp_file = img_tmp_dir + sw_image_desc['swImage'][zip_index + 4:]
+                    logger.debug('image dir %s', img_tmp_file)
+                    if not utils.exists_path(img_tmp_dir):
+                        utils.unzip(zip_file_path, img_tmp_dir)
+                else:
+                    img_tmp_file = self.base_dir + '/' + sw_image_desc['swImage']
                 add_upload_image_task(image_id, host_ip, img_tmp_file) \
                     .add_done_callback(lambda future, path=img_tmp_file: utils.delete_dir(path))
 
@@ -227,10 +249,12 @@ class CsarPkg:
         hot = {
             'heat_template_version': '2016-10-14',
             'description': 'Generated By OsPlugin',
+            'parameters': {},
             'resources': {},
-            'parameters': _input_translate(appd['topology_template']['inputs']),
             'outputs': {}
         }
+        if 'inputs' in appd['topology_template']:
+            hot['parameters'] = _input_translate(appd['topology_template']['inputs'])
 
         # 设置ip，临时性
         _set_default_ip(appd)
@@ -262,18 +286,20 @@ class CsarPkg:
             else:
                 LOG.info('skip unknown tosca type %s', template['type'])
 
-        for name, group in appd['topology_template']['groups'].items():
-            if group['type'] in TOSCA_GROUP_CLASS:
-                resource = TOSCA_GROUP_CLASS[group['type']](name, group)
-                resource.set_properties(topology_template=appd['topology_template'],
-                                        hot_file=hot)
-
-        for policy in appd['topology_template']['policies']:
-            for name, policy_template in policy.items():
-                if policy_template['type'] in TOSCA_POLICY_CLASS:
-                    resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
+        if 'groups' in appd['topology_template']:
+            for name, group in appd['topology_template']['groups'].items():
+                if group['type'] in TOSCA_GROUP_CLASS:
+                    resource = TOSCA_GROUP_CLASS[group['type']](name, group)
                     resource.set_properties(topology_template=appd['topology_template'],
                                             hot_file=hot)
+
+        if 'policies' in appd['topology_template']:
+            for policy in appd['topology_template']['policies']:
+                for name, policy_template in policy.items():
+                    if policy_template['type'] in TOSCA_POLICY_CLASS:
+                        resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
+                        resource.set_properties(topology_template=appd['topology_template'],
+                                                hot_file=hot)
 
 
 class CmccAppD:
