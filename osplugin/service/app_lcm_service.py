@@ -116,7 +116,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             host_ip=host_ip,
             status=utils.UPLOADING
         )
-        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         try:
@@ -125,6 +124,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             pkg = CsarPkg(app_package_id, app_package_path)
             pkg.check_image(host_ip, parameters.tenantId)
             pkg.translate()
+            commit()
             start_check_package_status(app_package_id, host_ip)
             resp.status = utils.SUCCESS
             LOG.info('upload and analyze app package success, start fetch image')
@@ -306,7 +306,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.SUCCESS
-        LOG.debug('处理请求完成')
+        LOG.info('success terminate app')
         return res
 
     @db_session
