@@ -36,6 +36,18 @@ from requests_toolbelt import MultipartEncoder
 LOG = logger
 
 
+image_meta_map = {
+    'operatingSystem': '__os_version',
+    'supportedVirtualizationEnvironment': '__os_type',
+    'containerFormat': 'container_format',
+    'diskFormat': 'disk_format',
+    'minRam': 'min_ram',
+    'minDisk': 'min_disk'
+}
+
+image_meta_ignore_set = {'id', 'checksum', 'version', 'size', 'swImage'}
+
+
 def start_check_image_status(image_id, host_ip):
     """
     新增检查镜像状态任务
@@ -64,23 +76,23 @@ def create_image_record(sw_image, app_package_id, host_ip, tenant_id):
 
     """
     glance = create_glance_client(host_ip, tenant_id)
-    image = glance.images.create(name=sw_image.name,
-                                 container_format=sw_image.container_format,
-                                 min_ram=sw_image.min_ram,
-                                 min_disk=sw_image.min_disk,
-                                 architecture=sw_image.architecture,
-                                 hw_disk_bus=sw_image.hw_disk_bus,
-                                 file_format=sw_image.disk_format,
-                                 __os_version=sw_image.operating_system,
-                                 __quick_start='False',
-                                 __os_type=sw_image.supported_virtualization_environment,
-                                 cloudinit='True',
-                                 virtual_env_type='KVM',
-                                 hw_watchdog_action='none',
-                                 disk_format=sw_image.disk_format)
+    image_data = {}
+    for key, value in sw_image.items():
+        if key in image_meta_ignore_set:
+            continue
+        elif key in image_meta_map:
+            image_data[image_meta_map[key]] = value
+        else:
+            image_data[key] = value
+    if image_data['disk_format'] == 'iso':
+        image_data['min_disk'] = 0
+
+    image = glance.images.create(**image_data)
+
     VmImageInfoMapper(
         image_id=image['id'],
-        image_name=sw_image.name,
+        image_name=sw_image['name'],
+        disk_format=sw_image['diskFormat'],
         status=image['status'],
         app_package_id=app_package_id,
         host_ip=host_ip,
@@ -101,6 +113,7 @@ def add_upload_image_task(image_id, host_ip, file_path):
     Returns:
 
     """
+    LOG.info('add new upload task')
     future = upload_thread_pool.submit(do_upload_image, image_id, host_ip, file_path)
     future.add_done_callback(exception_handler)
     start_check_image_status(image_id, host_ip)
@@ -118,6 +131,7 @@ def add_import_image_task(image_id, host_ip, uri):
     Returns:
 
     """
+    LOG.info('add new import task')
     future = upload_thread_pool.submit(do_import_image, image_id, host_ip, uri)
     future.add_done_callback(exception_handler)
     start_check_image_status(image_id, host_ip)
@@ -133,6 +147,7 @@ def add_download_then_compress_image_task(image_id, host_ip):
     Returns:
 
     """
+    LOG.info('add new download task')
     future = download_thread_pool.submit(do_download_then_compress_image, image_id, host_ip)
     future.add_done_callback(exception_handler)
 
@@ -147,6 +162,7 @@ def add_check_compress_image_task(image_id, host_ip):
     Returns:
 
     """
+    LOG.info('add new check compress task')
     future = check_thread_pool.submit(do_check_compress_status, image_id, host_ip)
     future.add_done_callback(exception_handler)
 
@@ -161,6 +177,7 @@ def add_push_image_task(image_id, host_ip):
     Returns:
 
     """
+    LOG.info('add push image %s task', image_id)
     future = upload_thread_pool.submit(do_push_image, image_id, host_ip)
     future.add_done_callback(exception_handler)
 
@@ -202,7 +219,8 @@ def do_check_image_status(image_id, host_ip):
         image_info.image_size = image['size']
         image_info.status = utils.ACTIVE
         commit()
-        add_download_then_compress_image_task(image_id, host_ip)
+        if image_info.compress_task_status == utils.WAITING:
+            add_download_then_compress_image_task(image_id, host_ip)
     elif image['status'] == utils.KILLED:
         image_info.status = utils.KILLED
         commit()
@@ -226,9 +244,9 @@ def do_upload_image(image_id, host_ip, file_path):
     glance = create_glance_client(host_ip, image_info.tenant_id)
     try:
         with open(file_path, 'rb') as image_data:
-            LOG.debug('start upload image %s', image_id)
+            LOG.info('start upload image %s', image_id)
             glance.images.upload(image_id, image_data=image_data)
-            LOG.debug('finish upload image %s', image_id)
+            LOG.info('finish upload image %s', image_id)
     except Exception as exception:
         image_info.status = utils.KILLED
         commit()
@@ -265,6 +283,7 @@ def do_download_then_compress_image(image_id, host_ip):
     Returns:
 
     """
+    LOG.info('start download & compress image %s task', image_id)
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
     if image_info is None:
         LOG.debug('image not found in database')
@@ -332,7 +351,6 @@ def do_check_compress_status(image_id, host_ip):
 
     """
     time.sleep(5)
-
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
     if image_info is None:
         LOG.debug('image not found in database')
@@ -379,6 +397,7 @@ def do_push_image(image_id, host_ip):
     Returns:
 
     """
+    LOG.info('start push image %s task', image_id)
     image_info = VmImageInfoMapper.get(image_id=image_id, host_ip=host_ip)
     if image_info is None:
         LOG.debug('image not found in database')
@@ -403,7 +422,7 @@ def do_push_image(image_id, host_ip):
             image_info.compress_task_status = utils.FAILURE
             commit()
             return
-
+        logger.debug('end push image: %s to developer', image_id)
         response_data = response.json()
         image_info.remote_url = config.image_push_url + '/' + response_data['imageId']
         image_info.compress_task_status = utils.SUCCESS

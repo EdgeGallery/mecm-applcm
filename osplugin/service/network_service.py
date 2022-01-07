@@ -48,16 +48,7 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
         LOG.info('received create network message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return CreateNetworkResponse(status='Failure')
-
-        i = 0
-        for req_subnet in request.network.subnets:
-            if not req_subnet.name:
-                req_subnet.name = f'net-{i}'
-            if not req_subnet.cidr:
-                logger.error(f'network.subnets[{i}].cidr required')
-                return CreateNetworkResponse(status='Failure')
-            i = i + 1
+            return CreateNetworkResponse(status='{"data": null, "retCode": 500, "message": "Failure"}')
 
         neutron = create_neutron_client(host_ip, request.tenantId)
 
@@ -118,7 +109,8 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
             neutron.create_subnet({'subnet': subnet_data})
 
         LOG.info("success create network %s", network)
-        return CreateNetworkResponse(status='Success')
+
+        return CreateNetworkResponse(status='{"data": null, "retCode": 200, "message": "success"}')
 
     def deleteNetwork(self, request, context):
         """
@@ -133,15 +125,16 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
         LOG.info('received delete network message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return DeleteNetworkResponse(status='Failure')
+            return DeleteNetworkResponse(status='{"data": null, "retCode": 500, "message": "Failure"}')
         neutron = create_neutron_client(host_ip, request.tenantId)
 
         try:
             neutron.delete_network(request.networkId)
         except NotFound:
             LOG.debug('skip not found network %s', request.networkId)
+            return DeleteNetworkResponse(status='{"data": null, "retCode": 404, "message": "Network not found"}')
         LOG.info("success delete network %s", request.networkId)
-        return DeleteNetworkResponse(status='Success')
+        return DeleteNetworkResponse(status='{"data": null, "retCode": 0, "message": "Success"}')
 
     def queryNetwork(self, request, context):
         """
@@ -156,12 +149,12 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
         LOG.info('received query network message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return QueryNetworkResponse(response='{"code":400, "msg":"hostIp必传"}')
+            return QueryNetworkResponse(response='{"data": null, "retCode": 400, "message": "hostIp is needed"}')
         neutron = create_neutron_client(host_ip, request.tenantId)
 
         resp_data = {
-            'code': 200,
-            'msg': 'success'
+            'retCode': 200,
+            'message': 'success'
         }
         if not request.networkId:
             networks = neutron.list_networks()['networks']

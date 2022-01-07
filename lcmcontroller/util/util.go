@@ -65,7 +65,8 @@ const (
 	AppPackageRecordId              = "app_package_record"
 	PkgHostKey                      = "pkg_host_key"
 	TenantId                        = "tenant_id"
-	HostIp                          = "mec_host_id"
+	HostId                          = "mec_host_id"
+	MecHostIp                       = "mechost_ip"
 	Mec_Host                        = "mec_host"
 	FailedToGetClient               = "Failed to get client"
 
@@ -173,7 +174,6 @@ const (
 	ErrCodePluginInstFailed  int = 31601
 	ErrCodeDeleteAuthCfgFail int = 31602
 
-
 	ErrCodeInternalServer int = 31503
 	ErrCodeBadRequest     int = 31400
 
@@ -220,10 +220,11 @@ const (
 	MecHostcontroller    = "lcmcontroller/controllers:MecHostController"
 	Mepcontroller        = "lcmcontroller/controllers:MepController"
 	Hosts                = "/v1/tenants/:tenantId/hosts"
+	AllHosts             = "/v1/hosts"
 	DELETE               = "delete"
 	GET                  = "get"
 	POST                 = "post"
-	ResponseForClient    = 	"Response message for ClientIP ["
+	ResponseForClient    = "Response message for ClientIP ["
 	Operation            = "] Operation ["
 	Resource             = " Resource ["
 	TempFile             = "/usr/app/temp"
@@ -234,7 +235,7 @@ const (
 	PkgId                = "package_id"
 	PkgUrlPath           = "/v1/tenants/:tenantId/packages/:packageId"
 
-	PkgUrlPathV2 = "/v2/tenants/:tenantId/packages/:packageId"
+	PkgUrlPathV2         = "/v2/tenants/:tenantId/packages/:packageId"
 	QueryMepCapabilities = "/v2/tenants/:tenantId/hosts/:hostIp/mep_capabilities"
 
 	//mep service calling
@@ -251,7 +252,7 @@ const (
 	PkgDtlAppType        = "app_type"
 	PkgDtlAppClass       = "app_class"
 	PkgDtlAppDescription = "app_package_description"
-
+	UnderScore           = "_"
 )
 
 var ReadTlsCfg = true
@@ -787,10 +788,33 @@ func GetPluginInfo(vim string) string {
 	pluginPortVar := pluginAddrVar + PluginPortSuffix
 	pluginPort := GetPluginPort(pluginPortVar)
 	pluginInfo := pluginAddr + ":" + pluginPort
+	log.Info("pluginInfo is: " + pluginInfo)
 	return pluginInfo
 }
 
 func GenerateUUID() string {
 	uuId := uuid.NewV4()
 	return strings.Replace(uuId.String(), "-", "", -1)
+}
+
+func IsAdminRole(accessToken string) bool {
+	claims := jwt.MapClaims{}
+
+	token, _ := jwt.ParseWithClaims(accessToken, claims, func(_ *jwt.Token) (interface{}, error) {
+		return jwtPublicKey, nil
+	})
+	if token != nil && !token.Valid {
+		for key, value := range claims {
+			if key == "authorities" {
+				authorities := value.([]interface{})
+				arr := reflect.ValueOf(authorities)
+				for i := 0; i < arr.Len(); i++ {
+					if arr.Index(i).Interface() == MecmAdminRole {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }

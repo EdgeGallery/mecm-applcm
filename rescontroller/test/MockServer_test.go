@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
-	"rescontroller/internal/resservice"
+	resservice "rescontroller/internal/internal_resourcemanager"
 )
 
 // GRPC server
@@ -44,19 +44,26 @@ type VmImageMangerServer struct {
 	Address string
 }
 
+func (c VmImageMangerServer) UploadVmImage(server resservice.VmImageManger_UploadVmImageServer) error {
+	panic("implement me")
+}
+
+func (c VmImageMangerServer) DownloadVmImage(request *resservice.DownloadVmImageRequest, server resservice.VmImageManger_DownloadVmImageServer) error {
+	panic("implement me")
+}
 
 const SUCCESS_RETURN = "Success"
 
 func (c FlavorManagerServer) CreateFlavor(ctx context.Context, request *resservice.CreateFlavorRequest) (*resservice.CreateFlavorResponse, error) {
 	resp := &resservice.CreateFlavorResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
     return  resp, nil
 }
 
 func (c FlavorManagerServer) DeleteFlavor(ctx context.Context, request *resservice.DeleteFlavorRequest) (*resservice.DeleteFlavorResponse, error) {
 	resp := &resservice.DeleteFlavorResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
@@ -71,14 +78,14 @@ func (c FlavorManagerServer) QueryFlavor(ctx context.Context, request *resservic
 
 func (c NetworkManagerServer) CreateNetwork(ctx context.Context, request *resservice.CreateNetworkRequest) (*resservice.CreateNetworkResponse, error) {
 	resp := &resservice.CreateNetworkResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
 
 func (c NetworkManagerServer) DeleteNetwork(ctx context.Context, request *resservice.DeleteNetworkRequest) (*resservice.DeleteNetworkResponse, error) {
 	resp := &resservice.DeleteNetworkResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
@@ -92,13 +99,13 @@ func (c NetworkManagerServer) QueryNetwork(ctx context.Context, request *resserv
 
 func (c SecurityGroupManagerServer) CreateSecurityGroup(context.Context, *resservice.CreateSecurityGroupRequest) (*resservice.CreateSecurityGroupResponse, error) {
 	resp := &resservice.CreateSecurityGroupResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
 func (c SecurityGroupManagerServer) DeleteSecurityGroup(context.Context, *resservice.DeleteSecurityGroupRequest) (*resservice.DeleteSecurityGroupResponse, error) {
 	resp := &resservice.DeleteSecurityGroupResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
@@ -110,26 +117,20 @@ func (c SecurityGroupManagerServer) QuerySecurityGroup(context.Context, *resserv
 }
 func (c SecurityGroupManagerServer) CreateSecurityGroupRule(context.Context, *resservice.CreateSecurityGroupRuleRequest) (*resservice.CreateSecurityGroupRuleResponse, error) {
 	resp := &resservice.CreateSecurityGroupRuleResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
 func (c SecurityGroupManagerServer) DeleteSecurityGroupRule(context.Context, *resservice.DeleteSecurityGroupRuleRequest) (*resservice.DeleteSecurityGroupRuleResponse, error) {
 	resp := &resservice.DeleteSecurityGroupRuleResponse{
-		Response: SUCCESS_RETURN,
-	}
-	return  resp, nil
-}
-func (c SecurityGroupManagerServer) QuerySecurityGroupRule(context.Context, *resservice.QuerySecurityGroupRuleRequest) (*resservice.QuerySecurityGroupRuleResponse, error) {
-	resp := &resservice.QuerySecurityGroupRuleResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
 
 func (c VmManagerServer) CreateVm(context.Context, *resservice.CreateVmRequest) (*resservice.CreateVmResponse, error) {
 	resp := &resservice.CreateVmResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
@@ -147,7 +148,7 @@ func (c VmManagerServer) OperateVm(context.Context, *resservice.OperateVmRequest
 }
 func (c VmManagerServer) DeleteVm(context.Context, *resservice.DeleteVmRequest) (*resservice.DeleteVmResponse, error) {
 	resp := &resservice.DeleteVmResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
@@ -160,13 +161,13 @@ func (c VmImageMangerServer) CreateVmImage(context.Context, *resservice.CreateVm
 }
 func (VmImageMangerServer) DeleteVmImage(context.Context, *resservice.DeleteVmImageRequest) (*resservice.DeleteVmImageResponse, error) {
 	resp := &resservice.DeleteVmImageResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }
 func (VmImageMangerServer) ImportVmImage(context.Context, *resservice.ImportVmImageRequest) (*resservice.ImportVmImageResponse, error) {
 	resp := &resservice.ImportVmImageResponse{
-		Response: SUCCESS_RETURN,
+		Status: SUCCESS_RETURN,
 	}
 	return  resp, nil
 }

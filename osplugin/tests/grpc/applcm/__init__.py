@@ -14,16 +14,3 @@
 # limitations under the License.
 
 """
-# -*- coding: utf-8 -*-
-from core import grpc_server
-from core.log import logger
-from task import upload_thread_pool, download_thread_pool, check_thread_pool
-
-if __name__ == "__main__":
-    grpc_server.serve()
-    upload_thread_pool.shutdown(wait=False)
-    logger.info('upload thread pool shutdown')
-    download_thread_pool.shutdown(wait=False)
-    logger.info('download thread pool shutdown')
-    check_thread_pool.shutdown(wait=False)
-    logger.info('check thread pool shutdown')

@@ -79,20 +79,22 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             image = glance.images.create(**metadata)
         except HTTPException as http_exception:
             resp.response = json.dumps({
+                'data': None,
                 'retCode': http_exception.code,
-                'msg': http_exception.details
+                'message': http_exception.details
             })
             return resp
         VmImageInfoMapper(
             image_id=image['id'],
             image_name=image['name'],
+            disk_format=request.image.diskFormat,
             status=image['status'],
             host_ip=host_ip,
             tenant_id=request.tenantId
         )
         commit()
 
-        resp.response = json.dumps({'code': 200, 'data': {'imageId': image['id']}})
+        resp.response = json.dumps({'data': {'imageId': image['id']}, 'retCode': 200, 'message': 'Create success'})
         LOG.info('create image record created')
         return resp
 
@@ -106,8 +108,9 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         host_ip = utils.validate_input_params(request)
 
         resp_data = {
-            'code': 200,
-            'msg': 'success'
+            'data': None,
+            'retCode': 200,
+            'message': 'Query Images Success'
         }
         if not request.imageId:
             resp_data['data'] = []
@@ -144,7 +147,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'resourceUrl': image_info.remote_url
         }
 
-        resp.response = json.dumps({'code': 200, 'data': res_dir})
+        resp.response = json.dumps({'data': res_dir, 'message': None, 'retCode': 200 })
         return resp
 
     @db_session
@@ -167,7 +170,13 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         if image_db is not None:
             image_db.delete()
             commit()
-        resp.status = 'Success'
+        resp_data = {
+            'data': None,
+            'retCode': 200,
+            'message': 'Delete Image Success'
+        }
+        resp.status = json.dumps(resp_data)
+
         LOG.info("delete image %s success", request.imageId)
         return resp
 
@@ -179,7 +188,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
 
         host_ip = utils.validate_input_params(request)
         if not host_ip:
-            yield DownloadVmImageResponse(content=b'{"code":400,"msg":"required param host_ip"}')
+            yield DownloadVmImageResponse(content=b'{"retCode":400,"message":"required param host_ip"}')
             return
 
         glance_client = create_glance_client(host_ip, request.tenantId)
@@ -217,7 +226,12 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
 
         """
         LOG.info("received uploadVmImage message")
-        resp = UploadVmImageResponse(status='Failure')
+        status = json.dumps({
+            'data': None,
+            'retCode': 500,
+            'message': 'Upload Image Failure'
+        })
+        resp = UploadVmImageResponse(status)
 
         access_token = next(request_iterator).accessToken
         host_ip = next(request_iterator).hostIp
@@ -238,7 +252,12 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         glance.images.upload(image_id=image_id, image_data=utils.StreamReader(request_iterator))
 
         LOG.info("upload finished")
-        resp.status = 'Success'
+
+        resp.status = json.dumps({
+            'data': None,
+            'retCode': 0,
+            'message': 'Success'
+        })
         return resp
 
     def importVmImage(self, request, context):
@@ -260,4 +279,4 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         add_import_image_task(request.imageId, host_ip, request.resourceUri)
 
         LOG.info('success add import image task')
-        return ImportVmImageResponse(status=utils.SUCCESS)
+        return ImportVmImageResponse(status='{"data": null, "retCode": 200, "message": "success"}')

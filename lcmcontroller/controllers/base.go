@@ -53,7 +53,7 @@ func (c *BaseController) HandleForErrorCode(clientIp string, code int, errMsg st
 		Data:    nil,
 		RetCode: errCode,
 		Message: errMsg,
-		Params: nil,
+		Params:  nil,
 	}
 	c.writeErrorResponseV2(errConent, code)
 	log.Info(util.ResponseForClient + clientIp + util.Operation + c.Ctx.Request.Method + "]" +
@@ -161,7 +161,7 @@ func (c *BaseController) getAppInfoRecord(appInsId string, clientIp string) (*mo
 // Get app package record
 func (c *BaseController) GetAppPackageRecord(appPkgId string, tenantId string, clientIp string) (*models.AppPackageRecord, error) {
 	appPkgRecord := &models.AppPackageRecord{
-		AppPkgId: appPkgId + tenantId,
+		AppPkgId: appPkgId,
 	}
 
 	readErr := c.Db.ReadData(appPkgRecord, util.AppPkgId)
@@ -176,7 +176,7 @@ func (c *BaseController) GetAppPackageRecord(appPkgId string, tenantId string, c
 // Get app package host record
 func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, clientIp string) (*models.AppPackageHostRecord, error) {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: appPkgId + tenantId + hostIp,
+		PkgHostKey: appPkgId + hostIp,
 	}
 
 	readErr := c.Db.ReadData(appPkgHostRecord, util.PkgHostKey)
@@ -189,9 +189,9 @@ func (c *BaseController) getAppPackageHostRecord(hostIp, appPkgId, tenantId, cli
 }
 
 // Get vim name
-func (c *BaseController) GetVim(clientIp string, hostIp string) (string, error) {
+func (c *BaseController) GetVim(clientIp, hostIp, tenantId string) (string, error) {
 
-	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp)
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp, tenantId)
 	if err != nil {
 		return "", err
 	}
@@ -267,7 +267,7 @@ func (c *BaseController) DeleteAppInfoRecord(appInsId string) error {
 // Delete app package record
 func (c *BaseController) DeleteAppPackageRecord(appPkgId string, tenantId string) error {
 	appPkgRecord := &models.AppPackageRecord{
-		AppPkgId: appPkgId + tenantId,
+		AppPkgId: appPkgId,
 	}
 
 	err := c.Db.DeleteData(appPkgRecord, util.AppPkgId)
@@ -281,7 +281,7 @@ func (c *BaseController) DeleteAppPackageRecord(appPkgId string, tenantId string
 // Delete app package host record
 func (c *BaseController) DeleteAppPackageHostRecord(hostIp, appPkgId, tenantId string) error {
 	appPkgHostRecord := &models.AppPackageHostRecord{
-		PkgHostKey: appPkgId + tenantId + hostIp,
+		PkgHostKey: appPkgId + hostIp,
 	}
 
 	err := c.Db.DeleteData(appPkgHostRecord, util.PkgHostKey)
@@ -315,16 +315,25 @@ func (c *BaseController) DeleteTenantRecord(clientIp, tenantId string) error {
 }
 
 // Get mec host info record
-func (c *BaseController) GetMecHostInfoRecord(hostIp string, clientIp string) (*models.MecHost, error) {
+func (c *BaseController) GetMecHostInfoRecord(hostIp, clientIp, tenantId string) (*models.MecHost, error) {
+
 	mecHostInfoRecord := &models.MecHost{
-		MecHostId: hostIp,
+		MecHostId: hostIp + util.UnderScore + tenantId,
 	}
 
-	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostIp)
+	readErr := c.Db.ReadData(mecHostInfoRecord, util.HostId)
 	if readErr != nil {
-		c.HandleLoggingForError(clientIp, util.StatusNotFound, util.MecHostRecDoesNotExist)
-		return nil, readErr
+		mecHostInfoRecord = &models.MecHost{
+			MechostIp: hostIp,
+			Role:      util.MecmAdminRole,
+		}
+		readErr = c.Db.ReadData(mecHostInfoRecord, util.MecHostIp)
+		if readErr != nil {
+			c.HandleLoggingForError(clientIp, util.StatusNotFound, util.MecHostRecDoesNotExist)
+			return nil, readErr
+		}
 	}
+
 	return mecHostInfoRecord, nil
 }
 
@@ -336,7 +345,6 @@ func (c *BaseController) HandleLoggingForTokenFailure(clientIp, errorString stri
 		c.HandleLoggingForError(clientIp, util.StatusUnauthorized, util.AuthorizationFailed)
 	}
 }
-
 
 func readMfBytes(mfYaml *os.File) ([]byte, error) {
 	scanner := bufio.NewScanner(mfYaml)
@@ -425,6 +433,7 @@ func (c *BaseController) validateCredentials(clientIp, userName, key string) err
 
 	readErr := c.Db.ReadData(edgeAuthInfoRec, "name")
 	if readErr != nil {
+		log.Info("Query user with error: ", readErr.Error())
 		c.HandleLoggingForError(clientIp, util.StatusNotFound,
 			"Edge auth info record does not exist in database")
 		return readErr
@@ -437,7 +446,6 @@ func (c *BaseController) validateCredentials(clientIp, userName, key string) err
 	}
 	return nil
 }
-
 
 // Validate token and credentials
 func (c *BaseController) ValidateTokenAndCredentials(accessToken, clientIp, tenantId string) error {
@@ -478,7 +486,6 @@ func (c *BaseController) GetUserNameAndKey(clientIp string) (name, key string, e
 	return name, key, err
 }
 
-
 // Get user name
 func (c *BaseController) GetUserName(clientIp string) (string, error) {
 	userName := c.Ctx.Request.Header.Get("name")
@@ -518,16 +525,14 @@ func (c *BaseController) CheckUserNameAndKey(clientIp string) (string, string, e
 	return name, key, nil
 }
 
-
 func HandleStatus(status string) string {
-	if strings.ToLower(status) =="uploading" {
+	if strings.ToLower(status) == "uploading" {
 		return "Distributing"
 	} else if strings.ToLower(status) == "uploaded" {
 		return "Distributed"
 	}
 	return status
 }
-
 
 func (c *BaseController) GetPluginAndClient(clientIp, packageId, tenantId, hostIp string) (string,
 	pluginAdapter.ClientIntf, error) {
@@ -541,7 +546,7 @@ func (c *BaseController) GetPluginAndClient(clientIp, packageId, tenantId, hostI
 		return "", nil, err
 	}
 
-	vim, err := c.GetVim(clientIp, appPkgHostRecord.HostIp)
+	vim, err := c.GetVim(clientIp, appPkgHostRecord.HostIp, appPkgHostRecord.TenantId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, err.Error(), util.ErrCodeGetVimFailed)
 		return "", nil, err

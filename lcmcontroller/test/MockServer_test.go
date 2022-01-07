@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 	"io"
-	"lcmcontroller/internal/lcmservice"
+	"lcmcontroller/internal/internal_lcmservice"
 	"net"
 
 	log "github.com/sirupsen/logrus"
@@ -47,37 +47,37 @@ type VmImageServer struct {
 	Address string
 }
 
-func (a AppLCMServer) Instantiate(ctx context.Context, request *lcmservice.InstantiateRequest) (*lcmservice.InstantiateResponse, error) {
-	resp := &lcmservice.InstantiateResponse{
+func (a AppLCMServer) Instantiate(ctx context.Context, request *internal_lcmservice.InstantiateRequest) (*internal_lcmservice.InstantiateResponse, error) {
+	resp := &internal_lcmservice.InstantiateResponse{
 		Status: SUCCESS_RETURN,
 	}
 	return resp, nil
 }
 
-func (a AppLCMServer) Terminate(ctx context.Context, request *lcmservice.TerminateRequest) (*lcmservice.TerminateResponse, error) {
-	resp := &lcmservice.TerminateResponse{
+func (a AppLCMServer) Terminate(ctx context.Context, request *internal_lcmservice.TerminateRequest) (*internal_lcmservice.TerminateResponse, error) {
+	resp := &internal_lcmservice.TerminateResponse{
 		Status: SUCCESS_RETURN,
 	}
 	return resp, nil
 }
 
-func (a AppLCMServer) Query(ctx context.Context, request *lcmservice.QueryRequest) (*lcmservice.QueryResponse, error) {
-	resp := &lcmservice.QueryResponse{
+func (a AppLCMServer) Query(ctx context.Context, request *internal_lcmservice.QueryRequest) (*internal_lcmservice.QueryResponse, error) {
+	resp := &internal_lcmservice.QueryResponse{
 		Response: "{\"Output\":\"Success\"}",
 	}
 	log.Info("Query is success")
 	return resp, nil
 }
 
-func (a AppLCMServer) QueryKPI(ctx context.Context, request *lcmservice.QueryKPIRequest) (*lcmservice.QueryKPIResponse, error) {
-	resp := &lcmservice.QueryKPIResponse{
+func (a AppLCMServer) QueryKPI(ctx context.Context, request *internal_lcmservice.QueryKPIRequest) (*internal_lcmservice.QueryKPIResponse, error) {
+	resp := &internal_lcmservice.QueryKPIResponse{
 		Response: finalOutput,
 	}
 	log.Info("Query KPI is success")
 	return resp, nil
 }
 
-func (a AppLCMServer) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) error {
+func (a AppLCMServer) UploadConfig(stream internal_lcmservice.AppLCM_UploadConfigServer) error {
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
@@ -89,7 +89,7 @@ func (a AppLCMServer) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) 
 		_ = req.GetConfigFile()
 	}
 
-	var res lcmservice.UploadCfgResponse
+	var res internal_lcmservice.UploadCfgResponse
 	res.Status = SUCCESS_RETURN
 	log.Info("Successful Upload")
 	err := stream.SendAndClose(&res)
@@ -100,29 +100,29 @@ func (a AppLCMServer) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) 
 	return nil
 }
 
-func (a AppLCMServer) RemoveConfig(ctx context.Context, request *lcmservice.RemoveCfgRequest) (*lcmservice.RemoveCfgResponse, error) {
-	resp := &lcmservice.RemoveCfgResponse{
+func (a AppLCMServer) RemoveConfig(ctx context.Context, request *internal_lcmservice.RemoveCfgRequest) (*internal_lcmservice.RemoveCfgResponse, error) {
+	resp := &internal_lcmservice.RemoveCfgResponse{
 		Status: SUCCESS_RETURN,
 	}
 	log.Info("host configuration file deleted successfully.")
 	return resp, nil
 }
 
-func (a AppLCMServer) WorkloadEvents(ctx context.Context, request *lcmservice.WorkloadEventsRequest) (*lcmservice.WorkloadEventsResponse, error) {
-	resp := &lcmservice.WorkloadEventsResponse{
+func (a AppLCMServer) WorkloadEvents(ctx context.Context, request *internal_lcmservice.WorkloadEventsRequest) (*internal_lcmservice.WorkloadEventsResponse, error) {
+	resp := &internal_lcmservice.WorkloadEventsResponse{
 		Response: SUCCESS_RETURN,
 	}
 	return resp, nil
 }
 
-func (a AppLCMServer) QueryPackageStatus(ctx context.Context, request *lcmservice.QueryPackageStatusRequest) (*lcmservice.QueryPackageStatusResponse, error) {
-	resp := &lcmservice.QueryPackageStatusResponse{
+func (a AppLCMServer) QueryPackageStatus(ctx context.Context, request *internal_lcmservice.QueryPackageStatusRequest) (*internal_lcmservice.QueryPackageStatusResponse, error) {
+	resp := &internal_lcmservice.QueryPackageStatusResponse{
 		Response: SUCCESS_RETURN,
 	}
 	return resp, nil
 }
 
-func (a AppLCMServer) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer) error {
+func (a AppLCMServer) UploadPackage(stream internal_lcmservice.AppLCM_UploadPackageServer) error {
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
@@ -134,7 +134,7 @@ func (a AppLCMServer) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer
 		_ = req.GetPackage()
 	}
 
-	var res lcmservice.UploadPackageResponse
+	var res internal_lcmservice.UploadPackageResponse
 	res.Status = SUCCESS_RETURN
 	log.Info("Successful Upload package")
 	err := stream.SendAndClose(&res)
@@ -145,8 +145,8 @@ func (a AppLCMServer) UploadPackage(stream lcmservice.AppLCM_UploadPackageServer
 	return nil
 }
 
-func (a AppLCMServer) DeletePackage(ctx context.Context, request *lcmservice.DeletePackageRequest) (*lcmservice.DeletePackageResponse, error) {
-	resp := &lcmservice.DeletePackageResponse{
+func (a AppLCMServer) DeletePackage(ctx context.Context, request *internal_lcmservice.DeletePackageRequest) (*internal_lcmservice.DeletePackageResponse, error) {
+	resp := &internal_lcmservice.DeletePackageResponse{
 		Status: SUCCESS_RETURN,
 	}
 	return resp, nil
@@ -169,7 +169,7 @@ func (s *ServerGRPC) Listen() (err error) {
 	s.server = grpc.NewServer()
 	var appLCMServer AppLCMServer
 
-	lcmservice.RegisterAppLCMServer(s.server, appLCMServer)
+	internal_lcmservice.RegisterAppLCMServer(s.server, appLCMServer)
 	log.Infof("Mock server registered with GRPC")
 
 	// Server start serving
@@ -183,8 +183,8 @@ func (s *ServerGRPC) Listen() (err error) {
 }
 
 // Query HELM chart
-func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (resp *lcmservice.QueryResponse, err error) {
-	resp = &lcmservice.QueryResponse{
+func (s *ServerGRPC) Query(_ context.Context, req *internal_lcmservice.QueryRequest) (resp *internal_lcmservice.QueryResponse, err error) {
+	resp = &internal_lcmservice.QueryResponse{
 		Response: "{\"Output\":\"Success\"}",
 	}
 	log.Info("Query is success")
@@ -192,8 +192,8 @@ func (s *ServerGRPC) Query(_ context.Context, req *lcmservice.QueryRequest) (res
 }
 
 // Terminate HELM charts
-func (s *ServerGRPC) Terminate(ctx context.Context, req *lcmservice.TerminateRequest) (resp *lcmservice.TerminateResponse, err error) {
-	resp = &lcmservice.TerminateResponse{
+func (s *ServerGRPC) Terminate(ctx context.Context, req *internal_lcmservice.TerminateRequest) (resp *internal_lcmservice.TerminateResponse, err error) {
+	resp = &internal_lcmservice.TerminateResponse{
 		Status: SUCCESS_RETURN,
 	}
 	return resp, nil
@@ -205,7 +205,7 @@ func (s *ServerGRPC) Instantiate() (err error) {
 }
 
 // Upload file configuration
-func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (err error) {
+func (s *ServerGRPC) UploadConfig(stream internal_lcmservice.AppLCM_UploadConfigServer) (err error) {
 
 	for {
 		req, err := stream.Recv()
@@ -218,7 +218,7 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 		_ = req.GetConfigFile()
 	}
 
-	var res lcmservice.UploadCfgResponse
+	var res internal_lcmservice.UploadCfgResponse
 	res.Status = SUCCESS_RETURN
 	log.Info("Successful Upload")
 	err = stream.SendAndClose(&res)
@@ -231,8 +231,8 @@ func (s *ServerGRPC) UploadConfig(stream lcmservice.AppLCM_UploadConfigServer) (
 
 // Remove file configuration
 func (s *ServerGRPC) RemoveConfig(_ context.Context,
-	request *lcmservice.RemoveCfgRequest) (*lcmservice.RemoveCfgResponse, error) {
-	resp := &lcmservice.RemoveCfgResponse{
+	request *internal_lcmservice.RemoveCfgRequest) (*internal_lcmservice.RemoveCfgResponse, error) {
+	resp := &internal_lcmservice.RemoveCfgResponse{
 		Status: SUCCESS_RETURN,
 	}
 	log.Info("host configuration file deleted successfully.")
@@ -240,8 +240,8 @@ func (s *ServerGRPC) RemoveConfig(_ context.Context,
 }
 
 // Workload description
-func (s *ServerGRPC) WorkloadEvents(ctx context.Context, request *lcmservice.WorkloadEventsRequest) (*lcmservice.WorkloadEventsResponse, error) {
-	resp := &lcmservice.WorkloadEventsResponse{
+func (s *ServerGRPC) WorkloadEvents(ctx context.Context, request *internal_lcmservice.WorkloadEventsRequest) (*internal_lcmservice.WorkloadEventsResponse, error) {
+	resp := &internal_lcmservice.WorkloadEventsResponse{
 		Response: SUCCESS_RETURN,
 	}
 	return resp, nil

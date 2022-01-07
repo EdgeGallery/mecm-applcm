@@ -48,7 +48,7 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
         LOG.info('received create security group message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return CreateSecurityGroupResponse(status='Failure')
+            return CreateSecurityGroupResponse(status='{"data": null, "retCode": 400, "message": "hostIp is needed"}')
         neutron = create_neutron_client(host_ip, request.tenantId)
 
         security_group = {
@@ -56,7 +56,7 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
         }
         neutron.create_security_group({'security_group': security_group})
         LOG.info('create security group success')
-        return CreateSecurityGroupResponse(status='Success')
+        return CreateSecurityGroupResponse(status='{"data": null, "retCode": 0, "message": "Success"}')
 
     def deleteSecurityGroup(self, request, context):
         """
@@ -71,7 +71,7 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
         LOG.info("received delete security group message")
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return DeleteSecurityGroupResponse(status='Failure')
+            return DeleteSecurityGroupResponse(status='{"data": null, "retCode": 400, "message": "hostIp is needed"}')
 
         neutron = create_neutron_client(host_ip, request.tenantId)
 
@@ -81,7 +81,7 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
             LOG.debug('skip not found security group %s', request.securityGroupId)
         LOG.info("delete security group success")
 
-        return DeleteSecurityGroupResponse(status='Success')
+        return DeleteSecurityGroupResponse(status='{"data": null, "retCode": 200, "message": "success"}')
 
     def querySecurityGroup(self, request, context):
         """
@@ -96,13 +96,14 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
         LOG.info("received delete security group message")
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return QuerySecurityGroupResponse(response='{"code":400,"msg":"error"}')
+            return QuerySecurityGroupResponse(response='{"data": null, "retCode": 400, "message": "params invalid"}')
 
         neutron = create_neutron_client(host_ip, request.tenantId)
 
         resp_data = {
-            'code': 200,
-            'msg': 'success'
+            'data': None,
+            'retCode': 200,
+            'message': 'success'
         }
         if request.securityGroupId:
             try:
@@ -124,8 +125,9 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
                         'direction': security_rule['direction']
                     })
             except NotFound:
-                resp_data['code'] = 404
-                resp_data['msg'] = 'security group %s not found' % request.securityGroupId
+                resp_data['data'] = None
+                resp_data['retCode'] = 404
+                resp_data['message'] = 'security group %s not found' % request.securityGroupId
         else:
             resp_data['data'] = []
             security_groups = neutron.list_security_groups()['security_groups']
@@ -151,7 +153,7 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
         LOG.info("received security group rule message")
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return CreateSecurityGroupRuleResponse(status='Failure')
+            return CreateSecurityGroupRuleResponse(status='{"data": null, "retCode": 500, "message": "Failure"}')
 
         neutron = create_neutron_client(host_ip, request.tenantId)
 
@@ -173,7 +175,7 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
 
         LOG.info("success create security group rule")
 
-        return CreateSecurityGroupRuleResponse(status='Success')
+        return CreateSecurityGroupRuleResponse(status='{"data": null, "retCode":200, "message":"success"}')
 
     def deleteSecurityGroupRule(self, request, context):
         """
@@ -188,7 +190,7 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
         LOG.info('received delete security group rule message')
         host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            return DeleteSecurityGroupRuleResponse(status='Failure')
+            return DeleteSecurityGroupRuleResponse(status='{"data": null, "retCode": 500, "message": "Failure"}')
 
         neutron = create_neutron_client(host_ip, request.tenantId)
 
@@ -199,4 +201,4 @@ class SecurityGroupService(resourcemanager_pb2_grpc.SecurityGroupManagerServicer
 
         LOG.info('success delete security group rule')
 
-        return DeleteSecurityGroupRuleResponse(status='success')
+        return DeleteSecurityGroupRuleResponse(status='{"data": null, "retCode":200, "message":"success"}')

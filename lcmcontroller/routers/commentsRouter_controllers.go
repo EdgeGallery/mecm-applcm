@@ -30,6 +30,7 @@ func init() {
 	initAPI(util.MecHostcontroller, "AddMecHost", util.Hosts, util.POST)
 	initAPI(util.MecHostcontroller, "UpdateMecHost", util.Hosts, "put")
 	initAPI(util.MecHostcontroller, "GetMecHost", util.Hosts, util.GET)
+	initAPI(util.MecHostcontroller, "GetMecHost", util.AllHosts, util.GET)
 	initAPI(util.MecHostcontroller, "DeleteMecHost", "/v1/tenants/:tenantId/hosts/:hostIp", util.DELETE)
 	initAPI(util.MecHostcontroller, "GetAppInstance", "/v1/tenants/:tenantId/app_instances", util.GET)
 	initAPI(util.MecHostcontroller, "BatchTerminate", "/v1/tenants/:tenantId/app_instances/batchTerminate", util.DELETE)

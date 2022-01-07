@@ -29,7 +29,8 @@ mock_glance_client.images.get.return_value = {
     'id': 'abc1231234',
     'status': 'active',
     'size': 2014,
-    'checksum': '222'
+    'checksum': '222',
+    'diskFormat': 'qcow2'
 }
 mock_glance_client.images.create.return_value = {
     'id': 'abc123123',

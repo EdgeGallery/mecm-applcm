@@ -49,14 +49,9 @@ func (c *VmController) CreateServer() {
 	var server models.Server
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &server)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		c.writeErrorResponse(err.Error(), util.BadRequest)
 		return
 	}
-	err = ValidateBody(server, clientIp)
-	if err != nil{
-		return
-	}
-
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -204,7 +199,7 @@ func ValidateBody( server models.Server , clientIp string) error {
 		return err
 	}
 
-	for _, network := range server.Network {
+	for _, network := range server.Networks {
 		err = util.ValidateUUID(network.Network)
 		if err != nil {
 			return err

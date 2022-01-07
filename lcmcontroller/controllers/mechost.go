@@ -24,6 +24,7 @@ import (
 	"lcmcontroller/models"
 	"lcmcontroller/util"
 	"strings"
+	"unsafe"
 )
 
 // Mec Host Controller
@@ -39,6 +40,8 @@ type MecHostController struct {
 // @router /hosts [post]
 func (c *MecHostController) AddMecHost() {
 	log.Info("Add or update mec host request received.")
+	bAdminRole := false
+
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
@@ -46,6 +49,19 @@ func (c *MecHostController) AddMecHost() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.IsPermitted(accessToken, clientIp)
+	defer util.ClearByteArray(bKey)
+	if err != nil {
+		return
+	}
+	if accessToken != "" {
+		bAdminRole = util.IsAdminRole(accessToken)
+	} else {
+		bAdminRole = true
+	}
 
 	tenantId, err := c.GetTenantId(clientIp)
 	if err != nil {
@@ -76,7 +92,7 @@ func (c *MecHostController) AddMecHost() {
 			return
 		}
 	}
-	err = c.InsertorUpdateMecHostRecord(clientIp, tenantId, request)
+	err = c.InsertorUpdateMecHostRecord(clientIp, tenantId, request, bAdminRole)
 	if err != nil {
 		c.writeErrorResponse("failed to insert or update mec host record", util.BadRequest)
 		return
@@ -145,10 +161,22 @@ func (c *MecHostController) ValidateAddMecHostRequest(clientIp string, request m
 
 // Insert or update mec host record
 func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantId string,
-	request models.MecHostInfo) error {
+	request models.MecHostInfo, bAdminRole bool) error {
+	mecHostKey := ""
+	role := ""
 
 	if request.Origin == "" {
 		request.Origin = "MEO"
+	}
+
+	if bAdminRole {
+		role = util.MecmAdminRole
+	}
+
+	if role == util.MecmAdminRole {
+		mecHostKey = request.MechostIp
+	} else {
+		mecHostKey = request.MechostIp + util.UnderScore + TenantId
 	}
 
 	syncStatus := true
@@ -157,7 +185,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 	}
 	// Insert or update host info record
 	hostInfoRecord := &models.MecHost{
-		MecHostId:          request.MechostIp,
+		MecHostId:          mecHostKey,
 		MechostIp:          request.MechostIp,
 		MechostName:        request.MechostName,
 		ZipCode:            request.ZipCode,
@@ -170,6 +198,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 		Vim:                request.Vim,
 		Origin:             request.Origin,
 		SyncStatus:         syncStatus,
+		Role:               role,
 	}
 
 	count, err := c.Db.QueryCount(util.Mec_Host)
@@ -184,7 +213,7 @@ func (c *MecHostController) InsertorUpdateMecHostRecord(clientIp string, TenantI
 		return err
 	}
 
-	err = c.Db.InsertOrUpdateData(hostInfoRecord, util.HostIp)
+	err = c.Db.InsertOrUpdateData(hostInfoRecord, util.HostId)
 	if err != nil && err.Error() != util.LastInsertIdNotSupported {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError,
 			"Failed to save host info record to database.")
@@ -225,6 +254,14 @@ func (c *MecHostController) DeleteMecHost() {
 		return
 	}
 	c.displayReceivedMsg(clientIp)
+
+	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
+	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
+	_, err = c.IsPermitted(accessToken, clientIp)
+	defer util.ClearByteArray(bKey)
+	if err != nil {
+		return
+	}
 
 	hostIp, err := c.getUrlHostIP(clientIp)
 	if err != nil {
@@ -277,19 +314,19 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 		}
 	}
 
-	hostInfoRecord := &models.MecHost{
-		MecHostId: hostIp,
+	tenantId, err := c.GetTenantId(clientIp)
+	if err != nil {
+		return err
 	}
 
-	readErr := c.Db.ReadData(hostInfoRecord, util.HostIp)
-	if readErr != nil {
-		c.HandleLoggingForError(clientIp, util.StatusNotFound,
-			"Mec host info record does not exist in database")
-		return readErr
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp, tenantId)
+	if err != nil {
+		return err
 	}
-	var origin = hostInfoRecord.Origin
 
-	err := c.Db.DeleteData(hostInfoRecord, util.HostIp)
+	var origin = mecHostInfoRec.Origin
+
+	err = c.Db.DeleteData(mecHostInfoRec, util.HostId)
 	if err != nil {
 		c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 		return err
@@ -300,7 +337,7 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 	}
 
 	if strings.EqualFold(origin, "mepm") {
-		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostIp)
+		err = c.Db.InsertOrUpdateData(mecHostKeyRec, util.HostId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return err
@@ -310,6 +347,24 @@ func (c *MecHostController) DeleteHostInfoRecord(clientIp, hostIp string) error 
 	return nil
 }
 
+func (c *MecHostController) TenantIdAndVim(hostIp, clientIp, tenantId string) (string, string, error) {
+	mecHostInfoRec, err := c.GetMecHostInfoRecord(hostIp, clientIp, tenantId)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Get VIM from host table based on hostIp
+	vim := mecHostInfoRec.Vim
+
+	// Default to k8s for backward compatibility
+	if vim == "" {
+		log.Info("Setting plugin to default value which is k8s, as no VIM is mentioned explicitly")
+		vim = "k8s"
+	}
+	configTenantId := mecHostInfoRec.TenantId
+	return vim, configTenantId, nil
+}
+
 // Terminate application
 func (c *MecHostController) TerminateApplication(clientIp string, appInsId string) error {
 	appInfoRecord, err := c.getAppInfoRecord(appInsId, clientIp)
@@ -317,7 +372,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	vim, err := c.GetVim(clientIp, appInfoRecord.MecHost)
+	vim, configTenantId, err := c.TenantIdAndVim(clientIp, appInfoRecord.MecHost, appInfoRecord.TenantId)
 	if err != nil {
 		return err
 	}
@@ -327,7 +382,7 @@ func (c *MecHostController) TerminateApplication(clientIp string, appInsId strin
 		return err
 	}
 
-	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId, appInfoRecord.TenantId)
+	_, err = adapter.Terminate(appInfoRecord.MecHost, "", appInfoRecord.AppInstanceId, configTenantId)
 	if err != nil {
 		c.HandleLoggingForFailure(clientIp, err.Error())
 		return err
@@ -418,30 +473,25 @@ func (c *MecHostController) GetMecHost() {
 }
 
 func (c *MecHostController) GetMecHostByCond(clientIp string) (mecHosts []*models.MecHost) {
-	edgeKey, _ := c.getKey(clientIp)
-	if edgeKey != "" {
-		count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
-		if count == 0 {
-			c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-			return mecHosts
-		}
-	} else {
-		tenantId,_ := c.GetTenantId(clientIp)
-		if tenantId == ""  {
-			count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
-			if count == 0 {
-				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-				return mecHosts
-			}
-		} else {
-			count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, util.TenantId, tenantId)
-			if count == 0 {
-				c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
-				return mecHosts
-			}
+	tenantId, _ := c.GetTenantId(clientIp)
+	if tenantId == "" {
+		c.HandleForErrorCode(clientIp, util.BadRequest, util.TenantIdIsInvalid, util.ErrCodeTenantIdInvalid)
+	}
+
+	count, _ := c.Db.QueryTable(util.Mec_Host, &mecHosts, "")
+	if count == 0 {
+		c.HandleForErrorCode(clientIp, util.StatusNotFound, util.RecordDoesNotExist, util.ErrCodeRecordNotExist)
+		return mecHosts
+	}
+
+	result := make([]*models.MecHost, 0)
+
+	for _, mecHost := range mecHosts {
+		if mecHost.TenantId == tenantId || mecHost.Role == util.MecmAdminRole {
+			result = append(result, mecHost)
 		}
 	}
-	return mecHosts
+	return result
 }
 
 // @Title Query AppInstance information
@@ -593,7 +643,7 @@ func (c *MecHostController) SynchronizeMecHostUpdatedRecord() {
 	}
 	for _, mecHost := range mecHostsSync {
 		mecHost.SyncStatus = true
-		err = c.Db.InsertOrUpdateData(mecHost, util.HostIp)
+		err = c.Db.InsertOrUpdateData(mecHost, util.HostId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			log.Error("Failed to save mec host info record to database.")
 			return
@@ -638,7 +688,7 @@ func (c *MecHostController) SynchronizeMecHostStaleRecord() {
 		return
 	}
 	for _, mecHostStaleRec := range mecHostStaleRecs {
-		err = c.Db.DeleteData(&mecHostStaleRec, util.HostIp)
+		err = c.Db.DeleteData(&mecHostStaleRec, util.HostId)
 		if err != nil && err.Error() != util.LastInsertIdNotSupported {
 			c.HandleLoggingForError(clientIp, util.StatusInternalServerError, err.Error())
 			return

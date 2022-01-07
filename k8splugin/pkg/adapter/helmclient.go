@@ -52,10 +52,10 @@ import (
 
 // Variables to be defined in deployment file
 var (
-	kubeconfigPath   = "/usr/app/artifacts/config/"
-	appPackagesBasePath = "/usr/app/artifacts/packages/"
-	totalCpu1 float64 = 0
-	totalMem1 float64 = 0
+	kubeconfigPath              = "/usr/app/artifacts/config/"
+	appPackagesBasePath         = "/usr/app/artifacts/packages/"
+	totalCpu1           float64 = 0
+	totalMem1           float64 = 0
 )
 
 // Helm client
@@ -96,7 +96,7 @@ type Manifest struct {
 // Constructor of helm client for a given host IP
 func NewHelmClient(tenantId string, hostIP string) (*HelmClient, error) {
 	// Kubeconfig file will be picked based on host IP and will be check for existence
-	exists, err := fileExists(kubeconfigPath + tenantId + "/" +hostIP)
+	exists, err := fileExists(kubeconfigPath + tenantId + "/" + hostIP)
 	if exists {
 		return &HelmClient{HostIP: hostIP, Kubeconfig: kubeconfigPath + tenantId + "/" + hostIP}, nil
 	} else {
@@ -124,12 +124,12 @@ func (hc *HelmClient) Deploy(appPkgRecord *models.AppPackage, appInsId, ak, sk s
 		return "", "", err
 	}
 	defer os.Remove(dirName + ".tar.gz")
-	defer  os.RemoveAll(dirName)
+	defer os.RemoveAll(dirName)
 
 	log.WithFields(log.Fields{
-		"helm_chart": dirName,
+		"helm_chart":      dirName,
 		"app_instance_id": appInsId,
-		"namespace": namespace,
+		"namespace":       namespace,
 	}).Info("deployment chart")
 
 	// Load the file to chart
@@ -342,7 +342,13 @@ func (hc *HelmClient) QueryKPI() (string, error) {
 
 	metricInfo.CpuUsage["used"] = totalPodCpu
 	metricInfo.MemUsage["used"] = totalPodMem
-	metricInfoJson, err := json.Marshal(metricInfo)
+	result := &models.ReturnResponse{
+		Data:    metricInfo,
+		RetCode: 0,
+		Message: "success",
+		Params:  nil,
+	}
+	metricInfoJson, err := json.Marshal(result)
 	if err != nil {
 		log.Info(util.FailedToJsonMarshal)
 		return "", err
@@ -414,7 +420,7 @@ func processUsage(iter1 *reflect.MapIter, totalPodCpu, totalPodMem int64) (int64
 	return totalPodCpu, totalPodMem
 }
 
-func getNodeTotalCpuMem(statsInfo  map[string]interface{}) (totalCpu, totalMem int64) {
+func getNodeTotalCpuMem(statsInfo map[string]interface{}) (totalCpu, totalMem int64) {
 	for key, value := range statsInfo {
 		if key == "items" {
 			items := value.([]interface{})
@@ -433,7 +439,7 @@ func getCpuMemUsageInfo(usage interface{}, totalCpu, totalMem int64) (int64, int
 	for iter.Next() {
 		if iter.Key().Interface() == "usage" {
 			val := iter.Value().Interface()
-			iter1 :=reflect.ValueOf(val).MapRange()
+			iter1 := reflect.ValueOf(val).MapRange()
 			for iter1.Next() {
 				if iter1.Key().Interface() == "cpu" {
 					cpuVal := iter1.Value().Interface()
@@ -709,7 +715,7 @@ func UpdatePodInfo(appInfo models.AppInfo, label *models.LabelList, clientset *k
 }
 
 // Get pods
-func GetPods(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (*v1.PodList, error){
+func GetPods(clientset *kubernetes.Clientset, namespace string, label *models.LabelList) (*v1.PodList, error) {
 	options := metav1.ListOptions{
 		LabelSelector: label.Selector,
 	}
@@ -800,7 +806,7 @@ func updateContainerInfo(podMetrics *v1beta1.PodMetrics, clientset *kubernetes.C
 
 		cpuNum, _ := strconv.ParseUint(totalCpuUsage, 10, 32)
 		cpuUsage1 := int64(cpuNum)
-		cpuPercent := float64(cpu)  / float64(cpuUsage1)
+		cpuPercent := float64(cpu) / float64(cpuUsage1)
 		totalCpu1 = totalCpu1 + cpuPercent
 		memNum, _ := strconv.ParseUint(totalMemUsage, 10, 32)
 		memUsage1 := int64(memNum)

@@ -50,25 +50,22 @@ func (c *NetworkController) CreateNetwork() {
 	c.displayReceivedMsg(clientIp)
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmAdminRole}, accessToken, clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
+	hostIp, vim, coningTenatnId, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
 	var network models.Network
 	err = json.Unmarshal(c.Ctx.Input.RequestBody, &network)
 	if err != nil {
-		c.writeErrorResponse(util.FailedToUnmarshal, util.BadRequest)
+		c.writeErrorResponse(err.Error(), util.BadRequest)
 		return
 	}
-	err = c.ValidateBodyParams(network, clientIp)
-	if err != nil{
-		return
-	}
+
 
 	pluginInfo := util.GetPluginInfo(vim)
 	client, err := pluginAdapter.GetClient(pluginInfo)
@@ -79,7 +76,7 @@ func (c *NetworkController) CreateNetwork() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	response, err := adapter.CreateNetwork(network, hostIp, accessToken, tenantId)
+	response, err := adapter.CreateNetwork(network, hostIp, accessToken, coningTenatnId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
 			util.ErrCodePluginReportFailed)
@@ -116,12 +113,12 @@ func (c *NetworkController) QueryNetwork() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
+	hostIp, vim, configTenantId, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -138,7 +135,7 @@ func (c *NetworkController) QueryNetwork() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	response, err := adapter.QueryNetwork(hostIp, accessToken, tenantId, networkId)
+	response, err := adapter.QueryNetwork(hostIp, accessToken, configTenantId, networkId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
 			util.ErrCodePluginReportFailed)
@@ -173,12 +170,12 @@ func (c *NetworkController) DeleteNetwork() {
 	accessToken := c.Ctx.Request.Header.Get(util.AccessToken)
 	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
 
-	tenantId, err := c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
+	_, err = c.isPermitted([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole}, accessToken, clientIp)
 	if err != nil {
 		return
 	}
 	defer util.ClearByteArray(bKey)
-	hostIp, vim, err := c.GetInputParameters(clientIp)
+	hostIp, vim, configTenantId, err := c.GetInputParameters(clientIp)
 	if err != nil {
 		return
 	}
@@ -193,7 +190,7 @@ func (c *NetworkController) DeleteNetwork() {
 	}
 
 	adapter := pluginAdapter.NewPluginAdapter(pluginInfo, client)
-	_, err = adapter.DeleteNetwork(hostIp, accessToken, tenantId, networkId)
+	_, err = adapter.DeleteNetwork(hostIp, accessToken, configTenantId, networkId)
 	if err != nil {
 		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
 			util.ErrCodePluginReportFailed)
@@ -203,27 +200,6 @@ func (c *NetworkController) DeleteNetwork() {
 }
 
 func (c *NetworkController) ValidateBodyParams (network models.Network, clientIp string) error {
-
-	// add validation code here
-	for _, subnet := range network.Subnets {
-		err := util.ValidateIpv4Address(subnet.GatewayIp)
-		if err != nil {
-			c.HandleLoggingForError(clientIp, util.BadRequest, "subnet.GatewayIp address is invalid")
-			return err
-		}
-		for _, sub := range subnet.AllocationPools {
-			err := util.ValidateIpv4Address(sub.Start)
-			if err != nil {
-				c.HandleLoggingForError(clientIp, util.BadRequest, "sub.Start address is invalid")
-				return err
-			}
-			err1 := util.ValidateIpv4Address(sub.End)
-			if err1 != nil {
-				c.HandleLoggingForError(clientIp, util.BadRequest, "sub.End address is invalid")
-				return err
-			}
-		}
-	}
 
 	name, err := util.ValidateName(network.Name, util.NameRegex)
 	if err != nil || !name {

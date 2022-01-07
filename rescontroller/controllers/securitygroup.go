@@ -171,11 +171,6 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 		return
 	}
 
-	err = ValidateBodyPara(securityGroupRules, clientIp)
-	if err != nil{
-		return
-	}
-
 	adapter, err := c.GetAdapter(clientIp, vim)
 	if err != nil {
 		return
@@ -187,43 +182,6 @@ func (c *SecurityGroupController) CreateSecurityGroupRules() {
 		return
 	}
 	c.SendResponse(clientIp, response, "Create security group rule is successful")
-}
-
-// @Title Query Security Group rule
-// @Description Query Security Group rule
-// @Param   access_token          header     string true   "access token"
-// @Param   tenantId              path 	     string	true   "tenantId"
-// @Param   hostIp                path 	     string	true   "hostIp"
-// @Param   securityGroupId       path 	     string	true   "securityGroupId"
-// @Success 200 ok
-// @Failure 400 bad request
-// @router "/tenants/:tenantId/hosts/:hostIp/securityGroups/:securityGroupId/securityGroupRules" [get]
-func (c *SecurityGroupController) QuerySecurityGroupRules() {
-	log.Info("Query security group rules request received.")
-	var securityGroupdId = ""
-
-	err, accessToken, clientIp, hostIp, vim, tenantId := c.ValidateAccessTokenAndGetInputParameters([]string{util.MecmTenantRole, util.MecmGuestRole, util.MecmAdminRole})
-	if err != nil {
-		return
-	}
-	bKey := *(*[]byte)(unsafe.Pointer(&accessToken))
-	defer util.ClearByteArray(bKey)
-
-	if c.IsIdAvailable(util.SecurityGroupId) {
-		securityGroupdId, err = c.GetId(util.SecurityGroupId, clientIp)
-	}
-
-	adapter, err := c.GetAdapter(clientIp, vim)
-	if err != nil {
-		return
-	}
-	response, err := adapter.QuerySecurityGroupRules(hostIp, accessToken, tenantId, securityGroupdId)
-	if err != nil {
-		c.HandleForErrorCode(clientIp, util.StatusInternalServerError, util.PluginErrorReport,
-			util.ErrCodePluginReportFailed)
-		return
-	}
-	c.SendResponse(clientIp, response, "Query security group rule is successful")
 }
 
 // @Title Delete Security Group rule

@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	resservice "rescontroller/internal/resservice"
+	resservice "rescontroller/internal/internal_resourcemanager"
 	"rescontroller/models"
 	"rescontroller/util"
 )
@@ -108,7 +108,7 @@ func (c *ClientGRPC) CreateFlavor(ctx context.Context, flavor models.Flavor, hos
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query flavor
@@ -122,6 +122,7 @@ func (c *ClientGRPC) QueryFlavor(ctx context.Context, hostIp, accessToken, tenan
 	}
 	resp, err := c.flavorClient.QueryFlavor(ctx, req)
 	if err != nil {
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
@@ -140,7 +141,7 @@ func (c *ClientGRPC) DeleteFlavor(ctx context.Context, hostIp, accessToken, tena
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create security group
@@ -160,7 +161,7 @@ func (c *ClientGRPC) CreateSecurityGroup(ctx context.Context, securityGroup mode
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query security group
@@ -192,7 +193,7 @@ func (c *ClientGRPC) DeleteSecurityGroup(ctx context.Context, hostIp, accessToke
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create security group rules
@@ -219,23 +220,7 @@ func (c *ClientGRPC) CreateSecurityGroupRules(ctx context.Context, securityGroup
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
-}
-
-// Query security group rules
-func (c *ClientGRPC) QuerySecurityGroupRules(ctx context.Context, hostIp, accessToken, tenantId,
-	securityGroupId string) (response string, error error) {
-	req := &resservice.QuerySecurityGroupRuleRequest{
-		AccessToken:          accessToken,
-		HostIp:               hostIp,
-		TenantId:             tenantId,
-		SecurityGroupId:      securityGroupId,
-	}
-	resp, err := c.securityGroupClient.QuerySecurityGroupRule(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Delete security group rule
@@ -251,7 +236,7 @@ func (c *ClientGRPC) DeleteSecurityGroupRule(ctx context.Context, hostIp, access
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query images
@@ -265,6 +250,7 @@ func (c *ClientGRPC) QueryImages(ctx context.Context, hostIp, accessToken,
 	}
 	resp, err := c.vmImageClient.QueryVmImage(ctx, req)
 	if err != nil {
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
@@ -283,7 +269,7 @@ func (c *ClientGRPC) DeleteImage(ctx context.Context, hostIp, accessToken, tenan
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create Image
@@ -325,17 +311,12 @@ func (c *ClientGRPC) ImportImage(ctx context.Context, importImage models.ImportI
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create Server
 func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hostIp, accessToken,
 	tenantId string) (response string, error error) {
-	var SecurityGroups   []string
-
-	for _, securityGroup := range server.Securitygroups {
-		SecurityGroups = append(SecurityGroups, securityGroup.Name)
-	}
 
 	reqServer := &resservice.CreateVmRequest_Server{
 		Name:             server.Name,
@@ -344,8 +325,8 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 		AvailabilityZone: server.Availabilityzone,
 		UserData:         server.UserData,
 		ConfigDrive:      server.Configdrive,
-		SecurityGroups:   SecurityGroups,
-		Networks:         server.Network,
+		SecurityGroups:   server.Securitygroups,
+		Networks:         server.Networks,
 	}
 
 	req := &resservice.CreateVmRequest{
@@ -354,11 +335,12 @@ func (c *ClientGRPC) CreateServer(ctx context.Context, server models.Server, hos
 		TenantId:      tenantId,
 		Server:        reqServer,
 	}
+	log.Info(req)
 	resp, err := c.vmClient.CreateVm(ctx, req)
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query Server
@@ -372,6 +354,7 @@ func (c *ClientGRPC) QueryServer(ctx context.Context, hostIp, accessToken,
 	}
 	resp, err := c.vmClient.QueryVm(ctx, req)
 	if err != nil {
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
@@ -397,6 +380,7 @@ func (c *ClientGRPC) OperateServer(ctx context.Context, operateServer models.Ope
 		Reboot:        rebootReq,
 		CreateImage:   createImageReq,
 	}
+	log.Info(req)
 	resp, err := c.vmClient.OperateVm(ctx, req)
 	if err != nil {
 		return "", err
@@ -417,7 +401,7 @@ func (c *ClientGRPC) DeleteServer(ctx context.Context, hostIp, accessToken, tena
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Create network
@@ -425,9 +409,7 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 	reqNetwork := &resservice.CreateNetworkRequest_Network{
 		Name:                    network.Name,
 		AdminStateUp:            network.Adminstateup,
-		DnsDomain:               network.Dnsdomain,
 		Mtu:                     network.Mtu,
-		PortSecurityEnabled:     network.Portsecurityenabled,
 		ProviderNetworkType:     network.Providernetworktype,
 		ProviderPhysicalNetwork: network.Providerphysicalnetwork,
 		ProviderSegmentationId:  network.Providersegmentationid,
@@ -435,9 +417,8 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 		RouterExternal:          network.Routerexternal,
 		Segments:                network.Segments,
 		Shared:                  network.Shared,
-		VlanTransparent:         network.Vlantransparent,
 		IsDefault:               network.Isdefault,
-		Subnets:                 network.Subnets,
+		Subnet:                  network.Subnet,
 	}
 	req := &resservice.CreateNetworkRequest{
 		AccessToken:   accessToken,
@@ -445,11 +426,12 @@ func (c *ClientGRPC) CreateNetwork(ctx context.Context, network models.Network, 
 		TenantId:      tenantId,
 		Network:       reqNetwork,
 	}
+	log.Info(req)
 	resp, err := c.networkClient.CreateNetwork(ctx, req)
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }
 
 // Query network
@@ -462,6 +444,7 @@ func (c *ClientGRPC) QueryNetwork(ctx context.Context, hostIp, accessToken, tena
 	}
 	resp, err := c.networkClient.QueryNetwork(ctx, req)
 	if err != nil {
+		log.Error(util.Error, err.Error())
 		return "", err
 	}
 	return resp.Response, err
@@ -479,5 +462,5 @@ func (c *ClientGRPC) DeleteNetwork(ctx context.Context, hostIp, accessToken, ten
 	if err != nil {
 		return "", err
 	}
-	return resp.Response, err
+	return resp.Status, err
 }

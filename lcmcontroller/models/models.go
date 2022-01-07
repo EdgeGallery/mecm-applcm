@@ -54,6 +54,7 @@ type MecHost struct {
 	Vim                string
 	Origin             string
 	SyncStatus         bool
+	Role               string
 	Hwcapabilities     []*MecHwCapability `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
 	AppInfoRecords     []*AppInfoRecord   `orm:"reverse(many);on_delete(set_null)"` // reverse relationship of fk
 }
@@ -82,17 +83,16 @@ type AppInfoRecord struct {
 	MecHostRec    *MecHost `orm:"rel(fk)"` // RelForeignKey relation
 }
 
-
 // Application info record
 type AppInfoRec struct {
 	AppInstanceId string    `orm:"pk" json:"appInstanceId"`
 	CreateTime    time.Time `orm:"auto_now_add;type(datetime)" json:"createTime"`
-	MecHost        string    `json:"mecHost"`
-	DeployType    string	`json:"deployType"`
-	TenantId      string	`json:"tenantId"`
-	AppPackageId  string	`json:"appPackageId"`
-	AppName       string	`json:"appName"`
-	Origin        string	`json:"origin"`
+	MecHost       string    `json:"mecHost"`
+	DeployType    string    `json:"deployType"`
+	TenantId      string    `json:"tenantId"`
+	AppPackageId  string    `json:"appPackageId"`
+	AppName       string    `json:"appName"`
+	Origin        string    `json:"origin"`
 	SyncStatus    bool      `json:"syncStatus"`
 }
 
@@ -108,34 +108,34 @@ type AppInstanceStaleRecords struct {
 
 // Application package record
 type AppPackageRecordInfo struct {
-	AppPkgId       string   `json:"appPkgId"`
-	AppPkgName     string   `json:"appPkgName"`
-	AppPkgVersion  string   `json:"appPkgVersion"`
-	AppPkgPath     string   `json:"appPkgPath"`
-	AppProvider    string   `json:"appProvider"`
-	AppPkgDesc     string   `json:"appPkgDesc"`
-	AppPkgAffinity string   `json:"appPkgAffinity"`
-	AppIconUrl     string   `json:"appIconUrl"`
-	CreatedTime    string   `json:"createdTime"`
-	ModifiedTime   string   `json:"modifiedTime"`
-	AppId          string   `json:"appId"`
-	TenantId       string   `json:"tenantId"`
-	PackageId      string   `json:"packageId"`
-	Origin         string   `json:"origin"`
-	SyncStatus     bool     `json:"syncStatus"`
-	MecHostInfo []AppPackageHostRecordInfo       `json:"mecHostInfo"`
+	AppPkgId       string                     `json:"appPkgId"`
+	AppPkgName     string                     `json:"appPkgName"`
+	AppPkgVersion  string                     `json:"appPkgVersion"`
+	AppPkgPath     string                     `json:"appPkgPath"`
+	AppProvider    string                     `json:"appProvider"`
+	AppPkgDesc     string                     `json:"appPkgDesc"`
+	AppPkgAffinity string                     `json:"appPkgAffinity"`
+	AppIconUrl     string                     `json:"appIconUrl"`
+	CreatedTime    string                     `json:"createdTime"`
+	ModifiedTime   string                     `json:"modifiedTime"`
+	AppId          string                     `json:"appId"`
+	TenantId       string                     `json:"tenantId"`
+	PackageId      string                     `json:"packageId"`
+	Origin         string                     `json:"origin"`
+	SyncStatus     bool                       `json:"syncStatus"`
+	MecHostInfo    []AppPackageHostRecordInfo `json:"mecHostInfo"`
 }
 
 // App package host record
 type AppPackageHostRecordInfo struct {
-	PkgHostKey             string    `json:"pkgHostKey"`
-	HostIp                 string    `json:"hostIp"`
-	AppPkgId               string    `json:"appPkgId"`
-	Status                 string    `json:"status"`
-	TenantId               string    `json:"tenantId"`
-	Error                  string    `json:"error"`
-	Origin                 string    `json:"origin"`
-	SyncStatus             bool      `json:"syncStatus"`
+	PkgHostKey string `json:"pkgHostKey"`
+	HostIp     string `json:"hostIp"`
+	AppPkgId   string `json:"appPkgId"`
+	Status     string `json:"status"`
+	TenantId   string `json:"tenantId"`
+	Error      string `json:"error"`
+	Origin     string `json:"origin"`
+	SyncStatus bool   `json:"syncStatus"`
 }
 
 // Application package record
@@ -178,45 +178,46 @@ type AppPackagesUpdatedRecords struct {
 
 // App package host stale records
 type AppDistPkgHostStaleRecords struct {
-	AppPackageStaleRecs []AppPackageStaleRec `json:"appPackageStaleRec"`
+	AppPackageStaleRecs    []AppPackageStaleRec     `json:"appPackageStaleRec"`
 	AppPackageHostStaleRec []AppPackageHostStaleRec `json:"appPackageHostStaleRec"`
 }
 
 // App package key information
 type AppPackageHostStaleRec struct {
-	PackageId      string `orm:"pk" json:"packageId"`
-	TenantId        string `json:"tenantId"`
-	HostIp          string `json:"hostIp"`
+	PackageId string `orm:"pk" json:"packageId"`
+	TenantId  string `json:"tenantId"`
+	HostIp    string `json:"hostIp"`
 }
 
 // App package key information
 type AppPackageStaleRec struct {
-	AppPkgId      string `orm:"pk" json:"appPackageId"`
-	TenantId      string `json:"tenantId"`
+	AppPkgId string `orm:"pk" json:"appPackageId"`
+	TenantId string `json:"tenantId"`
 }
 
 // Application package status record
 type AppPackageStatusRecord struct {
-	AppPkgName             string `json:"appPkgName"`
-	AppPkgVersion          string `json:"appPkgVersion"`
-	AppProvider            string `json:"appProvider"`
-	AppPkgDesc             string `json:"appPkgDesc"`
-	AppPkgAffinity         string `json:"appPkgAffinity"`
-	AppId                  string `json:"appId"`
-	PackageId              string  `orm:"pk" json:"packageId"`
-	AppIconUrl             string `json:"appIconUrl"`
-	CreatedTime            string `json:"createdTime"`
-	ModifiedTime           string `json:"modifiedTime"`
-	MecHostInfo []*AppPackageHostStatusRecord `orm:"reverse(many);on_delete(set_null)" json:"mecHostInfo"`
+	AppPkgName     string                        `json:"appPkgName"`
+	AppPkgVersion  string                        `json:"appPkgVersion"`
+	AppProvider    string                        `json:"appProvider"`
+	AppPkgDesc     string                        `json:"appPkgDesc"`
+	AppPkgAffinity string                        `json:"appPkgAffinity"`
+	AppId          string                        `json:"appId"`
+	PackageId      string                        `orm:"pk" json:"packageId"`
+	AppIconUrl     string                        `json:"appIconUrl"`
+	CreatedTime    string                        `json:"createdTime"`
+	ModifiedTime   string                        `json:"modifiedTime"`
+	MecHostInfo    []*AppPackageHostStatusRecord `orm:"reverse(many);on_delete(set_null)" json:"mecHostInfo"`
 }
 
 // Application package host status record
 type AppPackageHostStatusRecord struct {
-	HostIp                 string `orm:"pk" json:"hostIp"`
-	Status                 string `json:"status"`
-	Error                  string `json:"error"`
+	HostIp           string                  `orm:"pk" json:"hostIp"`
+	Status           string                  `json:"status"`
+	Error            string                  `json:"error"`
 	AppPackageStatus *AppPackageStatusRecord `orm:"rel(fk)"` // RelForeignKey relation
 }
+
 // Tenant info record
 type TenantInfoRecord struct {
 	TenantId string `orm:"pk"`
@@ -299,7 +300,7 @@ type MecHostStaleRec struct {
 // Application package distribute request
 type DistributeRequest struct {
 	HostIp []string `json:"hostIp"`
-	Origin string `json:"origin"`
+	Origin string   `json:"origin"`
 }
 
 // Application package instantiation request
@@ -324,13 +325,13 @@ type VnfData struct {
 
 // App package details info
 type AppPkgDetails struct {
-	App_product_name   string `json:"app_product_name"`
-	App_provider_id string `json:"app_provider_id"`
-	App_package_version  string `json:"app_package_version"`
+	App_product_name        string `json:"app_product_name"`
+	App_provider_id         string `json:"app_provider_id"`
+	App_package_version     string `json:"app_package_version"`
 	App_release_data_time   string `json:"app_release_data_time"`
-	App_type string `json:"app_type"`
-	App_class string `json:"app_class"`
-	App_package_description  string `json:"app_package_description"`
+	App_type                string `json:"app_type"`
+	App_class               string `json:"app_class"`
+	App_package_description string `json:"app_package_description"`
 }
 
 // App package response info
@@ -352,12 +353,14 @@ type AppInfoParams struct {
 	MecHost       string
 	DeployType    string
 	TenantId      string
+	ConfitTenantId string
 	AppPackageId  string
 	AppName       string
 	Origin        string
 	SyncStatus    bool
 	ClientIP      string
 	AccessToken   string
+	Vim           string
 }
 
 // Edge Authentication Info

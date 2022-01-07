@@ -321,10 +321,11 @@ class NovaServer(HOTBase):
         if 'nfvi_constraints' in self.template['properties']:
             self.properties['availability_zone'] = self.template['properties']['nfvi_constraints']
 
-    def _check_user_data(self, inputs):
+    def _check_user_data(self, topology_template):
         """
         转换user data
         """
+        inputs = topology_template['inputs'] if 'inputs' in topology_template else {}
         user_data = {
             'str_replace': {
                 'template': '',
@@ -397,7 +398,20 @@ class NovaServer(HOTBase):
         """
         image_name = self.template['properties']['sw_image_data']['name']
         if image_name in image_id_map:
-            self.properties['image'] = image_id_map[image_name]
+            if image_id_map[image_name]['format'] == 'iso':
+                self.properties['image'] = 'empty-disk'
+                image_size = int(image_id_map[image_name]['size'] / 1000000000) + 1
+                self.properties['block_device_mapping_v2'] = [
+                    {
+                        'boot_index': 1,
+                        'delete_on_termination': True,
+                        'device_type': 'cdrom',
+                        'image': image_id_map[image_name]['id'],
+                        'volume_size': image_size
+                    }
+                ]
+            else:
+                self.properties['image'] = image_id_map[image_name]['id']
         else:
             raise RuntimeError(f'image {image_name} not define in SwImageDesc.json')
 
@@ -430,8 +444,7 @@ class NovaServer(HOTBase):
         self._check_image(image_id_map)
 
         # user data
-        inputs = kwargs['topology_template']['inputs']
-        self._check_user_data(inputs)
+        self._check_user_data(kwargs['topology_template'])
 
         # network
         self.properties['networks'] = []
@@ -605,7 +618,6 @@ class Flavor(HOTBase):
                 elif isinstance(flavor_extra_specs[key], (int, float)):
                     self.properties['extra_specs'][key] = str(flavor_extra_specs[key])
                 else:
-                    logger.info(flavor_extra_specs[key])
                     self.properties['extra_specs'][key] = flavor_extra_specs[key]
 
         _change_function(self.properties)
