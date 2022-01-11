@@ -20,7 +20,7 @@ import json
 import os
 import uuid
 from core import openstack_utils
-from core.csar.pkg import CsarPkg
+from core.csar.pkg import CsarPkg, set_network_then_return_yaml
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
@@ -213,20 +213,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.error('app pkg %s not uploaded', parameter.app_package_id)
             return resp
 
-        LOG.debug('读取包')
-        try:
-            csar_pkg = CsarPkg(parameter.app_package_id, parameter.app_package_path)
-        except FileNotFoundError:
-            LOG.info('%s 文件不存在', parameter.app_package_path)
-            return resp
+        hot_yaml_path = set_network_then_return_yaml(host_ip,
+                                                     parameter.tenantId,
+                                                     parameter.app_package_id,
+                                                     parameter.app_package_path)
 
-        LOG.debug('创建tosca network')
-        csar_pkg.create_request_networks(host_ip, parameter.tenantId)
-
-        LOG.debug('读取hot文件')
-        hot_yaml_path = csar_pkg.hot_path
         if hot_yaml_path is None:
-            LOG.error("get hot yaml path failure, app package might not active")
             return resp
 
         LOG.debug('构建heat参数')

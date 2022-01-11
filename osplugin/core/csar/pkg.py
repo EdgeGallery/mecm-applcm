@@ -40,6 +40,26 @@ _APPD_R = '^Entry-Definitions: (.*)$'
 LOG = logger
 
 
+def set_network_then_return_yaml(host_ip, tenant_id, app_package_id, app_package_path):
+    LOG.debug('读取包')
+    try:
+        csar_pkg = CsarPkg(app_package_id, app_package_path)
+    except FileNotFoundError:
+        LOG.info('%s 文件不存在', app_package_path)
+        return None
+
+    LOG.debug('读取hot文件')
+    hot_yaml_path = csar_pkg.hot_path
+    if hot_yaml_path is None:
+        LOG.error("get hot yaml path failure, app package might not active")
+        return None
+
+    LOG.debug('创建tosca network')
+    csar_pkg.create_request_networks(host_ip, tenant_id)
+
+    return hot_yaml_path
+
+
 def _set_default_security_group(appd):
     """
     注入默认安全组和安全组规则
@@ -68,37 +88,6 @@ def _set_default_security_group(appd):
         topology_template['policies'].append(tosca_utils.n6_rule(target=default_group))
     if 'mep_ip' in topology_template['inputs']:
         topology_template['policies'].append(tosca_utils.mp1_rule(target=default_group))
-
-
-def _set_default_ip(appd):
-    """
-    主动注入IP，需要固定cp名称和ip参数
-    """
-    topology_template = appd['topology_template']
-    if 'inputs' not in topology_template:
-        return
-    inputs = topology_template['inputs']
-    node_templates = topology_template['node_templates']
-    if 'app_mp1_ip' in inputs and 'EMS_VDU1_CP0' in node_templates:
-        node_templates['EMS_VDU1_CP0']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_mp1_ip'
-            }
-        }
-
-    if 'app_internet_ip' in inputs and 'EMS_VDU1_CP1' in node_templates:
-        node_templates['EMS_VDU1_CP1']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_internet_ip'
-            }
-        }
-
-    if 'app_n6_ip' in inputs and 'EMS_VDU1_CP2' in node_templates:
-        node_templates['EMS_VDU1_CP2']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_n6_ip'
-            }
-        }
 
 
 def _input_translate(inputs):
@@ -177,7 +166,7 @@ class CsarPkg:
                 LOG.debug('use image from os')
                 image_id_map[sw_image_desc['name']] = {
                     'id': image['id'],
-                    'format': image['diskFormat'],
+                    'format': image['disk_format'],
                     'size': image['size']
                 }
             elif sw_image_desc['swImage'].startswith('http'):
@@ -241,8 +230,6 @@ class CsarPkg:
         if 'inputs' in appd['topology_template']:
             hot['parameters'] = _input_translate(appd['topology_template']['inputs'])
 
-        # 设置ip，临时性
-        # _set_default_ip(appd)
         # Default security group rules
         _set_default_security_group(appd)
 
@@ -298,11 +285,11 @@ class CsarPkg:
         neutron = create_neutron_client(host_ip, tenant_id)
 
         for name, template in appd['topology_template']['node_templates'].items():
-            if not template['type'] == 'tosca.nodes.nfv.VnfVirtualLink':
+            if template['type'] != 'tosca.nodes.nfv.VnfVirtualLink':
                 continue
             vl_profile = template['properties']['vl_profile']
             networks = neutron.list_networks(name=vl_profile['network_name'])
-            if len(networks) != 0:
+            if len(networks['networks']) != 0:
                 continue
             network_data = {
                 'name': vl_profile['network_name'],
@@ -321,12 +308,13 @@ class CsarPkg:
             if 'router_external' in vl_profile:
                 network_data['router:external'] = vl_profile['router_external']
             network = neutron.create_network({'network': network_data})
+            LOG.info('created not exist network %s id: %s', vl_profile['network_name'], network['network']['id'])
             if 'l3_protocol_data' in template['properties']['vl_profile'] \
                     and len(template['properties']['vl_profile']['l3_protocol_data']) > 0:
                 for l3_protocol_data in template['properties']['vl_profile']['l3_protocol_data']:
                     subnet = {
                         'cidr': l3_protocol_data['cidr'],
-                        'network_id': network['id'],
+                        'network_id': network['network']['id'],
                         'ip_version': l3_protocol_data['ip_version']
                     }
                     if 'name' in l3_protocol_data:
@@ -351,6 +339,7 @@ class CsarPkg:
                     if 'host_routes' in l3_protocol_data:
                         subnet['host_routes'] = l3_protocol_data['host_routes']
                     neutron.create_subnet({'subnet': subnet})
+                    LOG.info('created subnet %s', l3_protocol_data['cidr'])
 
 
 class CmccAppD:
