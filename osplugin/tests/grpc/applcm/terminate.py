@@ -23,7 +23,7 @@ request = TerminateRequest(
     accessToken=test_access_token,
     hostIp='192.168.1.218',
     tenantId='tenant01',
-    appInstanceId='ins001'
+    appInstanceId='ins002'
 )
 
 if __name__ == '__main__':

@@ -231,7 +231,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'retCode': 500,
             'message': 'Upload Image Failure'
         })
-        resp = UploadVmImageResponse(status)
+        resp = UploadVmImageResponse(status=status)
 
         access_token = next(request_iterator).accessToken
         host_ip = next(request_iterator).hostIp

@@ -26,10 +26,14 @@ from pony.orm import db_session, commit
 
 from core.models import VmImageInfoMapper
 from internal.resourcemanager.resourcemanager_pb2 import CreateVmImageRequest, \
-    DeleteVmImageRequest, QueryVmImageRequest, DownloadVmImageRequest, UploadVmImageRequest, ImportVmImageRequest
+    DeleteVmImageRequest, QueryVmImageRequest, DownloadVmImageRequest, UploadVmImageRequest, ImportVmImageRequest, \
+    CreateVmRequest, DeleteVmRequest, QueryVmRequest, CreateFlavorRequest, DeleteFlavorRequest, QueryFlavorRequest, \
+    OperateVmRequest
+from service.flavor_service import FlavorService
 from service.image_service import ImageService
+from service.vm_service import VmService
 from tests.resources import gen_token
-from tests.resources.test_data import mock_glance_client
+from tests.resources.test_data import mock_glance_client, mock_nova_client
 
 
 def make_create_image_request(access_token, host_ip, tenant_id):
@@ -118,11 +122,13 @@ def make_download_image_request(access_token, host_ip, tenant_id):
                                   imageId='abcabcabcabc')
 
 
-class VmImageServiceTest(unittest.TestCase):
+class ComputeServiceTest(unittest.TestCase):
     """
-    测试镜像service
+    测试 compute service
     """
     vm_image_service = ImageService()
+    flavor_service = FlavorService()
+    vm_service = VmService()
     access_token = gen_token.test_access_token
     host_ip = '10.10.9.75'
     tenant_id = 'tenant001'
@@ -163,9 +169,10 @@ class VmImageServiceTest(unittest.TestCase):
             )
             commit()
         resp = self.vm_image_service.deleteVmImage(request, None)
-        assert resp.status == 'Success'
+        assert resp.status == '{\"data\": null, \"retCode\": 200, \"message\": \"Delete Image Success\"}'
 
-    def test_query_image(self):
+    @mock.patch('service.image_service.create_glance_client')
+    def test_query_image(self, create_glance_client):
         """
         test_query_image
         """
@@ -182,6 +189,9 @@ class VmImageServiceTest(unittest.TestCase):
                 compress_task_id='abcabcabc'
             )
             commit()
+
+        create_glance_client.return_value = mock_glance_client
+
         request = make_query_image_request(access_token=self.access_token,
                                            host_ip=self.host_ip,
                                            tenant_id=self.tenant_id,
@@ -234,7 +244,7 @@ class VmImageServiceTest(unittest.TestCase):
                                             tenant_id=self.tenant_id)
 
         resp = self.vm_image_service.uploadVmImage(request, None)
-        assert resp.status == 'Success'
+        assert resp.status == '{\"data\": null, \"retCode\": 0, \"message\": \"Success\"}'
 
     @mock.patch('service.image_service.add_import_image_task')
     @mock.patch('service.image_service.create_glance_client')
@@ -253,4 +263,130 @@ class VmImageServiceTest(unittest.TestCase):
                                             host_ip=self.host_ip,
                                             tenant_id=self.tenant_id)
         resp = self.vm_image_service.importVmImage(request, None)
-        assert resp.status == 'Success'
+        assert resp.status == '{\"data\": null, \"retCode\": 200, \"message\": \"success\"}'
+
+    @mock.patch('service.vm_service.create_nova_client')
+    def test_create_vm(self, create_nova_client):
+        create_nova_client.return_value = mock_nova_client
+        request = CreateVmRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+            server=CreateVmRequest.Server(
+                name='testVm',
+                flavor='22e1a2f4-9f75-4baa-a6e4-f613deebc4ca',
+                image='783b1d93-3c23-4e4c-a0ed-98ca27137628',
+                networks=[
+                    CreateVmRequest.Server.Network(
+                        network='32b0f4fd-66ba-44b4-8a7e-ccdb0d7dc61e'
+                    )
+                ]
+            )
+        )
+        resp = self.vm_service.createVm(request, None)
+        assert resp.status == '{\"data\": null, \"retCode\": 0, \"message\": \"Create Success\"}'
+
+    @mock.patch('service.vm_service.create_nova_client')
+    def test_delete_vm(self, create_nova_client):
+        create_nova_client.return_value = mock_nova_client
+        request = DeleteVmRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+            vmId='vm001'
+        )
+        resp = self.vm_service.deleteVm(request, None)
+        assert resp.status == '{\"data\": null, \"retCode\":200, \"message\":\"success\"}'
+
+    @mock.patch('service.vm_service.create_nova_client')
+    def test_query_vm(self, create_nova_client):
+        create_nova_client.return_value = mock_nova_client
+        request = QueryVmRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+        )
+        resp = self.vm_service.queryVm(request, None)
+        resp_data = json.loads(resp.response)
+        assert len(resp_data['data']) > 0
+        request = QueryVmRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+            vmId='aabbccvm01'
+        )
+        resp = self.vm_service.queryVm(request, None)
+        resp_data = json.loads(resp.response)
+        assert resp_data['data']['id'] == 'aabbccvm01'
+
+    @mock.patch('service.vm_service.start_check_image_status')
+    @mock.patch('service.vm_service.create_nova_client')
+    def test_operate_vm(self, create_nova_client, start_check_image_status):
+        create_nova_client.return_value = mock_nova_client
+        start_check_image_status.return_value = None
+        request = OperateVmRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+            vmId='61fcdb06-9375-4711-9fbd-2989a4e0f9a6',
+            action='createImage',
+            createImage=OperateVmRequest.CreateImage(
+                name='test_image'
+            )
+        )
+        resp = self.vm_service.operateVm(request, None)
+        print(resp)
+        assert resp.response == '{\"data\": \"aabbccvmimage01\", \"retCode\": 200, \"message\": \"Success\"}'
+
+    @mock.patch('service.flavor_service.create_nova_client')
+    def test_create_flavor(self, create_nova_client):
+        create_nova_client.return_value = mock_nova_client
+        request = CreateFlavorRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+            flavor=CreateFlavorRequest.Flavor(
+                name='test-create-flavor',
+                vcpus=1,
+                ram=1024,
+                disk=20,
+                extraSpecs={
+                    'x86': 'true'
+                }
+            )
+        )
+        resp = self.flavor_service.createFlavor(request, None)
+        assert resp.status == '{\"data\": null, \"retCode\": 0, \"message\": \"Success\"}'
+
+    @mock.patch('service.flavor_service.create_nova_client')
+    def test_delete_flavor(self, create_nova_client):
+        create_nova_client.return_value = mock_nova_client
+        request = DeleteFlavorRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+            flavorId='b8921147-8fbb-4c60-93d8-b42504d23bca'
+        )
+        resp = self.flavor_service.deleteFlavor(request, None)
+        print(resp)
+
+    @mock.patch('service.flavor_service.create_nova_client')
+    def test_query_flavor(self, create_nova_client):
+        create_nova_client.return_value = mock_nova_client
+        request = QueryFlavorRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+        )
+        resp = self.flavor_service.queryFlavor(request, None)
+        resp_data = json.loads(resp.response)
+        assert len(resp_data['data'])
+        request = QueryFlavorRequest(
+            accessToken=self.access_token,
+            hostIp=self.host_ip,
+            tenantId=self.tenant_id,
+            flavorId='abcabc'
+        )
+        resp = self.flavor_service.queryFlavor(request, None)
+        resp_data = json.loads(resp.response)
+        assert resp_data['data']['id'] == 'abcabc'
