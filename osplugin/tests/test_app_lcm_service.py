@@ -50,7 +50,7 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         测试上传包
         """
-        get_image_by_name_checksum.return_value = {'id': 'abc123', 'size': 1024 * 1024 * 10240, 'diskFormat': 'iso'}
+        get_image_by_name_checksum.return_value = {'id': 'abc123', 'size': 1024 * 1024 * 10240, 'disk_format': 'iso'}
         add_import_image_task.return_value = None
         create_glance_client.return_value = mock_glance_client
 
@@ -67,7 +67,7 @@ class AppLcmServiceTest(unittest.TestCase):
         ]
         response = self.app_lcm_service.uploadPackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
-        utils.delete_dir('package/' + self.host_ip + '/pkg002')
+        utils.delete_dir('package')
 
     @mock.patch("service.app_lcm_service.create_glance_client")
     def test_delete_package(self, create_glance_client):
@@ -104,12 +104,12 @@ class AppLcmServiceTest(unittest.TestCase):
         response = self.app_lcm_service.deletePackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
 
+    @mock.patch('service.app_lcm_service.set_network_then_return_yaml')
     @mock.patch('service.app_lcm_service.start_check_stack_status')
     @mock.patch('service.app_lcm_service.create_heat_client')
-    @mock.patch("service.app_lcm_service.get_hot_yaml_path")
-    def test_instantiate(self, get_hot_yaml_path,
-                         create_heat_client,
-                         start_check_stack_status):
+    def test_instantiate(self, create_heat_client,
+                         start_check_stack_status,
+                         set_network_then_return_yaml):
         """
         测试实例化
         """
@@ -120,9 +120,10 @@ class AppLcmServiceTest(unittest.TestCase):
                 status='uploaded'
             )
             commit()
-        get_hot_yaml_path.return_value = 'resources/test_hot.yaml'
+        set_network_then_return_yaml.return_value = 'resources/test_hot.yaml'
         create_heat_client.return_value = mock_heat_client
         start_check_stack_status.return_value = None
+
         data = lcmservice_pb2.InstantiateRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
