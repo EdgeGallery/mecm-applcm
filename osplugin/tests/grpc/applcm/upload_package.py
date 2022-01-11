@@ -24,14 +24,13 @@ def upload_pkg_req():
     yield UploadPackageRequest(accessToken=test_access_token)
     yield UploadPackageRequest(hostIp='192.168.1.218')
     yield UploadPackageRequest(tenantId='tenant01')
-    yield UploadPackageRequest(appPackageId='package-iso1')
-    with open('../../resources/test_iso.zip', 'rb') as file:
+    yield UploadPackageRequest(appPackageId='package-network')
+    with open('../../resources/test_network.zip', 'rb') as file:
         while True:
             content = file.read(1024 * 1024)
             if not content:
                 break
             yield UploadPackageRequest(package=content)
-    print('upload finished')
 
 
 if __name__ == '__main__':

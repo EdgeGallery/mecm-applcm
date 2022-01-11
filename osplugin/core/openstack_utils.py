@@ -464,9 +464,6 @@ class NovaServer(HOTBase):
                 'vmId': {
                     'get_resource': self.name
                 },
-                'vncUrl': {
-                    'get_attr': [self.name, 'console_urls', 'novnc']
-                },
                 'networks': {
                     'get_attr': [self.name, 'addresses']
                 }
@@ -532,6 +529,10 @@ class VirtualPort(HOTBase):
         Returns:
 
         """
+        if 'attributes' in self.template and 'ipv6_address' in self.template['attributes']:
+            self.properties['fixed_ips'] = [{
+                'ip_address': self.template['attributes']['ipv6_address']
+            }]
         if 'attributes' in self.template and 'ipv4_address' in self.template['attributes']:
             self.properties['fixed_ips'] = [{
                 'ip_address': self.template['attributes']['ipv4_address']
