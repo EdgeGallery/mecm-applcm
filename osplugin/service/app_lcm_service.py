@@ -20,7 +20,7 @@ import json
 import os
 import uuid
 from core import openstack_utils
-from core.csar.pkg import get_hot_yaml_path, CsarPkg
+from core.csar.pkg import CsarPkg, set_network_then_return_yaml
 from core.log import logger
 from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
     UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
@@ -61,7 +61,6 @@ def _get_output_data(output_list, heat, stack_id):
         output_value = output['output']['output_value']
         item = {
             'vmId': output_value['vmId'],
-            'vncUrl': output_value['vncUrl'],
             'networks': []
         }
         if 'networks' in output_value and output_value['networks'] is not None:
@@ -116,7 +115,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             host_ip=host_ip,
             status=utils.UPLOADING
         )
-        commit()
 
         app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         try:
@@ -125,6 +123,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             pkg = CsarPkg(app_package_id, app_package_path)
             pkg.check_image(host_ip, parameters.tenantId)
             pkg.translate()
+            commit()
             start_check_package_status(app_package_id, host_ip)
             resp.status = utils.SUCCESS
             LOG.info('upload and analyze app package success, start fetch image')
@@ -214,11 +213,12 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.error('app pkg %s not uploaded', parameter.app_package_id)
             return resp
 
-        LOG.debug('读取包的hot文件')
-        hot_yaml_path = get_hot_yaml_path(parameter.app_package_id,
-                                          parameter.app_package_path)
+        hot_yaml_path = set_network_then_return_yaml(host_ip,
+                                                     parameter.tenantId,
+                                                     parameter.app_package_id,
+                                                     parameter.app_package_path)
+
         if hot_yaml_path is None:
-            LOG.error("get hot yaml path failure, app package might not active")
             return resp
 
         LOG.debug('构建heat参数')
@@ -227,6 +227,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         for key in template['parameters'].keys():
             if key in parameter.parameters:
                 parameters[key] = parameter.parameters[key]
+
         if not parameter.ak_sk_lcm_gen and 'ak' in parameters and 'sk' in parameters:
             parameters['ak'] = ''
             parameters['sk'] = ''
@@ -236,7 +237,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'files': dict(list(tpl_files.items())),
             'parameters': parameters
         }
-        LOG.debug('init heat client')
+
         heat = create_heat_client(host_ip, parameter.tenantId)
         try:
             LOG.debug('发送创建stack请求')
@@ -306,7 +307,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         start_check_stack_status(app_instance_id=app_instance_id)
 
         res.status = utils.SUCCESS
-        LOG.debug('处理请求完成')
+        LOG.info('success terminate app')
         return res
 
     @db_session

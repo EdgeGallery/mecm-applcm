@@ -87,6 +87,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         VmImageInfoMapper(
             image_id=image['id'],
             image_name=image['name'],
+            disk_format=request.image.diskFormat,
             status=image['status'],
             host_ip=host_ip,
             tenant_id=request.tenantId
@@ -230,7 +231,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'retCode': 500,
             'message': 'Upload Image Failure'
         })
-        resp = UploadVmImageResponse(status)
+        resp = UploadVmImageResponse(status=status)
 
         access_token = next(request_iterator).accessToken
         host_ip = next(request_iterator).hostIp

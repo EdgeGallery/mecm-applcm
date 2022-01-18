@@ -30,7 +30,7 @@ from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
 from core.openstack_utils import TOSCA_TYPE_CLASS, \
-    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, get_image_by_name_checksum
+    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, get_image_by_name_checksum, create_neutron_client
 from task.image_task import add_import_image_task, create_image_record, add_upload_image_task
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
@@ -40,19 +40,24 @@ _APPD_R = '^Entry-Definitions: (.*)$'
 LOG = logger
 
 
-def get_hot_yaml_path(app_package_id, unzip_pkg_path):
-    """
-    获取hot模板路径
-    :param app_package_id:
-    :param unzip_pkg_path: 包解压路径
-    :return: hot模板路径
-    """
+def set_network_then_return_yaml(host_ip, tenant_id, app_package_id, app_package_path):
+    LOG.debug('读取包')
     try:
-        csar_pkg = CsarPkg(app_package_id, unzip_pkg_path)
+        csar_pkg = CsarPkg(app_package_id, app_package_path)
     except FileNotFoundError:
-        LOG.info('%s 文件不存在', unzip_pkg_path)
+        LOG.info('%s 文件不存在', app_package_path)
         return None
-    return csar_pkg.hot_path
+
+    LOG.debug('读取hot文件')
+    hot_yaml_path = csar_pkg.hot_path
+    if hot_yaml_path is None:
+        LOG.error("get hot yaml path failure, app package might not active")
+        return None
+
+    LOG.debug('创建tosca network')
+    csar_pkg.create_request_networks(host_ip, tenant_id)
+
+    return hot_yaml_path
 
 
 def _set_default_security_group(appd):
@@ -60,6 +65,8 @@ def _set_default_security_group(appd):
     注入默认安全组和安全组规则
     """
     topology_template = appd['topology_template']
+    if 'inputs' not in topology_template:
+        return
     if 'ue_ip_segment' not in topology_template['inputs'] \
             and 'mep_ip' not in topology_template['inputs']:
         return
@@ -81,35 +88,6 @@ def _set_default_security_group(appd):
         topology_template['policies'].append(tosca_utils.n6_rule(target=default_group))
     if 'mep_ip' in topology_template['inputs']:
         topology_template['policies'].append(tosca_utils.mp1_rule(target=default_group))
-
-
-def _set_default_ip(appd):
-    """
-    主动注入IP，需要固定cp名称和ip参数
-    """
-    topology_template = appd['topology_template']
-    inputs = topology_template['inputs']
-    node_templates = topology_template['node_templates']
-    if 'app_mp1_ip' in inputs and 'EMS_VDU1_CP0' in node_templates:
-        node_templates['EMS_VDU1_CP0']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_mp1_ip'
-            }
-        }
-
-    if 'app_internet_ip' in inputs and 'EMS_VDU1_CP1' in node_templates:
-        node_templates['EMS_VDU1_CP1']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_internet_ip'
-            }
-        }
-
-    if 'app_n6_ip' in inputs and 'EMS_VDU1_CP2' in node_templates:
-        node_templates['EMS_VDU1_CP2']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_n6_ip'
-            }
-        }
 
 
 def _input_translate(inputs):
@@ -170,42 +148,60 @@ class CsarPkg:
         """
         image_id_map = {}
         for sw_image_desc in self.sw_image_desc_list:
-            image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc.checksum)
+            image = VmImageInfoMapper.get(host_ip=host_ip, checksum=sw_image_desc['checksum'])
             if image is not None:
                 LOG.debug('use exist image')
-                image_id_map[sw_image_desc.name] = image.image_id
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image.image_id,
+                    'format': image.disk_format,
+                    'size': image.image_size
+                }
                 continue
 
-            image = get_image_by_name_checksum(sw_image_desc.name,
-                                               sw_image_desc.checksum,
+            image = get_image_by_name_checksum(sw_image_desc['name'],
+                                               sw_image_desc['checksum'],
                                                host_ip,
                                                tenant_id)
             if image is not None:
-                LOG.debug('use image from plugin')
-                image_id_map[sw_image_desc.name] = image['id']
-
-            elif sw_image_desc.sw_image.startswith('http'):
+                LOG.debug('use image from os')
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image['id'],
+                    'format': image['disk_format'],
+                    'size': image['size']
+                }
+            elif sw_image_desc['swImage'].startswith('http'):
                 LOG.debug('use image from remote')
                 image_id = create_image_record(sw_image_desc,
                                                self.app_package_id,
                                                host_ip,
                                                tenant_id)
-                image_id_map[sw_image_desc.name] = image_id
-                add_import_image_task(image_id, host_ip, sw_image_desc.sw_image)
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image_id,
+                    'format': sw_image_desc['diskFormat'],
+                    'size': sw_image_desc['size']
+                }
+                add_import_image_task(image_id, host_ip, sw_image_desc['swImage'])
             else:
                 LOG.debug('use image from local')
                 image_id = create_image_record(sw_image_desc,
                                                self.app_package_id,
                                                host_ip,
                                                tenant_id)
-                image_id_map[sw_image_desc.name] = image_id
-                zip_index = sw_image_desc.sw_image.find('.zip')
-                zip_file_path = self.base_dir + '/' + sw_image_desc.sw_image[0: zip_index + 4]
-                img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
-                img_tmp_file = img_tmp_dir + sw_image_desc.sw_image[zip_index + 4:]
-                logger.debug('image dir %s', img_tmp_file)
-                if not utils.exists_path(img_tmp_dir):
-                    utils.unzip(zip_file_path, img_tmp_dir)
+                image_id_map[sw_image_desc['name']] = {
+                    'id': image_id,
+                    'format': sw_image_desc['diskFormat'],
+                    'size': sw_image_desc['size']
+                }
+                zip_index = sw_image_desc['swImage'].find('.zip')
+                if zip_index != -1:
+                    zip_file_path = self.base_dir + '/' + sw_image_desc['swImage'][0: zip_index + 4]
+                    img_tmp_dir = f'/tmp/osplugin/images/{self.app_package_id}'
+                    img_tmp_file = img_tmp_dir + sw_image_desc['swImage'][zip_index + 4:]
+                    logger.debug('image dir %s', img_tmp_file)
+                    if not utils.exists_path(img_tmp_dir):
+                        utils.unzip(zip_file_path, img_tmp_dir)
+                else:
+                    img_tmp_file = self.base_dir + '/' + sw_image_desc['swImage']
                 add_upload_image_task(image_id, host_ip, img_tmp_file) \
                     .add_done_callback(lambda future, path=img_tmp_file: utils.delete_dir(path))
 
@@ -227,13 +223,13 @@ class CsarPkg:
         hot = {
             'heat_template_version': '2016-10-14',
             'description': 'Generated By OsPlugin',
+            'parameters': {},
             'resources': {},
-            'parameters': _input_translate(appd['topology_template']['inputs']),
             'outputs': {}
         }
+        if 'inputs' in appd['topology_template']:
+            hot['parameters'] = _input_translate(appd['topology_template']['inputs'])
 
-        # 设置ip，临时性
-        _set_default_ip(appd)
         # Default security group rules
         _set_default_security_group(appd)
 
@@ -262,18 +258,88 @@ class CsarPkg:
             else:
                 LOG.info('skip unknown tosca type %s', template['type'])
 
-        for name, group in appd['topology_template']['groups'].items():
-            if group['type'] in TOSCA_GROUP_CLASS:
-                resource = TOSCA_GROUP_CLASS[group['type']](name, group)
-                resource.set_properties(topology_template=appd['topology_template'],
-                                        hot_file=hot)
-
-        for policy in appd['topology_template']['policies']:
-            for name, policy_template in policy.items():
-                if policy_template['type'] in TOSCA_POLICY_CLASS:
-                    resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
+        if 'groups' in appd['topology_template']:
+            for name, group in appd['topology_template']['groups'].items():
+                if group['type'] in TOSCA_GROUP_CLASS:
+                    resource = TOSCA_GROUP_CLASS[group['type']](name, group)
                     resource.set_properties(topology_template=appd['topology_template'],
                                             hot_file=hot)
+
+        if 'policies' in appd['topology_template']:
+            for policy in appd['topology_template']['policies']:
+                for name, policy_template in policy.items():
+                    if policy_template['type'] in TOSCA_POLICY_CLASS:
+                        resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
+                        resource.set_properties(topology_template=appd['topology_template'],
+                                                hot_file=hot)
+
+    def create_request_networks(self, host_ip, tenant_id):
+        if self.appd_file_path.endswith('.zip'):
+            cmcc_appd = CmccAppD(os.path.dirname(self.appd_file_path))
+            appd = cmcc_appd.appd
+        elif self.appd_file_path.endswith('.yaml'):
+            appd = yaml.load(self.appd_file_path, Loader=yaml.FullLoader)
+        else:
+            raise PackageNotValid('不支持的appd类型')
+
+        neutron = create_neutron_client(host_ip, tenant_id)
+
+        for name, template in appd['topology_template']['node_templates'].items():
+            if template['type'] != 'tosca.nodes.nfv.VnfVirtualLink':
+                continue
+            vl_profile = template['properties']['vl_profile']
+            networks = neutron.list_networks(name=vl_profile['network_name'])
+            if len(networks['networks']) != 0:
+                continue
+            network_data = {
+                'name': vl_profile['network_name'],
+                'shared': False,
+                'is_default': False
+            }
+            segment = {}
+            if getattr(vl_profile, 'network_type', None):
+                segment['provider_network_type'] = vl_profile['network_type']
+            if getattr(vl_profile, 'physical_network', None):
+                segment['provider_physical_network'] = vl_profile['physical_network']
+            if getattr(vl_profile, 'provider_segmentation_id', None):
+                segment['provider_segmentation_id'] = vl_profile['provider_segmentation_id']
+            if len(segment.keys()) > 0:
+                network_data['segments'] = [segment]
+            if 'router_external' in vl_profile:
+                network_data['router:external'] = vl_profile['router_external']
+            network = neutron.create_network({'network': network_data})
+            LOG.info('created not exist network %s id: %s', vl_profile['network_name'], network['network']['id'])
+            if 'l3_protocol_data' in template['properties']['vl_profile'] \
+                    and len(template['properties']['vl_profile']['l3_protocol_data']) > 0:
+                for l3_protocol_data in template['properties']['vl_profile']['l3_protocol_data']:
+                    subnet = {
+                        'cidr': l3_protocol_data['cidr'],
+                        'network_id': network['network']['id'],
+                        'ip_version': l3_protocol_data['ip_version']
+                    }
+                    if 'name' in l3_protocol_data:
+                        subnet['name'] = l3_protocol_data['name']
+                    if 'gateway_ip' in l3_protocol_data:
+                        subnet['gateway_ip'] = l3_protocol_data['gateway_ip']
+                    if 'dhcp_enabled' in l3_protocol_data:
+                        subnet['dhcp_enabled'] = l3_protocol_data['dhcp_enabled']
+                    if 'ipv6_ra_mode' in l3_protocol_data:
+                        subnet['ipv6_ra_mode'] = l3_protocol_data['ipv6_ra_mode']
+                    if 'ipv6_address_mode' in l3_protocol_data:
+                        subnet['ipv6_address_mode'] = l3_protocol_data['ipv6_address_mode']
+                    if 'dns_name_servers' in l3_protocol_data:
+                        subnet['dns_name_servers'] = l3_protocol_data['dns_name_servers']
+                    if 'ip_allocation_pools' in l3_protocol_data:
+                        subnet['allocation_pools'] = []
+                        for ip_allocation_pool in l3_protocol_data['ip_allocation_pools']:
+                            subnet['allocation_pools'].append({
+                                'start': ip_allocation_pool['start_ip_address'],
+                                'end': ip_allocation_pool['end_ip_address']
+                            })
+                    if 'host_routes' in l3_protocol_data:
+                        subnet['host_routes'] = l3_protocol_data['host_routes']
+                    neutron.create_subnet({'subnet': subnet})
+                    LOG.info('created subnet %s', l3_protocol_data['cidr'])
 
 
 class CmccAppD:

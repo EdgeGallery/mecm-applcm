@@ -50,7 +50,7 @@ class AppLcmServiceTest(unittest.TestCase):
         """
         测试上传包
         """
-        get_image_by_name_checksum.return_value = {'id': 'abc123'}
+        get_image_by_name_checksum.return_value = {'id': 'abc123', 'size': 1024 * 1024 * 10240, 'disk_format': 'iso'}
         add_import_image_task.return_value = None
         create_glance_client.return_value = mock_glance_client
 
@@ -67,7 +67,7 @@ class AppLcmServiceTest(unittest.TestCase):
         ]
         response = self.app_lcm_service.uploadPackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
-        utils.delete_dir('package/' + self.host_ip + '/pkg002')
+        utils.delete_dir('package')
 
     @mock.patch("service.app_lcm_service.create_glance_client")
     def test_delete_package(self, create_glance_client):
@@ -84,6 +84,7 @@ class AppLcmServiceTest(unittest.TestCase):
                 image_id='image001',
                 host_ip=self.host_ip,
                 image_name='image001',
+                disk_format='qcow2',
                 status='active',
                 app_package_id='pkg002',
                 image_size=1024,
@@ -103,12 +104,12 @@ class AppLcmServiceTest(unittest.TestCase):
         response = self.app_lcm_service.deletePackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
 
+    @mock.patch('service.app_lcm_service.set_network_then_return_yaml')
     @mock.patch('service.app_lcm_service.start_check_stack_status')
     @mock.patch('service.app_lcm_service.create_heat_client')
-    @mock.patch("service.app_lcm_service.get_hot_yaml_path")
-    def test_instantiate(self, get_hot_yaml_path,
-                         create_heat_client,
-                         start_check_stack_status):
+    def test_instantiate(self, create_heat_client,
+                         start_check_stack_status,
+                         set_network_then_return_yaml):
         """
         测试实例化
         """
@@ -119,9 +120,10 @@ class AppLcmServiceTest(unittest.TestCase):
                 status='uploaded'
             )
             commit()
-        get_hot_yaml_path.return_value = 'resources/test_hot.yaml'
+        set_network_then_return_yaml.return_value = 'resources/test_hot.yaml'
         create_heat_client.return_value = mock_heat_client
         start_check_stack_status.return_value = None
+
         data = lcmservice_pb2.InstantiateRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
@@ -158,6 +160,7 @@ class AppLcmServiceTest(unittest.TestCase):
         data = lcmservice_pb2.TerminateRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
+            tenantId='tenant001',
             appInstanceId='testterminate001'
         )
         response = self.app_lcm_service.terminate(data, None)
@@ -182,6 +185,7 @@ class AppLcmServiceTest(unittest.TestCase):
         data = lcmservice_pb2.QueryRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
+            tenantId='tenant001',
             appInstanceId='25e32a5c-e00f-4edf-b42d-6dd4b610c2db'
         )
         response = self.app_lcm_service.query(data, None)
@@ -203,6 +207,7 @@ class AppLcmServiceTest(unittest.TestCase):
                 image_id='image001',
                 host_ip=self.host_ip,
                 image_name='image001',
+                disk_format='qcow2',
                 status='active',
                 app_package_id='pkgQuery001',
                 tenant_id='abcabc'
@@ -211,6 +216,7 @@ class AppLcmServiceTest(unittest.TestCase):
                 image_id='image002',
                 host_ip=self.host_ip,
                 image_name='image002',
+                disk_format='qcow2',
                 status='killed',
                 app_package_id='pkgQuery001',
                 tenant_id='abcabc'
@@ -219,7 +225,8 @@ class AppLcmServiceTest(unittest.TestCase):
         request = lcmservice_pb2.QueryPackageStatusRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
-            packageId='pkgQuery001'
+            packageId='pkgQuery001',
+            tenantId='abcabc'
         )
         response = self.app_lcm_service.queryPackageStatus(request, None)
         LOG.info(response.response)
@@ -273,7 +280,8 @@ class AppLcmServiceTest(unittest.TestCase):
         data = lcmservice_pb2.WorkloadEventsRequest(
             accessToken=self.access_token,
             hostIp=self.host_ip,
-            appInstanceId='35e32a5c-e00f-4edf-b42d-6dd4b610c2db'
+            appInstanceId='35e32a5c-e00f-4edf-b42d-6dd4b610c2db',
+            tenantId='tenant001'
         )
         response = self.app_lcm_service.workloadEvents(data, None)
         LOG.info(response.response)

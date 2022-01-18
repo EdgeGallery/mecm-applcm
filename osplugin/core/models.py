@@ -244,6 +244,7 @@ class VmImageInfoMapper(db.Entity):
     host_ip = Required(str, max_len=15)
     image_name = Required(str, max_len=64)
     status = Required(str, max_len=20)
+    disk_format = Required(str, max_len=20)
     tenant_id = Required(str, max_len=64)
 
     image_size = Optional(int, size=64)

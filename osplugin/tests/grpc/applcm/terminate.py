@@ -15,15 +15,17 @@
 
 """
 # -*- coding: utf-8 -*-
-from core import grpc_server
-from core.log import logger
-from task import upload_thread_pool, download_thread_pool, check_thread_pool
+from internal.lcmservice.lcmservice_pb2 import TerminateRequest
+from tests.grpc.client import app_lcm_stub
+from tests.resources.gen_token import test_access_token
 
-if __name__ == "__main__":
-    grpc_server.serve()
-    upload_thread_pool.shutdown(wait=False)
-    logger.info('upload thread pool shutdown')
-    download_thread_pool.shutdown(wait=False)
-    logger.info('download thread pool shutdown')
-    check_thread_pool.shutdown(wait=False)
-    logger.info('check thread pool shutdown')
+request = TerminateRequest(
+    accessToken=test_access_token,
+    hostIp='192.168.1.218',
+    tenantId='tenant01',
+    appInstanceId='ins002'
+)
+
+if __name__ == '__main__':
+    resp = app_lcm_stub.terminate(request)
+    print(resp)
