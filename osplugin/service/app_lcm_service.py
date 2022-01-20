@@ -216,7 +216,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         hot_yaml_path = set_network_then_return_yaml(host_ip,
                                                      parameter.tenantId,
                                                      parameter.app_package_id,
-                                                     parameter.app_package_path)
+                                                     parameter.app_package_path,
+                                                     parameter.parameters)
 
         if hot_yaml_path is None:
             return resp
