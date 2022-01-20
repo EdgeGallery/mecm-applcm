@@ -26,6 +26,7 @@ from pony.orm import db_session
 
 import utils
 from core.csar import sw_image, tosca_utils
+from core.csar.tosca_utils import get_data
 from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
@@ -40,7 +41,7 @@ _APPD_R = '^Entry-Definitions: (.*)$'
 LOG = logger
 
 
-def set_network_then_return_yaml(host_ip, tenant_id, app_package_id, app_package_path):
+def set_network_then_return_yaml(host_ip, tenant_id, app_package_id, app_package_path, parameters):
     LOG.debug('读取包')
     try:
         csar_pkg = CsarPkg(app_package_id, app_package_path)
@@ -55,7 +56,7 @@ def set_network_then_return_yaml(host_ip, tenant_id, app_package_id, app_package
         return None
 
     LOG.debug('创建tosca network')
-    csar_pkg.create_request_networks(host_ip, tenant_id)
+    csar_pkg.create_request_networks(host_ip, tenant_id, parameters)
 
     return hot_yaml_path
 
@@ -273,7 +274,7 @@ class CsarPkg:
                         resource.set_properties(topology_template=appd['topology_template'],
                                                 hot_file=hot)
 
-    def create_request_networks(self, host_ip, tenant_id):
+    def create_request_networks(self, host_ip, tenant_id, parameters):
         if self.appd_file_path.endswith('.zip'):
             cmcc_appd = CmccAppD(os.path.dirname(self.appd_file_path))
             appd = cmcc_appd.appd
@@ -288,45 +289,59 @@ class CsarPkg:
             if template['type'] != 'tosca.nodes.nfv.VnfVirtualLink':
                 continue
             vl_profile = template['properties']['vl_profile']
-            networks = neutron.list_networks(name=vl_profile['network_name'])
+            networks = neutron.list_networks(name=get_data(vl_profile, 'network_name', parameters, appd))
             if len(networks['networks']) != 0:
                 continue
             network_data = {
-                'name': vl_profile['network_name'],
+                'name': get_data(vl_profile, 'network_name', parameters, appd),
                 'shared': False,
                 'is_default': False
             }
             segment = {}
-            if getattr(vl_profile, 'network_type', None):
-                segment['provider_network_type'] = vl_profile['network_type']
-            if getattr(vl_profile, 'physical_network', None):
-                segment['provider_physical_network'] = vl_profile['physical_network']
-            if getattr(vl_profile, 'provider_segmentation_id', None):
-                segment['provider_segmentation_id'] = vl_profile['provider_segmentation_id']
+            if get_data(vl_profile, 'network_type', parameters, appd):
+                segment['provider_network_type'] = get_data(vl_profile,
+                                                            'network_type',
+                                                            parameters, appd)
+            if get_data(vl_profile, 'physical_network', parameters, appd):
+                segment['provider_physical_network'] = get_data(vl_profile,
+                                                                'physical_network',
+                                                                parameters, appd)
+            if get_data(vl_profile, 'provider_segmentation_id', parameters, appd):
+                segment['provider_segmentation_id'] = get_data(vl_profile,
+                                                               'provider_segmentation_id',
+                                                               parameters, appd)
             if len(segment.keys()) > 0:
                 network_data['segments'] = [segment]
-            if 'router_external' in vl_profile:
-                network_data['router:external'] = vl_profile['router_external']
+            if get_data(vl_profile, 'router_external', parameters, appd):
+                network_data['router:external'] = get_data(vl_profile, 'router_external', parameters, appd)
             network = neutron.create_network({'network': network_data})
             LOG.info('created not exist network %s id: %s', vl_profile['network_name'], network['network']['id'])
             if 'l3_protocol_data' in template['properties']['vl_profile'] \
                     and len(template['properties']['vl_profile']['l3_protocol_data']) > 0:
                 for l3_protocol_data in template['properties']['vl_profile']['l3_protocol_data']:
                     subnet = {
-                        'cidr': l3_protocol_data['cidr'],
+                        'cidr': get_data(l3_protocol_data, 'cidr', parameters, appd),
                         'network_id': network['network']['id'],
-                        'ip_version': l3_protocol_data['ip_version']
+                        'ip_version': get_data(l3_protocol_data, 'ip_version', parameters, appd),
                     }
-                    if 'name' in l3_protocol_data:
-                        subnet['name'] = l3_protocol_data['name']
-                    if 'gateway_ip' in l3_protocol_data:
-                        subnet['gateway_ip'] = l3_protocol_data['gateway_ip']
-                    if 'dhcp_enabled' in l3_protocol_data:
-                        subnet['dhcp_enabled'] = l3_protocol_data['dhcp_enabled']
-                    if 'ipv6_ra_mode' in l3_protocol_data:
-                        subnet['ipv6_ra_mode'] = l3_protocol_data['ipv6_ra_mode']
-                    if 'ipv6_address_mode' in l3_protocol_data:
-                        subnet['ipv6_address_mode'] = l3_protocol_data['ipv6_address_mode']
+                    if get_data(l3_protocol_data, 'name', parameters, appd):
+                        subnet['name'] = get_data(l3_protocol_data, 'name', parameters, appd)
+                    if get_data(l3_protocol_data, 'gateway_ip', parameters, appd):
+                        subnet['gateway_ip'] = get_data(l3_protocol_data,
+                                                        'gateway_ip',
+                                                        parameters, appd)
+                    if get_data(l3_protocol_data, 'dhcp_enabled', parameters, appd):
+                        subnet['dhcp_enabled'] = get_data(l3_protocol_data,
+                                                          'dhcp_enabled',
+                                                          parameters, appd)
+                    if get_data(l3_protocol_data, 'ipv6_ra_mode', parameters, appd):
+                        subnet['ipv6_ra_mode'] = get_data(l3_protocol_data,
+                                                          'ipv6_ra_mode',
+                                                          parameters, appd)
+                    if get_data(l3_protocol_data, 'ipv6_address_mode', parameters, appd):
+                        subnet['ipv6_address_mode'] = get_data(l3_protocol_data,
+                                                               'ipv6_address_mode',
+                                                               parameters, appd)
                     if 'dns_name_servers' in l3_protocol_data:
                         subnet['dns_name_servers'] = l3_protocol_data['dns_name_servers']
                     if 'ip_allocation_pools' in l3_protocol_data:

@@ -126,3 +126,30 @@ def mp1_rule(target):
             }
         }
     }
+
+
+def get_data(source, field_name, parameter, appd):
+    """
+
+    Args:
+        source:
+        field_name:
+        parameter:
+        appd:
+
+    Returns:
+
+    """
+
+    data = getattr(source, field_name, None)
+    if data is None:
+        return None
+    elif type(data) == str:
+        return data
+    elif type(data) != object or 'get_input' not in data:
+        return data
+    elif type(data) == object and 'get_input' in data and parameter[data['get_input']] is None:
+        return parameter[data['get_input']]
+    else:
+        parameter_setting = appd['topology_template']['inputs'][data['get_input']]
+        return parameter_setting['default']
