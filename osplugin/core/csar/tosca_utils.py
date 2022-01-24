@@ -148,8 +148,8 @@ def get_data(source, field_name, parameter, appd):
         return data
     elif type(data) != object or 'get_input' not in data:
         return data
-    elif type(data) == object and 'get_input' in data and parameter[data['get_input']] is None:
+    elif type(data) == object and 'get_input' in data and parameter[data['get_input']] is not None:
         return parameter[data['get_input']]
     else:
         parameter_setting = appd['topology_template']['inputs'][data['get_input']]
-        return parameter_setting['default']
+        return getattr(parameter_setting, 'default', None)

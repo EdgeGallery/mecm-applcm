@@ -167,7 +167,7 @@ class NetworkService(resourcemanager_pb2_grpc.NetworkManagerServicer):
                     'external': network['router:external'],
                     'status': network['status'],
                     'adminState': network['admin_state_up'],
-                    'availabilityZones': network['availability_zones'],
+                    'availabilityZones': getattr(network, 'availability_zones', []),
                     'subnets': []
                 }
                 for subnet_id in network['subnets']:
