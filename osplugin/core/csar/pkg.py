@@ -91,6 +91,42 @@ def _set_default_security_group(appd):
         topology_template['policies'].append(tosca_utils.mp1_rule(target=default_group))
 
 
+def _set_iso_cdrom(appd, image_id_map):
+    """
+    把iso格式镜像挂载为cdrom
+    Args:
+        appd:
+
+    Returns:
+
+    """
+    topology_template = appd['topology_template']
+    volume_templates = {}
+    for node_name, template in topology_template['node_templates'].items():
+        if template['type'] != 'tosca.nodes.nfv.Vdu.Compute':
+            continue
+        image = template['properties']['sw_image_data']['name']
+        if image_id_map[image]['format'] != 'iso':
+            continue
+        node_name = node_name + '_CDROM'
+        volume_size = int(image_id_map[image]['size'] / 1000000000) + 1
+        properties = {
+            'virtual_storage_data': {
+                'type_of_storage': 'block_storage',
+                'size_of_storage': volume_size
+            },
+            'sw_image_data': {'name': image},
+            'nfvi_constraints': template['properties']['nfvi_constraints']
+        }
+        if 'nfvi_constraints' in template['properties']:
+            properties['nfvi_constraints'] = template['properties']['nfvi_constraints']
+        volume_templates[node_name] = {
+            'type': 'tosca.nodes.nfv.Vdu.VirtualStorage',
+            'properties': properties
+        }
+    topology_template['node_templates'].update(volume_templates)
+
+
 def _input_translate(inputs):
     """
     处理cmcc输入类型，把text/password类型转换为string
@@ -233,6 +269,9 @@ class CsarPkg:
 
         # Default security group rules
         _set_default_security_group(appd)
+
+        # ISO image to volume
+        _set_iso_cdrom(appd, self.image_id_map)
 
         self._translate_topology_template(appd, hot)
 

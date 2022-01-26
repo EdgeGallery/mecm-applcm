@@ -400,14 +400,12 @@ class NovaServer(HOTBase):
         if image_name in image_id_map:
             if image_id_map[image_name]['format'] == 'iso':
                 self.properties['image'] = 'empty-disk'
-                image_size = int(image_id_map[image_name]['size'] / 1000000000) + 1
                 self.properties['block_device_mapping_v2'] = [
                     {
                         'boot_index': 1,
                         'delete_on_termination': True,
                         'device_type': 'cdrom',
-                        'image': image_id_map[image_name]['id'],
-                        'volume_size': image_size
+                        'volume_id': {'get_resource': self.name + '_CDROM'}
                     }
                 ]
             else:
@@ -441,6 +439,7 @@ class NovaServer(HOTBase):
 
         # image
         image_id_map = kwargs['image_id_map']
+
         self._check_image(image_id_map)
 
         # user data
@@ -475,7 +474,7 @@ class VirtualStorage(HOTBase):
     """
     hot volume类型
     """
-    _TOSCA_TYPE = 'tosca.nodes.nfv.Vdu.VirtualBlockStorage'
+    _TOSCA_TYPE = 'tosca.nodes.nfv.Vdu.VirtualStorage'
 
     def __init__(self, name, template):
         super().__init__('OS::Cinder::Volume')
@@ -493,23 +492,25 @@ class VirtualStorage(HOTBase):
 
         """
         hot_file = kwargs['hot_file']
+        sw_image_map = kwargs['image_id_map']
 
-        self._set_size()
+        virtual_storage_data = self.template['properties']['virtual_storage_data']
+        size = virtual_storage_data['size_of_storage']
+        self.properties['size'] = size
+        if 'volume_type' in virtual_storage_data:
+            volume_type = virtual_storage_data['volume_type']['volume_type_name']
+            self.properties['type'] = volume_type
+        if 'nfvi_constraints' in self.template['properties']:
+            self.properties['availability_zone'] = self.template['properties']['nfvi_constraints']
+        if 'sw_image_data' in self.template['properties']:
+            image_name = self.template['properties']['sw_image_data']['name']
+            self.properties['image'] = sw_image_map[image_name]['id']
 
         _change_function(self.properties)
         hot_file['resources'][self.name] = {
             'type': self.type,
             'properties': self.properties
         }
-
-    def _set_size(self):
-        """
-        设置大小
-        Returns:
-
-        """
-        size = self.template['properties']['virtual_block_storage_data']['size_of_storage']
-        self.properties['size'] = size
 
 
 class VirtualPort(HOTBase):
@@ -721,7 +722,7 @@ class SecurityGroupRule(HOTBase):
 TOSCA_TYPE_CLASS = {
     'tosca.nodes.nfv.Vdu.Compute': NovaServer,
     'tosca.nodes.nfv.VduCp': VirtualPort,
-    'tosca.nodes.nfv.Vdu.VirtualBlockStorage': VirtualStorage,
+    'tosca.nodes.nfv.Vdu.VirtualStorage': VirtualStorage,
 }
 
 TOSCA_GROUP_CLASS = {
