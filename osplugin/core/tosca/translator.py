@@ -21,11 +21,12 @@ import logging
 logger = logging.getLogger()
 
 
-def translate(app_description):
+def translate(app_description, sw_image_map):
     """
     翻译tosca为hot
     Args:
         app_description: tosca模板
+        sw_image_map: 镜像名称id映射
 
     Returns: hot
 
@@ -39,31 +40,37 @@ def translate(app_description):
     }
     topology_template = app_description['topology_template']
 
-    # 翻译参数声明
-    if 'inputs' in app_description:
-        hot['parameters'] = translate_inputs(topology_template['inputs'])
+    # 翻译 参数声明
+    hot['parameters'] = translate_inputs(topology_template['inputs'])
 
-    # 翻译节点声明
+    # 翻译 节点声明
     node_templates = topology_template['node_templates']
     for name, node_template in node_templates.items():
         resource_translator = NODE_TEMPLATE_MAPPER[node_template['type']]
-        hot['resources'][name] = resource_translator(node_template, app_d=app_description)
+        resource_translator(node_template,
+                            app_d=app_description,
+                            hot=hot,
+                            node_name=name,
+                            sw_image_map=sw_image_map)
 
-    # 翻译组声明
+    # 翻译 组声明
     groups = topology_template['groups']
     for name, group in groups.items():
         group_translator = GROUP_MAPPER[group['type']]
-        hot['resources'][name] = group_translator(group, app_d=app_description)
+        group_translator(group,
+                         app_d=app_description,
+                         hot=hot,
+                         node_name=name)
 
-    # 翻译策略声明
+    # 翻译 策略声明
     policies = topology_template['policies']
     for policy_obj in policies:
-        name = policy_obj.keys()[0]
+        name = next(iter(policy_obj.keys()))
         policy = policy_obj[name]
         policy_translator = POLICY_MAPPER[policy['type']]
-        hot['resources'][name] = policy_translator(policy, app_d=app_description)
+        policy_translator(policy, app_d=app_description, hot=hot, node_name=name)
 
-    # 翻译函数
+    # 翻译 函数
     for resource in hot['resources'].values():
         translate_function(resource['properties'])
 
@@ -92,6 +99,26 @@ def translate_vdu_compute(node_template, **kwargs):
         'type': 'OS::Nova::Server',
         'properties': {}
     }
+    data_mapping(ComputeMapper, node_template, resource['properties'], **kwargs)
+    node_templates = kwargs['app_d']['topology_template']['node_templates']
+    resource['properties']['networks'] = []
+    for node_name, node_template in node_templates.items():
+        if node_template['type'] != 'tosca.nodes.nfv.VduCp':
+            continue
+        if 'requirements' not in node_template:
+            continue
+        for requirement in node_template['requirements']:
+            if 'virtual_binding' not in requirement:
+                continue
+            if kwargs['node_name'] != requirement['virtual_binding']:
+                continue
+            resource['properties']['networks'].append({
+                'port': {
+                    'get_resource': node_name
+                }
+            })
+
+    kwargs['hot']['resources'][kwargs['node_name']] = resource
     return resource
 
 
@@ -100,6 +127,21 @@ def translate_vdu_cp(node_template, **kwargs):
         'type': 'OS::Neutron::Port',
         'properties': {}
     }
+    data_mapping(VduCpMapper, node_template, resource['properties'], **kwargs)
+
+    security_groups = []
+    for name, group in kwargs['app_d']['topology_template']['groups'].items():
+        if group['type'] != 'tosca.groups.nfv.PortSecurityGroup':
+            continue
+        if kwargs['node_name'] not in set(group['members']):
+            continue
+        security_groups.append({
+            'get_resource': name
+        })
+    if len(security_groups) > 0:
+        resource['properties']['security_groups'] = security_groups
+
+    kwargs['hot']['resources'][kwargs['node_name']] = resource
     return resource
 
 
@@ -119,27 +161,29 @@ def translate_vl(node_template, **kwargs):
     return network
 
 
-def translate_vdu_compute_profile(compute_profile, **kwargs):
-    resource = {
-        'type': 'OS::Nova::Flavor',
-        'properties': {}
-    }
-    return resource
-
-
 def translate_virtual_storage(node_template, **kwargs):
     resource = {
         'type': 'OS::Cinder::Volume',
         'properties': {}
     }
+    data_mapping(VirtualStorageMapper, node_template, resource['properties'], **kwargs)
+
+    kwargs['hot']['resources'][kwargs['node_name']] = resource
     return resource
 
 
 def translate_port_security_group(group, **kwargs):
     resource = {
         'type': 'OS::Neutron::SecurityGroup',
-        'properties': {}
+        'properties': {
+            'rules': [{
+                'remote_mode': 'remote_group_id'
+            }]
+        }
     }
+    data_mapping(SecurityGroupMapper, group, resource['properties'], **kwargs)
+
+    kwargs['hot']['resources'][kwargs['node_name']] = resource
     return resource
 
 
@@ -148,7 +192,14 @@ def translate_security_group_rule(policy, **kwargs):
         'type': 'OS::Neutron::SecurityGroupRule',
         'properties': {}
     }
-    return resource
+    data_mapping(SecurityGroupRuleMapper, policy, resource['properties'], **kwargs)
+    rule_name = kwargs['node_name']
+    resources = kwargs['hot']['resources']
+    for group_name in policy['targets']:
+        resources[group_name + '_rule_' + rule_name] = copy.deepcopy(resource)
+        resources[group_name + '_rule_' + rule_name]['properties']['security_group'] = {
+            'get_resource': group_name
+        }
 
 
 def translate_function(properties):
@@ -196,7 +247,8 @@ NODE_TEMPLATE_MAPPER = {
     'tosca.nodes.nfv.Vdu.VirtualStorage': translate_virtual_storage,
     'tosca.nodes.nfv.VduCp': translate_vdu_cp,
     'tosca.nodes.nfv.Cp': translate_unknown,
-    'tosca.nodes.nfv.VnfVirtualLink': translate_unknown
+    'tosca.nodes.nfv.VnfVirtualLink': translate_unknown,
+    'tosca.nodes.nfv.app.configuration': translate_unknown
 }
 
 GROUP_MAPPER = {
@@ -210,61 +262,242 @@ POLICY_MAPPER = {
     'tosca.policies.nfv.SecurityGroupRule': translate_security_group_rule
 }
 
-ComputeMapper = {
-    'properties': {
-        'name': 'name',
-        'nfvi_constraints': 'availability_zone',
-        'bootdata': {
-            'user_data': {
-                'contents': 'user_data',
-                'params': ''
-            }
+
+class MappingAction(object):
+    def __init__(self, key):
+        self.key = key
+
+    def do_action(self, data, properties, **kwargs):
+        pass
+
+
+class SetAction(MappingAction):
+    def do_action(self, data, properties, **kwargs):
+        properties[self.key] = data
+
+
+class FunctionAction(MappingAction):
+    def do_action(self, data, properties, **kwargs):
+        self.key(data, properties, **kwargs)
+
+
+class AppendAction(MappingAction):
+    def do_action(self, data, properties, **kwargs):
+        if self.key['key'] not in properties:
+            properties[self.key['key']] = []
+        if 'value' in self.key:
+            item = {self.key['value']: data}
+            properties[self.key['key']].append(item)
+        else:
+            properties[self.key].append(data)
+
+
+def map_virtual_compute(virtual_compute, properties, **kwargs):
+    """
+    把 tosca.capabilities.nfv.VirtualCompute 映射为OS::Nova::Flavor
+    Args:
+        virtual_compute: tosca.capabilities.nfv.VirtualCompute对象
+        properties: 所属 OS::Nova::Server 对象
+        **kwargs:
+
+    Returns:
+
+    """
+    resource = {
+        'type': 'OS::Nova::Flavor',
+        'properties': {}
+    }
+    data_mapping(VirtualComputeMapper, virtual_compute, resource['properties'], **kwargs)
+    flavor_node_name = kwargs['node_name'] + '_FLAVOR'
+    if flavor_node_name in kwargs['hot']['resources']:
+        kwargs['hot']['resources'][flavor_node_name].update(resource['properties'])
+    else:
+        kwargs['hot']['resources'][flavor_node_name] = resource
+    properties['flavor'] = {
+        'get_resource': flavor_node_name
+    }
+
+
+def map_vdu_profile(vdu_profile, properties, **kwargs):
+    """
+
+    Args:
+        vdu_profile:
+        properties:
+        **kwargs:
+
+    Returns:
+
+    """
+    if 'flavor_extra_specs' not in vdu_profile:
+        return
+
+    resource = {
+        'type': 'OS::Nova::Flavor',
+        'properties': {
+            'extra_specs': {}
         }
-    },
-    'attributes': {},
-    'requirements': {}
+    }
+    flavor_extra_specs = vdu_profile['flavor_extra_specs']
+    for key in flavor_extra_specs:
+        if isinstance(flavor_extra_specs[key], bool):
+            resource['properties']['extra_specs'][key] = 'true' \
+                if flavor_extra_specs[key] else 'false'
+        elif isinstance(flavor_extra_specs[key], (int, float)):
+            resource['properties']['extra_specs'][key] = str(flavor_extra_specs[key])
+        else:
+            resource['properties']['extra_specs'][key] = flavor_extra_specs[key]
+
+    flavor_node_name = kwargs['node_name'] + '_FLAVOR'
+
+    if flavor_node_name in kwargs['hot']['resources']:
+        kwargs['hot']['resources'][flavor_node_name].update(resource['properties'])
+    else:
+        kwargs['hot']['resources'][flavor_node_name] = resource
+
+
+def map_user_data(user_data, properties, **kwargs):
+    """
+
+    Args:
+        user_data:
+        properties:
+
+    Returns:
+
+    """
+    if user_data['contents'] == '':
+        return
+    if len(user_data['params'].keys()) == 0:
+        properties['user_data'] = user_data['contents']
+        return
+    params = {}
+    for key in user_data['params'].keys():
+        params[f'${key}$'] = user_data['params'][key]
+    properties['user_data'] = {
+        'str_replace': {
+            'params': params,
+            'template': user_data['contents']
+        }
+    }
+
+
+def map_sw_image_data(sw_image_data, properties, **kwargs):
+    """
+
+    Args:
+        sw_image_data:
+        properties:
+        **kwargs:
+
+    Returns:
+
+    """
+    sw_image_map = kwargs['sw_image_map']
+    if sw_image_data['name'] not in sw_image_map:
+        properties['image'] = sw_image_data['name']
+        return
+
+    properties['image'] = sw_image_map[sw_image_data['name']]['id']
+
+
+def map_virtual_storage(requirement, properties, **kwargs):
+    block_device_mapping_v2 = {
+        'delete_on_termination': True,
+        'volume_id': {
+            'get_resource': requirement
+        }
+    }
+    node_templates = kwargs['app_d']['topology_template']['node_templates']
+
+    if requirement in node_templates:
+        block_storage = node_templates[requirement]['properties']
+        sw_image_map = kwargs['sw_image_map']
+
+        if 'sw_image_data' in block_storage and \
+                block_storage['sw_image_data']['name'] in sw_image_map and \
+                sw_image_map[block_storage['sw_image_data']['name']]['format'] == 'iso':
+            block_device_mapping_v2['boot_index'] = 1
+            block_device_mapping_v2['device_type'] = 'cdrom'
+
+    if 'block_device_mapping_v2' not in properties:
+        properties['block_device_mapping_v2'] = []
+    properties['block_device_mapping_v2'].append(block_device_mapping_v2)
+
+
+def map_virtual_link(requirement, properties, **kwargs):
+    node_templates = kwargs['app_d']['topology_template']['node_templates']
+
+    if requirement in node_templates:
+        virtual_link = node_templates[requirement]['properties']
+        network_name = virtual_link['vl_profile']['network_name']
+        properties['network'] = network_name
+
+
+ComputeMapper = {
+    'properties.name': SetAction('name'),
+    'properties.nfvi_constraints': SetAction('availability_zone'),
+    'properties.bootdata.user_data': FunctionAction(map_user_data),
+    'properties.bootdata.config_drive': SetAction('config_drive'),
+    'properties.vdu_profile': FunctionAction(map_vdu_profile),
+    'properties.sw_image_data': FunctionAction(map_sw_image_data),
+    'capabilities.virtual_compute': FunctionAction(map_virtual_compute),
+    'requirements.%d.virtual_storage': FunctionAction(map_virtual_storage)
+}
+
+VirtualComputeMapper = {
+    'properties.virtual_cpu.num_virtual_cpu': SetAction('vcpus'),
+    'properties.virtual_memory.virtual_mem_size': SetAction('ram'),
+    'properties.virtual_local_storage.size_of_storage': SetAction('disk'),
 }
 
 VduCpMapper = {
-    'properties.vnic_type': {
-        'os_set': 'binding:vnic_type'
-    },
-    'properties.port_security_enabled': {
-        'os_set': 'port_security_enabled'
-    },
-    'attributes.ipv4_address': {
-        'os_append': {
-            'key': 'fixed_ips',
-            'value': 'ip_address'
-        }
-    },
-    'attributes.ipv6_address': {
-        'os_append': {
-            'key': 'fixed_ips',
-            'value': 'ip_address'
-        }
-    },
-    'attributes.mac': {
-        'os_set': 'mac_address'
-    },
-    'requirements.%d.virtual_link': {
-        'os_set': 'network'
-    }
+    'properties.vnic_type': SetAction('binding:vnic_type'),
+    'properties.port_security_enabled': SetAction('port_security_enabled'),
+    'attributes.ipv4_address': AppendAction({'key': 'fixed_ips', 'value': 'ip_address'}),
+    'attributes.ipv6_address': AppendAction({'key': 'fixed_ips', 'value': 'ip_address'}),
+    'attributes.mac': SetAction('mac_address'),
+    'requirements.%d.virtual_link': FunctionAction(map_virtual_link),
 }
 
 VirtualStorageMapper = {
-    'properties.virtual_storage_data.size_of_storage': {
-        'set': 'size'
-    },
-    'properties.virtual_storage_data.volume_type.volume_type_name': {
-        'set': 'volume_type'
-    },
-    'properties.sw_image_data.name': {
-        'set': 'image'
-    },
-    'properties.nfvi_constraints': {
-        'set': 'availability_zone'
-    }
+    'properties.virtual_storage_data.size_of_storage': SetAction('size'),
+    'properties.virtual_storage_data.volume_type.volume_type_name': SetAction('volume_type'),
+    'properties.sw_image_data': FunctionAction(map_sw_image_data),
+    'properties.nfvi_constraints': SetAction('availability_zone')
 }
 
 VnfVirtualLinkMapper = {}
+
+SecurityGroupMapper = {
+    'properties.description': SetAction('description'),
+    'properties.name': SetAction('name'),
+}
+
+SecurityGroupRuleMapper = {
+    'properties.description': SetAction('description'),
+    'properties.direction': SetAction('direction'),
+    'properties.ether_type': SetAction('ether_type'),
+    'properties.protocol': SetAction('protocol'),
+    'properties.port_range_min': SetAction('port_range_min'),
+    'properties.port_range_max': SetAction('port_range_max'),
+    'properties.remote_ip_prefix': SetAction('remote_ip_prefix')
+}
+
+
+def data_mapping(map_dict, template, properties, **kwargs):
+    for key, item in template.items():
+        sub_data_mapping(map_dict, key, item, properties, **kwargs)
+
+
+def sub_data_mapping(map_dict, f_key, sub_data, properties, **kwargs):
+    if f_key in map_dict:
+        map_dict[f_key].do_action(sub_data, properties, **kwargs)
+    elif isinstance(sub_data, dict):
+        for key, item in sub_data.items():
+            sub_data_mapping(map_dict, f_key + '.' + key, item, properties, **kwargs)
+    elif isinstance(sub_data, list):
+        for item in sub_data:
+            sub_data_mapping(map_dict, f_key + '.%d', item, properties, **kwargs)
+    else:
+        logger.debug('skip unknown key %s', f_key)
