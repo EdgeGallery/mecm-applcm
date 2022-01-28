@@ -71,6 +71,8 @@ RUN rm -rf bin/tests bin/.gitignore bin/README.MD bin/requirements.txt bin/docke
 
 COPY --from=development --chown=$USER_NAME:$GROUP_NAME $HOME/venv $HOME/venv
 
+USER $USER_NAME
+
 EXPOSE 8234
 
 CMD ["sh", "-c", "$HOME/bin/start.sh"]
