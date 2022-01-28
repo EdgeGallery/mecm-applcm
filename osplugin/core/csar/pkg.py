@@ -275,76 +275,20 @@ class CsarPkg:
 
         neutron = create_neutron_client(host_ip, tenant_id)
 
+        inputs = appd['topology_template']['inputs']
+
         for name, template in appd['topology_template']['node_templates'].items():
             if template['type'] != 'tosca.nodes.nfv.VnfVirtualLink':
                 continue
-            vl_profile = template['properties']['vl_profile']
-            networks = neutron.list_networks(name=get_data(vl_profile, 'network_name', parameters, appd))
-            if len(networks['networks']) != 0:
-                continue
-            network_data = {
-                'name': get_data(vl_profile, 'network_name', parameters, appd),
-                'shared': False,
-                'is_default': False
-            }
-            segment = {}
-            if get_data(vl_profile, 'network_type', parameters, appd):
-                segment['provider_network_type'] = get_data(vl_profile,
-                                                            'network_type',
-                                                            parameters, appd)
-            if get_data(vl_profile, 'physical_network', parameters, appd):
-                segment['provider_physical_network'] = get_data(vl_profile,
-                                                                'physical_network',
-                                                                parameters, appd)
-            if get_data(vl_profile, 'provider_segmentation_id', parameters, appd):
-                segment['provider_segmentation_id'] = get_data(vl_profile,
-                                                               'provider_segmentation_id',
-                                                               parameters, appd)
-            if len(segment.keys()) > 0:
-                network_data['segments'] = [segment]
-            if get_data(vl_profile, 'router_external', parameters, appd):
-                network_data['router:external'] = get_data(vl_profile, 'router_external', parameters, appd)
-            network = neutron.create_network({'network': network_data})
-            LOG.info('created not exist network %s id: %s', vl_profile['network_name'], network['network']['id'])
-            if 'l3_protocol_data' in template['properties']['vl_profile'] \
-                    and len(template['properties']['vl_profile']['l3_protocol_data']) > 0:
-                for l3_protocol_data in template['properties']['vl_profile']['l3_protocol_data']:
-                    subnet = {
-                        'cidr': get_data(l3_protocol_data, 'cidr', parameters, appd),
-                        'network_id': network['network']['id'],
-                        'ip_version': get_data(l3_protocol_data, 'ip_version', parameters, appd),
-                    }
-                    if get_data(l3_protocol_data, 'name', parameters, appd):
-                        subnet['name'] = get_data(l3_protocol_data, 'name', parameters, appd)
-                    if get_data(l3_protocol_data, 'gateway_ip', parameters, appd):
-                        subnet['gateway_ip'] = get_data(l3_protocol_data,
-                                                        'gateway_ip',
-                                                        parameters, appd)
-                    if get_data(l3_protocol_data, 'dhcp_enabled', parameters, appd):
-                        subnet['dhcp_enabled'] = get_data(l3_protocol_data,
-                                                          'dhcp_enabled',
-                                                          parameters, appd)
-                    if get_data(l3_protocol_data, 'ipv6_ra_mode', parameters, appd):
-                        subnet['ipv6_ra_mode'] = get_data(l3_protocol_data,
-                                                          'ipv6_ra_mode',
-                                                          parameters, appd)
-                    if get_data(l3_protocol_data, 'ipv6_address_mode', parameters, appd):
-                        subnet['ipv6_address_mode'] = get_data(l3_protocol_data,
-                                                               'ipv6_address_mode',
-                                                               parameters, appd)
-                    if 'dns_name_servers' in l3_protocol_data:
-                        subnet['dns_name_servers'] = l3_protocol_data['dns_name_servers']
-                    if 'ip_allocation_pools' in l3_protocol_data:
-                        subnet['allocation_pools'] = []
-                        for ip_allocation_pool in l3_protocol_data['ip_allocation_pools']:
-                            subnet['allocation_pools'].append({
-                                'start': ip_allocation_pool['start_ip_address'],
-                                'end': ip_allocation_pool['end_ip_address']
-                            })
-                    if 'host_routes' in l3_protocol_data:
-                        subnet['host_routes'] = l3_protocol_data['host_routes']
-                    neutron.create_subnet({'subnet': subnet})
-                    LOG.info('created subnet %s', l3_protocol_data['cidr'])
+            network_properties = translator.translate_vl(template,
+                                                         inputs=inputs,
+                                                         parameters=parameters)
+            network = neutron.create_network({'network': network_properties['network']})
+            LOG.info('created not exist network %s id: %s', network['network']['name'], network['network']['id'])
+            for subnet in network_properties['subnets']:
+                subnet['network_id'] = network['network']['id']
+                neutron.create_subnet({'subnet': subnet})
+                LOG.info('created subnet %s', subnet['cidr'])
 
 
 class CmccAppD:

@@ -155,10 +155,16 @@ def translate_vl(node_template, **kwargs):
     Returns: neutron network
 
     """
-    network = {
+    network = {}
+    data_mapping(VnfVirtualLinkMapper, node_template, network, **kwargs)
+    subnets = network.pop('subnets', [])
+    virtual_link = {'network': network, 'subnets': subnets}
 
-    }
-    return network
+    if 'inputs' in kwargs:
+        inputs = kwargs['inputs']
+        parameters = getattr(kwargs, 'parameters', None)
+        set_inputs(virtual_link, inputs, parameters)
+    return virtual_link
 
 
 def translate_virtual_storage(node_template, **kwargs):
@@ -241,6 +247,46 @@ def translate_unknown(unknown, **kwargs):
     logger.info('skip translate unknown type %s', unknown['type'])
 
 
+def set_inputs(properties, inputs, parameters):
+    """
+    把get_input函数替换为实际值
+    Args:
+        properties:
+        inputs:
+        parameters:
+
+    Returns:
+
+    """
+    if isinstance(properties, dict):
+        for sub_key, sub_value in properties.items():
+            if 'get_input' in sub_value:
+                properties[sub_key] = get_from_inputs(sub_value['get_input'], inputs, parameters)
+            else:
+                set_inputs(sub_value, inputs, parameters)
+    elif isinstance(properties, list):
+        for item in properties:
+            set_inputs(item, inputs, parameters)
+
+
+def get_from_inputs(key, inputs, parameters):
+    """
+    获取根据参数名称获取参数值
+    如果没有传入参数值，则从默认值中获取
+    Args:
+        key: 参数名称
+        inputs: 定义参数的dict，包含默认值
+        parameters: 参数值列表
+
+    Returns:
+
+    """
+    if parameters and key in parameters:
+        return parameters[key]
+    default_input = getattr(inputs, key, {'default': None})
+    return default_input['default']
+
+
 NODE_TEMPLATE_MAPPER = {
     'tosca.nodes.nfv.VNF': translate_unknown,
     'tosca.nodes.nfv.Vdu.Compute': translate_vdu_compute,
@@ -264,24 +310,51 @@ POLICY_MAPPER = {
 
 
 class MappingAction(object):
+    """
+    描述映射时的行为
+    """
     def __init__(self, key):
+        """
+        指定映射目标
+        Args:
+            key:
+        """
         self.key = key
 
     def do_action(self, data, properties, **kwargs):
+        """
+        执行映射动作
+        Args:
+            data: 映射元数据
+            properties: 目标
+            **kwargs:
+
+        Returns:
+
+        """
         pass
 
 
 class SetAction(MappingAction):
+    """
+    把一个字段映射到目标字段
+    """
     def do_action(self, data, properties, **kwargs):
         properties[self.key] = data
 
 
 class FunctionAction(MappingAction):
+    """
+    把一个字段映射到目标函数
+    """
     def do_action(self, data, properties, **kwargs):
         self.key(data, properties, **kwargs)
 
 
 class AppendAction(MappingAction):
+    """
+    把一个字段映射到目标数组
+    """
     def do_action(self, data, properties, **kwargs):
         if self.key['key'] not in properties:
             properties[self.key['key']] = []
@@ -320,7 +393,7 @@ def map_virtual_compute(virtual_compute, properties, **kwargs):
 
 def map_vdu_profile(vdu_profile, properties, **kwargs):
     """
-
+    映射资源调度配置
     Args:
         vdu_profile:
         properties:
@@ -358,7 +431,7 @@ def map_vdu_profile(vdu_profile, properties, **kwargs):
 
 def map_user_data(user_data, properties, **kwargs):
     """
-
+    映射用户初始化数据
     Args:
         user_data:
         properties:
@@ -384,7 +457,7 @@ def map_user_data(user_data, properties, **kwargs):
 
 def map_sw_image_data(sw_image_data, properties, **kwargs):
     """
-
+    映射镜像
     Args:
         sw_image_data:
         properties:
@@ -402,6 +475,16 @@ def map_sw_image_data(sw_image_data, properties, **kwargs):
 
 
 def map_virtual_storage(requirement, properties, **kwargs):
+    """
+    映射云盘绑定
+    Args:
+        requirement:
+        properties:
+        **kwargs:
+
+    Returns:
+
+    """
     block_device_mapping_v2 = {
         'delete_on_termination': True,
         'volume_id': {
@@ -426,12 +509,51 @@ def map_virtual_storage(requirement, properties, **kwargs):
 
 
 def map_virtual_link(requirement, properties, **kwargs):
+    """
+    映射网络绑定
+    Args:
+        requirement:
+        properties:
+        **kwargs:
+
+    Returns:
+
+    """
     node_templates = kwargs['app_d']['topology_template']['node_templates']
 
     if requirement in node_templates:
         virtual_link = node_templates[requirement]['properties']
         network_name = virtual_link['vl_profile']['network_name']
         properties['network'] = network_name
+
+
+def map_l3_protocol_data(l3_protocol_data, properties, **kwargs):
+    """
+    映射3层网络配置
+    Args:
+        l3_protocol_data:
+        properties:
+        **kwargs:
+
+    Returns:
+
+    """
+    subnets = []
+    for data in l3_protocol_data:
+        subnet = {}
+        data_mapping(VnfVirtualLinkL3Mapper, data, subnet, **kwargs)
+        subnets.append(subnet)
+    if len(subnets) > 0:
+        properties['subnets'] = subnets
+
+
+def map_ip_allocation_pools(ip_allocation_pools, properties, **kwargs):
+    properties['allocation_pools'] = []
+    for ip_allocation_pool in ip_allocation_pools:
+        properties['allocation_pools'].append({
+            'start': ip_allocation_pool['start_ip_address'],
+            'end': ip_allocation_pool['end_ip_address']
+        })
 
 
 ComputeMapper = {
@@ -467,7 +589,28 @@ VirtualStorageMapper = {
     'properties.nfvi_constraints': SetAction('availability_zone')
 }
 
-VnfVirtualLinkMapper = {}
+VnfVirtualLinkMapper = {
+    'properties.vl_profile.network_name': SetAction('name'),
+    'properties.vl_profile.network_type': SetAction('provider:network_type'),
+    'properties.vl_profile.physical_network': SetAction('provider:physical_network'),
+    'properties.vl_profile.provider_segmentation_id': SetAction('provider:segmentation_id'),
+    'properties.vl_profile.router_external': SetAction('router:external'),
+    'properties.vl_profile.vlan_transparent': SetAction('vlan_transparent'),
+    'properties.vl_profile.l3_protocol_data': FunctionAction(map_l3_protocol_data)
+}
+
+VnfVirtualLinkL3Mapper = {
+    'properties.name': SetAction('name'),
+    'properties.ip_version': SetAction('ip_version'),
+    'properties.cidr': SetAction('cidr'),
+    'properties.ip_allocation_pools': FunctionAction(map_ip_allocation_pools),
+    'properties.gateway_ip': SetAction('gateway_ip'),
+    'properties.dhcp_enabled': SetAction('enable_dhcp'),
+    'properties.ipv6_ra_mode': SetAction('ipv6_ra_mode'),
+    'properties.ipv6_address_mode': SetAction('ipv6_address_mode'),
+    'properties.host_routes': SetAction('host_routes'),
+    'properties.dns_name_servers': SetAction('dns_nameservers')
+}
 
 SecurityGroupMapper = {
     'properties.description': SetAction('description'),
