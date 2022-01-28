@@ -16,7 +16,6 @@
 """
 
 # -*- coding: utf-8 -*-
-import copy
 import os
 import re
 import zipfile
@@ -27,7 +26,6 @@ from pony.orm import db_session
 import utils
 from core.tosca import translator
 from core.csar import sw_image, tosca_utils
-from core.csar.tosca_utils import get_data
 from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
