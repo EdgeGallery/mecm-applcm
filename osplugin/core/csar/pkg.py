@@ -281,6 +281,9 @@ class CsarPkg:
             network_properties = translator.translate_vl(template,
                                                          inputs=inputs,
                                                          parameters=parameters)
+            networks = neutron.list_networks(name=network_properties['network']['name'])
+            if len(networks['networks']) > 0:
+                continue
             network = neutron.create_network({'network': network_properties['network']})
             LOG.info('created not exist network %s id: %s', network['network']['name'], network['network']['id'])
             for subnet in network_properties['subnets']:
