@@ -23,8 +23,8 @@ request = InstantiateRequest(
     accessToken=test_access_token,
     hostIp='192.168.1.218',
     tenantId='tenant01',
-    appInstanceId='ins002',
-    appPackageId='package-network',
+    appInstanceId='ins001',
+    appPackageId='package-iso1',
     parameters={},
     akSkLcmGen=False
 )
