@@ -16,45 +16,14 @@
 """
 # -*- coding: utf-8 -*-
 
-from pony.orm import PrimaryKey, Required, Optional, select, raw_sql
+from pony.orm import PrimaryKey, Required, Optional, select
 
-import config
 import utils
 from core.log import logger
 from core.orm.adapter import db
 
 _APP_TASK_PATH = '/tmp/osplugin/tasks'
 LOG = logger
-
-
-class BaseRequest:
-    """
-    基础请求参数
-    """
-    accessToken = None
-    hostIp = None
-    tenantId = None
-
-    def __init__(self, request):
-        self.accessToken = request.accessToken
-        self.hostIp = request.hostIp
-        self.tenantId = request.tenantId
-
-    def get_access_token(self):
-        """
-        get access token
-        Returns:
-
-        """
-        return self.accessToken
-
-    def get_host_ip(self):
-        """
-        get host ip
-        Returns:
-
-        """
-        return self.accessToken
 
 
 class UploadPackageRequest:
@@ -64,19 +33,19 @@ class UploadPackageRequest:
     accessToken = None
     hostIp = None
     tenantId = None
-    app_package_id = None
+    appPackageId = None
 
     def __init__(self, request_iterator):
         task_id = utils.gen_uuid()
         self._tmp_package_dir = _APP_TASK_PATH + '/' + task_id
         utils.create_dir(self._tmp_package_dir)
-        self.tmp_package_file_path = self._tmp_package_dir + '/package.zip'
-        with open(self.tmp_package_file_path, 'ab') as file:
+        self._tmp_package_file = self._tmp_package_dir + '/package.zip'
+        with open(self._tmp_package_file, 'ab') as file:
             for request in request_iterator:
                 if request.accessToken:
                     self.accessToken = request.accessToken
                 elif request.appPackageId:
-                    self.app_package_id = request.appPackageId
+                    self.appPackageId = request.appPackageId
                 elif request.hostIp:
                     self.hostIp = request.hostIp
                 elif request.tenantId:
@@ -90,57 +59,25 @@ class UploadPackageRequest:
         """
         utils.delete_dir(self._tmp_package_dir)
 
+    def unzip(self, app_package_path):
+        """
+        解压app包到包目录
+        Args:
+            app_package_path:
+
+        Returns:
+
+        """
+        utils.unzip(self._tmp_package_file, app_package_path)
+
     def get_tmp_file_path(self):
         """
         获取临时文件目录
         """
-        return self.tmp_package_file_path
+        return self.tmpPackageFilePath
 
 
 _APP_PACKAGE_PATH_FORMATTER = '{base_dir}/package/{host_ip}/{app_package_id}'
-
-
-class InstantiateRequest:
-    """
-    实例化请求体封装
-    """
-    accessToken = None
-    hostIp = None
-    tenantId = None
-    app_instance_id = None
-    app_package_id = None
-    app_package_path = None
-    parameters = None
-    ak_sk_lcm_gen = None
-
-    def __init__(self, request):
-        self.accessToken = request.accessToken
-        self.hostIp = request.hostIp
-        self.tenantId = request.tenantId
-        self.app_instance_id = request.appInstanceId
-        self.app_package_id = request.appPackageId
-        self.app_package_path = _APP_PACKAGE_PATH_FORMATTER \
-            .format(base_dir=config.base_dir, host_ip=request.hostIp,
-                    app_package_id=request.appPackageId)
-
-        self.parameters = request.parameters
-        self.ak_sk_lcm_gen = request.akSkLcmGen
-
-    def get_app_package_path(self):
-        """
-        get app package path
-        Returns:
-
-        """
-        return self.app_package_path
-
-    def get_host_ip(self):
-        """
-        get host ip
-        Returns:
-
-        """
-        return self.hostIp
 
 
 class UploadCfgRequest:
@@ -150,18 +87,14 @@ class UploadCfgRequest:
     accessToken = None
     hostIp = None
     tenantId = None
-    config_file = None
+    configFile = None
 
     def __init__(self, request_iterator):
         for request in request_iterator:
-            if request.accessToken:
-                self.accessToken = request.accessToken
-            elif request.hostIp:
-                self.hostIp = request.hostIp
-            elif request.configFile:
-                self.config_file = request.configFile
-            elif request.tenantId:
-                self.tenantId = request.tenantId
+            self.accessToken = request.accessToken if request.accessToken else self.accessToken
+            self.hostIp = request.hostIp if request.hostIp else self.hostIp
+            self.tenantId = request.tenantId if request.tenantId else self.tenantId
+            self.configFile = request.configFile if request.configFile else self.tenantId
 
     def get_config_file(self):
         """
@@ -169,7 +102,7 @@ class UploadCfgRequest:
         Returns:
 
         """
-        return self.config_file
+        return self.configFile
 
     def get_host_ip(self):
         """
@@ -217,22 +150,7 @@ class AppPkgMapper(db.Entity):
     app_package_id = Required(str, max_len=64)
     host_ip = Required(str, max_len=15)
     status = Required(str, max_len=10)
-
-
-def query(x, **kwargs):
-    """
-    构造查询语句
-    Args:
-        x:
-        **kwargs:
-
-    Returns:
-
-    """
-    for (key, value) in kwargs.items():
-        if not hasattr(x, key) or not getattr(x, key) == value:
-            return False
-    return True
+    app_package_path = Optional(str, max_len=255)
 
 
 class VmImageInfoMapper(db.Entity):

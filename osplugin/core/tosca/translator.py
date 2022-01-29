@@ -162,7 +162,7 @@ def translate_vl(node_template, **kwargs):
 
     if 'inputs' in kwargs:
         inputs = kwargs['inputs']
-        parameters = getattr(kwargs, 'parameters', None)
+        parameters = kwargs.get('parameters', None)
         set_inputs(virtual_link, inputs, parameters)
     return virtual_link
 
@@ -260,9 +260,9 @@ def set_inputs(properties, inputs, parameters):
     """
     if isinstance(properties, dict):
         for sub_key, sub_value in properties.items():
-            if 'get_input' in sub_value:
+            if isinstance(sub_value, dict) and 'get_input' in sub_value:
                 properties[sub_key] = get_from_inputs(sub_value['get_input'], inputs, parameters)
-            else:
+            elif isinstance(sub_value, dict):
                 set_inputs(sub_value, inputs, parameters)
     elif isinstance(properties, list):
         for item in properties:
@@ -283,7 +283,7 @@ def get_from_inputs(key, inputs, parameters):
     """
     if parameters and key in parameters:
         return parameters[key]
-    default_input = getattr(inputs, key, {'default': None})
+    default_input = inputs.get(key, {'default': None})
     return default_input['default']
 
 
@@ -600,16 +600,16 @@ VnfVirtualLinkMapper = {
 }
 
 VnfVirtualLinkL3Mapper = {
-    'properties.name': SetAction('name'),
-    'properties.ip_version': SetAction('ip_version'),
-    'properties.cidr': SetAction('cidr'),
-    'properties.ip_allocation_pools': FunctionAction(map_ip_allocation_pools),
-    'properties.gateway_ip': SetAction('gateway_ip'),
-    'properties.dhcp_enabled': SetAction('enable_dhcp'),
-    'properties.ipv6_ra_mode': SetAction('ipv6_ra_mode'),
-    'properties.ipv6_address_mode': SetAction('ipv6_address_mode'),
-    'properties.host_routes': SetAction('host_routes'),
-    'properties.dns_name_servers': SetAction('dns_nameservers')
+    'name': SetAction('name'),
+    'ip_version': SetAction('ip_version'),
+    'cidr': SetAction('cidr'),
+    'ip_allocation_pools': FunctionAction(map_ip_allocation_pools),
+    'gateway_ip': SetAction('gateway_ip'),
+    'dhcp_enabled': SetAction('enable_dhcp'),
+    'ipv6_ra_mode': SetAction('ipv6_ra_mode'),
+    'ipv6_address_mode': SetAction('ipv6_address_mode'),
+    'host_routes': SetAction('host_routes'),
+    'dns_name_servers': SetAction('dns_nameservers')
 }
 
 SecurityGroupMapper = {

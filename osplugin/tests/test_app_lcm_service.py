@@ -26,7 +26,7 @@ from core.models import AppPkgMapper, VmImageInfoMapper, AppInsMapper
 from internal.lcmservice import lcmservice_pb2
 from service.app_lcm_service import AppLcmService
 from tests.resources import gen_token
-from tests.resources.test_data import mock_heat_client, mock_glance_client
+from tests.resources.test_data import mock_heat_client, mock_glance_client, mock_neutron_client
 
 LOG = logger
 
@@ -78,7 +78,8 @@ class AppLcmServiceTest(unittest.TestCase):
             AppPkgMapper(
                 app_package_id='pkg002',
                 host_ip=self.host_ip,
-                status='active'
+                status='active',
+                app_package_path='/tmp/unknown/abc%acblkajdsfl'
             )
             VmImageInfoMapper(
                 image_id='image001',
@@ -104,12 +105,14 @@ class AppLcmServiceTest(unittest.TestCase):
         response = self.app_lcm_service.deletePackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
 
-    @mock.patch('service.app_lcm_service.set_network_then_return_yaml')
+    @mock.patch('core.csar.pkg.get_sw_image_desc_list')
+    @mock.patch('core.csar.pkg.create_neutron_client')
     @mock.patch('service.app_lcm_service.start_check_stack_status')
     @mock.patch('service.app_lcm_service.create_heat_client')
     def test_instantiate(self, create_heat_client,
                          start_check_stack_status,
-                         set_network_then_return_yaml):
+                         create_neutron_client,
+                         get_sw_image_desc_list):
         """
         测试实例化
         """
@@ -117,12 +120,15 @@ class AppLcmServiceTest(unittest.TestCase):
             AppPkgMapper(
                 app_package_id='pkg003',
                 host_ip=self.host_ip,
-                status='uploaded'
+                status='uploaded',
+                app_package_path='./resources/test_package'
             )
             commit()
-        set_network_then_return_yaml.return_value = 'resources/test_hot.yaml'
+
+        create_neutron_client.return_value = mock_neutron_client
         create_heat_client.return_value = mock_heat_client
         start_check_stack_status.return_value = None
+        get_sw_image_desc_list.return_value = None
 
         data = lcmservice_pb2.InstantiateRequest(
             accessToken=self.access_token,
@@ -132,7 +138,8 @@ class AppLcmServiceTest(unittest.TestCase):
             appPackageId='pkg003',
             parameters={
                 'ak': 'ak',
-                'sk': 'sk'
+                'sk': 'sk',
+                'private_network_name': 'test-network'
             }
         )
         response = self.app_lcm_service.instantiate(data, None)

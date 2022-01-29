@@ -16,6 +16,7 @@
 """
 
 # -*- coding: utf-8 -*-
+import json
 import os
 import re
 import zipfile
@@ -25,7 +26,8 @@ from pony.orm import db_session
 
 import utils
 from core.tosca import translator
-from core.csar import sw_image, tosca_utils
+from core.csar import tosca_utils
+from core.csar.sw_image import get_sw_image_desc_list
 from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
@@ -37,26 +39,6 @@ _APPD_TOSCA_METADATA_PATH = 'TOSCA_VNFD.meta'
 _APPD_R = '^Entry-Definitions: (.*)$'
 
 LOG = logger
-
-
-def set_network_then_return_yaml(host_ip, tenant_id, app_package_id, app_package_path, parameters):
-    LOG.debug('读取包')
-    try:
-        csar_pkg = CsarPkg(app_package_id, app_package_path)
-    except FileNotFoundError:
-        LOG.info('%s 文件不存在', app_package_path)
-        return None
-
-    LOG.debug('读取hot文件')
-    hot_yaml_path = csar_pkg.hot_path
-    if hot_yaml_path is None:
-        LOG.error("get hot yaml path failure, app package might not active")
-        return None
-
-    LOG.debug('创建tosca network')
-    csar_pkg.create_request_networks(host_ip, tenant_id, parameters)
-
-    return hot_yaml_path
 
 
 def _set_default_security_group(appd):
@@ -155,7 +137,7 @@ class CsarPkg:
                     self._appd_path = match.group(1)
                     break
         sw_image_desc_path = self.base_dir + '/Image/SwImageDesc.json'
-        self.sw_image_desc_list = sw_image.get_sw_image_desc_list(sw_image_desc_path)
+        self.sw_image_desc_list = get_sw_image_desc_list(sw_image_desc_path)
         self.image_id_map = {}
         if self._appd_path is None:
             raise PackageNotValid('entry definitions not exist')
@@ -262,10 +244,10 @@ class CsarPkg:
         with open(self.hot_path, 'w') as file:
             yaml.dump(data=hot, stream=file, Dumper=yaml.SafeDumper)
 
-    def create_request_networks(self, host_ip, tenant_id, parameters):
+    def create_request_networks(self, host_ip: str, tenant_id: str, parameters: dict):
         if self.appd_file_path.endswith('.zip'):
-            cmcc_appd = CmccAppD(os.path.dirname(self.appd_file_path))
-            appd = cmcc_appd.appd
+            cmcc = CmccAppD(os.path.dirname(self.appd_file_path))
+            appd = cmcc.appd
         elif self.appd_file_path.endswith('.yaml'):
             appd = yaml.load(self.appd_file_path, Loader=yaml.FullLoader)
         else:
@@ -281,6 +263,7 @@ class CsarPkg:
             network_properties = translator.translate_vl(template,
                                                          inputs=inputs,
                                                          parameters=parameters)
+            logger.info('now network %s', json.dumps(network_properties))
             networks = neutron.list_networks(name=network_properties['network']['name'])
             if len(networks['networks']) > 0:
                 continue

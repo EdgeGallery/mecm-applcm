@@ -1,0 +1,207 @@
+tosca_definitions_version: tosca_simple_yaml_1_2
+description: HUAWEI MEC VM
+imports:
+  - cmcc_nfv_vnfd_types_v1_0.yaml
+
+metadata:
+  template_name: HUAWEI-MEC-VM
+  template_author: HUAWEI
+  template_version: 1.0.0
+  vnfm_type: MEPM
+  vnfd_id: HWMEC_FacialRec_CentOSosdt13
+  vnfd_version: v1.0
+  vnfd_name: HUAWEI_MEC_Sample_APPDosdt13
+  vnfd_description: HW MEC sample for gvnfm
+
+topology_template:
+  inputs:
+    private_network_name:
+      type: string
+      default: mynet
+    app_internet_ip:
+      type: string
+    app_internet_mask:
+      type: string
+    app_internet_gw:
+      type: string
+    app_n6_ip:
+      type: string
+    app_n6_mask:
+      type: string
+    app_n6_gw:
+      type: string
+    ue_ip_segment:
+      type: string
+    app_mp1_ip:
+      type: string
+    app_mp1_mask:
+      type: string
+    app_mp1_gw:
+      type: string
+    mep_ip:
+      type: string
+    mep_port:
+      type: string
+
+  node_templates:
+
+    VM01:
+      type: tosca.nodes.nfv.Vdu.Compute
+      capabilities:
+        virtual_compute:
+          properties:
+            virtual_memory:
+              virtual_mem_size: 1024
+            virtual_cpu:
+              num_virtual_cpu: 1
+            virtual_local_storage:
+              size_of_storage: 80
+      properties:
+        name: vmtype01
+        description: VM node
+        nfvi_constraints: nova
+        vdu_profile:
+          flavor_extra_specs:
+            "Mgmt_clabx86": 'true'
+        sw_image_data:
+          name: ubuntu-18.04
+        bootdata:
+          config_drive: true
+          user_data:
+            contents: |
+              #!/bin/bash
+              echo 'mep_endpoints=$MEP_IP$:$MEP_PORT$\n' >> /root/init.txt
+
+              rm -rf /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo 'BOOTPROTO=static\n' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo 'DEVICE=eth0\n' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo 'IPADDR=$APP_MP1_IP$\n' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo 'NETMASK=$APP_MP1_MASK\n' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo 'DEFROUTE=no\n' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo 'IPV4_FAILURE_FATAL=no\n' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo 'ONBOOT=yes\n' >> /etc/sysconfig/network-scripts/ifcfg-eth0
+              echo '$MEP_IP$/32 via $APP_MP1_GW$\n' >> /etc/sysconfig/network-scripts/route-eth0
+
+              rm -rf /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo 'BOOTPROTO=static\n' >> /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo 'DEVICE=eth1\n' >> /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo 'IPADDR=$APP_N6_IP$\n' >> /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo 'NETMASK=$APP_N6_MASK\n' >> /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo 'DEFROUTE=no\n' >> /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo 'IPV4_FAILURE_FATAL=no\n' >> /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo 'ONBOOT=yes\n' >> /etc/sysconfig/network-scripts/ifcfg-eth1
+              echo '$UE_IP_SEGMENT$ via $APP_N6_GW$' >> /etc/sysconfig/network-scripts/route-eth1
+
+              rm -rf /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'BOOTPROTO=static\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'DEVICE=eth2\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'IPADDR=$APP_INTERNET_IP$\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'NETMASK=$APP_INTERNET_MASK$\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'GATEWAY=$APP_INTERNET_GW$\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'DEFROUTE=yes\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'IPV4_FAILURE_FATAL=no\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+              echo 'ONBOOT=yes\n' >> /etc/sysconfig/network-scripts/ifcfg-eth2
+
+              systemctl restart network
+
+            params:
+              APP_MP1_IP: { get_input: app_mp1_ip }
+              APP_MP1_MASK: { get_input: app_mp1_mask }
+              APP_MP1_GW: { get_input: app_mp1_gw }
+              MEP_IP: { get_input: mep_ip }
+              MEP_PORT: { get_input: mep_port }
+              APP_N6_IP: {get_input: app_n6_ip}
+              APP_N6_MASK: {get_input: app_n6_mask}
+              APP_N6_GW: {get_input: app_n6_gw}
+              UE_IP_SEGMENT: {get_input: ue_ip_segment}
+              APP_INTERNET_IP: { get_input: app_internet_ip }
+              APP_INTERNET_MASK: { get_input: app_internet_mask }
+              APP_INTERNET_GW: { get_input: app_internet_gw }
+
+    MECAPP_MP1_CP:
+      type: tosca.nodes.nfv.VduCp
+      properties:
+        description: to mep
+        vnic_name: eth0
+        order: 0
+        vnic_type: normal
+        port_security_enabled: true
+      attributes:
+        ipv4_address: {get_input: app_mp1_ip}
+
+      requirements:
+        - virtual_binding: VM01
+        - virtual_link: MEC_APP_MP1
+
+    MECAPP_PRIVATE_CP:
+      type: tosca.nodes.nfv.VduCp
+      properties:
+        description: to n6
+        vnic_name: eth1
+        order: 1
+        vnic_type: normal
+        port_security_enabled: true
+      attributes:
+        ipv4_address: { get_input: app_private_ip1 }
+
+      requirements:
+        - virtual_binding: VM01
+        - virtual_link: MEC_APP_PRIVATE
+
+    MEC_APP_PRIVATE:
+      type: tosca.nodes.nfv.VnfVirtualLink
+      properties:
+        vl_profile:
+          network_name: { get_input: private_network_name }
+
+    MECAPP_N6_CP:
+      type: tosca.nodes.nfv.VduCp
+      properties:
+        description: to n6
+        vnic_name: eth1
+        order: 1
+        vnic_type: normal
+        port_security_enabled: true
+      attributes:
+        ipv4_address: { get_input: app_n6_ip1 }
+
+      requirements:
+        - virtual_binding: VM01
+        - virtual_link: mcm-app-n6
+
+    MECAPP_INTERNET_CP:
+      type: tosca.nodes.nfv.VduCp
+      properties:
+        description: to internet
+        vnic_name: eth2
+        order: 2
+        vnic_type: normal
+        port_security_enabled: true
+      attributes:
+        ipv4_address: { get_input: app_internet_ip }
+
+      requirements:
+        - virtual_binding: VM01
+        - virtual_link: MEC_APP_INTERNET
+
+    MEC_APP_MP1:
+      type: tosca.nodes.nfv.VnfVirtualLink
+      properties:
+        vl_profile:
+          network_name: mec_network_mep
+          l3_protocol_data:
+          - name: abc
+            ip_version: ipv4
+            ip_allocation_pools:
+              - start_ip_address: 192.168.0.2
+                end_ip_address: 192.168.0.10
+            cidr: 192.168.0.0/24
+            gateway_ip: none
+            dhcp_enabled: false
+
+
+    MEC_APP_INTERNET:
+      type: tosca.nodes.nfv.VnfVirtualLink
+      properties:
+        vl_profile:
+          network_name: mec_network_internet
