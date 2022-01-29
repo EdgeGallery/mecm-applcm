@@ -42,35 +42,12 @@ def n6_rule(target):
     param: target 目标安全组
     """
     return {
-        'n6_rule_tcp': {
+        'n6_rule': {
             'type': SECURITY_GROUP_RULE,
-            'targets': [target],
             'properties': {
-                'protocol': 'tcp',
-                'remote_ip_prefix': {
-                    'get_input': 'ue_ip_segment'
-                }
-            }
-        },
-        'n6_rule_udp': {
-            'type': SECURITY_GROUP_RULE,
+                'remote_ip_prefix': {'get_input': 'ue_ip_segment'}
+            },
             'targets': [target],
-            'properties': {
-                'protocol': 'udp',
-                'remote_ip_prefix': {
-                    'get_input': 'ue_ip_segment'
-                }
-            }
-        },
-        'n6_rule_icmp': {
-            'type': SECURITY_GROUP_RULE,
-            'targets': [target],
-            'properties': {
-                'protocol': 'icmp',
-                'remote_ip_prefix': {
-                    'get_input': 'ue_ip_segment'
-                }
-            }
         }
     }
 
@@ -80,49 +57,11 @@ def mp1_rule(target):
     生成mp1网络规则模板，允许mep的流量进入
     """
     return {
-        'mp1_rule_tcp': {
+        'mp1_rule': {
             'type': SECURITY_GROUP_RULE,
-            'targets': [target],
             'properties': {
-                'protocol': 'tcp',
-                'remote_ip_prefix': {
-                    'concat': [
-                        {
-                            'get_input': 'mep_ip'
-                        },
-                        '/32'
-                    ]
-                }
-            }
-        },
-        'mp1_rule_udp': {
-            'type': SECURITY_GROUP_RULE,
+                'remote_ip_prefix': {'concat': [{'get_input': 'mep_ip'}, '/32']}
+            },
             'targets': [target],
-            'properties': {
-                'protocol': 'udp',
-                'remote_ip_prefix': {
-                    'concat': [
-                        {
-                            'get_input': 'mep_ip'
-                        },
-                        '/32'
-                    ]
-                }
-            }
-        },
-        'mp1_rule_icmp': {
-            'type': SECURITY_GROUP_RULE,
-            'targets': [target],
-            'properties': {
-                'protocol': 'icmp',
-                'remote_ip_prefix': {
-                    'concat': [
-                        {
-                            'get_input': 'mep_ip'
-                        },
-                        '/32'
-                    ]
-                }
-            }
         }
     }

@@ -15,6 +15,10 @@ outputs:
         - console_urls
         - novnc
 parameters:
+  private_network_name:
+    description: 'aaa'
+    type: string
+    default: mynet
   DC_ID:
     description: DC_ID
     type: string

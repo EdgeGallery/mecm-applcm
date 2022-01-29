@@ -22,10 +22,10 @@ import uuid
 from core import openstack_utils
 from core.csar.pkg import CsarPkg
 from core.log import logger
-from core.models import AppInsMapper, InstantiateRequest, UploadCfgRequest, \
-    UploadPackageRequest, BaseRequest, AppPkgMapper, VmImageInfoMapper
-from core.openstack_utils import create_glance_client, create_heat_client, create_gnocchi_client, \
-    create_keystone_client, create_nova_client, create_neutron_client
+from core.models import AppInsMapper, UploadCfgRequest, \
+    UploadPackageRequest, AppPkgMapper, VmImageInfoMapper
+from core.openstack_utils import create_glance_client, create_heat_client, \
+    create_nova_client, create_neutron_client
 
 import glanceclient.exc
 
@@ -92,36 +92,37 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive upload package msg...')
         resp = UploadPackageResponse(status=utils.FAILURE)
 
-        parameters = UploadPackageRequest(request_iterator)
+        request = UploadPackageRequest(request_iterator)
 
-        host_ip = utils.validate_input_params(parameters)
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
-            parameters.delete_tmp()
+            request.delete_tmp()
             return resp
 
-        app_package_id = parameters.app_package_id
+        app_package_id = request.appPackageId
         if app_package_id is None:
             LOG.error('appPackageId is required')
-            parameters.delete_tmp()
+            request.delete_tmp()
             return resp
 
         app_pkg_mapper = AppPkgMapper.get(app_package_id=app_package_id, host_ip=host_ip)
         if app_pkg_mapper is not None:
             LOG.error('app package exist')
-            parameters.delete_tmp()
+            request.delete_tmp()
             return resp
+
+        app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
         AppPkgMapper(
             app_package_id=app_package_id,
             host_ip=host_ip,
-            status=utils.UPLOADING
+            status=utils.UPLOADING,
+            app_package_path=app_package_path
         )
-
-        app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + parameters.app_package_id
         try:
             LOG.debug('unzip package')
-            utils.unzip(parameters.tmp_package_file_path, app_package_path)
+            request.unzip(app_package_path)
             pkg = CsarPkg(app_package_id, app_package_path)
-            pkg.check_image(host_ip, parameters.tenantId)
+            pkg.check_image(host_ip, request.tenantId)
             pkg.translate()
             commit()
             start_check_package_status(app_package_id, host_ip)
@@ -132,7 +133,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.error(exception, exc_info=True)
             utils.delete_dir(app_package_path)
         finally:
-            parameters.delete_tmp()
+            request.delete_tmp()
         return resp
 
     @db_session
@@ -146,7 +147,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive delete package msg...')
         res = DeletePackageResponse(status=utils.FAILURE)
 
-        host_ip = utils.validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return res
 
@@ -155,10 +156,13 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             LOG.error("appPackageId required")
             return res
 
-        app_package_info = AppPkgMapper.get(app_package_id=app_package_id,
-                                            host_ip=host_ip)
-        if app_package_info is not None:
-            app_package_info.delete()
+        app_package_mapper = AppPkgMapper.get(app_package_id=app_package_id,
+                                              host_ip=host_ip)
+
+        if app_package_mapper is not None:
+            utils.delete_dir(app_package_mapper.app_package_path)
+            app_package_mapper.delete()
+
         glance = create_glance_client(host_ip, request.tenantId)
         images = VmImageInfoMapper.find_many(app_package_id=app_package_id,
                                              host_ip=host_ip)
@@ -169,9 +173,6 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 logger.debug('skip delete image %s', image.image_id)
             image.delete()
         commit()
-
-        app_package_path = utils.APP_PACKAGE_DIR + '/' + host_ip + '/' + app_package_id
-        utils.delete_dir(app_package_path)
 
         res.status = utils.SUCCESS
         LOG.info('delete app package success')
@@ -188,57 +189,44 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive instantiate msg...')
         resp = InstantiateResponse(status=utils.FAILURE)
 
-        parameter = InstantiateRequest(request)
-
         LOG.debug('校验access token, host ip')
-        host_ip = utils.validate_input_params(parameter)
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return resp
 
         LOG.debug('获取实例ID')
-        app_instance_id = parameter.app_instance_id
-        if app_instance_id is None or app_instance_id == '':
+        if not request.appInstanceId:
             LOG.error(utils.APP_INS_ERR_MDG)
             return resp
 
         LOG.debug('查询数据库是否存在相同记录')
-        if AppInsMapper.get(app_instance_id=app_instance_id) is not None:
-            LOG.error('app ins %s exist', app_instance_id)
+        if AppInsMapper.get(app_instance_id=request.appInstanceId) is not None:
+            LOG.error('app ins %s exist', request.appInstanceId)
             return resp
 
         LOG.debug('检查app包状态')
-        app_pkg_mapper = AppPkgMapper.get(app_package_id=parameter.app_package_id,
+        app_pkg_mapper = AppPkgMapper.get(app_package_id=request.appPackageId,
                                           host_ip=host_ip)
         if app_pkg_mapper is None or app_pkg_mapper.status != utils.UPLOADED:
-            LOG.error('app pkg %s not uploaded', parameter.app_package_id)
+            LOG.error('app pkg %s not uploaded', request.appPackageId)
             return resp
 
-        LOG.debug('读取包')
-        try:
-            csar_pkg = CsarPkg(parameter.app_package_id, parameter.app_package_path)
-        except FileNotFoundError:
-            LOG.info('%s 文件不存在', parameter.app_package_path)
-            return resp
-
-        LOG.debug('创建tosca network')
-        csar_pkg.create_request_networks(host_ip, parameter.tenantId)
-
-        LOG.debug('读取hot文件')
-        hot_yaml_path = csar_pkg.hot_path
-        if hot_yaml_path is None:
-            LOG.error("get hot yaml path failure, app package might not active")
-            return resp
+        csar = CsarPkg(app_pkg_mapper.app_package_id, app_pkg_mapper.app_package_path)
 
         LOG.debug('构建heat参数')
-        tpl_files, template = template_utils.get_template_contents(template_file=hot_yaml_path)
+        tpl_files, template = template_utils.get_template_contents(template_file=csar.hot_path)
+
         parameters = {}
         for key in template['parameters'].keys():
-            if key in parameter.parameters:
-                parameters[key] = parameter.parameters[key]
+            if key in request.parameters:
+                parameters[key] = request.parameters[key]
 
-        if not parameter.ak_sk_lcm_gen and 'ak' in parameters and 'sk' in parameters:
+        if not request.akSkLcmGen and 'ak' in parameters and 'sk' in parameters:
             parameters['ak'] = ''
             parameters['sk'] = ''
+
+        csar.create_request_networks(request.hostIp, request.tenantId, parameters)
+
         fields = {
             'stack_name': 'eg-' + ''.join(str(uuid.uuid4()).split('-'))[0:8],
             'template': template,
@@ -246,23 +234,23 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             'parameters': parameters
         }
 
-        heat = create_heat_client(host_ip, parameter.tenantId)
+        heat = create_heat_client(host_ip, request.tenantId)
         try:
             LOG.debug('发送创建stack请求')
             stack_resp = heat.stacks.create(**fields)
         except Exception as exception:
             LOG.error(exception, exc_info=True)
             return resp
-        AppInsMapper(app_instance_id=app_instance_id,
+        AppInsMapper(app_instance_id=request.appInstanceId,
                      host_ip=host_ip,
-                     tenant_id=parameter.tenantId,
+                     tenant_id=request.tenantId,
                      stack_id=stack_resp['stack']['id'],
                      operational_status=utils.INSTANTIATING)
         commit()
         LOG.debug('更新数据库')
 
         LOG.debug('开始更新状态定时任务')
-        start_check_stack_status(app_instance_id=app_instance_id)
+        start_check_stack_status(app_instance_id=request.appInstanceId)
 
         resp.status = utils.SUCCESS
         LOG.info('instantiate success')
@@ -280,7 +268,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         res = TerminateResponse(status=utils.FAILURE)
 
         LOG.debug('校验token, host ip')
-        host_ip = utils.validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return res
 
@@ -329,7 +317,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive query msg...')
         res = QueryResponse(response='{"code": 500, "msg": "server error"}')
 
-        host_ip = utils.validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             res.response = '{"code":400}'
             return res
@@ -378,7 +366,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         resp = QueryPackageStatusResponse(response=utils.ERROR)
 
         LOG.debug('校验access token, host ip')
-        host_ip = utils.validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return resp
 
@@ -409,7 +397,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('received query kpi message')
         resp = QueryKPIResponse(response=utils.FAILURE_JSON)
 
-        host_ip = utils.validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return resp
 
@@ -451,7 +439,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive workload describe msg...')
         res = WorkloadEventsResponse(response='{"code":500}')
 
-        host_ip = utils.validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return res
 
@@ -507,18 +495,18 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive uploadConfig msg...')
         res = UploadCfgResponse(status=utils.FAILURE)
 
-        parameter = UploadCfgRequest(request_iterator)
+        request = UploadCfgRequest(request_iterator)
 
-        host_ip = utils.validate_input_params(parameter)
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return res
 
-        config_file = parameter.config_file
+        config_file = request.configFile
         if config_file is None:
             LOG.info('configFile is required')
             return res
 
-        config_path_dir = utils.RC_FILE_DIR + '/' + parameter.tenantId
+        config_path_dir = utils.RC_FILE_DIR + '/' + request.tenantId
         if not utils.exists_path(config_path_dir):
             utils.create_dir(config_path_dir)
         config_path = config_path_dir + '/' + host_ip
@@ -526,7 +514,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         try:
             with open(config_path, 'wb') as new_file:
                 new_file.write(config_file)
-            openstack_utils.set_rc(host_ip, parameter.tenantId)
+            openstack_utils.set_rc(host_ip, request.tenantId)
             res.status = utils.SUCCESS
         except Exception as exception:
             LOG.error(exception, exc_info=True)
@@ -545,7 +533,7 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         LOG.info('receive removeConfig msg...')
         res = RemoveCfgResponse(status=utils.FAILURE)
 
-        host_ip = utils.validate_input_params(BaseRequest(request))
+        host_ip = utils.validate_input_params(request)
         if host_ip is None:
             return res
 

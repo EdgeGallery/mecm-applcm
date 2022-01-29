@@ -16,7 +16,7 @@
 """
 
 # -*- coding: utf-8 -*-
-import copy
+import json
 import os
 import re
 import zipfile
@@ -25,12 +25,13 @@ import yaml
 from pony.orm import db_session
 
 import utils
-from core.csar import sw_image, tosca_utils
+from core.tosca import translator
+from core.csar import tosca_utils
+from core.csar.sw_image import get_sw_image_desc_list
 from core.exceptions import PackageNotValid
 from core.log import logger
 from core.models import VmImageInfoMapper
-from core.openstack_utils import TOSCA_TYPE_CLASS, \
-    TOSCA_GROUP_CLASS, TOSCA_POLICY_CLASS, get_image_by_name_checksum, create_neutron_client
+from core.openstack_utils import get_image_by_name_checksum, create_neutron_client
 from task.image_task import add_import_image_task, create_image_record, add_upload_image_task
 
 _TOSCA_METADATA_PATH = 'TOSCA-Metadata/TOSCA.meta'
@@ -45,25 +46,17 @@ def _set_default_security_group(appd):
     注入默认安全组和安全组规则
     """
     topology_template = appd['topology_template']
-    if 'inputs' not in topology_template:
-        return
-    if 'ue_ip_segment' not in topology_template['inputs'] \
-            and 'mep_ip' not in topology_template['inputs']:
-        return
+
     default_group = tosca_utils.APP_SECURITY_GROUP_NAME
 
     # 设置默认安全组
-    if 'groups' not in topology_template:
-        topology_template['groups'] = {}
     topology_template['groups'][default_group] = tosca_utils.app_security_group()
     for name, template in topology_template['node_templates'].items():
-        if template['type'] == 'tosca.nodes.nfv.VduCp':
-            topology_template['groups'][default_group]['members'] \
-                .append(name)
+        if template['type'] != 'tosca.nodes.nfv.VduCp':
+            continue
+        topology_template['groups'][default_group]['members'].append(name)
 
     # 设置默认安全策略
-    if 'policies' not in topology_template:
-        topology_template['policies'] = []
     if 'ue_ip_segment' in topology_template['inputs']:
         topology_template['policies'].append(tosca_utils.n6_rule(target=default_group))
     if 'mep_ip' in topology_template['inputs']:
@@ -87,7 +80,8 @@ def _set_iso_cdrom(appd, image_id_map):
         image = template['properties']['sw_image_data']['name']
         if image_id_map[image]['format'] != 'iso':
             continue
-        node_name = node_name + '_CDROM'
+        template['properties']['sw_image_data']['name'] = 'empty-disk'
+        volume_node_name = node_name + '_CDROM'
         volume_size = int(image_id_map[image]['size'] / 1000000000) + 1
         properties = {
             'virtual_storage_data': {
@@ -95,61 +89,33 @@ def _set_iso_cdrom(appd, image_id_map):
                 'size_of_storage': volume_size
             },
             'sw_image_data': {'name': image},
-            'nfvi_constraints': template['properties']['nfvi_constraints']
         }
         if 'nfvi_constraints' in template['properties']:
             properties['nfvi_constraints'] = template['properties']['nfvi_constraints']
-        volume_templates[node_name] = {
+        volume_templates[volume_node_name] = {
             'type': 'tosca.nodes.nfv.Vdu.VirtualStorage',
             'properties': properties
         }
     topology_template['node_templates'].update(volume_templates)
-    
-def _set_default_ip(appd):
-    """
-    主动注入IP，需要固定cp名称和ip参数
-    """
-    topology_template = appd['topology_template']
-    if 'inputs' not in topology_template:
+
+
+def _set_ak_sk(appd):
+    inputs = appd['topology_template']['inputs']
+    if 'ak' not in inputs or 'sk' not in inputs:
         return
-    inputs = topology_template['inputs']
-    node_templates = topology_template['node_templates']
-    if 'app_mp1_ip' in inputs and 'EMS_VDU1_CP0' in node_templates:
-        node_templates['EMS_VDU1_CP0']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_mp1_ip'
+    for node_template in appd['topology_template']['node_templates'].values():
+        if node_template['type'] != 'tosca.nodes.nfv.Vdu.Compute':
+            continue
+        if 'user_data' not in node_template['properties']['bootdata']:
+            node_template['properties']['bootdata']['user_data'] = {
+                'contents': '#!/bin/bash',
+                'params': {}
             }
-        }
-
-    if 'app_internet_ip' in inputs and 'EMS_VDU1_CP1' in node_templates:
-        node_templates['EMS_VDU1_CP1']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_internet_ip'
-            }
-        }
-
-    if 'app_n6_ip' in inputs and 'EMS_VDU1_CP2' in node_templates:
-        node_templates['EMS_VDU1_CP2']['attributes'] = {
-            'ipv4_address': {
-                'get_input': 'app_n6_ip'
-            }
-        }
-
-
-def _input_translate(inputs):
-    """
-    处理cmcc输入类型，把text/password类型转换为string
-    Args:
-        inputs:
-
-    Returns:
-
-    """
-    result = copy.deepcopy(inputs)
-    for key in result.keys():
-        if result[key]['type'] == 'text' or result[key]['type'] == 'password':
-            result[key]['type'] = 'string'
-    return result
+        user_data = node_template['properties']['bootdata']['user_data']
+        mec_runtime_script = '\necho "ak=$ak$\\nsk=$sk$\\n" >> /root/init.txt\n'
+        user_data['params']['ak'] = {'get_input': 'ak'}
+        user_data['params']['sk'] = {'get_input': 'sk'}
+        user_data['contents'] = user_data['contents'] + mec_runtime_script
 
 
 class CsarPkg:
@@ -171,7 +137,7 @@ class CsarPkg:
                     self._appd_path = match.group(1)
                     break
         sw_image_desc_path = self.base_dir + '/Image/SwImageDesc.json'
-        self.sw_image_desc_list = sw_image.get_sw_image_desc_list(sw_image_desc_path)
+        self.sw_image_desc_list = get_sw_image_desc_list(sw_image_desc_path)
         self.image_id_map = {}
         if self._appd_path is None:
             raise PackageNotValid('entry definitions not exist')
@@ -212,7 +178,7 @@ class CsarPkg:
                 LOG.debug('use image from os')
                 image_id_map[sw_image_desc['name']] = {
                     'id': image['id'],
-                    'format': image['diskFormat'],
+                    'format': image['disk_format'],
                     'size': image['size']
                 }
             elif sw_image_desc['swImage'].startswith('http'):
@@ -266,68 +232,22 @@ class CsarPkg:
         else:
             raise PackageNotValid('不支持的appd类型')
 
-        hot = {
-            'heat_template_version': '2016-10-14',
-            'description': 'Generated By OsPlugin',
-            'parameters': {},
-            'resources': {},
-            'outputs': {}
-        }
-        if 'inputs' in appd['topology_template']:
-            hot['parameters'] = _input_translate(appd['topology_template']['inputs'])
-
-        # 设置ip，临时性
-        # _set_default_ip(appd)
         # Default security group rules
         _set_default_security_group(appd)
-
-        # ISO image to volume
         _set_iso_cdrom(appd, self.image_id_map)
+        _set_ak_sk(appd)
 
-        self._translate_topology_template(appd, hot)
+        LOG.debug('app descriptions:\n%s', yaml.dump(appd, Dumper=yaml.SafeDumper))
+
+        hot = translator.translate(appd, self.image_id_map)
 
         with open(self.hot_path, 'w') as file:
             yaml.dump(data=hot, stream=file, Dumper=yaml.SafeDumper)
 
-    def _translate_topology_template(self, appd, hot):
-        """
-        翻译topology template
-        Args:
-            appd:
-            hot:
-
-        Returns:
-
-        """
-        for name, template in appd['topology_template']['node_templates'].items():
-            if template['type'] in TOSCA_TYPE_CLASS:
-                resource = TOSCA_TYPE_CLASS[template['type']](name,
-                                                              template)
-                resource.set_properties(topology_template=appd['topology_template'],
-                                        hot_file=hot,
-                                        image_id_map=self.image_id_map)
-            else:
-                LOG.info('skip unknown tosca type %s', template['type'])
-
-        if 'groups' in appd['topology_template']:
-            for name, group in appd['topology_template']['groups'].items():
-                if group['type'] in TOSCA_GROUP_CLASS:
-                    resource = TOSCA_GROUP_CLASS[group['type']](name, group)
-                    resource.set_properties(topology_template=appd['topology_template'],
-                                            hot_file=hot)
-
-        if 'policies' in appd['topology_template']:
-            for policy in appd['topology_template']['policies']:
-                for name, policy_template in policy.items():
-                    if policy_template['type'] in TOSCA_POLICY_CLASS:
-                        resource = TOSCA_POLICY_CLASS[policy_template['type']](name, policy_template)
-                        resource.set_properties(topology_template=appd['topology_template'],
-                                                hot_file=hot)
-
-    def create_request_networks(self, host_ip, tenant_id):
+    def create_request_networks(self, host_ip: str, tenant_id: str, parameters: dict):
         if self.appd_file_path.endswith('.zip'):
-            cmcc_appd = CmccAppD(os.path.dirname(self.appd_file_path))
-            appd = cmcc_appd.appd
+            cmcc = CmccAppD(os.path.dirname(self.appd_file_path))
+            appd = cmcc.appd
         elif self.appd_file_path.endswith('.yaml'):
             appd = yaml.load(self.appd_file_path, Loader=yaml.FullLoader)
         else:
@@ -335,60 +255,24 @@ class CsarPkg:
 
         neutron = create_neutron_client(host_ip, tenant_id)
 
+        inputs = appd['topology_template']['inputs']
+
         for name, template in appd['topology_template']['node_templates'].items():
-            if not template['type'] == 'tosca.nodes.nfv.VnfVirtualLink':
+            if template['type'] != 'tosca.nodes.nfv.VnfVirtualLink':
                 continue
-            vl_profile = template['properties']['vl_profile']
-            networks = neutron.list_networks(name=vl_profile['network_name'])
-            if len(networks) != 0:
+            network_properties = translator.translate_vl(template,
+                                                         inputs=inputs,
+                                                         parameters=parameters)
+            logger.info('now network %s', json.dumps(network_properties))
+            networks = neutron.list_networks(name=network_properties['network']['name'])
+            if len(networks['networks']) > 0:
                 continue
-            network_data = {
-                'name': vl_profile['network_name'],
-                'shared': False,
-                'is_default': False
-            }
-            segment = {}
-            if getattr(vl_profile, 'network_type', None):
-                segment['provider_network_type'] = vl_profile['network_type']
-            if getattr(vl_profile, 'physical_network', None):
-                segment['provider_physical_network'] = vl_profile['physical_network']
-            if getattr(vl_profile, 'provider_segmentation_id', None):
-                segment['provider_segmentation_id'] = vl_profile['provider_segmentation_id']
-            if len(segment.keys()) > 0:
-                network_data['segments'] = [segment]
-            if 'router_external' in vl_profile:
-                network_data['router:external'] = vl_profile['router_external']
-            network = neutron.create_network({'network': network_data})
-            if 'l3_protocol_data' in template['properties']['vl_profile'] \
-                    and len(template['properties']['vl_profile']['l3_protocol_data']) > 0:
-                for l3_protocol_data in template['properties']['vl_profile']['l3_protocol_data']:
-                    subnet = {
-                        'cidr': l3_protocol_data['cidr'],
-                        'network_id': network['id'],
-                        'ip_version': l3_protocol_data['ip_version']
-                    }
-                    if 'name' in l3_protocol_data:
-                        subnet['name'] = l3_protocol_data['name']
-                    if 'gateway_ip' in l3_protocol_data:
-                        subnet['gateway_ip'] = l3_protocol_data['gateway_ip']
-                    if 'dhcp_enabled' in l3_protocol_data:
-                        subnet['dhcp_enabled'] = l3_protocol_data['dhcp_enabled']
-                    if 'ipv6_ra_mode' in l3_protocol_data:
-                        subnet['ipv6_ra_mode'] = l3_protocol_data['ipv6_ra_mode']
-                    if 'ipv6_address_mode' in l3_protocol_data:
-                        subnet['ipv6_address_mode'] = l3_protocol_data['ipv6_address_mode']
-                    if 'dns_name_servers' in l3_protocol_data:
-                        subnet['dns_name_servers'] = l3_protocol_data['dns_name_servers']
-                    if 'ip_allocation_pools' in l3_protocol_data:
-                        subnet['allocation_pools'] = []
-                        for ip_allocation_pool in l3_protocol_data['ip_allocation_pools']:
-                            subnet['allocation_pools'].append({
-                                'start': ip_allocation_pool['start_ip_address'],
-                                'end': ip_allocation_pool['end_ip_address']
-                            })
-                    if 'host_routes' in l3_protocol_data:
-                        subnet['host_routes'] = l3_protocol_data['host_routes']
-                    neutron.create_subnet({'subnet': subnet})
+            network = neutron.create_network({'network': network_properties['network']})
+            LOG.info('created not exist network %s id: %s', network['network']['name'], network['network']['id'])
+            for subnet in network_properties['subnets']:
+                subnet['network_id'] = network['network']['id']
+                neutron.create_subnet({'subnet': subnet})
+                LOG.info('created subnet %s', subnet['cidr'])
 
 
 class CmccAppD:
