@@ -208,6 +208,194 @@ def translate_security_group_rule(policy, **kwargs):
         }
 
 
+def translate_virtual_compute(virtual_compute, **kwargs):
+    """
+    把 tosca.capabilities.nfv.VirtualCompute 映射为OS::Nova::Flavor
+    Args:
+        virtual_compute: tosca.capabilities.nfv.VirtualCompute对象
+        **kwargs:
+
+    Returns:
+
+    """
+    node_templates = kwargs['app_d']['topology_template']['node_templates']
+    node_name = kwargs['node_name']
+    compute_template_properties = node_templates[node_name]['properties']
+
+    resource = {
+        'type': 'OS::Nova::Flavor',
+        'properties': {}
+    }
+    data_mapping(VirtualComputeMapper, virtual_compute, resource['properties'], **kwargs)
+
+    if 'vdu_profile' in compute_template_properties:
+        properties = translate_vdu_profile(compute_template_properties['vdu_profile'], **kwargs)
+        resource['properties'].update(properties)
+    flavor_node_name = node_name + '_FLAVOR'
+    kwargs['hot']['resources'][flavor_node_name] = resource
+    return {
+        'get_resource': flavor_node_name
+    }
+
+
+def translate_vdu_profile(vdu_profile, **kwargs):
+    """
+    映射资源调度配置
+    Args:
+        vdu_profile:
+        **kwargs:
+
+    Returns:
+
+    """
+    if 'flavor_extra_specs' not in vdu_profile:
+        return {}
+    extra_specs = {}
+    flavor_extra_specs = vdu_profile['flavor_extra_specs']
+    for key in flavor_extra_specs:
+        if isinstance(flavor_extra_specs[key], bool):
+            extra_specs[key] = 'true' if flavor_extra_specs[key] else 'false'
+        elif isinstance(flavor_extra_specs[key], (int, float)):
+            extra_specs[key] = str(flavor_extra_specs[key])
+        else:
+            extra_specs[key] = flavor_extra_specs[key]
+    return {
+        'extra_specs': extra_specs
+    }
+
+
+def translate_user_data(user_data, **kwargs):
+    """
+    映射用户初始化数据
+    Args:
+        user_data:
+
+    Returns:
+
+    """
+    if user_data['contents'] == '':
+        return None
+    if len(user_data['params'].keys()) == 0:
+        return user_data['contents']
+    params = {}
+    for key in user_data['params'].keys():
+        params[f'${key}$'] = user_data['params'][key]
+    return {
+        'str_replace': {
+            'params': params,
+            'template': user_data['contents']
+        }
+    }
+
+
+def translate_sw_image_data(sw_image_data, **kwargs):
+    """
+    映射镜像
+    Args:
+        sw_image_data:
+        **kwargs:
+
+    Returns:
+
+    """
+    sw_image_map = kwargs['sw_image_map']
+    if sw_image_data['name'] not in sw_image_map:
+        return sw_image_data['name']
+
+    return sw_image_map[sw_image_data['name']]['id']
+
+
+def translate_require_storage(requirement, **kwargs):
+    """
+    映射云盘绑定
+    Args:
+        requirement:
+        **kwargs:
+
+    Returns:
+
+    """
+    block_device_mapping_v2 = {
+        'delete_on_termination': True,
+        'volume_id': {
+            'get_resource': requirement
+        }
+    }
+    node_templates = kwargs['app_d']['topology_template']['node_templates']
+
+    if requirement in node_templates:
+        block_storage = node_templates[requirement]['properties']
+        sw_image_map = kwargs['sw_image_map']
+
+        if 'sw_image_data' in block_storage and \
+                block_storage['sw_image_data']['name'] in sw_image_map and \
+                sw_image_map[block_storage['sw_image_data']['name']]['format'] == 'iso':
+            block_device_mapping_v2['boot_index'] = 1
+            block_device_mapping_v2['device_type'] = 'cdrom'
+
+    return block_device_mapping_v2
+
+
+def translate_virtual_link(requirement, **kwargs):
+    """
+    映射网络绑定
+    Args:
+        requirement:
+        **kwargs:
+
+    Returns:
+
+    """
+    node_templates = kwargs['app_d']['topology_template']['node_templates']
+
+    if requirement in node_templates:
+        virtual_link = node_templates[requirement]['properties']
+        return virtual_link['vl_profile']['network_name']
+
+
+def translate_ip_address(address, **kwargs):
+    """
+    翻译 vdu connect point address
+    Args:
+        address:
+        **kwargs:
+
+    Returns:
+
+    """
+    return {'ip_address': address}
+
+
+def translate_ip_allocation_pool(ip_allocation_pool, **kwargs):
+    """
+    翻译 layer3 protocol data ip allocation pool
+    Args:
+        ip_allocation_pool:
+        **kwargs:
+
+    Returns:
+
+    """
+    properties = {}
+    data_mapping(IpAllocationPool, ip_allocation_pool, properties, **kwargs)
+    return properties
+
+
+def translate_l3_protocol_data(l3_protocol_data, **kwargs):
+    """
+    翻译 layer3 protocol data
+    Args:
+        l3_protocol_data:
+        **kwargs:
+
+    Returns:
+
+    """
+    properties = {}
+    data_mapping(VnfVirtualLinkL3Mapper, l3_protocol_data, properties, **kwargs)
+    return properties
+
+
 def translate_function(properties):
     """
     翻译函数名称和实现
@@ -356,16 +544,15 @@ class MapAction(BaseAction):
 
 
 class AppendAction(BaseAction):
-    def __init__(self, key, item_action: BaseAction):
+    def __init__(self, key, func):
         super().__init__(key)
-        self.item_action = item_action
+        self.func = func
 
     def do_action(self, data, properties, **kwargs):
         if self.key not in properties:
             properties[self.key] = []
-        item = {}
-        self.item_action.do_action(data, item, **kwargs)
-        properties[self.key].append(item['result'])
+        map_item = self.func(data, **kwargs)
+        properties[self.key].append(map_item)
 
 
 class FunctionAction(BaseAction):
@@ -378,9 +565,8 @@ class FunctionAction(BaseAction):
         self.func = func
 
     def do_action(self, data, properties, **kwargs):
-        result = self.func(data, properties, **kwargs)
-        if self.key:
-            properties[self.key] = result
+        result = self.func(data, **kwargs)
+        properties[self.key] = result
 
 
 class ListAction(BaseAction):
@@ -388,180 +574,26 @@ class ListAction(BaseAction):
     映射数组的元素
     """
 
-    def __init__(self, key, mapping_data):
+    def __init__(self, key, func):
         super().__init__(key)
-        self.mapping_data = mapping_data
+        self.func = func
 
     def do_action(self, data, properties, **kwargs):
         properties[self.key] = []
         for item in data:
-            map_item = {}
-            data_mapping(self.mapping_data, item, map_item)
+            map_item = self.func(item, **kwargs)
             properties[self.key].append(map_item)
-
-
-def map_virtual_compute(virtual_compute, **kwargs):
-    """
-    把 tosca.capabilities.nfv.VirtualCompute 映射为OS::Nova::Flavor
-    Args:
-        virtual_compute: tosca.capabilities.nfv.VirtualCompute对象
-        **kwargs:
-
-    Returns:
-
-    """
-    resource = {
-        'type': 'OS::Nova::Flavor',
-        'properties': {}
-    }
-    data_mapping(VirtualComputeMapper, virtual_compute, resource['properties'], **kwargs)
-    flavor_node_name = kwargs['node_name'] + '_FLAVOR'
-    if flavor_node_name in kwargs['hot']['resources']:
-        kwargs['hot']['resources'][flavor_node_name].update(resource['properties'])
-    else:
-        kwargs['hot']['resources'][flavor_node_name] = resource
-    return {
-        'get_resource': flavor_node_name
-    }
-
-
-def map_vdu_profile(vdu_profile, **kwargs):
-    """
-    映射资源调度配置
-    Args:
-        vdu_profile:
-        **kwargs:
-
-    Returns:
-
-    """
-    if 'flavor_extra_specs' not in vdu_profile:
-        return
-
-    resource = {
-        'type': 'OS::Nova::Flavor',
-        'properties': {
-            'extra_specs': {}
-        }
-    }
-    flavor_extra_specs = vdu_profile['flavor_extra_specs']
-    for key in flavor_extra_specs:
-        if isinstance(flavor_extra_specs[key], bool):
-            resource['properties']['extra_specs'][key] = 'true' \
-                if flavor_extra_specs[key] else 'false'
-        elif isinstance(flavor_extra_specs[key], (int, float)):
-            resource['properties']['extra_specs'][key] = str(flavor_extra_specs[key])
-        else:
-            resource['properties']['extra_specs'][key] = flavor_extra_specs[key]
-
-    flavor_node_name = kwargs['node_name'] + '_FLAVOR'
-
-    if flavor_node_name in kwargs['hot']['resources']:
-        kwargs['hot']['resources'][flavor_node_name].update(resource['properties'])
-    else:
-        kwargs['hot']['resources'][flavor_node_name] = resource
-
-
-def map_user_data(user_data, **kwargs):
-    """
-    映射用户初始化数据
-    Args:
-        user_data:
-
-    Returns:
-
-    """
-    if user_data['contents'] == '':
-        return None
-    if len(user_data['params'].keys()) == 0:
-        return user_data['contents']
-    params = {}
-    for key in user_data['params'].keys():
-        params[f'${key}$'] = user_data['params'][key]
-    return {
-        'str_replace': {
-            'params': params,
-            'template': user_data['contents']
-        }
-    }
-
-
-def map_sw_image_data(sw_image_data, **kwargs):
-    """
-    映射镜像
-    Args:
-        sw_image_data:
-        **kwargs:
-
-    Returns:
-
-    """
-    sw_image_map = kwargs['sw_image_map']
-    if sw_image_data['name'] not in sw_image_map:
-        return sw_image_data['name']
-
-    return sw_image_map[sw_image_data['name']]['id']
-
-
-def map_virtual_storage(requirement, **kwargs):
-    """
-    映射云盘绑定
-    Args:
-        requirement:
-        **kwargs:
-
-    Returns:
-
-    """
-    block_device_mapping_v2 = {
-        'delete_on_termination': True,
-        'volume_id': {
-            'get_resource': requirement
-        }
-    }
-    node_templates = kwargs['app_d']['topology_template']['node_templates']
-
-    if requirement in node_templates:
-        block_storage = node_templates[requirement]['properties']
-        sw_image_map = kwargs['sw_image_map']
-
-        if 'sw_image_data' in block_storage and \
-                block_storage['sw_image_data']['name'] in sw_image_map and \
-                sw_image_map[block_storage['sw_image_data']['name']]['format'] == 'iso':
-            block_device_mapping_v2['boot_index'] = 1
-            block_device_mapping_v2['device_type'] = 'cdrom'
-
-    return block_device_mapping_v2
-
-
-def map_virtual_link(requirement, **kwargs):
-    """
-    映射网络绑定
-    Args:
-        requirement:
-        **kwargs:
-
-    Returns:
-
-    """
-    node_templates = kwargs['app_d']['topology_template']['node_templates']
-
-    if requirement in node_templates:
-        virtual_link = node_templates[requirement]['properties']
-        return virtual_link['vl_profile']['network_name']
 
 
 ComputeMapper = {
     'properties.name': SetAction('name'),
     'properties.nfvi_constraints': SetAction('availability_zone'),
-    'properties.bootdata.user_data': FunctionAction('user_data', map_user_data),
+    'properties.bootdata.user_data': FunctionAction('user_data', translate_user_data),
     'properties.bootdata.config_drive': SetAction('config_drive'),
-    'properties.sw_image_data': FunctionAction('image', map_sw_image_data),
-    # todo: 未实现vdu_profile翻译
-    'properties.vdu_profile': FunctionAction(None, map_vdu_profile),
+    'properties.sw_image_data': FunctionAction('image', translate_sw_image_data),
     'requirements.%d.virtual_storage':
-        AppendAction('block_device_mapping_v2', FunctionAction(None, map_virtual_storage)),
-    'capabilities.virtual_compute': FunctionAction('flavor', map_virtual_compute)
+        AppendAction('block_device_mapping_v2', translate_require_storage),
+    'capabilities.virtual_compute': FunctionAction('flavor', translate_virtual_compute)
 }
 
 VirtualComputeMapper = {
@@ -573,16 +605,16 @@ VirtualComputeMapper = {
 VduCpMapper = {
     'properties.vnic_type': SetAction('binding:vnic_type'),
     'properties.port_security_enabled': SetAction('port_security_enabled'),
-    'attributes.ipv4_address': AppendAction('fixed_ips', SetAction('ip_address')),
-    'attributes.ipv6_address': AppendAction('fixed_ips', SetAction('ip_address')),
+    'attributes.ipv4_address': AppendAction('fixed_ips', translate_ip_address),
+    'attributes.ipv6_address': AppendAction('fixed_ips', translate_ip_address),
     'attributes.mac': SetAction('mac_address'),
-    'requirements.%d.virtual_link': FunctionAction('network', map_virtual_link),
+    'requirements.%d.virtual_link': FunctionAction('network', translate_virtual_link),
 }
 
 VirtualStorageMapper = {
     'properties.virtual_storage_data.size_of_storage': SetAction('size'),
     'properties.virtual_storage_data.volume_type.volume_type_name': SetAction('volume_type'),
-    'properties.sw_image_data': FunctionAction('image', map_sw_image_data),
+    'properties.sw_image_data': FunctionAction('image', translate_sw_image_data),
     'properties.nfvi_constraints': SetAction('availability_zone')
 }
 
@@ -595,7 +627,7 @@ VnfVirtualLinkL3Mapper = {
     'name': SetAction('name'),
     'ip_version': SetAction('ip_version'),
     'cidr': SetAction('cidr'),
-    'ip_allocation_pools': ListAction('allocation_pools', IpAllocationPool),
+    'ip_allocation_pools': ListAction('allocation_pools', translate_ip_allocation_pool),
     'gateway_ip': SetAction('gateway_ip'),
     'dhcp_enabled': SetAction('enable_dhcp'),
     'ipv6_ra_mode': SetAction('ipv6_ra_mode'),
@@ -611,7 +643,7 @@ VnfVirtualLinkMapper = {
     'properties.vl_profile.provider_segmentation_id': SetAction('provider:segmentation_id'),
     'properties.vl_profile.router_external': SetAction('router:external'),
     'properties.vl_profile.vlan_transparent': SetAction('vlan_transparent'),
-    'properties.vl_profile.l3_protocol_data': ListAction('subnets', VnfVirtualLinkL3Mapper)
+    'properties.vl_profile.l3_protocol_data': ListAction('subnets', translate_l3_protocol_data)
 }
 
 SecurityGroupMapper = {

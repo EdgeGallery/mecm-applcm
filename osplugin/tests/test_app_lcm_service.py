@@ -67,7 +67,7 @@ class AppLcmServiceTest(unittest.TestCase):
         ]
         response = self.app_lcm_service.uploadPackage(data, None)
         self.assertEqual(response.status, utils.SUCCESS)
-        utils.delete_dir('package')
+        # utils.delete_dir('package')
 
     @mock.patch("service.app_lcm_service.create_glance_client")
     def test_delete_package(self, create_glance_client):
