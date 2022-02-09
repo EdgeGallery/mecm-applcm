@@ -157,3 +157,12 @@ class MockResponse:
 
         """
         return self.data
+
+
+mock_neutron_client = Mock()
+mock_neutron_client.list_networks.return_value = {'networks': []}
+mock_neutron_client.create_network.return_value = {'network': {
+    'id': 'abcabc',
+    'name': 'test-net'
+}}
+mock_neutron_client.create_subnet.return_value = None
