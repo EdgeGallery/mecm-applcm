@@ -260,15 +260,17 @@ class CsarPkg:
         for name, template in appd['topology_template']['node_templates'].items():
             if template['type'] != 'tosca.nodes.nfv.VnfVirtualLink':
                 continue
-            network_properties = translator.translate_vl(template,
-                                                         inputs=inputs,
-                                                         parameters=parameters)
+            network_properties = translator.translate_virtual_link(template,
+                                                                   inputs=inputs,
+                                                                   parameters=parameters)
             logger.info('now network %s', json.dumps(network_properties))
             networks = neutron.list_networks(name=network_properties['network']['name'])
             if len(networks['networks']) > 0:
                 continue
             network = neutron.create_network({'network': network_properties['network']})
-            LOG.info('created not exist network %s id: %s', network['network']['name'], network['network']['id'])
+            LOG.info('created not exist network %s id: %s',
+                     network['network']['name'],
+                     network['network']['id'])
             for subnet in network_properties['subnets']:
                 subnet['network_id'] = network['network']['id']
                 neutron.create_subnet({'subnet': subnet})
