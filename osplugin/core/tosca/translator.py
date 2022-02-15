@@ -46,7 +46,7 @@ def translate(app_description, sw_image_map):
     # 翻译 节点声明
     node_templates = topology_template['node_templates']
     for name, node_template in node_templates.items():
-        resource_translator = NODE_TEMPLATE_MAPPER[node_template['type']]
+        resource_translator = NODE_TEMPLATE_MAPPER.get(node_template['type'], translate_unknown)
         resource_translator(node_template,
                             app_d=app_description,
                             hot=hot,
@@ -56,7 +56,7 @@ def translate(app_description, sw_image_map):
     # 翻译 组声明
     groups = topology_template['groups']
     for name, group in groups.items():
-        group_translator = GROUP_MAPPER[group['type']]
+        group_translator = GROUP_MAPPER.get(group['type'], translate_unknown)
         group_translator(group,
                          app_d=app_description,
                          hot=hot,
@@ -67,7 +67,7 @@ def translate(app_description, sw_image_map):
     for policy_obj in policies:
         name = next(iter(policy_obj.keys()))
         policy = policy_obj[name]
-        policy_translator = POLICY_MAPPER[policy['type']]
+        policy_translator = POLICY_MAPPER.get(policy['type'], translate_unknown)
         policy_translator(policy, app_d=app_description, hot=hot, node_name=name)
 
     # 翻译 函数
@@ -476,23 +476,16 @@ def get_from_inputs(key, inputs, parameters):
 
 
 NODE_TEMPLATE_MAPPER = {
-    'tosca.nodes.nfv.VNF': translate_unknown,
     'tosca.nodes.nfv.Vdu.Compute': translate_vdu_compute,
     'tosca.nodes.nfv.Vdu.VirtualStorage': translate_virtual_storage,
     'tosca.nodes.nfv.VduCp': translate_vdu_cp,
-    'tosca.nodes.nfv.Cp': translate_unknown,
-    'tosca.nodes.nfv.VnfVirtualLink': translate_unknown,
-    'tosca.nodes.nfv.app.configuration': translate_unknown
 }
 
 GROUP_MAPPER = {
-    'tosca.groups.nfv.PlacementGroup': translate_unknown,
     'tosca.groups.nfv.PortSecurityGroup': translate_port_security_group
 }
 
 POLICY_MAPPER = {
-    'tosca.policies.nfv.AffinityRule': translate_unknown,
-    'tosca.policies.nfv.AntiAffinityRule': translate_unknown,
     'tosca.policies.nfv.SecurityGroupRule': translate_security_group_rule
 }
 
