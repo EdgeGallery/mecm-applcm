@@ -745,6 +745,8 @@ func GetServiceInfo(clientset *kubernetes.Clientset, options metav1.ListOptions,
 				portInfo.TargetPort = sp.TargetPort.StrVal
 			}
 			portInfo.NodePort = fmt.Sprint(sp.NodePort)
+			portInfo.Name = sp.Name
+			portInfo.Protocol = fmt.Sprint(sp.Protocol)
 			serviceInfo.Ports = append(serviceInfo.Ports, portInfo)
 		}
 	}

@@ -70,6 +70,8 @@ type PortInfo struct {
 	Port       string `json:"port"`
 	TargetPort string `json:"targetPort"`
 	NodePort   string `json:"nodePort"`
+	Protocol   string `json:"protocol"`
+	Name       string `json:"name"`
 }
 
 // ContainerInfo Information
