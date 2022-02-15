@@ -105,6 +105,7 @@ def translate_vdu_compute(node_template, **kwargs):
     }
     data_mapping(ComputeMapper, node_template, resource['properties'], **kwargs)
     node_templates = kwargs['app_d']['topology_template']['node_templates']
+
     resource['properties']['networks'] = []
     for node_name, node_template in node_templates.items():
         if node_template['type'] != 'tosca.nodes.nfv.VduCp':
@@ -122,7 +123,19 @@ def translate_vdu_compute(node_template, **kwargs):
                 }
             })
 
+    node_name = kwargs['node_name']
+    kwargs['hot']['outputs'][node_name] = {
+        'value': {
+            'vmId': {
+                'get_resource': node_name,
+            },
+            'networks': {
+                'get_attr': [node_name, 'addresses']
+            }
+        }
+    }
     kwargs['hot']['resources'][kwargs['node_name']] = resource
+
     return resource
 
 
