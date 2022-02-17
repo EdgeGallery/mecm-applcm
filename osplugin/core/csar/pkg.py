@@ -212,7 +212,7 @@ class CsarPkg:
                 LOG.debug('use image from os')
                 image_id_map[sw_image_desc['name']] = {
                     'id': image['id'],
-                    'format': image['diskFormat'],
+                    'format': image['disk_format'],
                     'size': image['size']
                 }
             elif sw_image_desc['swImage'].startswith('http'):
