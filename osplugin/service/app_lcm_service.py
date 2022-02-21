@@ -25,7 +25,7 @@ from core.log import logger
 from core.models import AppInsMapper, UploadCfgRequest, \
     UploadPackageRequest, AppPkgMapper, VmImageInfoMapper
 from core.openstack_utils import create_glance_client, create_heat_client, \
-    create_nova_client, create_neutron_client
+    create_nova_client, create_neutron_client, create_cinder_client
 
 import glanceclient.exc
 
@@ -402,7 +402,9 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
             return resp
 
         nova = create_nova_client(host_ip, request.tenantId)
+        cinder = create_cinder_client(host_ip, request.tenantId)
         neutron = create_neutron_client(host_ip, request.tenantId)
+        os_project_id = nova.client.session.get_project_id()
 
         resp_data = {
             'retCode': 200,
@@ -410,12 +412,16 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         }
 
         quotas = nova.limits.get().absolute
-        net_usage = neutron.show_quota_details(nova.client.session.get_project_id())
+        net_usage = neutron.show_quota_details(os_project_id)
+        volume_usage = cinder.limits.get(tenant_id=os_project_id).absolute
 
         quota_dict = {}
 
         for quota in quotas:
             quota_dict[quota.name] = quota.value
+
+        for usage in volume_usage:
+            quota_dict[usage.name] = usage.value
 
         for (key, value) in net_usage['quota'].items():
             quota_dict[key + 'Limit'] = value['limit']

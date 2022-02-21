@@ -55,10 +55,6 @@ db_host = os.getenv('DB_HOST', conf.get('postgres', 'host'))
 db_port = int(os.getenv('DB_PORT', conf.get('postgres', 'port')))
 db_name = os.getenv('DB_NAME', conf.get('postgres', 'database'))
 
-# default chunk_size 2M
-_DEFAULT_IMAGE_CHUNK_SIZE = 1021 * 1024 * 2
-chunk_size = int(os.getenv("IMAGE_CHUNK_SIZE", str(_DEFAULT_IMAGE_CHUNK_SIZE)))
-
 _SERVER_CA_VERIFY = os.getenv('SERVER_CA_VERIFY_DIR', 'false')
 if _SERVER_CA_VERIFY == 'false':
     _SERVER_CA_VERIFY = False

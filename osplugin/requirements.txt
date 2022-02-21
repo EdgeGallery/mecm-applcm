@@ -15,6 +15,7 @@ python-heatclient==2.3.0
 python-neutronclient==7.6.0
 python-novaclient==17.3.0
 python-keystoneclient==4.3.0
+python-cinderclient==8.2.0
 
 PyYAML~=5.4.1
 requests~=2.25.1

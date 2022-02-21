@@ -21,6 +21,7 @@ import re
 from core.exceptions import OsConfigNotValid
 from core.log import logger
 
+from cinderclient.v3.client import Client as CinderClient
 from gnocchiclient.v1.client import Client as GnocchiClient
 from glanceclient.v2.client import Client as GlanceClient
 from heatclient.v1.client import Client as HeatClient
@@ -146,6 +147,11 @@ def create_gnocchi_client(host_ip, tenant_id):
     return GnocchiClient(session=get_session(host_ip, tenant_id), adapter_options=adapter_options)
 
 
+def create_cinder_client(host_ip, tenant_id):
+    rc_data = get_rc(host_ip, tenant_id)
+    return CinderClient(session=get_session(host_ip, tenant_id), endpoint_override=rc_data.cinder_url)
+
+
 def get_image_by_name_checksum(name, checksum, host_ip, tenant_id):
     """
     根据名称和校验和获取镜像
@@ -183,6 +189,7 @@ class RCFile:
     glance_url = None
     neutron_url = None
     gnocchi_url = None
+    cinder_url = None
 
     def __init__(self, rc_path):
         try:
@@ -217,6 +224,8 @@ class RCFile:
                         self.neutron_url = group2
                     elif group1 == 'GNOCCHI_URL':
                         self.gnocchi_url = group2
+                    elif group1 == 'CINDER_URL':
+                        self.cinder_url = group2
         except Exception as exception:
             logger.error(exception, exc_info=True)
             raise OsConfigNotValid()
