@@ -22,7 +22,6 @@ from io import BytesIO
 from glanceclient.exc import HTTPException
 from pony.orm import commit, db_session
 
-import config
 import utils
 from core.log import logger
 from core.models import VmImageInfoMapper
@@ -34,20 +33,6 @@ from internal.resourcemanager.resourcemanager_pb2 import CreateVmImageResponse, 
 from task.image_task import start_check_image_status, add_import_image_task
 
 LOG = logger
-
-
-def get_chunk_num(size, chunk_size=1048576):
-    """
-    get_chunk_num
-    Args:
-        size: name
-        chunk_size
-    Returns:
-        chunk_num
-    """
-    if size % chunk_size == 0:
-        return size // chunk_size
-    return size // chunk_size + 1
 
 
 class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
@@ -147,7 +132,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
             'resourceUrl': image_info.remote_url
         }
 
-        resp.response = json.dumps({'data': res_dir, 'message': None, 'retCode': 200 })
+        resp.response = json.dumps({'data': res_dir, 'message': None, 'retCode': 200})
         return resp
 
     @db_session
@@ -196,7 +181,7 @@ class ImageService(resourcemanager_pb2_grpc.VmImageMangerServicer):
         iterable = glance_client.images.data(image_id=request.imageId)
 
         buf = BytesIO()
-        buf_size = config.chunk_size
+        buf_size = 1024 * 1024 * 2
         send_size = 0
         for body in iterable:
             buf.write(body)
