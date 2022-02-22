@@ -19,6 +19,9 @@
 import json
 import os
 import uuid
+
+from novaclient.exceptions import Forbidden
+
 from core import openstack_utils
 from core.csar.pkg import CsarPkg
 from core.log import logger
@@ -412,10 +415,22 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         }
 
         quotas = nova.limits.get().absolute
+
         net_usage = neutron.show_quota_details(os_project_id)
         volume_usage = cinder.limits.get(tenant_id=os_project_id).absolute
 
         quota_dict = {}
+        try:
+            hypervisors = nova.hypervisors.list()
+            local_gb = 0
+            local_gb_used = 0
+            for hypervisor in hypervisors:
+                local_gb = local_gb + hypervisor.local_gb
+                local_gb_used = local_gb_used + hypervisor.local_gb_used
+            quota_dict['local_gb'] = local_gb
+            quota_dict['local_gb_used'] = local_gb_used
+        except Forbidden:
+            logger.warn('not permitted to get hypervisors info')
 
         for quota in quotas:
             quota_dict[quota.name] = quota.value
