@@ -429,6 +429,8 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
                 local_gb_used = local_gb_used + hypervisor.local_gb_used
             quota_dict['local_gb'] = local_gb
             quota_dict['local_gb_used'] = local_gb_used
+            quota_dict['virtual_local_storage_used'] = local_gb_used
+            quota_dict['virtual_local_storage_total'] = local_gb
         except Forbidden:
             logger.warn('not permitted to get hypervisors info')
 
@@ -441,6 +443,11 @@ class AppLcmService(lcmservice_pb2_grpc.AppLCMServicer):
         for (key, value) in net_usage['quota'].items():
             quota_dict[key + 'Limit'] = value['limit']
             quota_dict[key + 'Used'] = value['used']
+
+        quota_dict['virtual_mem_used'] = quota_dict['totalRAMUsed']
+        quota_dict['virtual_mem_total'] = quota_dict['maxTotalRAMSize']
+        quota_dict['virtual_cpu_used'] = quota_dict['totalCoresUsed']
+        quota_dict['virtual_cpu_total'] = quota_dict['maxTotalCores']
 
         resp_data['data'] = quota_dict
         resp.response = json.dumps(resp_data)
