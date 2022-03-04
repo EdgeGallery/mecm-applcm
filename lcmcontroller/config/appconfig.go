@@ -166,6 +166,8 @@ func (appAuthCfg *AppAuthConfig) GenerateAkSK() error {
 
 // Send app auth configuration request
 func (acm *AppConfigAdapter) PostAppAuthConfig(clientIp string) error {
+	var url string
+
 	authInfo := Auth{
 		AuthInfo{
 			Credentials{
@@ -185,8 +187,14 @@ func (acm *AppConfigAdapter) PostAppAuthConfig(clientIp string) error {
 		log.Error("Failed to marshal the request body information")
 		return err
 	}
-	url := util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mep/appMng/v1/applications/" +
-		acm.AppAuthCfg.AppInsId + "/confs"
+
+	if util.GetAppConfig("http_support") == "true" {
+		url = util.HttpUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mep/appMng/v1/applications/" +
+			acm.AppAuthCfg.AppInsId + "/confs"
+	} else {
+		url = util.HttpsUrl + util.GetAPIGwAddr() + ":" + util.GetAPIGwPort() + "/mep/appMng/v1/applications/" +
+			acm.AppAuthCfg.AppInsId + "/confs"
+	}
 	req, errNewRequest := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if errNewRequest != nil {
 		return errNewRequest
@@ -213,9 +221,15 @@ func (acm *AppConfigAdapter) PostAppAuthConfig(clientIp string) error {
 
 // Delete app auth configuration request
 func (acm *AppConfigAdapter) DeleteAppAuthConfig(clientIp string) error {
+	var url string
 
-	url := util.HttpsUrl + util.GetMepServerAddress() + ":" + util.GetMepPort() + "/mep/mec_app_support/v1/applications/" +
-		acm.AppAuthCfg.AppInsId + "/AppInstanceTermination"
+	if util.GetAppConfig("http_support") == "true" {
+		url = util.HttpUrl + util.GetMepServerAddress() + ":" + util.GetMepPort() + "/mep/mec_app_support/v1/applications/" +
+			acm.AppAuthCfg.AppInsId + "/AppInstanceTermination"
+	} else {
+		url = util.HttpsUrl + util.GetMepServerAddress() + ":" + util.GetMepPort() + "/mep/mec_app_support/v1/applications/" +
+			acm.AppAuthCfg.AppInsId + "/AppInstanceTermination"
+	}
 	req, errNewRequest := http.NewRequest("DELETE", url, nil)
 	if errNewRequest != nil {
 		return errNewRequest
