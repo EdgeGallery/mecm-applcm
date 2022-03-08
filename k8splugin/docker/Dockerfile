@@ -14,6 +14,7 @@
 
 FROM swr.cn-north-4.myhuaweicloud.com/eg-common/golang:1.14.2-alpine3.11 as builder
 
+ENV GOPROXY https://goproxy.cn,direct
 ENV HOME=/usr/app
 
 RUN apk update &&\
