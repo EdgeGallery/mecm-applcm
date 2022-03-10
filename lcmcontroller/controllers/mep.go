@@ -72,7 +72,14 @@ func (c *MepController) Subscribe() {
 // @Success 200 ok
 // @Failure 400 bad request
 // @Failure 500 Mep Service calling failed
-func GetFromMep(c *MepController, url string){
+func GetFromMep(c *MepController, queryUrl string){
+	var url string
+	if util.GetAppConfig("http_support") == "true" {
+		url = util.HttpUrl + queryUrl
+	} else {
+		url = util.HttpsUrl + queryUrl
+	}
+
 	clientIp := c.Ctx.Input.IP()
 	err := util.ValidateSrcAddress(clientIp)
 	if err != nil {
