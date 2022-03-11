@@ -75,8 +75,10 @@ func (c *MepController) Subscribe() {
 func GetFromMep(c *MepController, queryUrl string){
 	var url string
 	if util.GetAppConfig("http_support") == "true" {
+		log.Info("Query with http.")
 		url = util.HttpUrl + queryUrl
 	} else {
+		log.Info("Query with https.")
 		url = util.HttpsUrl + queryUrl
 	}
 
